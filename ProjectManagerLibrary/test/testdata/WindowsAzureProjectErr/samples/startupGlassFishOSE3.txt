@@ -1,0 +1,39 @@
+@REM *** Sample startup script containing the steps for starting GlassFish Server OSE 3 and deploying a WAR file. 
+@REM *** (Last tested with GlassFish Server OSE 3.1.1)
+
+@REM To use the sample, follow these steps:
+@REM *** 1) Copy all this content into approot/startup.cmd in the role folder, close this file, and edit the copy
+@REM *** 2) Place a JDK distribution as jdk.zip under approot
+@REM *** 3) Place a GlassFish Server OSE 3.x distribution as glassfish3.zip under approot in your project
+@REM *** 3.1) If you want to download the server into Azure directly from a URL instead, then
+@REM          uncomment the next line and modify the URL as appropriate:
+@REM cscript "util\download.vbs" "http://download.java.net/glassfish/3.1.1/release/glassfish-3.1.1.zip" "glassfish3.zip"
+
+@REM *** 4) Update SERVER_DIR_NAME below as appropriate:
+@REM *** (IMPORTANT: There must be no trailing nor leading whitespace around the setting)
+
+SET SERVER_DIR_NAME=glassfish3
+
+@REM *** 5) To deploy your own WAR file, place it in approot and update WAR_NAME below:
+@REM *** (IMPORTANT: There must be no trailing nor leading whitespace around the setting)
+
+SET WAR_NAME=HelloWorld.war
+
+			
+@REM **************************************************************			
+@REM *** Do not make changes below unless you know what you're doing.
+rd "\%ROLENAME%"
+mklink /D "\%ROLENAME%" "%ROLEROOT%\approot"
+cd /d "\%ROLENAME%"
+cscript util\unzip.vbs jdk.zip "%CD%"
+cscript util\unzip.vbs glassfish3.zip "%CD%"
+set JAVA_HOME=\%ROLENAME%\jdk
+set PATH=%PATH%;%JAVA_HOME%\bin
+cd "%SERVER_DIR_NAME%"
+cmd /c bin\asadmin.bat start-domain 
+cmd /c bin\asadmin.bat deploy "\%ROLENAME%\%WAR_NAME%"
+
+@ECHO OFF
+if %ERRORLEVEL%==0 exit %ERRORLEVEL%
+choice /d y /t 5 /c Y /N /M "*** Windows Azure startup failed - exiting..."
+exit %ERRORLEVEL%

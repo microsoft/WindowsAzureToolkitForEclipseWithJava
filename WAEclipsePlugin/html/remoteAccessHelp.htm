@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+  <title>Windows Azure remote access page</title>
+</head>
+
+<body>
+
+<h2>Windows Azure remote access page</h2>
+
+<p>This dialog allows you to enable or disable remote access
+for all the roles in your project at the same time.</p>
+
+<p><b>To enable remote access</b>, select the <b>Enable</b>
+checkbox and specify the login credentials that will be used for connecting a
+Remote Desktop client to a role instance within your Windows Azure cloud. </p>
+
+<p>The <b>Certificate</b> is needed to encrypt your remote
+access password. You may specify an existing X.509 certificate file or
+create a new self-signed certificate from this dialog. If specifying an
+existing one, you need both the public-key containing certificate file
+(typically with a *.CER extension) and a private-key containing version of the
+same certificate encoded using the SHA1, PKCS#12 format (typically with a .pfx
+extension). The public key from the *.CER certificate file will be used to
+encrypt your remote access password inside your configuration file (*.CSCFG).
+The private key-containing PFX file is what you need to upload to your hosted
+service using the <a href="http://windows.azure.com/">Windows Azure</a> portal.
+</p>
+
+<p><b>To disable remote access</b>, deselect the <b>Enable</b>
+checkbox. </p>
+
+<p>To learn more, see the Microsoft Interoperability Bridges
+website: <a href="http://java.interopbridges.com/cloud">http://java.interopbridges.com/cloud</a>.</p>
+
+</body>
+
+</html>

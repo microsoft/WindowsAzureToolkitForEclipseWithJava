@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: WASDKJavaUI
+Bundle-SymbolicName: com.microsoftopentechnologies.windowsazure.tools.wasdkjava.ui;singleton:=true
+Bundle-Version: 0.0.1.qualifier
+Bundle-Vendor: Microsoft Open Technologies Inc.
+Bundle-Activator: com.microsoftopentechnologies.windowsazure.tools.wasdkjava.ui.Activator
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.jdt.core;bundle-version="3.6.0",
+ org.eclipse.jdt.ui;bundle-version="3.6.0",
+ org.eclipse.core.resources;bundle-version="3.6.0"
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-Localization: plugin

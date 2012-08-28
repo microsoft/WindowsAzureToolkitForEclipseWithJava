@@ -1,0 +1,1 @@
+"C:\Program Files\Windows Azure SDK\v1.5\bin\csrun.exe" "C:\sureshdepot\sessionAffinitySQE\deploy\WindowsAzurePackage.cspkg" "C:\sureshdepot\sessionAffinitySQE\deploy\ServiceConfiguration.cscfg"

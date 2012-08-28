@@ -1,0 +1,31 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Windows Azure Libraries
+Bundle-SymbolicName: com.microsoftopentechnologies.windowsazure.tools.sdk;singleton:=true
+Bundle-Version: 0.3.0
+Bundle-Vendor: Microsoft Open Technologies Inc.
+Bundle-ClassPath: microsoft-windowsazure-api-0.3.0.jar
+Export-Package: com.microsoft.schemas._2003._10.serialization,
+ com.microsoft.windowsazure.serviceruntime,
+ com.microsoft.windowsazure.services.blob,
+ com.microsoft.windowsazure.services.blob.client,
+ com.microsoft.windowsazure.services.blob.implementation,
+ com.microsoft.windowsazure.services.blob.models,
+ com.microsoft.windowsazure.services.core,
+ com.microsoft.windowsazure.services.core.storage,
+ com.microsoft.windowsazure.services.core.storage.utils,
+ com.microsoft.windowsazure.services.core.storage.utils.implementation,
+ com.microsoft.windowsazure.services.core.utils,
+ com.microsoft.windowsazure.services.core.utils.pipeline,
+ com.microsoft.windowsazure.services.queue,
+ com.microsoft.windowsazure.services.queue.client,
+ com.microsoft.windowsazure.services.queue.implementation,
+ com.microsoft.windowsazure.services.queue.models,
+ com.microsoft.windowsazure.services.serviceBus,
+ com.microsoft.windowsazure.services.serviceBus.implementation,
+ com.microsoft.windowsazure.services.serviceBus.models,
+ com.microsoft.windowsazure.services.table,
+ com.microsoft.windowsazure.services.table.client,
+ com.microsoft.windowsazure.services.table.implementation,
+ com.microsoft.windowsazure.services.table.models
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6

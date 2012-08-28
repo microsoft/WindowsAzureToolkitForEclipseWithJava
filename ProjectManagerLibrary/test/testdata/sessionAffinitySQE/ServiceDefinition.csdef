@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<ServiceDefinition xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" name="WindowsAzureProject">
+  <WorkerRole name="WorkerRole1" vmsize="Small">
+    <Startup>
+      <!--Do not delete this startup task or insert tasks before it. It was created by Windows Azure Plugin for Eclipse with Java to enable session affinity. -->
+      <Task commandLine=".sessionaffinity\ConfigureARR.cmd 1http 1http_SESSION_AFFINITY" executionContext="elevated" taskType="simple"/>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </Startup>
+    <Runtime executionContext="elevated">
+    	<EntryPoint>
+	  		<!-- Sample entry point calling startup.cmd from the role's approot\util folder -->
+    		<ProgramEntryPoint commandLine="util\startup.cmd" setReadyOnProcessStart="true"/>
+    	</EntryPoint>
+    </Runtime> 
+    <Imports>
+  	  <Import moduleName="RemoteAccess"/>
+  	  <Import moduleName="RemoteForwarder"/>
+    </Imports>
+  <Endpoints>
+      
+      
+      
+       <InputEndpoint localPort="31222" name="1http" port="80" protocol="tcp"/>
+      
+      
+    
+    
+    
+    <InternalEndpoint name="1http_SESSION_AFFINITY" protocol="tcp">
+        <FixedPort port="31221"/>
+      </InternalEndpoint>
+    </Endpoints>
+  </WorkerRole>
+</ServiceDefinition>

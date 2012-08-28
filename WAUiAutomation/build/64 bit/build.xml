@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<project name="testsuite" default="run" basedir="."> 
+	<property environment="env"/> 
+	<property name="eclipse-home" value="${env.eclipse_home}" />
+    <property name="plugin-name" value="WAUiAutomation" /> 
+    <property name="test-classname" value="com.persistent.uiautomation.AllTestRun" /> 
+    <property name="library-file" value="${eclipse-home}/plugins/org.eclipse.swtbot.eclipse.junit4.headless_2.0.4.20110304_0338-e5aff47-dev-e36/library.xml" /> 
+    <target name="RunTest">  
+       <property name="jvmOption" value=""></property>
+         <property name="temp-workspace" value="AutomationWorkspace"/> 
+          <delete dir="${temp-workspace}" quiet="true"/> 
+        <ant target="swtbot-test" antfile="${library-file}" dir="${eclipse-home}"> 
+            <property name="data-dir" value="${temp-workspace}"/> 
+            <property name="plugin-name" value="${plugin-name}"/> 
+            <property name="os" value="win32"/>
+             <property name="ws" value="win32"/> 
+            <property name="arch" value="x86_64"/> 
+            <property name="classname" value="${test-classname}"/> 
+            <property name="vmargs" value="-Xms128M -XX:MaxPermSize=512m -Xmx512M"/> 
+        </ant>
+     </target> 
+	<target name="cleanup" />  
+   <target name="run" depends="RunTest,cleanup">
+    </target>
+ </project>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<ServiceDefinition xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" name="WindowsAzureProject">
+  <WorkerRole name="WorkerRole1" vmsize="Small">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd .startup.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="InstanceEp_PUBLICPORT">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/Endpoints/Endpoint[@name='InstanceEp']/@publicPort"/>
+          </Variable>
+        </Environment>
+      </Task>
+    </Startup>
+    <Runtime executionContext="elevated">
+    	<EntryPoint>
+	  		<!-- Sample entry point calling run.cmd from the role's approot folder -->
+    		<ProgramEntryPoint commandLine="run.cmd" setReadyOnProcessStart="true"/>
+    	</EntryPoint>
+    </Runtime>
+    <Imports>
+  	  <Import moduleName="RemoteAccess"/>
+  	  <Import moduleName="RemoteForwarder"/>
+    </Imports>
+    <Endpoints>
+      <InputEndpoint localPort="8080" name="http" port="80" protocol="tcp"/>
+    <InternalEndpoint name="InternalEp" protocol="tcp">
+        <FixedPort port="34"/>
+      </InternalEndpoint>
+    <InstanceInputEndpoint localPort="93" name="InstanceEp" protocol="tcp">
+        <AllocatePublicPortFrom>
+          <FixedPortRange max="92" min="89"/>
+        </AllocatePublicPortFrom>
+      </InstanceInputEndpoint>
+    </Endpoints>
+  </WorkerRole>
+<WorkerRole enableNativeCodeExecution="true" name="Role1" vmsize="Medium">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd .startup.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="MyStorage1_PATH">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='MyStorage1']/@path"/>
+          </Variable>
+        </Environment>
+      </Task>
+    </Startup>
+    <Runtime executionContext="elevated">
+      <EntryPoint>
+        <!-- Sample entry point calling run.cmd from the role's approot folder -->
+        <ProgramEntryPoint commandLine="startup.cmd" setReadyOnProcessStart="true"/>
+      </EntryPoint>
+    </Runtime>
+    <Imports>
+      <Import moduleName="RemoteAccess"/>
+    </Imports>
+    <Endpoints>
+      <InputEndpoint localPort="8091" name="InputEp3" port="8090" protocol="tcp"/>
+    <InputEndpoint localPort="555555" name="InputEp2" port="5555" protocol="tcp"/>
+    </Endpoints>
+  <LocalResources>
+      <LocalStorage cleanOnRoleRecycle="true" name="MyStorage1" sizeInMB="1"/>
+    </LocalResources>
+  </WorkerRole>
+<WorkerRole enableNativeCodeExecution="true" name="WorkerRole2" vmsize="Small">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd .startup.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+
+        <Variable name="WAStorage_PATH">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='WAStorage']/@path"/>
+          </Variable>
+        </Environment>
+      </Task>
+    </Startup>
+    <Runtime executionContext="elevated">
+      <EntryPoint>
+        <!-- Sample entry point calling run.cmd from the role's approot folder -->
+        <ProgramEntryPoint commandLine="startup.cmd" setReadyOnProcessStart="true"/>
+      </EntryPoint>
+    </Runtime>
+    <Imports>
+      <Import moduleName="RemoteAccess"/>
+    </Imports>
+    <Endpoints>
+      <InputEndpoint localPort="8098" name="Debugging" port="8092" protocol="tcp"/>
+    </Endpoints>
+  <LocalResources>
+      <LocalStorage cleanOnRoleRecycle="true" name="WAStorage" sizeInMB="2"/>
+      <LocalStorage cleanOnRoleRecycle="true" name="WAStorage1" sizeInMB="2"/>
+    </LocalResources>
+  </WorkerRole>
+<WorkerRole enableNativeCodeExecution="true" name="WorkerRole3" vmsize="Small">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd .startup.cmd" executionContext="elevated" taskType="simple"/>
+    </Startup>
+    <Runtime executionContext="elevated">
+      <EntryPoint>
+        <!-- Sample entry point calling run.cmd from the role's approot folder -->
+        <ProgramEntryPoint commandLine="startup.cmd" setReadyOnProcessStart="true"/>
+      </EntryPoint>
+    </Runtime>
+    <Imports>
+      <Import moduleName="RemoteAccess"/>
+    </Imports>
+    <Endpoints>
+      <InputEndpoint localPort="8093" name="Debugging1" port="8093" protocol="tcp"/>
+      <InputEndpoint localPort="7070" name="DbgEp" port="7070" protocol="tcp"/>
+    </Endpoints>
+  </WorkerRole>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</ServiceDefinition>

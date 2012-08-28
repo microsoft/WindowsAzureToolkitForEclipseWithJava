@@ -1,0 +1,40 @@
+@REM *** Sample startup script containing the steps for starting JBoss Application Server 6 and deploying a WAR file. 
+@REM *** (Last tested with JBoss Application Server 6.1.0)
+
+@REM To use the sample, follow these steps:
+@REM *** 1) Copy all this content into approot/startup.cmd in the role folder, close this file, and edit the copy
+@REM *** 2) Place a JRE distribution as jre.zip under approot
+@REM *** 3) Place a JBoss Application Server 6 distribution as jboss6.zip under approot in your project
+@REM *** 3.1) If you want to download the server into Azure directly from a URL instead, then
+@REM          uncomment the next line and modify the URL as appropriate:
+@REM cscript "util\download.vbs" "http://download.jboss.org/jbossas/6.1/jboss-as-distribution-6.1.0.Final.zip" "jboss6.zip"
+
+@REM *** 4) Update SERVER_DIR_NAME below as appropriate:
+@REM *** (IMPORTANT: There must be no trailing nor leading whitespace around the setting)
+
+SET SERVER_DIR_NAME=jboss-6.1.0.Final
+
+@REM *** 5) To deploy your own WAR file, place it in approot and update WAR_NAME below:
+@REM *** (IMPORTANT: There must be no trailing nor leading whitespace around the setting)
+
+SET WAR_NAME=HelloWorld.war
+			
+			
+@REM *********************************************************************		
+@REM *** Do not make changes below unless you know what you are doing. ***
+rd "\%RoleName%"
+mklink /D "\%RoleName%" "%ROLEROOT%\approot"
+cd /d "\%RoleName%"
+cscript util\unzip.vbs jre.zip "%CD%"
+cscript util\unzip.vbs jboss6.zip "%CD%"
+copy "%WAR_NAME%" "%SERVER_DIR_NAME%\server\default\deploy"
+cd /d "%SERVER_DIR_NAME%\bin"
+set JRE_HOME=\%ROLENAME%\jre
+set JAVA_HOME=\%ROLENAME%\jre
+set JBOSS_Home=\%ROLENAME%\%SERVER_DIR_NAME%
+start run.bat -b 0.0.0.0
+
+@ECHO OFF
+if %ERRORLEVEL%==0 exit %ERRORLEVEL%
+choice /d y /t 5 /c Y /N /M "*** Windows Azure startup failed - exiting..."
+exit %ERRORLEVEL%

@@ -1,0 +1,3 @@
+SET ECLIPSE_HOME=%1
+echo ECLIPSE_HOME=%ECLIPSE_HOME%
+call %ANT_HOME%\bin\ant -Denv.eclipse_home=%ECLIPSE_HOME%

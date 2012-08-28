@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: WAACSFilterForJava
+Bundle-SymbolicName: com.microsoftopentechnologies.acsfilter
+Bundle-Version: 0.2.0
+Bundle-ClassPath: ACSAuthFilter.jar
+Bundle-Vendor: Microsoft Open Technologies Inc.
+Export-Package: com.microsoftopentechnologies.acs.federation,
+ com.microsoftopentechnologies.acs.saml,
+ com.microsoftopentechnologies.acs.util,
+ com.microsoftopentechnologies.acs.xmldsig
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6

@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?NLS TYPE="org.eclipse.help.contexts"?>
+<contexts>
+   <context id="windows_azure_project" >
+  <description>
+This dialog allows you to create and configure a new Windows Azure Deployment Project for deploying your Java applications, runtime and server to the Windows Azure cloud.
+  </description>
+        <topic label="Creating a Hello World application..." href="http://go.microsoft.com/fwlink/?LinkID=234493"/>
+    </context>
+
+
+   <context id="windows_azure_project_roles" >
+        <description>
+This dialog allows you to configure a Windows Azure role.
+       </description>
+        <topic label="Miscellaneous Role Configuration Settings" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
+   </context>
+
+   <context id="windows_azure_project_project_property" >
+        <description>
+This dialog allows you to edit the properties of your Windows Azure Deployment Project.
+ 		</description>
+        <topic label="Creating a Hello World application..." href="http://go.microsoft.com/fwlink/?LinkID=234493"/>
+   </context>
+
+
+   <context id="windows_azure_project_remote_access_property" >
+        <description>
+This dialog allows you to configure remote access for all the roles in your project at the same time.
+  		</description>
+        <topic label="Enabling Remote Access in Windows Azure Using Eclipse" href="http://go.microsoft.com/fwlink/?LinkId=235085"/>
+   </context>
+
+
+   <context id="new_certificate_dialog" >
+        <description>
+This dialog allows you to create a new self-signed X.509 certificate that you can use for testing purposes in scenarios involving encryption or digital signing. 
+
+Two files will be generated: a certificate file with the public key only (*.CER), and a file containing both the private and the public key (*.PFX).
+  		</description>
+   </context>
+
+
+ <context id="windows_azure_debug_config" >
+  <description>
+This dialog enables you to automatically create remote debug configurations for your applications deployed to Windows Azure:
+
+1. Select the project containing the Java code that you wish to debug
+
+2. Specify the types of debug configurations to create (emulator and/or cloud)
+
+If creating a cloud configuration, you need to upload your deployment to Windows Azure first, to obtain the host address assigned to your deployment. Then enter it here.
+
+When done, you will see the new debug configuration(s) created for your workspace under the “Remote Java Application” category.
+
+<b>Note: </b>Encryption support for debugging connections is not enabled yet, therefore using remote debugging for applications deployed to the public cloud is discouraged.
+ </description>
+ <topic label="Debugging Windows Azure Applications in Eclipse" href="http://go.microsoft.com/fwlink/?LinkId=235086"/>
+  </context>
+  
+   
+  <context id="windows_azure_debug_page" >
+  <description>
+This dialog allows you to configure the selected Windows Azure role to accept remote debugging connections for your Java application and to automatically create the relevant debug configurations for the emulator and the cloud.
+ </description>
+ <topic label="Debugging in Windows Azure Using Eclipse" href="http://go.microsoft.com/fwlink/?LinkId=235086"/>
+  </context>
+  
+  <context id="windows_azure_endpoint_page" >
+  <description>
+This dialog allows you to configure the fire wall and port routing settings for your deployment, by enabling specific service end points.
+ </description>
+ <topic label="Miscellaneous Role Configuration Settings" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
+  </context>
+
+  <context id="windows_azure_envvar_page" >
+  <description>
+This dialog allows you to specify the environment variables that you want to be set at the time the startup task for the selected Windows Azure role is executed.
+ </description>
+ <topic label="Configuration Settings and Environment Variables" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
+  </context>
+
+  <context id="windows_azure_localstorage_page" >
+  <description>
+This dialog allows you to configure temporary named local storage resources of the desired size in the virtual machine where your application will be run, and to save their automatically determined directory paths in environment variables that will be available when this role's startup task is executed.
+ </description>
+ <topic label="Configuration Settings and Environment Variables" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
+ </context>
+
+  <context id="windows_azure_loadbalance_page" >
+  <description>
+This dialog allows you to enable HTTP session affinity (“sticky sessions”) for this Windows Azure role, for the selected input end point.
+ </description>
+ <topic label="Load Balancing (Session Affinity)" href="http://go.microsoft.com/fwlink/?LinkId=235088"/>
+  </context>
+  
+  <context id="windows_azure_importexport_dialog" >
+  <description>
+This dialog enables you to describe how to import and deploy a component into the selected Windows Azure role.
+ </description>
+ <topic label="Miscellaneous Role Configuration Settings" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
+  </context>
+
+   <context id="windows_azure_serverconfiguration_page" >
+  <description>
+This dialog enables you to specify the JDK, the server and the applications to include in your deployment.
+ </description>
+  <topic label="Miscellaneous Role Configuration Settings" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
+  </context>
+
+   <context id="windows_azure_components_page" >
+  <description>
+This dialog enables you to specify components to import into and deploy with your deployment, as well as command lines to run at startup.
+ </description>
+  <topic label="Miscellaneous Role Configuration Settings" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
+  </context>
+
+  <context id="windows_azure_addapp_dialog" >
+  <description>
+This dialog allows you to add a Java application to your server deployment.
+ </description>
+  <topic label="Miscellaneous Role Configuration Settings" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
+  </context>
+  
+  
+  <context id="publish_project_command" title="Publish to Windows Azure from Eclipse">
+     <description>This dialog allows you to publish your deployment to the Windows Azure cloud.
+
+<b>1. Select the Windows Azure subscription to publish to</b>
+
+<b>Download</b> - If you do not have a .publishsettings file from Window Azure containing your subscription information, this allows you to download one, which you should then <b>Import</b>.
+
+<b>New</b> - Allows you to create a new self-signed certificate saved in a *.PFX file (with the private key) and a *.CER file (with the public key) which you can then <b>Import</b> instead of a .publishsettings file.
+  
+<b>Import</b> - You have the following options: 
+
+- If you have a .publishsettings file from Windows Azure, select that file to load your subscription information. 
+
+- If you have a PFX file and a corresponding password that you'd want to use instead, choose that file and enter the subscription id in the following dialog. <b>Note</b> - you must first manually upload the matching CER certificate file to your Windows Azure subscription using the online portal.
+
+<b>2. Select the storage account to save your deployment in</b>
+
+If none are available, create a new one. After selecting the storage account, select the access key to use with that account.
+
+<b>3. Select the hosted service to deploy into</b>
+
+If none are available, create a new one. After selecting the service, select the <b>Target environment</b> to publish to (Staging or Production).
+  </description>
+  <topic label="Creating a Hello World Application..." href="http://go.microsoft.com/fwlink/?LinkID=234493"/>  
+  </context>
+  
+  
+  <context id="new_hosted_service" title="Create a New Cloud Service">
+    <description>This dialog allows you to create a new Cloud Service for your deployment.
+
+1. Specify a unique <b>Name</b> for the cloud service. Note that this name will also be used as the DNS prefix.
+
+2. Choose a <b>Location</b> for the cloud service.
+
+3. Provide a <b>Description</b>.
+	</description>
+  </context>
+  
+  
+  <context id="new_storage_account" title="Create a New Storage Account">
+    <description>This dialog allows you to create a new Storage Account for your deployment.
+
+1. Specify a unique <b>Name</b> for the storage account. Note that this name will also be used as the DNS prefix.
+
+2. Choose a <b>Location</b> for the Storage Account.
+
+3. Provide a <b>Description</b>.
+	</description>
+  </context>
+  
+  
+  <context id="unpublish_project_command" title="Unpublish a Deployment from Windows Azure Cloud">
+    <description>This dialog allows you to remove a previously published deployment from the Windows Azure cloud.
+
+1. Choose the subscription
+2. Choose the cloud service your deployment is hosted on.
+3. Choose your deployment
+	</description>
+  </context>
+  
+  
+  <context id="credentials_property_page" title="Credentials Configurations">
+    <description>This dialog allows you to customize the credentials for all your Winows Azure subscriptions.
+
+1. Add - This options allows you to add a subscription by providing a certificate thumbprint from the Windows Azure portal.
+
+2. Edit - This option allows you change the thumbprint that the selected subscription uses for authentication.
+
+3. Remove - This option removes the selected subscription from your local configuration. (It is not removed from the Windows Azure cloud). 
+Note that after this, you will not be able to use this subscription until you add it again.
+	</description>
+  </context>
+  
+</contexts>

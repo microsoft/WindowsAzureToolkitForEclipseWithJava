@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="AzureService" default="package" basedir=".">
+	
+	<target name="clean">
+        <delete dir="${basedir}\build"/>
+		<delete dir="${basedir}\jar"/>
+    </target>
+
+	<target name="package" description="Package JARs" depends="clean">
+		<mkdir dir="${basedir}\build" />
+		<mkdir dir="${basedir}\jar" />
+		<javac srcdir="src" destdir="build" />
+		<jar destfile="${basedir}\jar\.cspack.jar" basedir="${basedir}\build" />
+		<copy file="${basedir}\jar\.cspack.jar" tofile="${basedir}\..\WindowsAzureDeploymentProject\.cspack.jar" overwrite="true" />
+	</target>
+</project>

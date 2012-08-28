@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+  <title>Windows Azure page to configure Role</title>
+</head>
+
+<body>
+
+<h2>Windows Azure page to configure Role</h2>
+
+<p>This window allow use to configure Windows azure Role.</p>
+
+<p><b>Step 1:</b> Specify role name in ‘Role name’ text box. The role's name must be unique.</p>
+<p><b>Step 2:</b> Select VM Size using the drop down list. Set this value to change the <a href ="http://msdn.microsoft.com/en-us/library/ee814754.aspx">size of the VM</a> allotted to this role. The default value is <b>Small</b>. Other possible values are <b>ExtraSmall</b>, <b>Medium</b>, <b>Large</b>, and <b>ExtraLarge</b>.</p>
+<p><b>Step 3:</b> Enter the <b>Instances</b> element specifies the number of instances of this role to deploy as part of the service deployment. Default 1 will get selected.</p>
+
+<p>
+  <img src="images/windowsazurerole.jpg" alt="Windows Azure page to configure Role" width="525" height="579" />
+</p>
+
+<p><b>Step 4:</b> User can view endpoints in tabular format. Press <b>Add</b> button to add new endpint for specified role. <b>Remove</b> button will remove the endpoint from the specified role.</p>
+<p>The <b>Endpoints</b> element describes the collection of input (external) and internal endpoints for a role. There are two types of endpoints : </p>
+<p>·         <a href="http://msdn.microsoft.com/en-us/library/b7735dbf-8e91-4d1b-89f7-2f17e9302469#InputEndpoint">InputEndpoint</a> </p>
+<p>The <b>InputEndpoint</b> element describes an external endpoint for a worker role. You can define multiple endpoints that are a combination of HTTP, HTTPS, and TCP endpoints. You can specify any port number you choose for an input endpoint, but the port numbers specified for each role in the service must be unique. For example, if you specify that a role uses port 80 for HTTP and port 443 for HTTPS, you might then specify that a second role uses port 8080 for HTTP and port 8043 for HTTPS.</p>
+<p>·         <a href="http://msdn.microsoft.com/en-us/library/b7735dbf-8e91-4d1b-89f7-2f17e9302469#InternalEndpoint">InternalEndpoint</a>  </p>
+<p>The <b>InternalEndpoint</b> element describes an internal endpoint to a worker role. An internal endpoint is available only to other role instances running within the service; it is not available to clients outside the service. A worker role may have up to five HTTP or TCP internal endpoints.</p>
+<p><b>Step 5: </b>You can enable remote debugging for this Windows Azure role by checking the checkbox. A new endpoint is automatically created. You can change the port numbers or choose another endpoint. You can also specify that the JVM should be suspended until a debugger connection is established. Use the <b>Create Debug Configurations</b> button to automatically generate up to two new debug configurations: one for the emulator and one for the cloud.</p>
+<p>For more information: <a href="http://java.interoperabilitybridges.com/cloud">http://java.interoperabilitybridges.com/cloud</a></p>
+
+</body>
+</html>
