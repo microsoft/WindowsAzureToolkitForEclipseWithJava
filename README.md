@@ -16,4 +16,4 @@ This project is the collaborative effort of the following:
 
 * Microsoft Open Technologies, Inc.
 * [Persistent Systems, Ltd.](http://www.persistentsys.com/)
-* [Gigaspaces Technologies Ltd.](http://www.gigaspaces.com/)
+* [GigaSpaces Technologies Ltd.](http://www.gigaspaces.com/)
