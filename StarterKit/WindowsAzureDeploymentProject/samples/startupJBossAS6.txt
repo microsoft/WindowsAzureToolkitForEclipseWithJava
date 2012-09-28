@@ -31,7 +31,7 @@ cscript /NoLogo util\unzip.vbs jdk.zip "%CD%"
 
 :: Deploy server
 set JBOSS_Home=\%ROLENAME%\%SERVER_DIR_NAME%
-cscript /NoLogo util\unzip.vbs jboss6.zip "%CD%"
+cscript /NoLogo util\unzip.vbs jboss6.zip "\%ROLENAME%"
 
 :: Deploy application
 copy "%WAR_NAME%" "%JBOSS_HOME%\server\default\deploy"

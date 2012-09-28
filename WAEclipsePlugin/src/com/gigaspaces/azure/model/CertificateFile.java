@@ -19,7 +19,7 @@ package com.gigaspaces.azure.model;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-
+import com.microsoftopentechnologies.wacommon.utils.Base64;
 
 
 @XmlRootElement(name = "CertificateFile")
@@ -33,7 +33,7 @@ public class CertificateFile {
 	}
 
 	public CertificateFile(byte[] data, String passwod) {
-		this.data = Base64Persistent.encode(data);		
+		this.data = Base64.encode(data);		
 		this.password = passwod;
 	}
 

@@ -16,9 +16,12 @@
 package com.persistent.ui.toolbar;
 
 import org.eclipse.osgi.util.NLS;
-
+/**
+ * Stores common strings.
+ */
 public final class Messages extends NLS {
-	 private static final String BUNDLE_NAME = "com.persistent.ui.toolbar.messages";
+	 private static final String BUNDLE_NAME =
+			 "com.persistent.ui.toolbar.messages";
 	 public static String bldErrTtl;
 	 public static String bldErrMsg;
 	 public static String waEmulator;
@@ -36,12 +39,17 @@ public final class Messages extends NLS {
 	 public static String pWizStarterKit;
 	 public static String rstEmCmd;
 	 public static String ioErrMsg;
+	 public static String waWizardId;
+	 public static String wzrdCrtErMsg;
+	 public static String errTtl;
 
 	 static {
 	        // initialize resource bundle
 	        NLS.initializeMessages(BUNDLE_NAME, Messages.class);
 	    }
-
+	 /**
+	  * Constructor.
+	  */
 	 private Messages() {
 	    	super();
 	    }

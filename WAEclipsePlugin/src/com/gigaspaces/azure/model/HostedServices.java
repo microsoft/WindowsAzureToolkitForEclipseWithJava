@@ -65,4 +65,18 @@ public class HostedServices implements Iterable<HostedService> {
 		}
 		hostedServices.add(hostedService);
 	}
+	
+	public void remove(final String hostedServiceName) {
+		
+		HostedService toRemove = null;
+		for (HostedService hs : hostedServices) {
+			if (hs.getServiceName().equals(hostedServiceName)) {
+				toRemove = hs;
+			}
+		}
+		if (toRemove != null) {
+			hostedServices.remove(toRemove);
+		}
+		
+	}
 }

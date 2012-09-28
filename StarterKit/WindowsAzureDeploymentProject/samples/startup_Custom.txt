@@ -30,7 +30,7 @@ cscript /NoLogo util\unzip.vbs jdk.zip "%CD%"
 
 :: Deploy server
 :: set SERVER_HOME=???
-cscript /NoLogo util\unzip.vbs server.zip "%CD%"
+cscript /NoLogo util\unzip.vbs server.zip "\%ROLENAME%"
 
 :: Deploy application
 :: copy %WAR_NAME% "%SERVER_HOME%\???"

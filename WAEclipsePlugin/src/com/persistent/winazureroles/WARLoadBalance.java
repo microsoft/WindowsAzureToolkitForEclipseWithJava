@@ -45,7 +45,9 @@ import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.persistent.util.WAEclipseHelper;
 import com.persistent.util.MessageUtil;
-
+/**
+ * Property page for Load Balancing that is sticky session.
+ */
 public class WARLoadBalance extends PropertyPage {
 
     private WindowsAzureProjectManager waProjManager;
@@ -58,9 +60,15 @@ public class WARLoadBalance extends PropertyPage {
     private String errorTitle;
     private String errorMessage;
     private WindowsAzureEndpoint stcSelEndpoint;
+    private boolean isPageDisplayed = false;
+    private final int HTTP_PRV_PORT = 8080;
+    private final String HTTP_PORT = "80";
 
     @Override
     public String getTitle() {
+    	if (!isPageDisplayed) {
+    		return super.getTitle();
+    	}
         try {
             if (waRole != null) {
                 WindowsAzureEndpoint endPt =
@@ -133,9 +141,14 @@ public class WARLoadBalance extends PropertyPage {
                     errorMessage);
             Activator.getDefault().log(errorMessage, ex);
         }
+        isPageDisplayed = true;
         return container;
     }
 
+    /**
+     * Enable session affinity components.
+     * @param value
+     */
     private void enableSessionAffComp(boolean value) {
         btnSsnAffinity.setEnabled(value);
         lblEndptToUse.setEnabled(value);
@@ -143,6 +156,10 @@ public class WARLoadBalance extends PropertyPage {
         //lblNote.setEnabled(value);
     }
 
+    /**
+     * Method creates UI controls for session affinity.
+     * @param container
+     */
     private void createSessionAffinityComponent(Composite container) {
         grpSessionAff = new Group(container, SWT.None);
         GridLayout gridLayout = new GridLayout();
@@ -250,19 +267,24 @@ public class WARLoadBalance extends PropertyPage {
             		getExternalBrowser().openURL(new URL(event.text));
             	}
             	catch (Exception ex) {
-            		//only logging the error in log file not showing anything to end user
+            		/*
+            		 * only logging the error in log file
+            		 * not showing anything to end user.
+            		 */
             		Activator.getDefault().log(errorMessage, ex);
             	}
             }
         });
     }
 
+    /**
+     * Enable session affinity.
+     */
     protected void enableSessionAff() {
         try {
-
-             WindowsAzureEndpoint endpt = null;
-            populateEndPointList();
-            endpt = findInputEndpt();
+        	WindowsAzureEndpoint endpt = null;
+        	populateEndPointList();
+        	endpt = findInputEndpt();
 
             if (endpt == null) {
                 errorTitle = Messages.lbCreateEndptTtl;
@@ -299,13 +321,20 @@ public class WARLoadBalance extends PropertyPage {
         }
     }
 
+    /**
+     * Method creates endpoint associated with session affinity.
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
     private WindowsAzureEndpoint createEndpt()
     		throws WindowsAzureInvalidProjectOperationException {
         WindowsAzureEndpoint endpt = null;
         StringBuffer endptName = new StringBuffer(Messages.lbHttpEndpt);
         int index = 1;
-        int localPort = 8080;
-        while (!waRole.isAvailableEndpointName(endptName.toString())) {
+        int localPort = HTTP_PRV_PORT;
+        while (!waRole.isAvailableEndpointName(
+        		endptName.toString(),
+        		WindowsAzureEndpointType.Input)) {
             endptName.insert(4, index++);
         }
 
@@ -316,10 +345,14 @@ public class WARLoadBalance extends PropertyPage {
         endpt = waRole.addEndpoint(endptName.toString(),
                 WindowsAzureEndpointType.Input,
                 String.valueOf(localPort),
-                "80");
+                HTTP_PORT);
         return endpt;
     }
 
+    /**
+     * Populates endpoints having type input in combo box.
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
     private void populateEndPointList()
     		throws WindowsAzureInvalidProjectOperationException {
         endpointsList = waRole.getEndpoints();
@@ -336,6 +369,12 @@ public class WARLoadBalance extends PropertyPage {
         }
     }
 
+    /**
+     * find input endpoint to associate it with
+     * session affinity.
+     * @return WindowsAzureEndpoint
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
     private WindowsAzureEndpoint findInputEndpt()
     		throws WindowsAzureInvalidProjectOperationException {
         WindowsAzureEndpoint endpt = null;
@@ -348,7 +387,7 @@ public class WARLoadBalance extends PropertyPage {
                     endpt = endpoint;
                     isFirst = false;
                 }
-                if (endpoint.getPort().equalsIgnoreCase("80")) {
+                if (endpoint.getPort().equalsIgnoreCase(HTTP_PORT)) {
                     endpt = endpoint;
                     break;
                 }
@@ -359,6 +398,9 @@ public class WARLoadBalance extends PropertyPage {
 
     @Override
     public boolean performOk() {
+    	if (!isPageDisplayed) {
+    		return super.performOk();
+    	}
         boolean okToProceed = true;
         try {
             if (!Activator.getDefault().isSaved()) {

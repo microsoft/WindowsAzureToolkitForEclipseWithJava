@@ -49,7 +49,6 @@ import waeclipseplugin.Activator;
 
 /**
  * This class creates a page for the project wizard.
- *
  */
 public class WAProjectWizardPage extends WizardPage {
 
@@ -149,8 +148,8 @@ public class WAProjectWizardPage extends WizardPage {
         }
 
         workingSetGroup = new WorkingSetGroup(container, structuredSel,
-        		new String []{"org.eclipse.ui.resourceWorkingSetPage",
-        		"org.eclipse.jdt.ui.JavaWorkingSetPage"});
+        		new String []{Messages.rsrcPage,
+        		Messages.javaPage});
         setControl(container);
     }
 
@@ -318,20 +317,36 @@ public class WAProjectWizardPage extends WizardPage {
         }
     }
 
+    /**
+     * Method returns project name.
+     * @return String
+     */
     public String getTextProjName() {
         return textProjName.getText();
     }
 
+    /**
+     * Method returns project location.
+     * @return String
+     */
     public String getTextLocation() {
         return textLocation.getText();
     }
 
+    /**
+     * Method returns project should be
+     * created at default location or not.
+     * @return boolean
+     */
     public boolean isDefaultLocation() {
         return buttonUseDefLoc.getSelection();
     }
 
+    /**
+     * Method returns working set group.
+     * @return
+     */
     public WorkingSetGroup getWorkingSetGroup() {
         return workingSetGroup;
     }
-
 }

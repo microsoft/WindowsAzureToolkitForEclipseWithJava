@@ -2,7 +2,7 @@
 <feature
       id="com.persistent.winazure.eclipseplugin.feature"
       label="Windows Azure Plugin for Eclipse with Java (by MS Open Tech)"
-      version="1.7.2.qualifier"
+      version="1.7.3.qualifier"
       provider-name="Microsoft Open Technologies Inc.">
 
    <description>
@@ -14,17 +14,17 @@
    </copyright>
 
    <license>
-LICENSES
+      LICENSES
 
 =====================================================================================
 
 This package includes the following components, each of which has its own license terms:
 
-•	WINDOWS AZURE PLUGIN FOR ECLIPSE WITH JAVA (BY MICROSOFT OPEN TECHNOLOGIES, INC.)
-•	MICROSOFT WEB PLATFORM INSTALLER 3.0
-•	MICROSOFT APPLICATON REQUEST ROUTING VERSION 2.5 FOR WINDOWS OPERATING SYSTEMS
-•	MICROSOFT WEB FARM FRAMEWORK VERSION 1.1 FOR WINDOWS OPERATING SYSTEMS
-•	MICROSOFT EXTERNAL CACHE 1.0
+• WINDOWS AZURE PLUGIN FOR ECLIPSE WITH JAVA (BY MICROSOFT OPEN TECHNOLOGIES, INC.)
+• MICROSOFT WEB PLATFORM INSTALLER 3.0
+• MICROSOFT APPLICATON REQUEST ROUTING VERSION 2.5 FOR WINDOWS OPERATING SYSTEMS
+• MICROSOFT WEB FARM FRAMEWORK VERSION 1.1 FOR WINDOWS OPERATING SYSTEMS
+• MICROSOFT EXTERNAL CACHE 1.0
 
 Please scroll all the way through in order to read these terms.
 
@@ -37,73 +37,73 @@ WINDOWS AZURE PLUGIN FOR ECLIPSE WITH JAVA (BY MICROSOFT OPEN TECHNOLOGIES, INC.
 
 These license terms are an agreement between Microsoft Open Technologies, Inc. (“MICROSOFT OPEN TECH”) and you. Please read them. They apply to the software named above, which includes the media on which you received it, if any. The terms also apply to any Microsoft Open Tech
 
-•	updates,
-•	supplements,
-•	Internet-based services, and
-•	support services
+• updates,
+• supplements,
+• Internet-based services, and
+• support services
 
 for this software, unless other terms accompany those items. If so, those terms apply.
 BY USING THE SOFTWARE, YOU ACCEPT THESE TERMS. IF YOU DO NOT ACCEPT THEM, DO NOT USE THE SOFTWARE.
 
 IF YOU COMPLY WITH THESE LICENSE TERMS, YOU HAVE THE RIGHTS BELOW.
 
-1.	INSTALLATION AND USE RIGHTS. 
-a.	Installation and Use.
+1. INSTALLATION AND USE RIGHTS. 
+a. Installation and Use.
 
-•	You may install and use any number of copies of the software on your premises to design, develop and test your programs for use with the software. 
+• You may install and use any number of copies of the software on your premises to design, develop and test your programs for use with the software. 
 
-b.	Included Microsoft Programs. The software contains certain Microsoft programs. These license terms identify them, and indicate if the license terms with each of those programs apply to your use of them or if these license terms apply to your use of them. 
+b. Included Microsoft Programs. The software contains certain Microsoft programs. These license terms identify them, and indicate if the license terms with each of those programs apply to your use of them or if these license terms apply to your use of them. 
 
-2. 	ADDITIONAL LICENSING REQUIREMENTS AND/OR USE RIGHTS.
-a.	Distributable Code. The software is “Distributable Code” that you are permitted to distribute in programs you develop if you comply with the terms below.
+2.  ADDITIONAL LICENSING REQUIREMENTS AND/OR USE RIGHTS.
+a. Distributable Code. The software is “Distributable Code” that you are permitted to distribute in programs you develop if you comply with the terms below.
 
-i.	Right to Use and Distribute.  You are permitted to distribute the software in programs you develop if you comply with the terms below:
-•	You may copy and distribute the object code form of the software (“Distributable Code”) in programs you develop. You may not modify the software.
-•	You may permit distributors of your programs to copy and distribute the Distributable Code as part of those programs.
+i. Right to Use and Distribute.  You are permitted to distribute the software in programs you develop if you comply with the terms below:
+• You may copy and distribute the object code form of the software (“Distributable Code”) in programs you develop. You may not modify the software.
+• You may permit distributors of your programs to copy and distribute the Distributable Code as part of those programs.
 
-ii.	Distribution Requirements. For any Distributable Code you distribute, you must
-•	add significant primary functionality to it in your programs;
-•	require distributors and external end users to agree to terms that protect it at least as much as this agreement; 
-•	display your valid copyright notice on your programs; and
-•	indemnify, defend, and hold harmless Microsoft Open Tech from any claims, including attorneys’ fees, related to the distribution or use of your programs.
+ii. Distribution Requirements. For any Distributable Code you distribute, you must
+• add significant primary functionality to it in your programs;
+• require distributors and external end users to agree to terms that protect it at least as much as this agreement; 
+• display your valid copyright notice on your programs; and
+• indemnify, defend, and hold harmless Microsoft Open Tech from any claims, including attorneys’ fees, related to the distribution or use of your programs.
 
-iii.	Distribution Restrictions. You may not
-•	alter any copyright, trademark or patent notice in the Distributable Code;
-•	use Microsoft Open Tech’s trademarks in your programs’ names or in a way that suggests your programs come from or are endorsed by Microsoft Open Tech or its corporate affiliates;
-•	include Distributable Code in malicious, deceptive or unlawful programs; or
-•	modify or distribute the source code of any Distributable Code so that any part of it becomes subject to an Excluded License. An Excluded License is one that requires, as a condition of use, modification or distribution, that
-•	the code be disclosed or distributed in source code form; or
-•	others have the right to modify it.
+iii. Distribution Restrictions. You may not
+• alter any copyright, trademark or patent notice in the Distributable Code;
+• use Microsoft Open Tech’s trademarks in your programs’ names or in a way that suggests your programs come from or are endorsed by Microsoft Open Tech or its corporate affiliates;
+• include Distributable Code in malicious, deceptive or unlawful programs; or
+• modify or distribute the source code of any Distributable Code so that any part of it becomes subject to an Excluded License. An Excluded License is one that requires, as a condition of use, modification or distribution, that
+• the code be disclosed or distributed in source code form; or
+• others have the right to modify it.
 
-3.	PRE-RELEASE SOFTWARE. This software is a pre-release version. It may not work the way a final version of the software will. We may change it for the final version. We also may not release a final or other subsequent version.
+3. PRE-RELEASE SOFTWARE. This software is a pre-release version. It may not work the way a final version of the software will. We may change it for the final version. We also may not release a final or other subsequent version.
 
-4.	SCOPE OF LICENSE. The software is licensed, not sold. This agreement only gives you some rights to use the software. Microsoft Open Tech reserves all other rights. Unless applicable law gives you more rights despite this limitation, you may use the software only as expressly permitted in this agreement. In doing so, you must comply with any technical limitations in the software that only allow you to use it in certain ways. You may not
-•	work around any technical limitations in the software;
-•	reverse engineer, decompile or disassemble the software, except and only to the extent that applicable law expressly permits, despite this limitation;
-•	make more copies of the software than specified in this agreement or allowed by applicable law, despite this limitation;
-•	publish the software for others to copy;
-•	rent, lease or lend the software; or
-•	transfer the software or this agreement to any third party.
+4. SCOPE OF LICENSE. The software is licensed, not sold. This agreement only gives you some rights to use the software. Microsoft Open Tech reserves all other rights. Unless applicable law gives you more rights despite this limitation, you may use the software only as expressly permitted in this agreement. In doing so, you must comply with any technical limitations in the software that only allow you to use it in certain ways. You may not
+• work around any technical limitations in the software;
+• reverse engineer, decompile or disassemble the software, except and only to the extent that applicable law expressly permits, despite this limitation;
+• make more copies of the software than specified in this agreement or allowed by applicable law, despite this limitation;
+• publish the software for others to copy;
+• rent, lease or lend the software; or
+• transfer the software or this agreement to any third party.
 
-5.	EXPORT RESTRICTIONS. The software is subject to United States export laws and regulations. You must comply with all domestic and international export laws and regulations that apply to the software. These laws include restrictions on destinations, end users and end use. For additional information, see www.microsoft.com/exporting.
+5. EXPORT RESTRICTIONS. The software is subject to United States export laws and regulations. You must comply with all domestic and international export laws and regulations that apply to the software. These laws include restrictions on destinations, end users and end use. For additional information, see www.microsoft.com/exporting.
 
-6.	SUPPORT SERVICES. Because this software is “as is,” we may not provide support services for it.
+6. SUPPORT SERVICES. Because this software is “as is,” we may not provide support services for it.
 
-7.	ENTIRE AGREEMENT. This agreement, and the terms for supplements, updates, Internet-based services and support services that you use, are the entire agreement for the software and support services.
+7. ENTIRE AGREEMENT. This agreement, and the terms for supplements, updates, Internet-based services and support services that you use, are the entire agreement for the software and support services.
 
-8.	APPLICABLE LAW.
-a.	United States. If you acquired the software in the United States, Washington state law governs the interpretation of this agreement and applies to claims for breach of it, regardless of conflict of laws principles. The laws of the state where you live govern all other claims, including claims under state consumer protection laws, unfair competition laws, and in tort.
-b.	Outside the United States. If you acquired the software in any other country, the laws of that country apply.
+8. APPLICABLE LAW.
+a. United States. If you acquired the software in the United States, Washington state law governs the interpretation of this agreement and applies to claims for breach of it, regardless of conflict of laws principles. The laws of the state where you live govern all other claims, including claims under state consumer protection laws, unfair competition laws, and in tort.
+b. Outside the United States. If you acquired the software in any other country, the laws of that country apply.
 
-9.	LEGAL EFFECT. This agreement describes certain legal rights. You may have other rights under the laws of your country. You may also have rights with respect to the party from whom you acquired the software. This agreement does not change your rights under the laws of your country if the laws of your country do not permit it to do so.
+9. LEGAL EFFECT. This agreement describes certain legal rights. You may have other rights under the laws of your country. You may also have rights with respect to the party from whom you acquired the software. This agreement does not change your rights under the laws of your country if the laws of your country do not permit it to do so.
 
-10.	DISCLAIMER OF WARRANTY. THE SOFTWARE IS LICENSED “AS-IS.” YOU BEAR THE RISK OF USING IT. MICROSOFT OPEN TECH GIVES NO EXPRESS WARRANTIES, GUARANTEES OR CONDITIONS. YOU MAY HAVE ADDITIONAL CONSUMER RIGHTS OR STATUTORY GUARANTEES UNDER YOUR LOCAL LAWS WHICH THIS AGREEMENT CANNOT CHANGE. TO THE EXTENT PERMITTED UNDER YOUR LOCAL LAWS, MICROSOFT OPEN TECH EXCLUDES THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
+10. DISCLAIMER OF WARRANTY. THE SOFTWARE IS LICENSED “AS-IS.” YOU BEAR THE RISK OF USING IT. MICROSOFT OPEN TECH GIVES NO EXPRESS WARRANTIES, GUARANTEES OR CONDITIONS. YOU MAY HAVE ADDITIONAL CONSUMER RIGHTS OR STATUTORY GUARANTEES UNDER YOUR LOCAL LAWS WHICH THIS AGREEMENT CANNOT CHANGE. TO THE EXTENT PERMITTED UNDER YOUR LOCAL LAWS, MICROSOFT OPEN TECH EXCLUDES THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
 FOR AUSTRALIA – YOU HAVE STATUTORY GUARANTEES UNDER THE AUSTRALIAN CONSUMER LAW AND NOTHING IN THESE TERMS IS INTENDED TO AFFECT THOSE RIGHTS.
 
-11.	LIMITATION ON AND EXCLUSION OF REMEDIES AND DAMAGES. YOU CAN RECOVER FROM MICROSOFT  OPEN TECH AND ITS SUPPLIERS ONLY DIRECT DAMAGES UP TO U.S. $5.00. YOU CANNOT RECOVER ANY OTHER DAMAGES, INCLUDING CONSEQUENTIAL, LOST PROFITS, SPECIAL, INDIRECT OR INCIDENTAL DAMAGES.
+11. LIMITATION ON AND EXCLUSION OF REMEDIES AND DAMAGES. YOU CAN RECOVER FROM MICROSOFT  OPEN TECH AND ITS SUPPLIERS ONLY DIRECT DAMAGES UP TO U.S. $5.00. YOU CANNOT RECOVER ANY OTHER DAMAGES, INCLUDING CONSEQUENTIAL, LOST PROFITS, SPECIAL, INDIRECT OR INCIDENTAL DAMAGES.
 This limitation applies to
-•	anything related to the software, services, content (including code) on third party Internet sites, or third party programs; and
-•	claims for breach of contract, breach of warranty, guarantee or condition, strict liability, negligence, or other tort to the extent permitted by applicable law.
+• anything related to the software, services, content (including code) on third party Internet sites, or third party programs; and
+• claims for breach of contract, breach of warranty, guarantee or condition, strict liability, negligence, or other tort to the extent permitted by applicable law.
 It also applies even if Microsoft Open Tech knew or should have known about the possibility of the damages. The above limitation or exclusion may not apply to you because your country may not allow the exclusion or limitation of incidental, consequential or other damages.
 
 Please note: As this software is distributed in Quebec, Canada, these license terms are provided below in French.
@@ -116,8 +116,8 @@ LIMITATION DES DOMMAGES-INTÉRÊTS ET EXCLUSION DE RESPONSABILITÉ POUR LES DOMM
 
 Cette limitation concerne :
 
-•	tout ce qui est relié au logiciel, aux services ou au contenu (y compris le code) figurant sur des sites Internet tiers ou dans des programmes tiers ; et
-•	les réclamations au titre de violation de contrat ou de garantie, ou au titre de responsabilité stricte, de négligence ou d’une autre faute dans la limite autorisée par la loi en vigueur.
+• tout ce qui est relié au logiciel, aux services ou au contenu (y compris le code) figurant sur des sites Internet tiers ou dans des programmes tiers ; et
+• les réclamations au titre de violation de contrat ou de garantie, ou au titre de responsabilité stricte, de négligence ou d’une autre faute dans la limite autorisée par la loi en vigueur.
 
 Elle s’applique également, même si Microsoft Open Tech connaissait ou devrait connaître l’éventualité d’un tel dommage. Si votre pays n’autorise pas l’exclusion ou la limitation de responsabilité pour les dommages indirects, accessoires ou de quelque nature que ce soit, il se peut que la limitation ou l’exclusion ci-dessus ne s’appliquera pas à votre égard.
 
@@ -132,58 +132,58 @@ MICROSOFT WEB PLATFORM INSTALLER 3.0
 
 These license terms are an agreement between Microsoft Corporation (or based on where you live, one of its affiliates) and you. Please read them. They apply to the software named above, which includes the media on which you received it, if any. The terms also apply to any Microsoft
 
-•	updates,
-•	supplements,
-•	Internet-based services, and
-•	support services
+• updates,
+• supplements,
+• Internet-based services, and
+• support services
 
 for this software, unless other terms accompany those items. If so, those terms apply.
 BY USING THE SOFTWARE, YOU ACCEPT THESE TERMS. IF YOU DO NOT ACCEPT THEM, DO NOT USE THE SOFTWARE.
 
 If you comply with these license terms, you have the rights below.
 
-1.	INSTALLATION AND USE RIGHTS.   You may install and use any number of copies of the software on your devices.
+1. INSTALLATION AND USE RIGHTS.   You may install and use any number of copies of the software on your devices.
 
-2.	Third Party Programs. This software enables you to obtain software applications from other sources.  Those applications are offered and distributed by third parties under their own license terms.  Microsoft is not developing, distributing or licensing those applications to you, but instead, as a convenience, enables you to use this software to obtain those applications directly from the application providers.  By using the software, you acknowledge and agree that you are obtaining the applications directly from the third party providers and under separate license terms, and that it is your responsibility to locate, understand and comply with those license terms.  Microsoft grants you no license rights for third-party software or applications that is obtained using this software.   
+2. Third Party Programs. This software enables you to obtain software applications from other sources.  Those applications are offered and distributed by third parties under their own license terms.  Microsoft is not developing, distributing or licensing those applications to you, but instead, as a convenience, enables you to use this software to obtain those applications directly from the application providers.  By using the software, you acknowledge and agree that you are obtaining the applications directly from the third party providers and under separate license terms, and that it is your responsibility to locate, understand and comply with those license terms.  Microsoft grants you no license rights for third-party software or applications that is obtained using this software.   
 
-3.		INTERNET-BASED SERVICES. Microsoft provides Internet-based services with the software. It may change or cancel them at any time.  The software contains product information that is updated by means of a feed online from Microsoft.
+3.  INTERNET-BASED SERVICES. Microsoft provides Internet-based services with the software. It may change or cancel them at any time.  The software contains product information that is updated by means of a feed online from Microsoft.
 
-4.	SCOPE OF LICENSE. The software is licensed, not sold. This agreement only gives you some rights to use the software. Microsoft reserves all other rights. Unless applicable law gives you more rights despite this limitation, you may use the software only as expressly permitted in this agreement. In doing so, you must comply with any technical limitations in the software that only allow you to use it in certain ways. You may not
+4. SCOPE OF LICENSE. The software is licensed, not sold. This agreement only gives you some rights to use the software. Microsoft reserves all other rights. Unless applicable law gives you more rights despite this limitation, you may use the software only as expressly permitted in this agreement. In doing so, you must comply with any technical limitations in the software that only allow you to use it in certain ways. You may not
 
-•	work around any technical limitations in the software;
-•	reverse engineer, decompile or disassemble the software, except and only to the extent that applicable law expressly permits, despite this limitation;
-•	make more copies of the software than specified in this agreement or allowed by applicable law, despite this limitation;
-•	publish the software for others to copy;
-•	rent, lease or lend the software; or
-•	transfer the software or this agreement to any third party;
+• work around any technical limitations in the software;
+• reverse engineer, decompile or disassemble the software, except and only to the extent that applicable law expressly permits, despite this limitation;
+• make more copies of the software than specified in this agreement or allowed by applicable law, despite this limitation;
+• publish the software for others to copy;
+• rent, lease or lend the software; or
+• transfer the software or this agreement to any third party;
 
-5.		BACKUP COPY. You may make one backup copy of the software. You may use it only to reinstall the software.
+5.  BACKUP COPY. You may make one backup copy of the software. You may use it only to reinstall the software.
 
-6.	DOCUMENTATION. Any person that has valid access to your computer or internal network may copy and use the documentation for your internal, reference purposes.
+6. DOCUMENTATION. Any person that has valid access to your computer or internal network may copy and use the documentation for your internal, reference purposes.
 
-7.	TRANSFER TO ANOTHER DEVICE. You may uninstall the software and install it on another device for your use. You may not do so to share this license between devices.
+7. TRANSFER TO ANOTHER DEVICE. You may uninstall the software and install it on another device for your use. You may not do so to share this license between devices.
 
-8.	EXPORT RESTRICTIONS. The software is subject to United States export laws and regulations. You must comply with all domestic and international export laws and regulations that apply to the software. These laws include restrictions on destinations, end users and end use. For additional information, see www.microsoft.com/exporting.
+8. EXPORT RESTRICTIONS. The software is subject to United States export laws and regulations. You must comply with all domestic and international export laws and regulations that apply to the software. These laws include restrictions on destinations, end users and end use. For additional information, see www.microsoft.com/exporting.
 
-9.	SUPPORT SERVICES. Because this software is “as is,” we may not provide support services for it.
+9. SUPPORT SERVICES. Because this software is “as is,” we may not provide support services for it.
 
-10.	ENTIRE AGREEMENT. This agreement, and the terms for supplements, updates, Internet-based services and support services that you use, are the entire agreement for the software and support services.
+10. ENTIRE AGREEMENT. This agreement, and the terms for supplements, updates, Internet-based services and support services that you use, are the entire agreement for the software and support services.
 
-11.	APPLICABLE LAW.
+11. APPLICABLE LAW.
 
-a.	United States. If you acquired the software in the United States, Washington state law governs the interpretation of this agreement and applies to claims for breach of it, regardless of conflict of laws principles. The laws of the state where you live govern all other claims, including claims under state consumer protection laws, unfair competition laws, and in tort.
+a. United States. If you acquired the software in the United States, Washington state law governs the interpretation of this agreement and applies to claims for breach of it, regardless of conflict of laws principles. The laws of the state where you live govern all other claims, including claims under state consumer protection laws, unfair competition laws, and in tort.
 
-b.	Outside the United States. If you acquired the software in any other country, the laws of that country apply.
+b. Outside the United States. If you acquired the software in any other country, the laws of that country apply.
 
-12.	LEGAL EFFECT. This agreement describes certain legal rights. You may have other rights under the laws of your country. You may also have rights with respect to the party from whom you acquired the software. This agreement does not change your rights under the laws of your country if the laws of your country do not permit it to do so.
+12. LEGAL EFFECT. This agreement describes certain legal rights. You may have other rights under the laws of your country. You may also have rights with respect to the party from whom you acquired the software. This agreement does not change your rights under the laws of your country if the laws of your country do not permit it to do so.
 
-13.		DISCLAIMER OF WARRANTY. THE SOFTWARE IS LICENSED “AS-IS.” YOU BEAR THE RISK OF USING IT. MICROSOFT GIVES NO EXPRESS WARRANTIES, GUARANTEES OR CONDITIONS. YOU MAY HAVE ADDITIONAL CONSUMER RIGHTS UNDER YOUR LOCAL LAWS WHICH THIS AGREEMENT CANNOT CHANGE. TO THE EXTENT PERMITTED UNDER YOUR LOCAL LAWS, MICROSOFT EXCLUDES THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
+13.  DISCLAIMER OF WARRANTY. THE SOFTWARE IS LICENSED “AS-IS.” YOU BEAR THE RISK OF USING IT. MICROSOFT GIVES NO EXPRESS WARRANTIES, GUARANTEES OR CONDITIONS. YOU MAY HAVE ADDITIONAL CONSUMER RIGHTS UNDER YOUR LOCAL LAWS WHICH THIS AGREEMENT CANNOT CHANGE. TO THE EXTENT PERMITTED UNDER YOUR LOCAL LAWS, MICROSOFT EXCLUDES THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
 
-14.	LIMITATION ON AND EXCLUSION OF REMEDIES AND DAMAGES. YOU CAN RECOVER FROM MICROSOFT AND ITS SUPPLIERS ONLY DIRECT DAMAGES UP TO U.S. $5.00. YOU CANNOT RECOVER ANY OTHER DAMAGES, INCLUDING CONSEQUENTIAL, LOST PROFITS, SPECIAL, INDIRECT OR INCIDENTAL DAMAGES.
+14. LIMITATION ON AND EXCLUSION OF REMEDIES AND DAMAGES. YOU CAN RECOVER FROM MICROSOFT AND ITS SUPPLIERS ONLY DIRECT DAMAGES UP TO U.S. $5.00. YOU CANNOT RECOVER ANY OTHER DAMAGES, INCLUDING CONSEQUENTIAL, LOST PROFITS, SPECIAL, INDIRECT OR INCIDENTAL DAMAGES.
 This limitation applies to
 
-•	anything related to the software, services, content (including code) on third party Internet sites, or third party programs; and
-•	claims for breach of contract, breach of warranty, guarantee or condition, strict liability, negligence, or other tort to the extent permitted by applicable law.
+• anything related to the software, services, content (including code) on third party Internet sites, or third party programs; and
+• claims for breach of contract, breach of warranty, guarantee or condition, strict liability, negligence, or other tort to the extent permitted by applicable law.
 
 It also applies even if Microsoft knew or should have known about the possibility of the damages. The above limitation or exclusion may not apply to you because your country may not allow the exclusion or limitation of incidental, consequential or other damages.
 
@@ -219,7 +219,6 @@ IF YOU COMPLY WITH THESE LICENSE TERMS, YOU HAVE THE RIGHTS BELOW.
 1. SUPPORT SERVICES FOR SUPPLEMENT. Microsoft provides support services for this software as described at www.support.microsoft.com/common/international.aspx.
 
 =====================================================================================
-   
    </license>
 
    <plugin

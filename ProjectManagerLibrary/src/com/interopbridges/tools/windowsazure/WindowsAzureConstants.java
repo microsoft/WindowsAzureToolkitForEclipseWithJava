@@ -15,7 +15,7 @@
  */
 package com.interopbridges.tools.windowsazure;
 
-final class WindowsAzureConstants {
+public final class WindowsAzureConstants {
 
     private WindowsAzureConstants() {}
     public static final String SERVICE_NAME = "/ServiceDefinition/@name";
@@ -28,6 +28,10 @@ final class WindowsAzureConstants {
             + "/@configurationfilename";
     public static final String DEF_FILE_NAME = WINAZURE_PACKAGE
             + "/@definitionfilename";
+
+    public static final String CONFIG_OSFAMILY = "/ServiceConfiguration/@osFamily";
+    public static final String OSFAMILY_WINDOWS_SERVER_2008_R2 = "2";
+    public static final String OSFAMILY_WINDOWS_SERVER_2012 = "3";
 
     public static final String ROLE = "/ServiceConfiguration/Role";
     public static final String ROLE_NAME = ROLE + "[@name='%s']";
@@ -87,10 +91,10 @@ final class WindowsAzureConstants {
             + "/InternalEndpoint";
     public static final String INSTANCE_WR_NAME = ENDPOINT_WR_NAME
             + "/InstanceInputEndpoint";
- 	public static final String LOCAL_STORAGE = WR_NAME + "/LocalResources/LocalStorage";
+     public static final String LOCAL_STORAGE = WR_NAME + "/LocalResources/LocalStorage";
     public static final String LS_NAME = WR_NAME + "/LocalResources/LocalStorage[@name='%s']";
 
-    public static final String ENDPOINT = "/ServiceDefinition/WorkerRole/Endpoints";
+    public static final String ENDPOINT = "/ServiceDefinition/WorkerRole[@name='%s']/Endpoints";
     public static final String INTERNAL_ENDPOINT = ENDPOINT
             + "/InternalEndpoint[@name='%s']";
     public static final String INTERNAL_FIXED_ENDPOINT = ENDPOINT + "/InternalEndpoint[@name='%s']/FixedPort";
@@ -128,6 +132,7 @@ final class WindowsAzureConstants {
     public static final String DATE_FORMAT = "yyyy-MM-dd'T23:59:59.0000000-08:00'";
     public static final String CREATOR_VER = PROJ_PROPERTY
             + "/property[@name='creator.version']";
+    public static final String V17_VERSION = "1.7.0";
     public static final String VERSION = "1.7.0";
     public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.inputendpoint']";
     public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.internalendpoint']";
@@ -176,7 +181,7 @@ final class WindowsAzureConstants {
     public static final String INVALID_ARG = "Invalid argument.";
     public static final String ATTR_NAME = "name";
     public static final String ATTR_VALUE = "value";
-  	public static final String ATTR_SIZEINMB = "sizeInMB";
+      public static final String ATTR_SIZEINMB = "sizeInMB";
     public static final String ATTR_CLE_ON_ROLE_RECYCLE = "cleanOnRoleRecycle";
     public static final String ATTR_CMD_LINE = "commandLine";
     public static final String ATTR_EXE_CONTEXT = "executionContext";
@@ -262,6 +267,8 @@ final class WindowsAzureConstants {
     public static final String EXCP_IS_AVAILABLE_PORT = "Exception occured while validating port";
     public static final String EXCP_GET_SERVICE_NAME = "Exception occured while getting service name";
     public static final String EXCP_SET_SERVICE_NAME = "Exception occured while setting service name";
+    public static final String EXCP_GET_TARGET_OS_NAME = "Exception occured while getting target os name";
+    public static final String EXCP_SET_TARGET_OS_NAME = "Exception occured while setting target os name";
     public static final String EXCP_GET_ROLE = "Exception occured while getting roles";
     public static final String EXCP_EMPTY_ROLE = "Role name should not be empty";
     public static final String EXCP_ADD_ROLE = "Exception occured while adding role";
@@ -326,7 +333,7 @@ final class WindowsAzureConstants {
     public static final int PACKAGE_DOC_SA_PROPERTIES = 1 ;
     public static final int SA_FILES_COPIED = 2 ;
     public static final int DEFINITION_DOC_SA_CHANGES = 3 ;
-    
+
     public static final String APPROOT_NAME = "approot";
     public static final String SA_FOLDER_NAME = ".sessionaffinity";
 
@@ -345,4 +352,26 @@ final class WindowsAzureConstants {
     public static final String INS_FIX_RANGE = "./AllocatePublicPortFrom/FixedPortRange";
     public static final String INS_FIX_RANGE_EXPR = ENDPOINT + "/InstanceInputEndpoint/AllocatePublicPortFrom/FixedPortRange";
     public static final String PROPERTY_VAL = CREATE_PKG_TARGET + "/property[@name='%s']";
+
+    public static final String SET_CACHESIZEPER = "Microsoft.WindowsAzure.Plugins.Caching.CacheSizePercentage";
+    public static final String SET_DIAGLEVEL = "Microsoft.WindowsAzure.Plugins.Caching.DiagnosticLevel";
+    public static final String SET_CONFIGCONN = "Microsoft.WindowsAzure.Plugins.Caching.ConfigStoreConnectionString";
+    public static final String SET_CONFIGCONN_VAL = "UseDevelopmentStorage=true";
+    public static final String SET_CONFIGCONN_VAL_CLOULD =  "DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s";
+    public static final String SET_NAMEDCACHE = "Microsoft.WindowsAzure.Plugins.Caching.NamedCaches";
+    public static final String SET_NAMEDCACHE_VAL = "{&quot;caches&quot;:[{&quot;name&quot;:&quot;default&quot;,&quot;policy&quot;:{&quot;expiration&quot;:{&quot;defaultTTL&quot;:10,&quot;isExpirable&quot;:true,&quot;type&quot;:1}}}]}";
+    public static final String CONFIG_SETTING_ROLE = ROLE_NAME
+            + "/ConfigurationSettings/Setting[@name='%s']";
+    public static final String CONFIG_SETTING_ROLE_VAL = CONFIG_SETTING_ROLE + "/@value";
+    public static final String CACHE_LS_NAME = "DiagnosticStore";
+    public static final String CACHE_LS_PATH = CACHE_LS_NAME + "_PATH";
+
+    public static final String CACHE_ST_ACC_NAME_PROP = "project.%s.cachestorageaccount.name";
+    public static final String CACHE_ST_ACC_KEY_PROP = "project.%s.cachestorageaccount.key";
+    public static final String ROLE_PROP = PROJ_PROPERTY + "/property[@name='%s']";
+    public static final String ROLE_PROP_VAL = PROJ_PROPERTY + "/property[@name='%s']/@value";
+    public static final String IMPORT_NANE = IMPORT
+            + "/Import[@moduleName='%s']";
+
+    public static final String MIN_SDK_VERSION="2012-10";
 }

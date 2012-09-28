@@ -55,7 +55,6 @@ import com.persistent.util.MessageUtil;
 /**
  * This Class provides the debug option to the user
  * to enable/disable project debugging.
- *
  */
 public class DebugConfigurationDialog extends TrayDialog {
 
@@ -73,10 +72,17 @@ public class DebugConfigurationDialog extends TrayDialog {
     private List<String> configList = new ArrayList<String>();
     private Label staticMsgLabel;
 
-
-
-    public DebugConfigurationDialog(Shell parentShell , WindowsAzureRole role ,
-            WindowsAzureEndpoint endPoint, Map<String,String> map) {
+    /**
+     * Constructor.
+     * @param parentShell
+     * @param role
+     * @param endPoint
+     * @param map
+     */
+    public DebugConfigurationDialog(Shell parentShell,
+    		WindowsAzureRole role,
+    		WindowsAzureEndpoint endPoint,
+    		Map<String,String> map) {
         super(parentShell);
         debugRole = role;
         debugEndpoint = endPoint;
@@ -97,7 +103,8 @@ public class DebugConfigurationDialog extends TrayDialog {
                 .getWorkbench()
                 .getHelpSystem()
                 .setHelp(getParentShell(),
-                  "com.persistent.winazure.eclipseplugin.windows_azure_debug_config");
+                  "com.persistent.winazure.eclipseplugin." +
+                  "windows_azure_debug_config");
         Composite container = new Composite(parent, SWT.NONE);
         GridLayout gridLayout = new GridLayout();
         GridData gridData = new GridData();
@@ -144,7 +151,7 @@ public class DebugConfigurationDialog extends TrayDialog {
         gridData.verticalIndent = 5;
         gridData.horizontalSpan = 2;
         gridData.grabExcessHorizontalSpace = true;
-        gridData.horizontalAlignment= SWT.FILL;
+        gridData.horizontalAlignment = SWT.FILL;
         hostText.setLayoutData(gridData);
         hostText.setEnabled(false);
         hostText.addModifyListener(new ModifyListener() {
@@ -253,8 +260,8 @@ public class DebugConfigurationDialog extends TrayDialog {
         gridData = new GridData();
         gridData.horizontalIndent = 10;
         gridData.verticalIndent = 5;
-        gridData.grabExcessHorizontalSpace=true;
-        gridData.horizontalAlignment=SWT.FILL;
+        gridData.grabExcessHorizontalSpace = true;
+        gridData.horizontalAlignment = SWT.FILL;
         projText.setLayoutData(gridData);
         projText.addModifyListener(new ModifyListener() {
 
@@ -299,7 +306,7 @@ public class DebugConfigurationDialog extends TrayDialog {
                 if (!project.exists()
                         || !project.isOpen()
                         || !project.hasNature(
-                                "org.eclipse.jdt.core.javanature")) {
+                                Messages.natJava)) {
                     errorTitle = Messages.dbgInvdProjTitle;
                     errorMessage = Messages.dbgInvdProjMsg;
                     MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
@@ -361,7 +368,7 @@ public class DebugConfigurationDialog extends TrayDialog {
         try {
             for (IProject wRoot : root.getProjects()) {
                 if (wRoot.isOpen()
-                        && wRoot.hasNature("org.eclipse.jdt.core.javanature")) {
+                        && wRoot.hasNature(Messages.natJava)) {
                     projList.add(wRoot);
                 }
             }
@@ -414,8 +421,8 @@ public class DebugConfigurationDialog extends TrayDialog {
      * creating a new debug launch configuration.
      * @throws CoreException
      */
-    protected void createLaunchConfigParams() throws CoreException {
-
+    protected void createLaunchConfigParams()
+    		throws CoreException {
         if (emulatorCheckBox.getSelection()) {
             String configName = String.format("%s%s)",
                     Messages.dlgDbgConfEmul,
@@ -465,7 +472,6 @@ public class DebugConfigurationDialog extends TrayDialog {
     /**
      * Private class for displaying the confirmation message dialog to the user
      * with created launch configuration names.
-     *
      */
     private class ConfirmDebugDialog extends Dialog {
         @Override
@@ -478,6 +484,10 @@ public class DebugConfigurationDialog extends TrayDialog {
             return ctrl;
         }
 
+        /**
+         * Constructor.
+         * @param parentShell
+         */
         public ConfirmDebugDialog(Shell parentShell) {
             super(parentShell);
         }

@@ -26,30 +26,40 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.swt.widgets.Shell;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
-import com.persistent.winazureroles.Messages;
 
 import waeclipseplugin.Activator;
-
+/**
+ * Class has various method which
+ * helps to find project nature,
+ * projects from workspace,
+ * deployment name of component &
+ * for path conversion.
+ */
 public class ProjectNatureHelper {
-    public enum ProjExportType {WAR,EAR,JAR};
+    public enum ProjExportType { WAR, EAR, JAR };
     private static final String BASE_PATH = "${basedir}\\..";
     public static String errorTitle;
     private static String errorMessage;
-
+    
+    /**
+     * Method returns nature of project.
+     * @param proj
+     * @return
+     */
     public static ProjExportType getProjectNature(IProject proj) {
         ProjExportType type = null;
         try {
-            if (proj.hasNature("org.eclipse.jem.workbench.JavaEMFNature")
-                    && proj.hasNature("org.eclipse.wst.common.modulecore.ModuleCoreNature")
-                    && proj.hasNature("org.eclipse.wst.common.project.facet.core.nature")
-                    && proj.hasNature("org.eclipse.jdt.core.javanature")
-                    && proj.hasNature("org.eclipse.wst.jsdt.core.jsNature")) {
+            if (proj.hasNature(Messages.natJavaEMF)
+                    && proj.hasNature(Messages.natMdCore)
+                    && proj.hasNature(Messages.natFctCore)
+                    && proj.hasNature(Messages.natJava)
+                    && proj.hasNature(Messages.natJs)) {
                     type = ProjExportType.WAR;
-            } else if (proj.hasNature("org.eclipse.wst.common.project.facet.core.nature")
-                    && proj.hasNature("org.eclipse.wst.common.modulecore.ModuleCoreNature")) {
-                if (proj.hasNature("org.eclipse.wst.jsdt.core.jsNature")
-                        || proj.hasNature("org.eclipse.jdt.core.javanature")
-                        || proj.hasNature("org.eclipse.jem.workbench.JavaEMFNature")) {
+            } else if (proj.hasNature(Messages.natFctCore)
+                    && proj.hasNature(Messages.natMdCore)) {
+                if (proj.hasNature(Messages.natJs)
+                        || proj.hasNature(Messages.natJava)
+                        || proj.hasNature(Messages.natJavaEMF)) {
 
                     type = ProjExportType.JAR;
                 } else {
@@ -101,7 +111,8 @@ public class ProjectNatureHelper {
     		name = new File(path).getName();
     		if (method == WindowsAzureRoleComponentImportMethod.auto) {
     			ProjExportType type = ProjectNatureHelper.
-    					getProjectNature(findProjectFromWorkSpace(convertPath(path)));
+    					getProjectNature(findProjectFromWorkSpace(
+    							convertPath(path)));
     			name = String.format("%s%s%s", name, ".",
     					type.name().toLowerCase());
     		} else if (method == WindowsAzureRoleComponentImportMethod.zip) {
@@ -126,7 +137,7 @@ public class ProjectNatureHelper {
        try {
            for (IProject wRoot : root.getProjects()) {
                if (wRoot.isOpen()
-                       && !wRoot.hasNature("com.persistent.ui.projectnature")) {
+                       && !wRoot.hasNature(Messages.stUpProjNature)) {
                    projList.add(wRoot);
                }
            }

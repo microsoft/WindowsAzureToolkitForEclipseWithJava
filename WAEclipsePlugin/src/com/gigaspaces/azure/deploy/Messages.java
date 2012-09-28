@@ -18,8 +18,13 @@ package com.gigaspaces.azure.deploy;
 
 import org.eclipse.osgi.util.NLS;
 
-public class Messages extends NLS {
-	private static final String BUNDLE_NAME = "com.gigaspaces.azure.deploy.messages"; //$NON-NLS-1$
+public final class Messages extends NLS {
+	private static final String BUNDLE_NAME =
+			"com.gigaspaces.azure.deploy.messages"; //$NON-NLS-1$
+
+	public static String createHostedService;
+
+	public static String createStorageAccount;
 		
 	public static String activityView;
 

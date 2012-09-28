@@ -190,7 +190,7 @@ public class WindowsAzureRoleComponent {
                     WindowsAzureConstants.INVALID_ARG);
         }
         try {
-            if(this.deployName.isEmpty() && ((this.importPath.isEmpty()))) {
+            if(this.deployName.isEmpty() && (this.importPath.isEmpty())) {
                 this.importPath = importPath;
             }
             Element component = getComponentNode();
@@ -285,7 +285,7 @@ public class WindowsAzureRoleComponent {
                     WindowsAzureConstants.INVALID_ARG);
         }
         try {
-            if(this.deployName.isEmpty() && ((this.importPath.isEmpty()))) {
+            if(this.deployName.isEmpty() && (this.importPath.isEmpty())) {
                 this.deployName = deployName;
             }
             Element component = getComponentNode();

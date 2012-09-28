@@ -113,10 +113,10 @@ public class LoadingSubscriptionTask extends LoadingTask<List<Subscription>> {
 			} catch (Exception e) {
 				AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
 				event.setException(e);
-				if ((e.getMessage() != null) && (!e.getMessage().isEmpty())) {
+				if ((e.getMessage() == null) || (e.getMessage().isEmpty())) {
 					event.setMessage(com.gigaspaces.azure.wizards.Messages.genericErrorWhileLoadingCred);					
 				}
-				else{ 
+				else {
 					event.setMessage(e.getMessage());
 				}
 				errorHappened.set(true);

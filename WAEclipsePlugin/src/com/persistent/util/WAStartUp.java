@@ -31,8 +31,6 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.IStartup;
 import org.eclipse.wst.xml.core.internal.XMLCorePlugin;
 import org.eclipse.wst.xml.core.internal.catalog.provisional.ICatalog;
@@ -81,6 +79,12 @@ public class WAStartUp implements IStartup {
                                         iProject.getLocation().toFile());
                         if (!projMngr.isCurrVersion()) {
                             iProject.close(null);
+                        }
+                        // Correct name if its invalid
+                        if (!iProject.getName().
+                        		equalsIgnoreCase(projMngr.getProjectName())) {
+                        	WAEclipseHelper.
+                        	correctProjectName(iProject, projMngr);
                         }
 
                     }
@@ -201,36 +205,48 @@ public class WAStartUp implements IStartup {
             String restFile = String.format("%s%s%s", pluginInstLoc,
             		File.separator, Messages.restFileName);
 
-            // Check for componentsets.xml. If exists compare if it is same like V1.7.1 componentsets.xml 
-            // if same copy V1.7.2 componentsets.xml , else just ignore. 
+            /*
+             *  Check for componentsets.xml.
+             *  If exists compare if it is same like V1.7.2 componentsets.xml
+             *  if same copy V1.7.3 componentsets.xml,
+             *  else just ignore.
+             */
             if (new File(cmpntFile).exists()) {
-            	File oldCmpntFile   = WAEclipseHelper.getResourceAsFile(Messages.oldCmpntFileEntry);
-            	boolean isIdentical = WAEclipseHelper.isFilesIdentical(oldCmpntFile, new File(cmpntFile));
-            	if(isIdentical) { // If identical then only copy new componentsets.xml else not needed
+            	File oldCmpntFile   = WAEclipseHelper.
+            			getResourceAsFile(Messages.oldCmpntFileEntry);
+            	boolean isIdentical = WAEclipseHelper.
+            			isFilesIdentical(oldCmpntFile,
+            					new File(cmpntFile));
+            	if (isIdentical) {
+            		/*
+            		 * If identical then only copy new componentsets.xml
+            		 * else not needed.
+            		 */
             		new File(cmpntFile).delete();
-            		copyFile(cmpntFile, Messages.cmpntFileEntry);
+					copyResourceFile(Messages.cmpntFileEntry,
+							cmpntFile);
             	}
             } else {
-            	copyFile(cmpntFile, Messages.cmpntFileEntry);
+            	copyResourceFile(Messages.cmpntFileEntry, cmpntFile);
             }
 
             // Check for encutil.exe
             if (new File(enctFile).exists()) {
             	new File(enctFile).delete();
             }
-            copyFile(enctFile, Messages.encFileEntry);
+            copyResourceFile(Messages.encFileEntry, enctFile);
 
             // Check for WAStarterKitForJava.zip
             if (new File(starterKit).exists()) {
             	new File(starterKit).delete();
             }
-            copyFile(starterKit, Messages.starterKitEntry);
+            copyResourceFile(Messages.starterKitEntry, starterKit);
 
             // Check for restutil.exe
             if (new File(restFile).exists()) {
             	new File(restFile).delete();
             }
-            copyFile(restFile, Messages.restFileEntry);
+            copyResourceFile(Messages.restFileEntry, restFile);
 
         } catch (Exception e) {
             Activator.getDefault().log(e.getMessage(), e);
@@ -239,25 +255,24 @@ public class WAStartUp implements IStartup {
 
     /**
      * Method copy specified file in eclipse plugins folder.
-     * @param name : Name of file
-     * @param entry : Location of file
+     * @param resourceFile
+     * @param destFile
      */
-    private void copyFile(String name, String entry) {
+    private void copyResourceFile(String resourceFile, String destFile) {
     	URL url = Activator.getDefault().getBundle()
-                .getEntry(entry);
+                .getEntry(resourceFile);
         URL fileURL;
 		try {
 			fileURL = FileLocator.toFileURL(url);
 			URL resolve = FileLocator.resolve(fileURL);
 	        File file = new File(resolve.getFile());
 	        FileInputStream fis = new FileInputStream(file);
-	        File outputFile = new File(name);
+	        File outputFile = new File(destFile);
 	        FileOutputStream fos = new FileOutputStream(outputFile);
 	        writeFile(fis , fos);
 		} catch (IOException e) {
 			Activator.getDefault().log(e.getMessage(), e);
 		}
-
     }
 
     /**

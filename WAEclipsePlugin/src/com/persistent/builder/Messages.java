@@ -16,9 +16,12 @@
 package com.persistent.builder;
 
 import org.eclipse.osgi.util.NLS;
-
+/**
+ * Stores common strings.
+ */
 public final class Messages extends NLS {
-    private static final String BUNDLE_NAME = "com.persistent.builder.messages";
+    private static final String BUNDLE_NAME =
+    		"com.persistent.builder.messages";
     public static String bldErrMsg;
     public static String addBldErrMsg;
     public static String crtErrMsg;
@@ -33,7 +36,9 @@ public final class Messages extends NLS {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);
     }
-
+    /**
+     * Constructor.
+     */
     private Messages() {
     	super();
     }

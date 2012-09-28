@@ -45,7 +45,7 @@ import javax.xml.bind.Marshaller;
 import org.eclipse.core.runtime.Platform;
 
 import waeclipseplugin.Activator;
-import com.gigaspaces.azure.model.Base64Persistent;
+import com.microsoftopentechnologies.wacommon.utils.Base64;
 import com.gigaspaces.azure.model.Deployment;
 import com.gigaspaces.azure.model.ModelFactory;
 import com.gigaspaces.azure.model.RoleInstance;
@@ -56,14 +56,14 @@ import com.gigaspaces.azure.util.PublishProfile;
 
 public class WindowsAzureRestUtils {
 
-	private static String PLUGIN_FOLDER;
-	private static String URI;
+	private static String pluginFolder;
+	private static String uri;
 
-	private static WindowsAzureRestUtils INSTANCE;
+	private static WindowsAzureRestUtils instance;
 
 	public static synchronized WindowsAzureRestUtils getInstance() {
 
-		if (INSTANCE == null) {
+		if (instance == null) {
 			String eclipseInstallation = Platform.getInstallLocation().getURL()
 					.getPath().toString();
 			if (eclipseInstallation.charAt(0) == '/'
@@ -72,16 +72,16 @@ public class WindowsAzureRestUtils {
 			}
 			eclipseInstallation = eclipseInstallation.replace("/",
 					File.separator);
-			PLUGIN_FOLDER = String.format("%s%s%s%s%s", eclipseInstallation,
+			pluginFolder = String.format("%s%s%s%s%s", eclipseInstallation,
 					File.separator, com.persistent.util.Messages.pluginFolder,
 					File.separator, com.persistent.util.Messages.pluginId);
 
-			URI = getRestEXE();
+			uri = getRestEXE();
 
-			INSTANCE = new WindowsAzureRestUtils();
+			instance = new WindowsAzureRestUtils();
 		}
 
-		return INSTANCE;
+		return instance;
 	}
 
 	public String runRest(HttpVerb method, String url,
@@ -96,7 +96,7 @@ public class WindowsAzureRestUtils {
 					throws InterruptedException, CommandLineException {
 		StringBuilder command = new StringBuilder();
 
-		command.append("" + URI + " ");
+		command.append("" + uri + " ");
 		command.append("--request ");
 		command.append("/verb:" + method + " ");
 		command.append("/url:\"" + url + "\" ");
@@ -139,7 +139,7 @@ public class WindowsAzureRestUtils {
 					.replace("ns2:", "").replace(":ns2", "")
 					.replace("ns3:", "").replace(":ns3", "");
 
-			xmlString = Base64Persistent
+			xmlString = Base64
 					.encode(xmlString.getBytes("UTF-8"));
 			return xmlString;
 		} catch (JAXBException e) {
@@ -189,7 +189,7 @@ public class WindowsAzureRestUtils {
 						.replace("ns2:", "").replace(":ns2", "")
 						.replace("ns3:", "").replace(":ns3", "");
 
-				xmlString = Base64Persistent
+				xmlString = Base64
 						.encode(xmlString.getBytes("UTF-8"));
 
 				command.append(" /body:\"" + xmlString + "\" ");
@@ -208,11 +208,11 @@ public class WindowsAzureRestUtils {
 
 		try {
 
-			File pluginDir = new File(PLUGIN_FOLDER);
+			File pluginDir = new File(pluginFolder);
 			if (!pluginDir.exists()) {
 				pluginDir.mkdirs();
 			}
-			File restUtils = new File(PLUGIN_FOLDER, "restutil.exe");
+			File restUtils = new File(pluginFolder, "restutil.exe");
 
 			boolean fileCreated = false;
 			if (!restUtils.exists()) {
@@ -247,7 +247,7 @@ public class WindowsAzureRestUtils {
 			Activator.getDefault().log(Messages.error, e);
 		}
 
-		return '"' + PLUGIN_FOLDER + File.separator + "restutil.exe" + '"';
+		return '"' + pluginFolder + File.separator + "restutil.exe" + '"';
 	}
 
 	private void appendHeades(HashMap<String, String> headers,
@@ -321,7 +321,7 @@ public class WindowsAzureRestUtils {
 	public String installPublishSettings(File file, String password)
 			throws InterruptedException, CommandLineException {
 		StringBuilder command = new StringBuilder();
-		command.append("" + URI + " ");
+		command.append("" + uri + " ");
 		command.append("--install ");
 		command.append("/path:\"" + file.getPath() + "\" ");
 
@@ -351,7 +351,7 @@ public class WindowsAzureRestUtils {
 					throws InterruptedException, CommandLineException {
 		StringBuilder command = new StringBuilder();
 
-		command.append("" + URI + " ");
+		command.append("" + uri + " ");
 		command.append("--request ");
 		command.append("/verb:" + method + " ");
 		command.append("/url:\"" + url + "\" ");
@@ -411,8 +411,8 @@ public class WindowsAzureRestUtils {
 					"LoadBalanceInfo:s:Cookie: mstshash=%s#%s",
 					instance.getRoleName(), instance.getInstanceName()));
 
-			String fileName = String.format("%s\\%s-%s.rdp", PLUGIN_FOLDER,
-					new String(Base64Persistent.decode(deployment.getLabel()),
+			String fileName = String.format("%s\\%s-%s.rdp", pluginFolder,
+					new String(Base64.decode(deployment.getLabel()),
 							"UTF-8"), instance.getInstanceName());
 
 			File file = new File(fileName);
@@ -465,7 +465,7 @@ public class WindowsAzureRestUtils {
 			input = new FileInputStream(file);
 			dis = new DataInputStream(input);
 			dis.readFully(buff);
-			profile.setManagementCertificate(Base64Persistent.encode(buff)); //$NON-NLS-1$
+			profile.setManagementCertificate(Base64.encode(buff)); //$NON-NLS-1$
 		} catch (FileNotFoundException e) {
 			Activator.getDefault().log(Messages.error, e);
 			throw e;

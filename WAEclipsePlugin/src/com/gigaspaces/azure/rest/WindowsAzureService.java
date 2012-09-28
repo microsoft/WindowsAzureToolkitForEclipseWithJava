@@ -34,26 +34,26 @@ public interface WindowsAzureService {
 	// final static String deployment_slot = "<deployment-slot>";
 	final static String DEPLOYMENT_SLOT_NAME = "<deployment-slot-name>"; //$NON-NLS-1$
 
-	final static String Management_Services_URL = "https://management.core.windows.net/<subscription-id>"; //$NON-NLS-1$
-	final static String Get_Operation_Status = "/operations/<request-id>"; //$NON-NLS-1$
-	final static String List_Storage_Accounts = "/services/storageservices"; //$NON-NLS-1$
-	final static String Get_Storage_Keys = "/<service-name>/keys"; //$NON-NLS-1$
-	final static String List_Locations = "/locations"; //$NON-NLS-1$
-	final static String List_Affinity_Groups = "/affinitygroups"; //$NON-NLS-1$
-	final static String List_Hosted_Services = "/services/hostedservices"; //$NON-NLS-1$
-	final static String Hosted_Services = "/<service-name>"; //$NON-NLS-1$
-	final static String Add_Certificate = "/<service-name>/certificates"; //$NON-NLS-1$
-	final static String Create_Deployment = "/deploymentslots/<deployment-slot-name>"; //$NON-NLS-1$
-	final static String Deployment_Name = "/deployments/<deployment-name>"; //$NON-NLS-1$
+	final static String MNGMT_SERV_URL = "https://management.core.windows.net/<subscription-id>"; //$NON-NLS-1$
+	final static String GET_OPERTN_STAT = "/operations/<request-id>"; //$NON-NLS-1$
+	final static String LIST_STRG_ACC = "/services/storageservices"; //$NON-NLS-1$
+	final static String GET_STRG_KEYS = "/<service-name>/keys"; //$NON-NLS-1$
+	final static String LIST_LOC = "/locations"; //$NON-NLS-1$
+	final static String LIST_AFF_GRPS = "/affinitygroups"; //$NON-NLS-1$
+	final static String LIST_HOST_SERV = "/services/hostedservices"; //$NON-NLS-1$
+	final static String HOST_SERV = "/<service-name>"; //$NON-NLS-1$
+	final static String ADD_CERT = "/<service-name>/certificates"; //$NON-NLS-1$
+	final static String CREATE_DPLY = "/deploymentslots/<deployment-slot-name>"; //$NON-NLS-1$
+	final static String DPLY_NAME = "/deployments/<deployment-name>"; //$NON-NLS-1$
 
 	// Storage Service
-	final static String storage_account = "<storage-account>";
-	final static String storage_container = "<container>";
-	final static String block_id = "<block-id>";
+	final static String STRG_ACC = "<storage-account>";
+	final static String STRG_CONTAINER = "<container>";
+	final static String BLOCK_ID = "<block-id>";
 
-	final static String Storage_Service_URL = "http://<storage-account>.blob.core.windows.net/";
-	final static String List_Containers = "?comp=list";
-	final static String Put_Blob = "<container>";
-	final static String Put_Block = "?comp=block&blockid=<block-id>";
-	final static String Put_Block_List = "?comp=blocklist";
+	final static String STRG_SERV_URL = "http://<storage-account>.blob.core.windows.net/";
+	final static String LIST_CONTAINERS = "?comp=list";
+	final static String PUT_BLOB = "<container>";
+	final static String PUT_BLOCK = "?comp=block&blockid=<block-id>";
+	final static String PUT_BLOCK_LIST = "?comp=blocklist";
 }

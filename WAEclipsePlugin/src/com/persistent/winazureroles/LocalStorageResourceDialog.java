@@ -44,7 +44,10 @@ import com.interopbridges.tools.windowsazure.WindowsAzureLocalStorage;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.persistent.util.MessageUtil;
-
+/**
+ * Class creates UI controls and respective listeners
+ * for add or edit local storage dialog.
+ */
 public class LocalStorageResourceDialog extends TitleAreaDialog {
 
     private String errorTitle;
@@ -171,7 +174,6 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
         }
         return super.createDialogArea(parent);
     }
-
 
     @Override
     protected Control createButtonBar(Composite parent) {
@@ -315,42 +317,30 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
                                  Messages.lclStgMxSizeMsg1 , maxSize ,
                                  Messages.lclStgMxSizeMsg2));
                  if (choice) {
-                     isValidSize = true;
+                	 isValidSize = true;
                  } else {
-                     if (isResEdit) {
-                         txtSize.setText(String.valueOf(windowsAzureRole.
-                        		 getLocalStorage(resName).getSize()));
-                         isValidSize = true;
-                     }
-                     else {
-                         txtSize.setText("1");
-                         isValidSize = true;
-                     }
+                	 /*
+                	  * If user selects No
+                	  * then keep dialog open.
+                	  */
+                	 isValidSize = false;
                  }
              } else {
                  isValidSize = true;
              }
-
          } catch (NumberFormatException e) {
-             errorTitle = Messages.lclStgSizeErrTtl;
-             errorMessage = Messages.lclStgSizeErrMsg;
-             MessageUtil.displayErrorDialog(getShell(),
-                     errorTitle, errorMessage);
-             Activator.getDefault().log(errorMessage, e);
-             isValidSize = false;
-         } catch (WindowsAzureInvalidProjectOperationException e) {
-             errorTitle = Messages.lclStgSetErrTtl;
-             errorMessage = Messages.lclStgSetErrMsg;
-             MessageUtil.displayErrorDialog(getShell(),
-                     errorTitle, errorMessage);
-             Activator.getDefault().log(errorMessage, e);
-             isValidSize = false;
+        	 errorTitle = Messages.lclStgSizeErrTtl;
+        	 errorMessage = Messages.lclStgSizeErrMsg;
+        	 MessageUtil.displayErrorDialog(getShell(),
+        			 errorTitle, errorMessage);
+        	 Activator.getDefault().log(errorMessage, e);
+        	 isValidSize = false;
          }
          return isValidSize;
      }
 
      /**
-      * Validates the env path.
+      * Validates the environment path.
       *
       * @param path : user given path
       * @return retVal : true if valid path else false
@@ -417,7 +407,7 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
          txtResource.addModifyListener(new ModifyListener() {
              @Override
              public void modifyText(ModifyEvent arg0) {
-                 if (txtResource.getText().isEmpty() 
+                 if (txtResource.getText().isEmpty()
                 		 || txtSize.getText().isEmpty()) {
                      if (okButton != null) {
                      okButton.setEnabled(false);
@@ -471,7 +461,6 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
                     okButton.setEnabled(true);
                     }
                 }
-
             }
         });
      }
@@ -511,7 +500,7 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
      }
 
      /**
-      * Create env path component.
+      * Create environment path component.
       *
       * @param container : parent container
       */

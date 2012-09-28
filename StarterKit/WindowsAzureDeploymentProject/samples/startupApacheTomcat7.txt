@@ -31,7 +31,7 @@ cscript /NoLogo util\unzip.vbs jdk.zip "%CD%"
 
 :: Deploy server
 set CATALINA_HOME=\%ROLENAME%\%SERVER_DIR_NAME%
-cscript /NoLogo util\unzip.vbs tomcat7.zip "%CD%"
+cscript /NoLogo util\unzip.vbs tomcat7.zip "\%ROLENAME%"
 
 :: Deploy application
 copy %WAR_NAME% "%CATALINA_HOME%\webapps"

@@ -39,7 +39,7 @@ import java.util.concurrent.Future;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.deploy.Notifier;
-import com.gigaspaces.azure.model.Base64Persistent;
+import com.microsoftopentechnologies.wacommon.utils.Base64;
 import com.gigaspaces.azure.model.BlockList;
 import com.gigaspaces.azure.model.EnumerationResults;
 import com.gigaspaces.azure.model.Response;
@@ -49,7 +49,7 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 
 	private static final int MAX_SIZE = 64 * 1048576; //64MB
 	private static final int CHUNK_SIZE = 4 * 1048576; //4MB
-	private static int CHUNK_COUNT;
+	private static int chunkCnt;
 
 	private class UploadingTask implements Callable<String> {
 
@@ -85,7 +85,7 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 			}
 
 			if (notifier != null) {
-				double step = (1 / (double) CHUNK_COUNT) * 100;
+				double step = (1 / (double) chunkCnt) * 100;
 				notifier.notifyProgress((int)step);
 			}
 			return blockId;
@@ -100,7 +100,7 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 	public WindowsAzureStorageServices(String storageAccount, String storageKey) throws NoSuchAlgorithmException, InvalidKeyException {
 		super();
 		if (storageAccount == null || storageAccount.isEmpty())
-			throw new InvalidRestAPIArgument(Messages.invalidStorageAccount);
+			throw new InvalidRestAPIArgument(Messages.invalidStrgAcc);
 		this.storageAccount = storageAccount;
 		if (storageKey == null || storageKey.isEmpty())
 			throw new InvalidRestAPIArgument(Messages.invalidStorageKey);
@@ -108,11 +108,11 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 	}
 
 	public EnumerationResults listContainers() throws InvalidKeyException, RestAPIException, InterruptedException, CommandLineException {
-		String url = Storage_Service_URL.replace(storage_account,storageAccount).concat(List_Containers);
+		String url = STRG_SERV_URL.replace(STRG_ACC,storageAccount).concat(LIST_CONTAINERS);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		headers.put(X_MS_VERSION, Messages.x_msVersion);
+		headers.put(X_MS_VERSION, Messages.xMsVersion);
 
 		String result = WindowsAzureRestUtils.getInstance().runStorage(HttpVerb.GET, url,storageKey, headers, null);
 
@@ -125,12 +125,12 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 
 	public void putBlob(String container, String blobName, File file, Notifier notifier) throws URISyntaxException, RestAPIException, InterruptedException, CommandLineException, ExecutionException, IOException {
 
-		String url = Storage_Service_URL.replace(storage_account, storageAccount).concat(Put_Blob).replace(storage_container, container).concat("/" + blobName);
+		String url = STRG_SERV_URL.replace(STRG_ACC, storageAccount).concat(PUT_BLOB).replace(STRG_CONTAINER, container).concat("/" + blobName);
 
 		int fileLength = (int) file.length();
 
 		HashMap<String, String> headers = new HashMap<String, String>();
-		headers.put(X_MS_VERSION, Messages.x_msVersion2);
+		headers.put(X_MS_VERSION, Messages.xMsVersion2);
 		headers.put(CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM);
 		if (fileLength > MAX_SIZE) {
 			
@@ -211,7 +211,7 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 		try {
 			int fileLength = (int) cspkgFile.length();
 
-			CHUNK_COUNT = fileLength / chunkSize;
+			chunkCnt = fileLength / chunkSize;
 
 			ExecutorService executorService = Executors.newFixedThreadPool(threadpoolSize);
 
@@ -226,9 +226,9 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 
 			List<Future<String>> result = new ArrayList<Future<String>>();
 
-			String[] blocks = new String[CHUNK_COUNT];
+			String[] blocks = new String[chunkCnt];
 
-			for (; i < CHUNK_COUNT; i++) {
+			for (; i < chunkCnt; i++) {
 
 				if (i % NTHREAD == 0 && i > 0) {
 					join(result);
@@ -299,14 +299,14 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 	public Response<?> putBlockList(String container, String blobName,
 			BlockList body) throws RestAPIException, InterruptedException, CommandLineException {
 
-		String url = Storage_Service_URL
-				.replace(storage_account, storageAccount).concat(Put_Blob)
-				.replace(storage_container, container).concat("/" + blobName)
-				.concat(Put_Block_List);
+		String url = STRG_SERV_URL
+				.replace(STRG_ACC, storageAccount).concat(PUT_BLOB)
+				.replace(STRG_CONTAINER, container).concat("/" + blobName)
+				.concat(PUT_BLOCK_LIST);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		headers.put(X_MS_VERSION, Messages.x_msVersion3);
+		headers.put(X_MS_VERSION, Messages.xMsVersion3);
 
 		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
 
@@ -327,7 +327,7 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 
 	public String createContainer(String container) throws RestAPIException, InterruptedException, CommandLineException {
 
-		String url = Storage_Service_URL.replace(storage_account,
+		String url = STRG_SERV_URL.replace(STRG_ACC,
 				storageAccount).concat(
 						container.toLowerCase() + "?restype=container");
 
@@ -348,10 +348,10 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 	private Response<?> putBlock(String container, String blobName,
 			String blockId, byte[] chunck, HashMap<String, String> headers) throws InterruptedException, CommandLineException {
 
-		String url = Storage_Service_URL
-				.replace(storage_account, storageAccount).concat(Put_Blob)
-				.replace(storage_container, container).concat("/" + blobName)
-				.concat(Put_Block).replace(block_id, blockId);
+		String url = STRG_SERV_URL
+				.replace(STRG_ACC, storageAccount).concat(PUT_BLOB)
+				.replace(STRG_CONTAINER, container).concat("/" + blobName)
+				.concat(PUT_BLOCK).replace(BLOCK_ID, blockId);
 
 		headers.put(CONTENT_LENGTH, "" + chunck.length);
 
@@ -367,7 +367,7 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 		String encode = "";
 
 		try {
-			encode = URLEncoder.encode(Base64Persistent.encode(blockId.getBytes("UTF-8")),"UTF-8");
+			encode = URLEncoder.encode(Base64.encode(blockId.getBytes("UTF-8")),"UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			Activator.getDefault().log(Messages.error, e);
 		}

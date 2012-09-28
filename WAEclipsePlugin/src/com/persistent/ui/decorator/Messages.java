@@ -16,9 +16,12 @@
 package com.persistent.ui.decorator;
 
 import org.eclipse.osgi.util.NLS;
-
+/**
+ * Stores common strings.
+ */
 public final class Messages extends NLS {
-	private static final String BUNDLE_NAME = "com.persistent.ui.decorator.messages"; //$NON-NLS-1$
+	private static final String BUNDLE_NAME =
+			"com.persistent.ui.decorator.messages";
 	public static String errProjIcon;
 	public static String errRoleIcon;
 	public static String projFolder;
@@ -27,7 +30,9 @@ public final class Messages extends NLS {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);
 	}
-
+	/**
+	 * Constructor.
+	 */
 	private Messages() {
 		super();
 	}

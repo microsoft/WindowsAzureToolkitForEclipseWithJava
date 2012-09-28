@@ -47,7 +47,7 @@ import waeclipseplugin.Activator;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
-import com.persistent.util.MessageUtil;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.ProjectNatureHelper;
 import com.persistent.util.ProjectNatureHelper.ProjExportType;
 import com.persistent.winazureroles.WAServerConfiguration;
@@ -61,14 +61,18 @@ public class WAApplicationDialog extends TitleAreaDialog {
     private Text asNameTxt;
     private Label projLbl;
     private Label nameLbl;
-    private String errorTitle;
-    private String errorMessage;
     private Button okButton;
     private WindowsAzureRole windowsAzureRole;
     private WADeployPage depPage;
     private WAServerConfiguration serverConf;
 
-
+    /**
+     * Constructor.
+     * @param parentShell
+     * @param page : object of WADeployPage
+     * @param role : WindowsAzureRole
+     * @param conf
+     */
     public WAApplicationDialog(Shell parentShell,
     WADeployPage page,
     WindowsAzureRole role,
@@ -85,7 +89,6 @@ public class WAApplicationDialog extends TitleAreaDialog {
         newShell.setText(Messages.appDlgTxt);
         newShell.setLocation(250, 250);
     }
-
 
     @Override
     protected Control createDialogArea(Composite parent) {
@@ -111,6 +114,11 @@ public class WAApplicationDialog extends TitleAreaDialog {
         return super.createDialogArea(parent);
     }
 
+    /**
+     * Method creates UI controls of application file selection
+     * using file system.
+     * @param container
+     */
     private void createAppFileCmpnt(Composite container) {
         fileRadioBtn = new Button(container, SWT.RADIO);
         GridData gridData = new GridData();
@@ -124,17 +132,31 @@ public class WAApplicationDialog extends TitleAreaDialog {
         fileRadioBtn.addSelectionListener(new SelectionListener() {
             @Override
             public void widgetSelected(SelectionEvent arg0) {
-                projRadioBtn.setSelection(false);
-                projCombo.setEnabled(false);
-                asNameTxt.setEnabled(false);
-                nameLbl.setEnabled(false);
-                fileRadioBtn.setSelection(true);
-                fileTxt.setEnabled(true);
-                fileTxt.setText("");
-                browseBtn.setEnabled(true);
-                if (okButton != null) {
-                    okButton.setEnabled(false);
-                }
+            	/*
+            	 * If user is again selecting File radio button
+            	 * which was already selected,
+            	 * and some file path was present in text box
+            	 * then do not make text empty and keep OK enabled.
+            	 */
+            	if (fileRadioBtn.getSelection()
+            			&& !fileTxt.getText().equals("")) {
+            		if (okButton != null) {
+            			okButton.setEnabled(true);
+            		}
+            	} else {
+            		projRadioBtn.setSelection(false);
+            		projCombo.setEnabled(false);
+            		asNameTxt.setText("");
+            		asNameTxt.setEnabled(false);
+            		nameLbl.setEnabled(false);
+            		fileRadioBtn.setSelection(true);
+            		fileTxt.setEnabled(true);
+            		fileTxt.setText("");
+            		browseBtn.setEnabled(true);
+            		if (okButton != null) {
+            			okButton.setEnabled(false);
+            		}
+            	}
             }
 
             @Override
@@ -182,6 +204,11 @@ public class WAApplicationDialog extends TitleAreaDialog {
         });
     }
 
+    /**
+     * Method creates UI controls of application project selection
+     * using workspace.
+     * @param container
+     */
     private void createAppProjCmpnt(Composite container) {
         projRadioBtn = new Button(container, SWT.RADIO);
         GridData gridData = new GridData();
@@ -196,17 +223,32 @@ public class WAApplicationDialog extends TitleAreaDialog {
 
             @Override
             public void widgetSelected(SelectionEvent arg0) {
-                fileRadioBtn.setSelection(false);
-                projRadioBtn.setSelection(true);
-                fileTxt.setEnabled(false);
-                browseBtn.setEnabled(false);
-                projCombo.setEnabled(true);
-                asNameTxt.setEnabled(true);
-                nameLbl.setEnabled(true);
-                projCombo.setItems(getProjects());
-                if (okButton != null) {
-                    okButton.setEnabled(false);
-                }
+            	/*
+            	 * If user is again selecting Project radio button
+            	 * which was already selected,
+            	 * and some value present in combo box and text box
+            	 * then do not make text empty and keep OK enabled.
+            	 */
+            	if (projRadioBtn.getSelection()
+            			&& !projCombo.getText().equals("")
+            			&& !asNameTxt.getText().equals("")) {
+            		if (okButton != null) {
+            			okButton.setEnabled(true);
+            		}
+            	} else {
+            		fileRadioBtn.setSelection(false);
+            		projRadioBtn.setSelection(true);
+            		fileTxt.setEnabled(false);
+            		browseBtn.setEnabled(false);
+            		projCombo.setEnabled(true);
+            		asNameTxt.setEnabled(true);
+            		asNameTxt.setText("");
+            		nameLbl.setEnabled(true);
+            		projCombo.setItems(getProjects());
+            		if (okButton != null) {
+            			okButton.setEnabled(false);
+            		}
+            	}
             }
             @Override
             public void widgetDefaultSelected(SelectionEvent arg0) {
@@ -244,7 +286,6 @@ public class WAApplicationDialog extends TitleAreaDialog {
             public void widgetDefaultSelected(SelectionEvent arg0) {
             }
         });
-
 
         projLbl = new Label(container, SWT.LEFT);
         gridData = new GridData();
@@ -284,10 +325,14 @@ public class WAApplicationDialog extends TitleAreaDialog {
                 }
             }
         });
-
     }
+
+    /**
+     * Browse button for application file selection using file system.
+     * Only JAR, WAR and EAR files can be selected.
+     */
     private void browseBtnListener() {
-        FileDialog dialog = new FileDialog(this.getShell(), SWT.MULTI);
+        FileDialog dialog = new FileDialog(this.getShell());
         String[] extensions = new String [3];
         extensions[0] = "*.WAR";
         extensions[1] = "*.JAR";
@@ -299,26 +344,29 @@ public class WAApplicationDialog extends TitleAreaDialog {
         }
     }
 
+    /**
+     * Method returns array of project names
+     * which are open and has windows azure nature.
+     * @return String[]
+     */
     private String[] getProjects() {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IWorkspaceRoot root = workspace.getRoot();
-        String []projects = null;
+        String[] projects = null;
         ArrayList<String> projList = new ArrayList<String>();
         try {
             for (IProject wRoot : root.getProjects()) {
                 if (wRoot.isOpen()
-                        && !wRoot.hasNature("com.persistent.ui.projectnature")) {
+                        && !wRoot.hasNature(Messages.waProjNature)) {
                     projList.add(wRoot.getProject().getName());
                 }
             }
             projects = new String[projList.size()];
             projects = projList.toArray(projects);
         } catch (Exception e) {
-            errorTitle = Messages.projSelTtl;
-            errorMessage = Messages.projSelMsg;
-            MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                    errorMessage);
-            Activator.getDefault().log(errorMessage, e);
+            PluginUtil.displayErrorDialogAndLog(this.getShell(),
+            		Messages.projSelTtl,
+            		Messages.projSelMsg, e);
         }
         return projects;
     }
@@ -330,10 +378,9 @@ public class WAApplicationDialog extends TitleAreaDialog {
             File file = new File(fileTxt.getText());
             if (!file.exists()) {
                 isValid = false;
-                errorTitle = Messages.appDlgInvFileTtl;
-                errorMessage = Messages.appDlgInvFileMsg;
-                MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                        errorMessage);
+                PluginUtil.displayErrorDialog(this.getShell(),
+                		Messages.appDlgInvFileTtl,
+                		Messages.appDlgInvFileMsg);
             }
         } else if (projRadioBtn.getSelection()
         		&& !asNameTxt.getText().isEmpty()
@@ -347,10 +394,9 @@ public class WAApplicationDialog extends TitleAreaDialog {
             }
             if (!isValidName) {
                 isValid = false;
-                errorTitle = Messages.appDlgInvNmeTtl;
-                errorMessage = Messages.appDlgInvNmeMsg;
-                MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                        errorMessage);
+                PluginUtil.displayErrorDialog(this.getShell(),
+                		Messages.appDlgInvNmeTtl,
+                		Messages.appDlgInvNmeMsg);
             }
         }
         if (isValid) {
@@ -363,10 +409,9 @@ public class WAApplicationDialog extends TitleAreaDialog {
 
             if (fileRadioBtn.getSelection()) {
                 if (cmpList.contains(new File(fileTxt.getText()).getName())) {
-                    errorTitle = Messages.appDlgDupNmeTtl;
-                    errorMessage = Messages.appDlgDupNmeMsg;
-                    MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                            errorMessage);
+                    PluginUtil.displayErrorDialog(this.getShell(),
+                    		Messages.appDlgDupNmeTtl,
+                    		Messages.appDlgDupNmeMsg);
                     return;
                 }
                 try {
@@ -374,30 +419,28 @@ public class WAApplicationDialog extends TitleAreaDialog {
                 			windowsAzureRole.getComponents();
                 	for (int i = 0; i < components.size(); i++) {
                 		if (components.get(i).getDeployName().
-                				equalsIgnoreCase(new File(fileTxt.getText()).getName())) {
-                			errorTitle = Messages.appDlgDupNmeTtl;
-                			errorMessage = Messages.appDlgDupNmeMsg;
-                			MessageUtil.displayErrorDialog(this.getShell(),
-                					errorTitle, errorMessage);
+                				equalsIgnoreCase(new File(
+                						fileTxt.getText()).getName())) {
+                			PluginUtil.displayErrorDialog(this.getShell(),
+                					Messages.appDlgDupNmeTtl,
+                					Messages.appDlgDupNmeMsg);
                 			return;
                 		}
                 	}
                 } catch (WindowsAzureInvalidProjectOperationException e) {
-                    errorTitle = Messages.addAppErrTtl;
-                    errorMessage = Messages.addAppErrMsg;
-                    Activator.getDefault().log(errorMessage, e);
-                    MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                            errorMessage);
+                    PluginUtil.displayErrorDialogAndLog(this.getShell(),
+                    		Messages.addAppErrTtl,
+                    		Messages.addAppErrMsg, e);
                 }
 
                 if (depPage == null) {
                     serverConf.addToAppList(fileTxt.getText(),
                     		new File(fileTxt.getText()).getName(),
-                    		"copy");
+                    		Messages.methodCopy);
                 } else {
                     depPage.addToAppList(fileTxt.getText(),
                     		new File(fileTxt.getText()).getName(),
-                    		"copy");
+                    		Messages.methodCopy);
                 }
 
 
@@ -406,18 +449,19 @@ public class WAApplicationDialog extends TitleAreaDialog {
                 IWorkspaceRoot root = workspace.getRoot();
                 IProject proj = root.getProject(projCombo.getText());
                 if (cmpList.contains(new File(asNameTxt.getText()).getName())) {
-                    errorTitle = Messages.appDlgDupNmeTtl;
-                    errorMessage = Messages.appDlgDupNmeMsg;
-                    MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                            errorMessage);
+                	PluginUtil.displayErrorDialog(this.getShell(),
+                			Messages.appDlgDupNmeTtl,
+                			Messages.appDlgDupNmeMsg);
                     return;
                 }
                 if (depPage == null) {
                      serverConf.addToAppList(proj.getLocation().toOSString(),
-                    		 asNameTxt.getText(), "auto");
+                    		 asNameTxt.getText(),
+                    		 Messages.methodAuto);
                 } else {
                      depPage.addToAppList(proj.getLocation().toOSString(),
-                    		 asNameTxt.getText(), "auto");
+                    		 asNameTxt.getText(),
+                    		 Messages.methodAuto);
                 }
             }
             super.okPressed();
@@ -431,7 +475,14 @@ public class WAApplicationDialog extends TitleAreaDialog {
         okButton.setEnabled(false);
         return ctrl;
     }
-
+    
+    /**
+     * Method checks type of project
+     * and returns corresponding as name with
+     * proper extension. 
+     * @param path
+     * @return String
+     */
     private String getAsNameFrmProject(String path) {
         String name = "";
         ProjExportType type = ProjectNatureHelper
@@ -447,10 +498,14 @@ public class WAApplicationDialog extends TitleAreaDialog {
                 name = name.concat(".jar");
             }
         }
-
         return name;
     }
-
+    
+    /**
+     * Method returns project having specified from path.
+     * @param path
+     * @return IProject
+     */
     private IProject getProjectFrmPath(String path) {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IWorkspaceRoot root = workspace.getRoot();
@@ -459,23 +514,22 @@ public class WAApplicationDialog extends TitleAreaDialog {
         try {
             for (IProject wRoot : root.getProjects()) {
                 if (wRoot.isOpen()
-                        && !wRoot.hasNature("com.persistent.ui.projectnature")) {
+                        && !wRoot.hasNature(Messages.waProjNature)) {
                     projList.add(wRoot);
                 }
             }
             IProject[] arr = new IProject[projList.size()];
             arr = projList.toArray(arr);
             for (int i = 0; i < arr.length; i++) {
-                if (arr[i].getLocation().toOSString().equalsIgnoreCase(path)) {
+                if (arr[i].getLocation().
+                		toOSString().equalsIgnoreCase(path)) {
                     project = arr[i];
                 }
             }
         } catch (Exception e) {
-            errorTitle = Messages.projSelTtl;
-            errorMessage = Messages.projSelMsg;
-            MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                    errorMessage);
-            Activator.getDefault().log(errorMessage, e);
+            PluginUtil.displayErrorDialogAndLog(this.getShell(),
+            		Messages.projSelTtl,
+            		Messages.projSelMsg, e);
         }
         return project;
     }

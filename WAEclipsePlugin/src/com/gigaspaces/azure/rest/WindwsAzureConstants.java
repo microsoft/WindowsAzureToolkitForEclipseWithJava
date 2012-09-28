@@ -23,5 +23,5 @@ public interface WindwsAzureConstants {
 	public final static String CONTENT_TYPE = Messages.contentTypeConst; 
 	public final static String ACCEPT_CHARSET = Messages.acceptCharsetConst; 
 	public final static String CONTENT_LENGTH = Messages.contentLenConst; 
-	public final static String AUTHORIZATION = Messages.authorizationConst; 
+	public final static String AUTHORIZATION = Messages.authrztnConst; 
 }

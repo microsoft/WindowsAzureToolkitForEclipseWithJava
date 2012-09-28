@@ -17,6 +17,7 @@ package com.persistent.winazureroles;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ComboBoxCellEditor;
@@ -53,10 +54,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.persistent.util.WAEclipseHelper;
 import com.persistent.util.MessageUtil;
 
-
 /**
  * Property page for Endpoints table.
- *
  */
 public class WAREndpoints extends PropertyPage {
 
@@ -73,12 +72,22 @@ public class WAREndpoints extends PropertyPage {
     private String errorMessage;
     private Button btnEdit;
     private Button btnRemove;
+    /**
+     * End point range's minimum value.
+     */
+    private final static int RANGE_MIN = 1;
+    /**
+     * End point range's maximum value.
+     */
+    private final static int RANGE_MAX = 65535;
+    private boolean isPageDisplayed = false;
 
     @Override
     public String getTitle() {
-        if (tblViewer != null) {
-            tblViewer.refresh();
-        }
+    	if (isPageDisplayed 
+    			&& tblViewer != null) {
+    		tblViewer.refresh();
+    	}
         return super.getTitle();
     }
 
@@ -107,8 +116,7 @@ public class WAREndpoints extends PropertyPage {
         container.setLayout(gridLayout);
         container.setLayoutData(gridData);
 
-        tblEndpoints = new Table(container, SWT.MULTI | SWT.BORDER
-                | SWT.FULL_SELECTION);
+        tblEndpoints = new Table(container, SWT.BORDER | SWT.FULL_SELECTION);
         tblEndpoints.setHeaderVisible(true);
         tblEndpoints.setLinesVisible(true);
         gridData = new GridData();
@@ -182,6 +190,7 @@ public class WAREndpoints extends PropertyPage {
         }
         // set listEndpoints as input to tblViewer
         tblViewer.setInput(listEndPoints.toArray());
+        isPageDisplayed = true;
         return container;
     }
 
@@ -315,35 +324,42 @@ public class WAREndpoints extends PropertyPage {
 
         @Override
         public String getColumnText(Object element, int colIndex) {
-            WindowsAzureEndpoint endpoint =
-                    (WindowsAzureEndpoint) element;
-            String result = "";
-            switch (colIndex) {
-            case 0:
-                result = endpoint.getName();
-                break;
-            case 1:
-                result = endpoint.getEndPointType().toString();
-                break;
-            case 2:
-                if (endpoint.getEndPointType().toString()
-                      .equalsIgnoreCase(
-                       WindowsAzureEndpointType.Input.toString())
-                       || endpoint.getEndPointType().toString()
-                       .equalsIgnoreCase(
-                        WindowsAzureEndpointType.InstanceInput.toString())) {
-                    result = endpoint.getPort();
-                } else {
-                    result = Messages.dlgDbgNA;
-                }
-                break;
-            case 3:
-                result = endpoint.getPrivatePort();
-                break;
-            default:
-                break;
-            }
-            return result;
+        	String result = "";
+        	try {
+        		WindowsAzureEndpoint endpoint =
+        				(WindowsAzureEndpoint) element;
+        		switch (colIndex) {
+        		case 0:
+        			result = endpoint.getName();
+        			break;
+        		case 1:
+        			result = endpoint.getEndPointType().toString();
+        			break;
+        		case 2:
+        			if (endpoint.getEndPointType().toString()
+        					.equalsIgnoreCase(
+        							WindowsAzureEndpointType.Input.toString())
+        							|| endpoint.getEndPointType().toString()
+        							.equalsIgnoreCase(
+        									WindowsAzureEndpointType.
+        									InstanceInput.toString())) {
+        				result = endpoint.getPort();
+        			} else {
+        				result = Messages.dlgDbgNA;
+        			}
+        			break;
+        		case 3:
+        			result = endpoint.getPrivatePort();
+        			break;
+        		default:
+        			break;
+        		}
+        	} catch (WindowsAzureInvalidProjectOperationException e) {
+        		MessageUtil.displayErrorDialog(getShell(),
+        				Messages.dlgDbgEndPtErrTtl,
+        				Messages.endPtTypeErr);
+        	}
+        	return result;
         }
 
         @Override
@@ -395,6 +411,8 @@ public class WAREndpoints extends PropertyPage {
         private void modifyType(WindowsAzureEndpoint endpoint,
                 Object modifiedVal)
                         throws WindowsAzureInvalidProjectOperationException {
+        	WindowsAzureEndpointType oldType = endpoint.getEndPointType();
+        	// User changed type to Input
             if (modifiedVal.toString().equals("0")) {
                  WindowsAzureEndpoint stickyIntEndpt = windowsAzureRole
                          .getSessionAffinityInternalEndpoint();
@@ -407,11 +425,23 @@ public class WAREndpoints extends PropertyPage {
                     MessageDialog.openWarning(new Shell(),
                             Messages.dlgTypeTitle, msg.toString());
                 } else {
-                endpoint.setEndPointType(WindowsAzureEndpointType
-                        .valueOf(arrType[0]));
+                	/*
+                	 * While changing type from Internal to Input
+                	 * if private port is in the form of range,
+                	 * then assign minimum of that range
+                	 * as a private port because private port
+                	 * range is not valid for Input endpoint.
+                	 */
+                	if (oldType.equals(WindowsAzureEndpointType.Internal)
+                			&& endpoint.getPrivatePort().contains("-")) {
+                		String[] portRange = endpoint.getPrivatePort().split("-");
+                		endpoint.setPrivatePort(portRange[0]);
+                	}
+                	endpoint.setEndPointType(WindowsAzureEndpointType
+                			.valueOf(arrType[0]));
                 }
             } else {
-                WindowsAzureEndpointType oldType = endpoint.getEndPointType();
+            	// User changed type to Internal
                 String endpointName = endpoint.getName();
                 WindowsAzureEndpoint debugEndpt = windowsAzureRole
                         .getDebuggingEndpoint();
@@ -432,9 +462,11 @@ public class WAREndpoints extends PropertyPage {
                     stcIntEndptName = stickyIntEndpt.getName();
                 }
                 if (endpointName.equalsIgnoreCase(dbgEndptName)
-                        && oldType.equals(WindowsAzureEndpointType.Input) 
+                        && oldType.equals(
+                        		WindowsAzureEndpointType.Input)
                         || endpointName.equalsIgnoreCase(dbgEndptName)
-                        && oldType.equals(WindowsAzureEndpointType.InstanceInput)) {
+                        && oldType.equals(
+                        		WindowsAzureEndpointType.InstanceInput)) {
                     StringBuffer msg = new StringBuffer(Messages.dlgEPDel);
                     msg.append(Messages.dlgEPChangeType);
                     msg.append(Messages.dlgEPDel2);
@@ -451,17 +483,33 @@ public class WAREndpoints extends PropertyPage {
                     MessageDialog.openWarning(new Shell(),
                             Messages.dlgTypeTitle, msg.toString());
                 } else if (modifiedVal.toString().equals("2")) {
+                	// User changed type to InstanceInput
                 	if (endpointName.equalsIgnoreCase(stcEndptName)
                             && oldType.equals(WindowsAzureEndpointType.Input)
-                            || (endpointName.equalsIgnoreCase(stcIntEndptName) 
-                            		&& oldType.equals(WindowsAzureEndpointType.Internal))) {
-                        StringBuffer msg = new StringBuffer(Messages.ssnAffTypMsg);
+                            || (endpointName.equalsIgnoreCase(stcIntEndptName)
+                            		&& oldType.equals(WindowsAzureEndpointType.
+                            				Internal))) {
+                        StringBuffer msg = new StringBuffer(
+                        		Messages.ssnAffTypMsg);
                         MessageDialog.openWarning(new Shell(),
                                 Messages.dlgTypeTitle, msg.toString());
-                    } else {
-                    endpoint.setEndPointType(WindowsAzureEndpointType
-                            .valueOf(arrType[2]));
-                    }
+                	} else {
+                		/*
+                		 * While changing type from Internal to Input
+                		 * if private port is in the form of range,
+                		 * then assign minimum of that range
+                		 * as a private port because private port
+                		 * range is not valid for Input endpoint.
+                		 */
+                		if (oldType.equals(WindowsAzureEndpointType.Internal)
+                				&& endpoint.getPrivatePort().contains("-")) {
+                			String[] portRange = endpoint.
+                					getPrivatePort().split("-");
+                			endpoint.setPrivatePort(portRange[0]);
+                		}
+                		endpoint.setEndPointType(WindowsAzureEndpointType
+                				.valueOf(arrType[2]));
+                	}
                 }
                 else {
                     endpoint.setEndPointType(WindowsAzureEndpointType
@@ -484,7 +532,8 @@ public class WAREndpoints extends PropertyPage {
             // Validate endpoint name
             String endptName = modifiedVal.toString();
             boolean isValid = windowsAzureRole
-                    .isAvailableEndpointName(endptName);
+                    .isAvailableEndpointName(endptName,
+                    		endpoint.getEndPointType());
             if (isValid || endptName.equalsIgnoreCase(endpoint.getName())) {
                 endpoint.setName(modifiedVal.toString());
             } else {
@@ -505,18 +554,79 @@ public class WAREndpoints extends PropertyPage {
         private void modifyPublicPort(WindowsAzureEndpoint endpoint,
                 Object modifiedVal)
                         throws WindowsAzureInvalidProjectOperationException {
-            // Validate port
-            boolean isValid = windowsAzureRole.isValidEndpoint(
-                    endpoint.getName(), endpoint.getEndPointType(),
-                    endpoint.getPrivatePort(), modifiedVal.toString());
-            if (isValid) {
-                endpoint.setPort(modifiedVal.toString());
-            } else {
-                errorTitle = Messages.dlgInvldPort;
-                errorMessage = Messages.dlgPortInUse;
-                MessageUtil.displayErrorDialog(getShell(),
-                        errorTitle, errorMessage);
-            }
+        	/*
+        	 * Check only one '-' is present,
+        	 * while specifying range for Instance end point.
+        	 * If end point is Internal or Input then,
+        	 * it will not satisfy if condition
+        	 * and dash count will be zero.
+        	 */
+        	int dashCnt = 0;
+        	if (endpoint.getEndPointType().
+        			equals(WindowsAzureEndpointType.InstanceInput)) {
+        		dashCnt = StringUtils.countMatches(
+        				modifiedVal.toString().trim(), "-");
+        		if (dashCnt > 1) {
+        			MessageUtil.displayErrorDialog(getShell(),
+        					Messages.dlgInvldPort,
+        					Messages.dashErrMsg);
+        		}
+        	}
+        	if (dashCnt <= 1) {
+        		// Check for valid range 1 to 65535
+        		Boolean isPortValid = true;
+        		try {
+        			/*
+        			 * If public port contains '-'
+        			 * then split string and
+        			 * get two integer values out of it.
+        			 * else directly check for value.
+        			 */
+        			if (dashCnt == 1) {
+        				String[] range = modifiedVal.
+        						toString().split("-");
+        				int rngStart = Integer.
+        						parseInt(range[0]);
+        				int rngEnd = Integer.parseInt(range[1]);
+        				if (!(rngStart >= RANGE_MIN
+        						&& rngStart <= RANGE_MAX
+        						&& rngEnd >= RANGE_MIN
+        						&& rngEnd <= RANGE_MAX)) {
+        					isPortValid = false;
+        				}
+        			} else {
+        				int port = Integer.parseInt(
+        						modifiedVal.toString());
+        				if (!(port >= RANGE_MIN
+        						&& port <= RANGE_MAX)) {
+        					isPortValid = false;
+        				}
+        			}
+        		} catch (NumberFormatException e) {
+        			isPortValid = false;
+        		}
+        		if (isPortValid) {
+        			// Validate port
+        			boolean isValid = windowsAzureRole.isValidEndpoint(
+        					endpoint.getName(),
+        					endpoint.getEndPointType(),
+        					endpoint.getPrivatePort(),
+        					modifiedVal.toString());
+        			if (isValid) {
+        				endpoint.setPort(
+        						modifiedVal.toString());
+        			} else {
+        				MessageUtil.displayErrorDialog(
+        						getShell(),
+        						Messages.dlgInvldPort,
+        						Messages.dlgPortInUse);
+        			}
+        		} else {
+        			MessageUtil.displayErrorDialog(getShell(),
+        					Messages.dlgInvldPort,
+        					Messages.rngErrMsg);
+        		}
+        	}
         }
 
         /**
@@ -529,74 +639,172 @@ public class WAREndpoints extends PropertyPage {
         private void modifyPrivatePort(WindowsAzureEndpoint endpoint,
                 Object modifiedVal)
                         throws WindowsAzureInvalidProjectOperationException {
-            // Validate port
-            boolean isValid = windowsAzureRole.isValidEndpoint(
-                    endpoint.getName(), endpoint.getEndPointType(),
-                    modifiedVal.toString(), endpoint.getPort());
-            if (isValid) {
-                boolean isDebugEnabled = false;
-                boolean isSuspended = false;
-                WindowsAzureEndpoint endPt =
-                		windowsAzureRole.getDebuggingEndpoint();
-                //check if the endpoint is associated with debug,
-                //if yes then set isDebugEnabled to true and
-                //store the suspended mode value. Disable debug endpoint
-                //and then enable it with the modified endpoint.
-                if (endPt != null && endpoint.getName().equalsIgnoreCase(
-                            endPt.getName())) {
-                    isSuspended = windowsAzureRole.getStartSuspended();
-                    windowsAzureRole.setDebuggingEndpoint(null);
-                    isDebugEnabled = true;
-                }
-                endpoint.setPrivatePort(modifiedVal.toString());
-                if (isDebugEnabled) {
-                    windowsAzureRole.setDebuggingEndpoint(endpoint);
-                    windowsAzureRole.setStartSuspended(isSuspended);
-                }
-            } else {
-                errorTitle = Messages.dlgInvldPort;
-                errorMessage = Messages.dlgPortInUse;
-                MessageUtil.displayErrorDialog(getShell(),
-                        errorTitle, errorMessage);
-            }
+        	/*
+        	 * Check only one '-' is present,
+        	 * while specifying range for Internal end point.
+        	 * If end point is Instance or Input then,
+        	 * it will not satisfy if condition
+        	 * and dash count will be zero.
+        	 */
+        	int dashCnt = 0;
+        	if (endpoint.getEndPointType().
+        			equals(WindowsAzureEndpointType.Internal)) {
+        		dashCnt = StringUtils.countMatches(
+        				modifiedVal.toString().trim(), "-");
+        		if (dashCnt > 1) {
+        			MessageUtil.displayErrorDialog(getShell(),
+        					Messages.dlgInvldPort,
+        					Messages.dashErrMsg);
+        		}
+        	}
+        	if (dashCnt <= 1) {
+        		// Check for valid range 1 to 65535
+        		Boolean isPortValid = true;
+        		try {
+        			/*
+        			 * If public port contains '-'
+        			 * then split string and
+        			 * get two integer values out of it.
+        			 * else directly check for value.
+        			 */
+        			if (dashCnt == 1) {
+        				String[] range = modifiedVal.
+        						toString().split("-");
+        				int rngStart = Integer.
+        						parseInt(range[0]);
+        				int rngEnd = Integer.parseInt(range[1]);
+        				if (!(rngStart >= RANGE_MIN
+        						&& rngStart <= RANGE_MAX
+        						&& rngEnd >= RANGE_MIN
+        						&& rngEnd <= RANGE_MAX)) {
+        					isPortValid = false;
+        				}
+        			} else {
+        				int port = Integer.
+        						parseInt(modifiedVal.toString());
+        				if (!(port >= RANGE_MIN
+        						&& port <= RANGE_MAX)) {
+        					isPortValid = false;
+        				}
+        			}
+        		} catch (NumberFormatException e) {
+        			isPortValid = false;
+        		}
+        		if (isPortValid) {
+        			// Validate port
+        			boolean isValid = windowsAzureRole.isValidEndpoint(
+        					endpoint.getName(),
+        					endpoint.getEndPointType(),
+        					modifiedVal.toString(),
+        					endpoint.getPort());
+        			if (isValid) {
+        				boolean isDebugEnabled = false;
+        				boolean isSuspended = false;
+        				WindowsAzureEndpoint endPt =
+        						windowsAzureRole.getDebuggingEndpoint();
+        				/*
+        				 * check if the endpoint is associated with debug,
+        				 * if yes then set isDebugEnabled to true and
+        				 * store the suspended mode value. Disable debug endpoint
+        				 * and then enable it with the modified endpoint.
+        				 */
+        				if (endPt != null
+        						&& endpoint.getName().equalsIgnoreCase(
+        								endPt.getName())) {
+        					isSuspended = windowsAzureRole.
+        							getStartSuspended();
+        					windowsAzureRole.setDebuggingEndpoint(null);
+        					isDebugEnabled = true;
+        				}
+        				endpoint.setPrivatePort(
+        						modifiedVal.toString());
+        				if (isDebugEnabled) {
+        					windowsAzureRole.
+        					setDebuggingEndpoint(endpoint);
+        					windowsAzureRole.
+        					setStartSuspended(isSuspended);
+        				}
+        			} else {
+        				MessageUtil.displayErrorDialog(
+        						getShell(),
+        						Messages.dlgInvldPort,
+        						Messages.dlgPortInUse);
+        			}
+        		} else {
+        			MessageUtil.displayErrorDialog(getShell(),
+        					Messages.dlgInvldPort,
+        					Messages.rngErrMsg);
+        		}
+        	}
         }
 
+        /**
+         * Return attribute values of selected row of the table.
+         * @param element
+         * @param property : column name
+         * @return Object
+         */
         public Object getValue(Object element, String property) {
-            Object result = null;
-            WindowsAzureEndpoint endpoint = (WindowsAzureEndpoint) element;
+        	Object result = null;
+        	WindowsAzureEndpoint endpoint = (WindowsAzureEndpoint) element;
 
-            if (property.equals(Messages.dlgColType)) {
-                if (endpoint.getEndPointType().toString().equalsIgnoreCase(
-                        WindowsAzureEndpointType.Input.toString())) {
-                    result = 0;
-                } else {
-                    result = 1;
-                }
-            } else if (property.equals(Messages.dlgColName)) {
-                result = endpoint.getName();
-            } else if (property.equals(
-                    Messages.dlgColPubPort)) {
-                result = endpoint.getPort();
-            } else if (property.equals(
-                    Messages.dlgColPrivatePort)) {
-                result = endpoint.getPrivatePort();
-            }
-            return result;
+        	if (property.equals(Messages.dlgColType)) {
+        		try {
+					if (endpoint.getEndPointType().
+							toString().equalsIgnoreCase(
+							WindowsAzureEndpointType.Input.toString())) {
+						result = 0;
+					} else {
+						result = 1;
+					}
+				} catch (WindowsAzureInvalidProjectOperationException e) {
+	            	MessageUtil.displayErrorDialog(getShell(),
+	            			Messages.dlgDbgEndPtErrTtl,
+	            			Messages.endPtTypeErr);
+	            }
+        	} else if (property.equals(Messages.dlgColName)) {
+        		result = endpoint.getName();
+        	} else if (property.equals(
+        			Messages.dlgColPubPort)) {
+        		result = endpoint.getPort();
+        	} else if (property.equals(
+        			Messages.dlgColPrivatePort)) {
+        		result = endpoint.getPrivatePort();
+        	}
+        	return result;
         }
 
         /**
          * Determines whether a particular cell can be modified or not.
+         * @return boolean
          */
         @Override
         public boolean canModify(Object element, String property) {
-            boolean retVal = true;
-            WindowsAzureEndpoint endpoint = (WindowsAzureEndpoint) element;
-            if (endpoint.getEndPointType().toString().equalsIgnoreCase(
-                    WindowsAzureEndpointType.Internal.toString())
-                && property.equals(Messages.dlgColPubPort)) {
-                retVal = false;
-            }
-            return retVal;
+        	boolean retVal = true;
+        	WindowsAzureEndpoint endpoint = (WindowsAzureEndpoint) element;
+        	/*
+        	 * If end point selected for in place editing
+        	 * is related to caching then don't allow.
+        	 */
+        	if (endpoint.getName().startsWith(Messages.cachEndPtName)
+        			&& (property.equals(Messages.dlgColName)
+        					|| property.equals(Messages.dlgColPrivatePort)
+        					|| property.equals(Messages.dlgColType))) {
+        		retVal = false;
+        	} else {
+        		try {
+        			if (endpoint.getEndPointType().toString().equalsIgnoreCase(
+        					WindowsAzureEndpointType.Internal.toString())
+        					&& property.equals(Messages.dlgColPubPort)) {
+        				retVal = false;
+        			}
+        		} catch (WindowsAzureInvalidProjectOperationException e) {
+        			MessageUtil.displayErrorDialog(getShell(),
+        					Messages.dlgDbgEndPtErrTtl,
+        					Messages.endPtTypeErr);
+        		}
+        	}
+        	return retVal;
         }
     }
 
@@ -627,10 +835,24 @@ public class WAREndpoints extends PropertyPage {
                 // delete the selected endpoint
                 WindowsAzureEndpoint waEndpoint = listEndPoints
                         .get(selIndex);
-                if (waEndpoint.getName().equalsIgnoreCase(dbgEndptName)) {
-                    StringBuffer msg = new StringBuffer(Messages.dlgEPDel);
-                    msg.append(Messages.dlgEPDel1);
-                    msg.append(Messages.dlgEPDel2);
+                /*
+        		 * Check end point selected for removal
+        		 * is associated with Caching then give error
+        		 * and does not allow to remove.
+        		 */
+                if (waEndpoint.isCachingEndPoint()) {
+                	MessageUtil.displayErrorDialog(getShell(),
+                			Messages.cachDsblErTtl,
+                			Messages.endPtRmvErMsg);
+                }
+                /*
+        		 * Check end point selected for removal
+        		 * is associated with Debugging.
+        		 */
+                else if (waEndpoint.getName().equalsIgnoreCase(dbgEndptName)) {
+                	StringBuffer msg = new StringBuffer(Messages.dlgEPDel);
+                	msg.append(Messages.dlgEPDel1);
+                	msg.append(Messages.dlgEPDel2);
                     boolean choice = MessageDialog.openQuestion(new Shell(),
                             Messages.dlgDelEndPt1, msg.toString());
                     if (choice) {
@@ -638,22 +860,34 @@ public class WAREndpoints extends PropertyPage {
                         windowsAzureRole.setDebuggingEndpoint(null);
                         tblViewer.refresh();
                     }
-                } else if (waEndpoint.getName().equalsIgnoreCase(stcEndptName)
-                        || waEndpoint.getName().equalsIgnoreCase(stcIntEndptName)) {
+                }
+                /*
+        		 * Check end point selected for removal
+        		 * is associated with Load balancing
+        		 * i.e (HTTP session affinity).
+        		 */
+                else if (waEndpoint.getName().equalsIgnoreCase(stcEndptName)
+                        || waEndpoint.getName().
+                        equalsIgnoreCase(stcIntEndptName)) {
                     StringBuffer msg = new StringBuffer(Messages.ssnAffDelMsg);
                     boolean choice = MessageDialog.openQuestion(new Shell(),
                             Messages.dlgDelEndPt1, msg.toString());
                     if (choice) {
-                    	if (waEndpoint.getEndPointType().equals(WindowsAzureEndpointType.Input)){
-                    		windowsAzureRole.setSessionAffinityInputEndpoint(null);
+                    	if (waEndpoint.getEndPointType().
+                    			equals(WindowsAzureEndpointType.Input)){
+                    		windowsAzureRole.
+                    		setSessionAffinityInputEndpoint(null);
                     		waEndpoint.delete();
                     	} else {
-                    		windowsAzureRole.setSessionAffinityInputEndpoint(null);
+                    		windowsAzureRole.
+                    		setSessionAffinityInputEndpoint(null);
                     	}
                     	tblViewer.refresh();
                     }
                 }
-
+                /*
+                 * Normal end point.
+                 */
                 else {
                     boolean choice = MessageDialog.openQuestion(new Shell(),
                             Messages.dlgDelEndPt1, Messages.dlgDelEndPt2);
@@ -689,15 +923,35 @@ public class WAREndpoints extends PropertyPage {
      * to edit an endpoint.
      */
     protected void editBtnListener() {
-        int selIndex = tblViewer.getTable().getSelectionIndex();
-        if (selIndex > -1) {
-            WindowsAzureEndpoint waEndpoint = listEndPoints
-                    .get(selIndex);
-            WAEndpointDialog dialog = new WAEndpointDialog(this.getShell(),
-                    windowsAzureRole, waEndpoint, true);
-            dialog.open();
-            tblViewer.refresh(true);
-        }
+    	int selIndex = tblViewer.getTable().getSelectionIndex();
+    	if (selIndex > -1) {
+    		WindowsAzureEndpoint waEndpoint = listEndPoints
+    				.get(selIndex);
+    		/*
+    		 * Check end point selected for modification
+    		 * is associated with caching then give error
+    		 * and does not allow to edit.
+    		 */
+    		try {
+    			if (waEndpoint.isCachingEndPoint()) {
+    				MessageUtil.displayErrorDialog(getShell(),
+    						Messages.cachDsblErTtl,
+    						Messages.endPtEdtErMsg);
+    			} else {
+    				WAEndpointDialog dialog =
+    						new WAEndpointDialog(
+    								this.getShell(),
+    						windowsAzureRole,
+    						waEndpoint, true);
+    				dialog.open();
+    				tblViewer.refresh(true);
+    			}
+    		} catch (WindowsAzureInvalidProjectOperationException e) {
+    			MessageUtil.displayErrorDialog(getShell(),
+    					Messages.genErrTitle,
+    					Messages.chEndPtErMsg);
+    		}
+    	}
     }
 
     /**
@@ -726,6 +980,9 @@ public class WAREndpoints extends PropertyPage {
 
     @Override
     public boolean performOk() {
+    	if (!isPageDisplayed) {
+    		return super.performOk();
+    	}
         boolean okToProceed = true;
         try {
             if (!Activator.getDefault().isSaved()) {

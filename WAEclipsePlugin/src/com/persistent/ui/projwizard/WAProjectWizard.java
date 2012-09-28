@@ -19,8 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IProject;
@@ -50,15 +50,17 @@ import org.eclipse.ui.dialogs.WorkingSetGroup;
 
 import waeclipseplugin.Activator;
 
+import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
+import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.builder.WADependencyBuilder;
 import com.persistent.ui.propertypage.WAProjectNature;
 import com.persistent.util.AppCmpntParam;
-import com.persistent.util.MessageUtil;
 import com.persistent.util.ParseXML;
 import com.persistent.util.WAEclipseHelper;
 
@@ -71,8 +73,11 @@ public class WAProjectWizard extends Wizard implements INewWizard {
 	private String errorTitle;
 	private String errorMessage;
 	private WADeployPage waDepPage;
+//	private WAKeyFeaturesPage waKeyPage;
 	private WindowsAzureProjectManager waProjMgr;
 	private WindowsAzureRole waRole;
+	private final int CACH_DFLTVAL = 30;
+	private final String DEBUG_PORT = "8090";
 
     private static final String LAUNCH_FILE_PATH = File.separator
     		+ Messages.pWizToolBuilder
@@ -87,27 +92,26 @@ public class WAProjectWizard extends Wizard implements INewWizard {
         String zipFile = "";
         try {
         	zipFile  = String.format("%s%s%s%s%s%s%s",
-        			Platform.getInstallLocation().getURL().getPath().toString(),
+        			Platform.getInstallLocation().getURL()
+        			.getPath().toString(),
         			File.separator, Messages.pluginFolder,
-        			File.separator, Messages.pluginId, File.separator,
+        			File.separator, Messages.pluginId,
+        			File.separator,
         			Messages.starterKitFileName);
 
         	//Extract the WAStarterKitForJava.zip to temp dir
         	waProjMgr = WindowsAzureProjectManager.create(zipFile);
         	waRole = waProjMgr.getRoles().get(0);
         } catch (WindowsAzureInvalidProjectOperationException e) {
-        	errorTitle = "Syntax or File Error"; //$NON-NLS-1$
+        	errorTitle = Messages.adRolErrTitle;
         	errorMessage = Messages.pWizErrMsgBox1
         			+ Messages.pWizErrMsgBox2;
-        	MessageUtil.displayErrorDialog(this.getShell(),
-        			errorTitle, errorMessage);
-        	Activator.getDefault().log(errorMessage, e);
+        	PluginUtil.displayErrorDialogAndLog(this.getShell(),
+        			errorTitle,
+        			errorMessage, e);
         } catch (IOException e) {
-        	errorTitle = Messages.pWizErrTitle;
-        	errorMessage = Messages.pWizErrMsg;
-        	MessageUtil.displayErrorDialog(getShell(),
-        			errorTitle, errorMessage);
-        	Activator.getDefault().log(errorMessage, e);
+        	PluginUtil.displayErrorDialogAndLog(this.getShell(),
+        			Messages.pWizErrTitle, Messages.pWizErrMsg, e);
         }
     }
 
@@ -115,7 +119,8 @@ public class WAProjectWizard extends Wizard implements INewWizard {
      * Init method.
      */
     @Override
-    public void init(IWorkbench arg0, IStructuredSelection arg1) {
+    public void init(IWorkbench arg0,
+    		IStructuredSelection arg1) {
 
     }
 
@@ -137,6 +142,8 @@ public class WAProjectWizard extends Wizard implements INewWizard {
         		PlatformUI.getWorkbench().getWorkingSetManager();
         final Map<String, String> depParams =
         		getDeployPageValues();
+        final Map<String, Boolean> keyFtr =
+        		getKeyFtrPageValues();
         final IProject proj = getSelectProject();
         boolean retVal = true;
 
@@ -146,7 +153,7 @@ public class WAProjectWizard extends Wizard implements INewWizard {
                 try {
                     doFinish(projName, projLocation, isDefault,
                             selWorkingSets, workingSetManager,
-                            depParams , proj);
+                            depParams, keyFtr, proj);
                 } finally {
                     monitor.done();
                 }
@@ -155,40 +162,41 @@ public class WAProjectWizard extends Wizard implements INewWizard {
         try {
             getContainer().run(true, false, runnable);
         } catch (InterruptedException e) {
-            errorTitle = Messages.pWizErrTitle;
-            errorMessage = Messages.pWizErrMsg;
-            MessageUtil.displayErrorDialog(getShell(),
-            		errorTitle, errorMessage);
-            retVal = false;
+        	PluginUtil.displayErrorDialog(this.getShell(),
+        			Messages.pWizErrTitle,
+        			Messages.pWizErrMsg);
+        	retVal = false;
         } catch (InvocationTargetException e) {
-            errorTitle = Messages.pWizErrTitle;
-            errorMessage = Messages.pWizErrMsg;
-            MessageUtil.displayErrorDialog(getShell(),
-            		errorTitle, errorMessage);
-            Activator.getDefault().log(errorMessage, e);
-            retVal = false;
+        	PluginUtil.displayErrorDialogAndLog(this.getShell(),
+        			Messages.pWizErrTitle,
+        			Messages.pWizErrMsg, e);
+        	retVal = false;
         }
-        //re-initialising context menu to default option : false
+        //re-initializing context menu to default option : false
         Activator.getDefault().setContextMenu(false);
         return retVal;
     }
 
     /**
      * Move the project structure to the location provided by user.
-     *
+     * Also configure JDK, server, server application
+     * and key features like session affinity, caching, debugging
+     * if user wants to do so.
      * @param projName : Name of the project
      * @param projLocation : Location of the project
      * @param isDefault : whether location of project is default
-     * @param workingSetManager
      * @param selWorkingSets
-     * @param monitor : progress monitor
-     * @return void
-     *
+     * @param workingSetManager
+     * @param depMap : stores configurations done on WADeployPage
+     * @param ftrMap : stores configurations done on WAKeyFeaturesPage
+     * @param selProj
      */
     private void doFinish(String projName, String projLocation,
     		boolean isDefault, IWorkingSet[] selWorkingSets,
     		IWorkingSetManager workingSetManager,
-    		Map<String, String> depMap, IProject selProj) {
+    		Map<String, String> depMap,
+    		Map<String, Boolean> ftrMap,
+    		IProject selProj) {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IWorkspaceRoot root = workspace.getRoot();
         IProject project = null;
@@ -208,11 +216,15 @@ public class WAProjectWizard extends Wizard implements INewWizard {
                 			depMap.get("serLoc"),
                 			new File(depMap.get("tempFile")));
                 }
-                //Handling adding server application without configuring server/jdk.
+                /*
+                 * Handling adding server application
+                 * without configuring server/jdk.
+                 */
                 if (!waDepPage.getAppsAsNames().isEmpty()) {
                     for (int i = 0; i < waDepPage.getAppsList().size(); i++) {
                         AppCmpntParam app = waDepPage.getAppsList().get(i);
-                        if (!app.getImpAs().equalsIgnoreCase("HelloWorld.war")) {
+                        if (!app.getImpAs().
+                        		equalsIgnoreCase(Messages.helloWorld)) {
                             role.addServerApplication(app.getImpSrc(),
                             		app.getImpAs(), app.getImpMethod(),
                             		new File(depMap.get("tempFile")));
@@ -222,20 +234,54 @@ public class WAProjectWizard extends Wizard implements INewWizard {
             }
 
             /**
-             * Handling for HelloWorld app in plugin
+             * Handling for HelloWorld application in plug-in
              */
 
             if (waDepPage != null) {
-                if (!waDepPage.getAppsAsNames().contains("HelloWorld.war")) {
-                    ArrayList<WindowsAzureRoleComponent> waCompList =
-                    		waProjMgr.getRoles().get(0).getServerApplications();
+                if (!waDepPage.getAppsAsNames().contains(Messages.helloWorld)) {
+                    List<WindowsAzureRoleComponent> waCompList =
+                    		waProjMgr.getRoles().
+                    		get(0).getServerApplications();
                     for (WindowsAzureRoleComponent waComp : waCompList) {
-                        if (waComp.getDeployName().equalsIgnoreCase("HelloWorld.war")
+                        if (waComp.getDeployName().
+                        		equalsIgnoreCase(Messages.helloWorld)
                         		&& waComp.getImportPath().isEmpty()) {
                             waComp.delete();
                         }
                     }
                 }
+            }
+
+            // Enable Key features
+            // Session Affinity
+            if (ftrMap.get("ssnAffChecked")) {
+            	WindowsAzureEndpoint httpEndPt =
+            			role.getEndpoint(Messages.httpEp);
+            	if (httpEndPt != null) {
+            		role.
+            		setSessionAffinityInputEndpoint(httpEndPt);
+            	}
+            }
+
+            // Caching
+            if (ftrMap.get("cacheChecked")) {
+            	role.setCacheMemoryPercent(CACH_DFLTVAL);
+            }
+
+            // Remote Debugging
+            if (ftrMap.get("debugChecked")) {
+            	if (role.isValidEndpoint(Messages.dbgEp,
+            			WindowsAzureEndpointType.Input,
+            			DEBUG_PORT, DEBUG_PORT)) {
+            		WindowsAzureEndpoint dbgEndPt =
+            				role.addEndpoint(Messages.dbgEp,
+            						WindowsAzureEndpointType.Input,
+            						DEBUG_PORT, DEBUG_PORT);
+            		if (dbgEndPt != null) {
+            			role.setDebuggingEndpoint(dbgEndPt);
+            			role.setStartSuspended(false);
+            		}
+            	}
             }
 
             waProjMgr.save();
@@ -255,16 +301,13 @@ public class WAProjectWizard extends Wizard implements INewWizard {
             projDescription.setNatureIds(
             		new String [] {WAProjectNature.NATURE_ID});
 
-
-
-            if (!project.exists())
-            {
+            if (!project.exists()) {
             	if (isDefault) {
             		project.create(null);
             	}
-                else {
-                    project.create(projDescription, null);
-                }
+            	else {
+            		project.create(projDescription, null);
+            	}
             }
             project.open(null);
 
@@ -279,10 +322,7 @@ public class WAProjectWizard extends Wizard implements INewWizard {
 
             root.touch(null);
         } catch (Exception e) {
-            errorTitle = Messages.pWizErrTitle;
             errorMessage = Messages.pWizErrMsg;
-            MessageUtil.displayErrorDialog(getShell(),
-            		errorTitle, errorMessage);
             Activator.getDefault().log(errorMessage, e);
         }
 
@@ -293,7 +333,6 @@ public class WAProjectWizard extends Wizard implements INewWizard {
 
     /**
      * Add page to the wizard.
-     * @return void
      */
     @Override
     public void addPages() {
@@ -329,8 +368,10 @@ public class WAProjectWizard extends Wizard implements INewWizard {
                     		+ ".war", WindowsAzureRoleComponentImportMethod.
                     		auto.name());
                 }
+                // waKeyPage = new WAKeyFeaturesPage("WAKeyFeaturesPage");
                 addPage(waProjWizPage);
                 addPage(waDepPage);
+                //addPage(waKeyPage);
             }
         }
         catch (Exception ex) {
@@ -390,6 +431,10 @@ public class WAProjectWizard extends Wizard implements INewWizard {
         return true;
     }
 
+    /**
+     * Returns configurations done on WADeployPage.
+     * @return Map<String, String>
+     */
     private Map<String, String> getDeployPageValues() {
         Map <String, String> values = new HashMap<String, String>();
         values.put("jdkChecked" , waDepPage.isJDKChecked());
@@ -400,7 +445,19 @@ public class WAProjectWizard extends Wizard implements INewWizard {
         values.put("tempFile", WAEclipseHelper.getTemplateFile());
         return values;
     }
-    
+    /**
+     * Returns configurations done on WAKeyFeaturesPage.
+     * @return Map<String, Boolean>
+     */
+    private Map<String, Boolean> getKeyFtrPageValues() {
+    	Map <String, Boolean> ftrPgValues = new
+    			HashMap<String, Boolean>();
+    	ftrPgValues.put("ssnAffChecked", false);
+    	ftrPgValues.put("cacheChecked", false);
+    	ftrPgValues.put("debugChecked", false);
+    	return ftrPgValues;
+    }
+
     /**
      * This method returns currently selected project in workspace.
      * Do not use WAEclipseHelper Utility method instead of this method

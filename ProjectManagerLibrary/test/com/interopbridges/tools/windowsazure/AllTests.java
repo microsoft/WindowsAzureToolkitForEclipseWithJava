@@ -24,7 +24,8 @@ import org.junit.runners.Suite.SuiteClasses;
                 WindowsAzureProjectManagerTest.class,
                 WindowsAzureLocalStorageTest.class,
                 WindowsAzureEndpointSATest.class,
-                WindowsAzureRoleComponentTest.class})
+                WindowsAzureRoleComponentTest.class,
+                WindowsAzureCacheTest.class})
 public class AllTests {
 
 }

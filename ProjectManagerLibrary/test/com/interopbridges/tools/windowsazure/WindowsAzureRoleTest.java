@@ -403,7 +403,7 @@ public class WindowsAzureRoleTest {
     throws WindowsAzureInvalidProjectOperationException {
             waRole = (WindowsAzureRole) listRoles.get(0);
             assertTrue("Check for valid new endpoint name",
-                    waRole.isAvailableEndpointName("endpt"));
+                    waRole.isAvailableEndpointName("endpt", WindowsAzureEndpointType.Input));
 
     }
 
@@ -416,7 +416,7 @@ public class WindowsAzureRoleTest {
     throws WindowsAzureInvalidProjectOperationException {
             waRole = (WindowsAzureRole) listRoles.get(0);
             assertFalse("Check for empty endpoint name",
-                    waRole.isAvailableEndpointName(""));
+                    waRole.isAvailableEndpointName("", WindowsAzureEndpointType.Input));
     }
 
 
@@ -429,7 +429,7 @@ public class WindowsAzureRoleTest {
     throws WindowsAzureInvalidProjectOperationException {
             waRole = (WindowsAzureRole) listRoles.get(0);
             assertFalse("Check for null endpoint name",
-                    waRole.isAvailableEndpointName(null));
+                    waRole.isAvailableEndpointName(null, null));
     }
 
     /**
@@ -441,7 +441,7 @@ public class WindowsAzureRoleTest {
     throws WindowsAzureInvalidProjectOperationException {
             waRole = (WindowsAzureRole) listRoles.get(0);
             assertFalse("Check for existing endpoint name",
-                    waRole.isAvailableEndpointName("InternalEp"));
+                    waRole.isAvailableEndpointName("InternalEp", WindowsAzureEndpointType.Input));
     }
 
     /**
@@ -521,8 +521,8 @@ public class WindowsAzureRoleTest {
     public final void testIsValidEndpointInputInstancePortEdit()
     throws WindowsAzureInvalidProjectOperationException{
             waRole = (WindowsAzureRole) listRoles.get(0);
-            waRole.addEndpoint("test1", WindowsAzureEndpointType.InstanceInput, "76", "77-80");
-            assertTrue(waRole.isValidEndpoint("test1",WindowsAzureEndpointType.InstanceInput, "67", "78-83"));
+            waRole.addEndpoint("test1", WindowsAzureEndpointType.InstanceInput, "76", "110-115");
+            assertTrue(waRole.isValidEndpoint("test1",WindowsAzureEndpointType.InstanceInput, "67", "111-116"));
      }
 
     /**
@@ -1109,6 +1109,30 @@ public class WindowsAzureRoleTest {
         waCompRole.getRuntimeEnvType("");
     }
 
+    @Test
+    public final void testGetRuntimeEnvType() throws WindowsAzureInvalidProjectOperationException {
+        waCompRole = waCompMgr.getRoles().get(1);
+        assertEquals("jdk.home", waCompRole.getRuntimeEnvType("JAVA_HOME"));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public final void testSetRuntimeEnvTypeWithNull() throws WindowsAzureInvalidProjectOperationException {
+        waCompRole = waCompMgr.getRoles().get(1);
+        waCompRole.setRuntimeEnvType(null, null);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public final void testSetRuntimeEnvTypeWithEmpty() throws WindowsAzureInvalidProjectOperationException {
+        waCompRole = waCompMgr.getRoles().get(1);
+        waCompRole.setRuntimeEnvType("", "");
+    }
+
+    @Test
+    public final void testSetRuntimeEnvType() throws WindowsAzureInvalidProjectOperationException {
+        waCompRole = waCompMgr.getRoles().get(1);
+        waCompRole.setRuntimeEnvType("JAVA_HOME", "jdk_home");
+        assertEquals("jdk_home", waCompRole.getRuntimeEnvType("JAVA_HOME"));
+    }
 
     @Test()
     public final void testsetServer()

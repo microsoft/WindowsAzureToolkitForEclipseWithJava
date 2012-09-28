@@ -38,11 +38,7 @@ namespace Gigaspaces.Rest
             }
             catch (Exception ex)
             {
-                while (ex.InnerException != null)
-                {
-                    ex = ex.InnerException;
-                }
-                Console.Error.Write(ex.StackTrace);
+                Console.Error.Write(ex.Message);
             }
         }
     }

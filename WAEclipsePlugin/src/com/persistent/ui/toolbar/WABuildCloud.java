@@ -88,7 +88,9 @@ public class WABuildCloud extends AbstractHandler {
 						}
 						waProjMngr.save();
 					} catch (IOException e) {
-						errorMessage = String.format("%s%s", Messages.dplyFldErrMsg, dplyFolderPath);
+						errorMessage = String.format("%s%s",
+								Messages.dplyFldErrMsg,
+								dplyFolderPath);
 						Activator.getDefault().log(errorMessage, e);
 						return Status.CANCEL_STATUS;
 					} catch (Exception e) {

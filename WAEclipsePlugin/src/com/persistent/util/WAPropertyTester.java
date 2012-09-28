@@ -40,12 +40,16 @@ import com.persistent.util.ProjectNatureHelper.ProjExportType;
  *
  * 2) isRolePrefNode : to determine if the node is a particular
  *                     role related node.
- *
+ *                    
+ * 3) isProjFile : to determine if file opened in editor is
+ * 					is of Windows Azure Deployment project.
  */
 public class WAPropertyTester extends PropertyTester {
 
     @Override
-    public boolean test(Object object, String property, Object[] args, Object value) {
+    public boolean test(Object object,
+    		String property, Object[] args,
+    		Object value) {
         boolean retVal = false;
         try {
             if (property.equalsIgnoreCase(Messages.propRoleFolder)
@@ -121,26 +125,42 @@ public class WAPropertyTester extends PropertyTester {
     private boolean isWebProj(Object object)
     throws CoreException, WindowsAzureInvalidProjectOperationException {
         boolean retVal = false;
-        IProject project = (IProject)object;
+        IProject project = (IProject) object;
         if (project.isOpen()) {
-        ProjExportType type = ProjectNatureHelper.getProjectNature(project);
-        if (type!=null && type.equals(ProjExportType.WAR)){
-            retVal = true;
-        }
+        	ProjExportType type = ProjectNatureHelper.getProjectNature(project);
+        	if (type != null && type.equals(ProjExportType.WAR)){
+        		retVal = true;
+        	}
         }
         return retVal;
     }
 
+    /**
+     * Method checks and returns true,
+     * if the file which is opened in editor
+     * is of Windows Azure Deployment project.
+     * @param obj
+     * @return
+     * @throws CoreException
+     */
     private boolean isProjFile(Object obj) throws CoreException {
-        boolean isProjFile = false;
-        IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-        IFile editFile = (IFile)page.getActiveEditor().getEditorInput().getAdapter(IFile.class);
-        if (editFile != null) {
-        if (editFile.getProject().hasNature(WAProjectNature.NATURE_ID)) {
-            isProjFile = true;
-        }
-        }
-        return isProjFile;
+    	boolean isProjFile = false;
+    	IWorkbenchPage page = PlatformUI.getWorkbench().
+    			getActiveWorkbenchWindow().getActivePage();
+    	/*
+    	 * To avoid null pointer exception when we close any file
+    	 * and as a result of which there is no active editor.
+    	 */
+    	if (page.getActiveEditor() != null) {
+    		IFile editFile = (IFile) page.getActiveEditor().
+    				getEditorInput().getAdapter(IFile.class);
+    		if (editFile != null) {
+    			if (editFile.getProject().
+    					hasNature(WAProjectNature.NATURE_ID)) {
+    				isProjFile = true;
+    			}
+    		}
+    	}
+    	return isProjFile;
     }
-
 }

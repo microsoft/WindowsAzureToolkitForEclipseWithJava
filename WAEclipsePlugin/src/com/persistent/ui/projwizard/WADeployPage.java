@@ -58,9 +58,12 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.persistent.util.AppCmpntParam;
-import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
 
+/**
+ * This class creates page for configuring JDK
+ * and server with application.
+ */
 public class WADeployPage extends WizardPage {
 	private Text txtDir;
 	private Text txtJdk;
@@ -86,27 +89,30 @@ public class WADeployPage extends WizardPage {
 	private boolean isWizard;
 	private ArrayList<AppCmpntParam> appList = new ArrayList<AppCmpntParam>();
 
-	
 	/**
 	 * Constructor with page name.
-	 * 
 	 * @param pageName : name of page
+	 * @param waprojMgr : WindowsAzureProjectManager
+	 * @param role : WindowsAzureRole
+	 * @param pageObj
+	 * @param isWizard
 	 */
-	protected WADeployPage(String pageName, 
-			WindowsAzureProjectManager waprojMgr, 
-			WindowsAzureRole role, Object pageObj, 
+	protected WADeployPage(String pageName,
+			WindowsAzureProjectManager waprojMgr,
+			WindowsAzureRole role, Object pageObj,
 			boolean isWizard) {
 		super(pageName);
 		this.waRole = role;
 		this.pageObj = pageObj;
 		this.isWizard = isWizard;
-		setTitle(Messages.dplPageShlTxt);
+		setTitle(Messages.wizPageTitle);
 		setDescription(Messages.dplPageMsg);
 		setPageComplete(true);
 		if (!Activator.getDefault().isContextMenu()) {
 			try {
 				AppCmpntParam acp = new AppCmpntParam();
-				acp.setImpAs(waRole.getComponents().get(0).getDeployName());
+				acp.setImpAs(waRole.getComponents().
+						get(0).getDeployName());
 				appList.add(acp);
 			} catch (WindowsAzureInvalidProjectOperationException e) {
 				Activator.getDefault().log(e.getMessage());
@@ -134,7 +140,8 @@ public class WADeployPage extends WizardPage {
 		createServerGrp(container);
 		if (Activator.getDefault().isContextMenu()) {
 			jdkCheckBtn.setSelection(true);
-			txtJdk.setText(WAEclipseHelper.jdkDefaultDirectory(null));
+			txtJdk.setText(WAEclipseHelper.
+					jdkDefaultDirectory(null));
 			txtJdk.setEnabled(true);
 			lblJdkLoc.setEnabled(true);
 			btnJdkLoc.setEnabled(true);
@@ -148,7 +155,7 @@ public class WADeployPage extends WizardPage {
 				Arrays.sort(servList);
 				comboServer.setItems(servList);
 			} catch (WindowsAzureInvalidProjectOperationException e) {
-				Activator.getDefault().log("", e);
+				Activator.getDefault().log(e.getMessage());
 			}
 			serCheckBtn.setSelection(true);
 			handlePageComplete();
@@ -158,7 +165,6 @@ public class WADeployPage extends WizardPage {
 
 	/**
 	 * Creates the size component.
-	 * 
 	 * @param parent : parent container
 	 */
 	private void createJDKGrp(Composite parent) {
@@ -190,7 +196,8 @@ public class WADeployPage extends WizardPage {
 					jdkCheckBtn.setSelection(true);
 					lblJdkLoc.setEnabled(true);
 					txtJdk.setEnabled(true);
-					txtJdk.setText(WAEclipseHelper.jdkDefaultDirectory(null));
+					txtJdk.setText(WAEclipseHelper.
+							jdkDefaultDirectory(null));
 					btnJdkLoc.setEnabled(true);
 					serCheckBtn.setEnabled(true);
 					handlePageComplete();
@@ -255,7 +262,6 @@ public class WADeployPage extends WizardPage {
 
 	/**
 	 * Creates the server components.
-	 * 
 	 * @param parent : parent container
 	 */
 	private void createServerGrp(Composite parent) {
@@ -287,15 +293,17 @@ public class WADeployPage extends WizardPage {
 					String file = WAEclipseHelper.getTemplateFile();
 					File cmpntFile = new File(file);
 					try {
-						String[] servList = WindowsAzureProjectManager.getServerTemplateNames(cmpntFile);
+						String[] servList =
+								WindowsAzureProjectManager.
+								getServerTemplateNames(cmpntFile);
 						Arrays.sort(servList);
 						comboServer.setItems(servList);
 					} catch (WindowsAzureInvalidProjectOperationException e) {
-						Activator.getDefault().log("", e);
+						Activator.getDefault().log(e.getMessage());
 					}
 					handlePageComplete();
 				} else {
-					if (!appList.isEmpty()) {
+					if (appList.isEmpty()) {
 						serCheckBtn.setSelection(false);
 						disableServerGrp();
 						serCheckBtn.setEnabled(true);
@@ -401,17 +409,22 @@ public class WADeployPage extends WizardPage {
 	}
 
 	/**
-	 * Listener for browse button it is used in file system button. It will open
-	 * the file system location.
+	 * Listener for browse button it is used in file system button.
+	 * It will open the file system location.
 	 */
 	protected void jdkBrowseBtnListener() {
 		try {
-			String path = WAEclipseHelper.jdkDefaultDirectory(txtJdk.getText());
-			DirectoryDialog dialog = new DirectoryDialog(this.getShell());
-			if(path != null) {
+			String path = WAEclipseHelper.
+					jdkDefaultDirectory(txtJdk.getText());
+			DirectoryDialog dialog =
+					new DirectoryDialog(this.getShell());
+			if (path != null) {
 				File file = new File(path);
-				if (!path.isEmpty() && file.exists() && file.isDirectory())
+				if (!path.isEmpty()
+						&& file.exists()
+						&& file.isDirectory()) {
 					dialog.setFilterPath(path);
+				}
 			}
 
 			String directory = dialog.open();
@@ -424,33 +437,36 @@ public class WADeployPage extends WizardPage {
 	}
 
 	/**
-	 * Listener for browse button it is used in file system button. It will open
-	 * the file system location.
+	 * Listener for browse button it is used in file system button.
+	 * It will open the file system location.
 	 */
 	protected void serBrowseBtnListener() {
 		try {
 			String path = txtDir.getText();
-			DirectoryDialog dialog = new DirectoryDialog(this.getShell());
-			
-			if(path != null) {
+			DirectoryDialog dialog =
+					new DirectoryDialog(this.getShell());
+			if (path != null) {
 				File file = new File(path);
-				if (!path.isEmpty() && file.exists() && file.isDirectory())
+				if (!path.isEmpty()
+						&& file.exists()
+						&& file.isDirectory()) {
 					dialog.setFilterPath(path);
+				}
 			}
-			
 			String directory = dialog.open();
 			if (directory != null) {
 				txtDir.setText(directory);
-				
 				// Autodetect server family
-				String serverName = WAEclipseHelper.detectServer(new File(directory));
-				if(serverName != null && !serverName.isEmpty()) {
+				String serverName = WAEclipseHelper.
+						detectServer(new File(directory));
+				if (serverName != null
+						&& !serverName.isEmpty()) {
 					comboServer.setText(serverName);
 				} else {
 					comboServer.clearSelection();
 				}
 			}
-			
+
 			handlePageComplete();
 		} catch (Exception e) {
 			Activator.getDefault().log(e.getMessage(), e);
@@ -462,7 +478,8 @@ public class WADeployPage extends WizardPage {
 	 * @param parent : container
 	 */
 	private void createAppTbl(Composite parent) {
-		tblApp = new Table(parent, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
+		tblApp = new Table(parent, SWT.MULTI | SWT.BORDER
+				| SWT.FULL_SELECTION);
 		tblApp.setHeaderVisible(true);
 		tblApp.setLinesVisible(true);
 		GridData gridData = new GridData();
@@ -483,7 +500,8 @@ public class WADeployPage extends WizardPage {
 		tableViewer = new TableViewer(tblApp);
 		tableViewer.setContentProvider(new IStructuredContentProvider() {
 			@Override
-			public void inputChanged(Viewer arg0, Object arg1, Object arg2) {
+			public void inputChanged(Viewer arg0,
+					Object arg1, Object arg2) {
 			}
 
 			@Override
@@ -517,12 +535,8 @@ public class WADeployPage extends WizardPage {
 			@Override
 			public String getColumnText(Object element, int colIndex) {
 				String result = "";
-				try {
-					if (colIndex == 0) {
-						result = element.toString();
-					}
-				} catch (Exception e) {
-					MessageUtil.displayErrorDialogAndLog(getShell(), "", "", e);
+				if (colIndex == 0) {
+					result = element.toString();
 				}
 				return result;
 			}
@@ -534,9 +548,10 @@ public class WADeployPage extends WizardPage {
 
 		tableViewer.setInput(getAppsAsNames());
 
-		
+
 		// Composite for buttons
-		final Composite containerRoleBtn = new Composite(parent, SWT.NONE);
+		final Composite containerRoleBtn =
+				new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
 		GridData cntGridData = new GridData();
 		cntGridData.verticalAlignment = SWT.FILL;
@@ -600,7 +615,7 @@ public class WADeployPage extends WizardPage {
 	 * @param parent : parent container
 	 */
 	private void addButtonListener(Composite parent) {
-		WAApplicationDialog dialog = new WAApplicationDialog(getShell(), 
+		WAApplicationDialog dialog = new WAApplicationDialog(getShell(),
 				this, waRole, null);
 		dialog.open();
 		tableViewer.refresh();
@@ -617,7 +632,7 @@ public class WADeployPage extends WizardPage {
 				appList.remove(selIndex);
 				tableViewer.refresh();
 			} catch (Exception e) {
-				Activator.getDefault().log("", e);
+				Activator.getDefault().log(e.getMessage(), e);
 			}
 		}
 	}
@@ -684,7 +699,8 @@ public class WADeployPage extends WizardPage {
 				} else if (txtDir.getText().isEmpty()) {
 					setErrorMessage(Messages.dplEmtSerPtMsg);
 					setPageComplete(false);
-				} else if (!(new File(txtDir.getText()).exists())) {
+				} else if (!(new File(txtDir.
+						getText()).exists())) {
 					setErrorMessage(Messages.dplWrngSerMsg);
 					setPageComplete(false);
 				} else {
@@ -707,7 +723,8 @@ public class WADeployPage extends WizardPage {
 		if (choice) {
 			try {
 				if (isWizard) {
-					WAProjectWizard wiz = (WAProjectWizard) pageObj;
+					WAProjectWizard wiz =
+							(WAProjectWizard) pageObj;
 					wiz.getShell().close();
 				}
 				String file = WAEclipseHelper.getTemplateFile();
@@ -716,18 +733,19 @@ public class WADeployPage extends WizardPage {
 					IFileStore store = EFS.getLocalFileSystem().
 							getStore(cmpntFile.toURI());
 					IWorkbenchPage benchPage = PlatformUI.
-							getWorkbench().getActiveWorkbenchWindow().getActivePage();
+							getWorkbench().getActiveWorkbenchWindow()
+							.getActivePage();
 					IDE.openEditorOnFileStore(benchPage, store);
 				}
 			} catch (PartInitException e) {
-				Activator.getDefault().log("", e);
+				Activator.getDefault().log(e.getMessage(), e);
 			}
 		}
 	}
 
 	/**
 	 * Gives JDK location specified by user.
-	 * @return jdk home location
+	 * @return JDK home location
 	 */
 	public String getJdkLoc() {
 		return txtJdk.getText();

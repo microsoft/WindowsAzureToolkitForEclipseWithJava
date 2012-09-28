@@ -127,6 +127,7 @@ public class PreferenceUtil {
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	private Preferences getPrefs() {
 		
 		Preferences prefs = null;

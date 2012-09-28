@@ -63,9 +63,7 @@ import com.persistent.util.ProjectNatureHelper.ProjExportType;
 
 /**
  * Property page for Components table.
- *
  */
-
 public class WARComponents extends PropertyPage {
 
     private WindowsAzureProjectManager waProjManager;
@@ -78,10 +76,12 @@ public class WARComponents extends PropertyPage {
     private Button btnEdit;
     private Button btnRemove;
     private ArrayList<File> fileToDel = new ArrayList<File>();
+    private boolean isPageDisplayed = false;
 
     @Override
     public String getTitle() {
-    	if (tblViewer != null) {
+    	if (isPageDisplayed
+    			&& tblViewer != null) {
     		tblViewer.refresh();
     	}
     	return super.getTitle();
@@ -112,8 +112,7 @@ public class WARComponents extends PropertyPage {
         container.setLayout(gridLayout);
         container.setLayoutData(gridData);
 
-        tblComponents = new Table(container, SWT.MULTI | SWT.BORDER
-                | SWT.FULL_SELECTION);
+        tblComponents = new Table(container, SWT.BORDER | SWT.FULL_SELECTION);
         tblComponents.setHeaderVisible(true);
         tblComponents.setLinesVisible(true);
         gridData = new GridData();
@@ -182,6 +181,7 @@ public class WARComponents extends PropertyPage {
         note.setText(Messages.cmpntNote);
         note.setLayoutData(gridData);
 
+        isPageDisplayed = true;
         return container;
     }
 
@@ -265,9 +265,9 @@ public class WARComponents extends PropertyPage {
     /**
      * Content provider class for components table,
      * which determines the input for the table.
-     *
      */
-    private class CmptTableContentProvider implements IStructuredContentProvider {
+    private class CmptTableContentProvider
+    implements IStructuredContentProvider {
 
         @Override
         public void inputChanged(Viewer viewer,
@@ -471,14 +471,17 @@ public class WARComponents extends PropertyPage {
         WindowsAzureRoleComponent component = listComponents.get(selIndex);
         if (selIndex > -1) {
         	try {
-        		/* First condition: Checks component is part of a JDK, server configuration
-        		 * Second condition: For not showing error message 
-        		 * "Disable Server JDK Configuration" while removing server application 
+        		/* First condition: Checks component is part of a JDK,
+        		 * server configuration
+        		 * Second condition: For not showing error message
+        		 * "Disable Server JDK Configuration"
+        		 * while removing server application
         		 * when server or JDK  is already disabled.
         		 */
         		if (component.getIsPreconfigured()
-        				&& (!(component.getType().equals("server.app") 
-        						&& windowsAzureRole.getServerName() == null))) {
+        				&& (!(component.getType().equals(Messages.typeSrvApp)
+        						&& windowsAzureRole.
+        						getServerName() == null))) {
         			errorTitle = Messages.jdkDsblErrTtl;
         			errorMessage = Messages.jdkDsblErrMsg;
         			MessageUtil.displayErrorDialog(getShell(),
@@ -491,13 +494,15 @@ public class WARComponents extends PropertyPage {
                         String cmpntPath = String.format("%s%s%s%s%s",
                                 root.getProject(waProjManager.
                                 		getProjectName()).getLocation(),
-                                "\\", windowsAzureRole.getName(), "\\approot\\",
+                                "\\", windowsAzureRole.getName(),
+                                Messages.approot,
                                 component.getDeployName());
                         File file = new File(cmpntPath);
                         // Check import source is equal to approot
                         if (component.getImportPath().isEmpty()
                                 && file.exists()) {
-                            MessageDialog dialog = new MessageDialog(new Shell(),
+                            MessageDialog dialog =
+                            		new MessageDialog(new Shell(),
                                     Messages.cmpntSrcRmvTtl,
                                     null, Messages.cmpntSrcRmvMsg,
                                     MessageDialog.QUESTION_WITH_CANCEL,
@@ -566,7 +571,7 @@ public class WARComponents extends PropertyPage {
         editors[4] = new TextCellEditor(tblComponents);
 
         tblViewer.setCellEditors(editors);
-        tblViewer.setContentProvider( new CmptTableContentProvider());
+        tblViewer.setContentProvider(new CmptTableContentProvider());
         tblViewer.setLabelProvider(new CmptTableLabelProvider());
         tblViewer.setCellModifier(new CellModifier());
 
@@ -584,28 +589,38 @@ public class WARComponents extends PropertyPage {
 
     @Override
     public boolean performOk() {
-        boolean okToProceed = true;
-        try {
-        	if (!Activator.getDefault().isSaved()) {
-        		waProjManager.save();
-        		// Delete files from approot, whose entry from component table is removed
-        		if (!fileToDel.isEmpty()) {
-        			for (int i = 0; i < fileToDel.size(); i++) {
-        				File file = fileToDel.get(i);
-        				if (file.exists()) {
-        					if (file.isDirectory()) {
-        						WAEclipseHelper.deleteDirectory(file);
-        					} else {
-        						file.delete();
-        					}
-        				}
-        			}
-        		}
-        		fileToDel.clear();
-        		Activator.getDefault().setSaved(true);
-        	}
-        	WAEclipseHelper.refreshWorkspace(
-            		Messages.rolsRefTitle, Messages.rolsRefMsg);
+		if (!isPageDisplayed) {
+			return super.performOk();
+		}
+    	boolean okToProceed = true;
+    	try {
+    		if (!Activator.getDefault().isSaved()) {
+    			waProjManager.save();
+    			Activator.getDefault().setSaved(true);
+    		}
+    		/*
+    		 * Delete files from approot,
+    		 * whose entry from component table is removed
+    		 * Should be outside of above isSaved() if condition
+    		 * as performOk() of ServerConfiguration page is called first
+    		 * and project manager object is saved on that page.
+    		 * So this if is not executed.
+    		 */
+    		if (!fileToDel.isEmpty()) {
+    			for (int i = 0; i < fileToDel.size(); i++) {
+    				File file = fileToDel.get(i);
+    				if (file.exists()) {
+    					if (file.isDirectory()) {
+    						WAEclipseHelper.deleteDirectory(file);
+    					} else {
+    						file.delete();
+    					}
+    				}
+    			}
+    		}
+    		fileToDel.clear();
+    		WAEclipseHelper.refreshWorkspace(
+    				Messages.rolsRefTitle, Messages.rolsRefMsg);
         } catch (WindowsAzureInvalidProjectOperationException e) {
             errorTitle = Messages.adRolErrTitle;
             errorMessage = Messages.adRolErrMsgBox1

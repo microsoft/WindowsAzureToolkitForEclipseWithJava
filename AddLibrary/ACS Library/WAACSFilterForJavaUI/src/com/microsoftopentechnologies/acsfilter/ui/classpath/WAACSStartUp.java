@@ -15,9 +15,7 @@
  */
 package com.microsoftopentechnologies.acsfilter.ui.classpath;
 
-import java.io.File;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.ElementChangedEvent;
 import org.eclipse.jdt.core.IElementChangedListener;
 import org.eclipse.jdt.core.IJavaElementDelta;
@@ -47,32 +45,7 @@ public class WAACSStartUp implements IStartup {
         JavaCore.addElementChangedListener(listener,
         		ElementChangedEvent.POST_CHANGE);
         
-        //this code is for copying encutil.exe in plugins folder
-        copyPluginComponents();
     }
-
-    private void copyPluginComponents() {
-        try {
-            String pluginInstLoc = String.format("%s%s%s%s%s",
-            		Platform.getInstallLocation().getURL().getPath().toString(),
-                    File.separator, Messages.pluginFolder,
-                    File.separator, Messages.pluginId);
-            if (!new File(pluginInstLoc).exists()) {
-                new File(pluginInstLoc).mkdir();
-            }
-            String enctFile = String.format("%s%s%s", pluginInstLoc,
-            		File.separator, Messages.encFileName);
-
-            // Check for encutil.exe
-            if (new File(enctFile).exists()) {
-            	new File(enctFile).delete();
-            }
-            ACSFilterUtil.copyResourceFile(Messages.encFileEntry,enctFile);
-        } catch (Exception e) {
-            Activator.getDefault().log(e.getMessage(), e);
-        }
-		
-	}
 
 	/**
      * Method removes entries from web.xml.

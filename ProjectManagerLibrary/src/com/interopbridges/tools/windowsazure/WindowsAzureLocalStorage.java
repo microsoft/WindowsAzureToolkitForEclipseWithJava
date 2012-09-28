@@ -117,6 +117,10 @@ public class WindowsAzureLocalStorage {
             throw new IllegalArgumentException(
                     WindowsAzureConstants.INVALID_ARG);
         }
+        if(isCachingLocalStorage()) {
+            throw new WindowsAzureInvalidProjectOperationException(
+                    "This local storage is assoiciated with caching");
+        }
         try {
             if (this.name.isEmpty()) {
                 this.name = lsName;
@@ -298,6 +302,11 @@ public class WindowsAzureLocalStorage {
          */
         public void delete()
                 throws WindowsAzureInvalidProjectOperationException {
+            //if caching is associated,This Local storage can not be deleted
+            if(isCachingLocalStorage()) {
+                throw new WindowsAzureInvalidProjectOperationException("This local storage is assoiciated with caching");
+            }
+
             //delete corresponding environment variable
             if(!getPathEnv().isEmpty()) {
                 deleteLsEnv(getPathEnv());
@@ -331,5 +340,25 @@ public class WindowsAzureLocalStorage {
                 throw new WindowsAzureInvalidProjectOperationException(
                         WindowsAzureConstants.EXCP, ex);
             }
+        }
+
+        /**
+         *	This API is return true in case LS is associated with caching
+         *  (having name "Microsoft.WindowsAzure.Plugins.Caching.FileStore")
+         *	and name caching is enabled
+         */
+        public boolean isCachingLocalStorage()
+                throws WindowsAzureInvalidProjectOperationException {
+            boolean isCachingAssociated = false;
+            try {
+                if (getName().equalsIgnoreCase(WindowsAzureConstants.CACHE_LS_NAME)
+                        && !wRole.getNamedCaches().isEmpty()) {
+                    isCachingAssociated = true;
+                }
+            } catch(Exception ex) {
+                throw new WindowsAzureInvalidProjectOperationException(
+                        WindowsAzureConstants.EXCP, ex);
+            }
+            return isCachingAssociated;
         }
 }

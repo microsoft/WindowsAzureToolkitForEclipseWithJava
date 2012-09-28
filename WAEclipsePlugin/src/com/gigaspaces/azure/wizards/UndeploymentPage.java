@@ -34,7 +34,7 @@ import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.Base64Persistent;
+import com.microsoftopentechnologies.wacommon.utils.Base64;
 import com.gigaspaces.azure.model.Deployment;
 import com.gigaspaces.azure.model.HostedService;
 import com.gigaspaces.azure.model.HostedServices;
@@ -44,6 +44,7 @@ import com.gigaspaces.azure.runnable.FetchDeploymentsForHostedServiceWithProgres
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressWindow;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PublishData;
+import com.gigaspaces.azure.util.UIUtils;
 
 public class UndeploymentPage extends WindowsAzurePage {
 
@@ -85,7 +86,7 @@ public class UndeploymentPage extends WindowsAzurePage {
 			setErrorMessage(Messages.deploymentIsNull);
 			return false;
 		}
-		String label = new String(Base64Persistent.decode(deployment.getLabel())); //$NON-NLS-1$
+		String label = new String(Base64.decode(deployment.getLabel())); //$NON-NLS-1$
 		((UndeployWizard) getWizard()).setSettings(serviceName,deployment.getName(), label, deployment.getDeploymentSlot().toString());
 
 		setErrorMessage(null);
@@ -210,7 +211,7 @@ public class UndeploymentPage extends WindowsAzurePage {
 				}
 				if (deployment.getStatus().equals(Status.Running)) {
 					try {
-						String label = new String(Base64Persistent.decode(deployment.getLabel()), "UTF-8"); //$NON-NLS-1$
+						String label = new String(Base64.decode(deployment.getLabel()), "UTF-8"); //$NON-NLS-1$
 						String id = label + " - " + deployment.getDeploymentSlot();
 						deploymentCombo.add(id);
 						deploymentCombo.setData(id, deployment);
@@ -259,7 +260,7 @@ public class UndeploymentPage extends WindowsAzurePage {
 					if (curentHostedService != null) {
 						defaultSelection = curentHostedService.getServiceName();
 					}
-					int selection = findSelectionByText(defaultSelection, hostedServiceCombo);
+					int selection = UIUtils.findSelectionByText(defaultSelection, hostedServiceCombo);
 					if (selection != -1) {
 						hostedServiceCombo.select(selection);
 					}
@@ -297,7 +298,7 @@ public class UndeploymentPage extends WindowsAzurePage {
 			if (currentPublishData2 != null) {
 				defaultSelection = currentPublishData2.getCurrentSubscription().getName();
 			}
-			int selection = findSelectionByText(defaultSelection, subscriptionCombo);
+			int selection = UIUtils.findSelectionByText(defaultSelection, subscriptionCombo);
 			if (selection != -1) {
 				subscriptionCombo.select(selection);
 			}
@@ -307,15 +308,6 @@ public class UndeploymentPage extends WindowsAzurePage {
 		}
 
 		setComponentState();
-	}
-
-	private int findSelectionByText(String txt, Combo combo) {
-		if (txt == null || txt.isEmpty()) return 0;
-		for (int i = 0 ; i < combo.getItemCount() ; i++) {
-			String itemText = combo.getItem(i);
-			if (itemText.equals(txt)) return i;
-		}
-		return 0;
 	}
 
 	private void setComponentState() {

@@ -53,7 +53,9 @@ import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.persistent.util.WAEclipseHelper;
 import com.persistent.util.MessageUtil;
-
+/**
+ * Property page for Environment variables table.
+ */
 public class WAREnvVars extends PropertyPage {
 
     private WindowsAzureProjectManager waProjManager;
@@ -65,12 +67,14 @@ public class WAREnvVars extends PropertyPage {
     private String errorMessage;
     private Button btnEdit;
     private Button btnRemove;
+    private boolean isPageDisplayed = false;
 
     @Override
     public String getTitle() {
-        if (tblViewer != null) {
-            tblViewer.refresh();
-        }
+    	if (isPageDisplayed
+    			&& tblViewer != null) {
+    		tblViewer.refresh();
+    	}
         return super.getTitle();
     }
 
@@ -93,8 +97,7 @@ public class WAREnvVars extends PropertyPage {
         container.setLayout(gridLayout);
         container.setLayoutData(gridData);
 
-        tblEnvVariables = new Table(container, SWT.MULTI | SWT.BORDER
-                | SWT.FULL_SELECTION);
+        tblEnvVariables = new Table(container, SWT.BORDER | SWT.FULL_SELECTION);
         tblEnvVariables.setHeaderVisible(true);
         tblEnvVariables.setLinesVisible(true);
         gridData = new GridData();
@@ -140,6 +143,7 @@ public class WAREnvVars extends PropertyPage {
         createEditButton(containerButtons);
         createRemoveButton(containerButtons);
         createTableViewer();
+        isPageDisplayed = true;
         return container;
     }
 
@@ -289,7 +293,10 @@ public class WAREnvVars extends PropertyPage {
                     boolean choice = MessageDialog.openQuestion(new Shell(),
                             Messages.evRemoveTtl, Messages.evRemoveMsg);
                     if (choice) {
-                        // to delete call rename with newName(second param) as empty
+                        /*
+                         * to delete call rename with
+                         * newName(second param) as empty
+                         */
                         windowsAzureRole.
                         renameRuntimeEnv(mapEntry.getKey(), "");
                         tblViewer.refresh();
@@ -527,6 +534,9 @@ public class WAREnvVars extends PropertyPage {
 
     @Override
     public boolean performOk() {
+    	if (!isPageDisplayed) {
+    		return super.performOk();
+    	}
         boolean okToProceed = true;
         try {
             if (!Activator.getDefault().isSaved()) {

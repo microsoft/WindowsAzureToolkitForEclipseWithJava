@@ -59,6 +59,20 @@ When done, you will see the new debug configuration(s) created for your workspac
   </context>
   
    
+   <context id="windows_azure_caching_page" >
+  <description>
+This dialog enables you to configure co-located caching on a Windows Azure Role.
+ </description>
+ <topic label="Co-located caching in Windows Azure" href="http://go.microsoft.com/fwlink/?LinkId=264792"/>
+   </context>
+   
+   <context id="windows_azure_cache_dialog" >
+  <description>
+This dialog enables you to configure a named cache.
+ </description>
+ <topic label="Co-located caching in Windows Azure" href="http://go.microsoft.com/fwlink/?LinkId=264792"/>
+   </context>
+   
   <context id="windows_azure_debug_page" >
   <description>
 This dialog allows you to configure the selected Windows Azure role to accept remote debugging connections for your Java application and to automatically create the relevant debug configurations for the emulator and the cloud.

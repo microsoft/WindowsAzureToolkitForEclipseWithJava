@@ -31,7 +31,7 @@ cscript /NoLogo util\unzip.vbs jdk.zip "%CD%"
 
 :: Deploy server
 set GLASSFISH_HOME=\%ROLENAME%\%SERVER_DIR_NAME%\glassfish
-cscript /NoLogo util\unzip.vbs glassfish3.zip "%CD%"
+cscript /NoLogo util\unzip.vbs glassfish3.zip "\%ROLENAME%"
 
 :: Deploy application
 copy %WAR_NAME% "%GLASSFISH_HOME%\domains\domain1\autodeploy"

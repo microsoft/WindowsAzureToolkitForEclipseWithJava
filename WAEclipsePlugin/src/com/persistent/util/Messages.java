@@ -16,9 +16,12 @@
 package com.persistent.util;
 
 import org.eclipse.osgi.util.NLS;
-
+/**
+ * Stores common strings.
+ */
 public final class Messages extends NLS {
-    private static final String BUNDLE_NAME = "com.persistent.util.messages"; //$NON-NLS-1$
+    private static final String BUNDLE_NAME =
+    		"com.persistent.util.messages";
     public static String propErr;
     public static String propIdDbg;
     public static String propIdEndPts;
@@ -74,12 +77,44 @@ public final class Messages extends NLS {
 	public static String restFileName;
 	public static String restFileEntry;
 	public static String oldCmpntFileEntry;
+	public static String resChgOldPrjOpenTtl;
+	public static String resChgOldPrjOpenMsg;
+	public static String natJavaEMF;
+	public static String natMdCore;
+	public static String natFctCore;
+	public static String natJava;
+	public static String natJs;
+	public static String prjSelErr;
+	public static String prjSelMsg;
+	public static String cmhIdDbg;
+	public static String cmhIdEndPts;
+	public static String cmhIdEnvVars;
+	public static String cmhIdGeneral;
+	public static String cmhIdCmpnts;
+	public static String cmhIdSrvCnfg;
+	public static String cmhLblDbg;
+	public static String cmhLblEndPts;
+	public static String cmhLblEnvVars;
+	public static String cmhLblGeneral;
+	public static String cmhLblCmpnts;
+	public static String cmhLblSrvCnfg;
+	public static String cmhIdLdBlnc;
+	public static String cmhLblLdBlnc;
+	public static String cmhIdCach;
+	public static String cmhLblCach;
+	public static String cmhIdLclStg;
+	public static String cmhLblLclStg;
+	public static String cmhPropFor;
+	public static String rolsDlgErr;
+	public static String rolsDlgErrMsg;
 
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);
     }
-
+    /**
+     * Constructor.
+     */
     private Messages() {
         super();
     }

@@ -27,17 +27,17 @@ public class RestAPIException extends Exception {
 	protected String description;
 
 	public RestAPIException(Response<?> response) {
-		super(String.format(Messages.RestAPIException,
+		super(String.format(Messages.restAPIException,
 				response.getStatus(), response.getDescription()));
 	}
 	
 	public RestAPIException(Response<?> response, String desc) {
-		super(String.format(Messages.RestAPIException,
+		super(String.format(Messages.restAPIException,
 				response.getStatus(), desc));		
 	}
 	
 	public RestAPIException(String errorCode, String errorMessage) {
-		super(String.format(Messages.RestAPIException,
+		super(String.format(Messages.restAPIException,
 				errorCode, errorMessage));		
 	}
 

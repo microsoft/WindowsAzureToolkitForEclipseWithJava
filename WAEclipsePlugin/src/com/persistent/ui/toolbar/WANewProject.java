@@ -24,9 +24,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.wizards.IWizardDescriptor;
 
-import waeclipseplugin.Activator;
-
-import com.persistent.util.MessageUtil;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 /**
  * This class handles the click event on custom context menu of role folder.
@@ -38,25 +36,23 @@ public class WANewProject extends AbstractHandler {
 	public Object execute(ExecutionEvent arg0)
 			throws ExecutionException {
 		try {
-	        IWizardDescriptor des = PlatformUI.getWorkbench().
-	        getNewWizardRegistry().
-	        findWizard("com.persistent.ui.projwizard.waprojectwizard");
-	        if (des != null) {
-	            IWizard wizard = des.createWizard();
-	            WizardDialog wizDialog = new
-	            		WizardDialog(PlatformUI.getWorkbench()
-	            				.getDisplay().getActiveShell(),
-	            				wizard);
-	            wizDialog.setTitle(wizard.getWindowTitle());
-	            wizDialog.open();
-	        }
-	        } catch (Exception ex) {
-	            String errorTitle = "";
-	            String errorMessage = "";
-	            MessageUtil.displayErrorDialog(new Shell(),
-	                    errorTitle, errorMessage);
-	            Activator.getDefault().log(errorMessage, ex);
-	        }
+			IWizardDescriptor des = PlatformUI.getWorkbench().
+					getNewWizardRegistry().
+					findWizard(Messages.waWizardId);
+			if (des != null) {
+				IWizard wizard = des.createWizard();
+				WizardDialog wizDialog = new
+						WizardDialog(PlatformUI.getWorkbench()
+								.getDisplay().getActiveShell(),
+								wizard);
+				wizDialog.setTitle(wizard.getWindowTitle());
+				wizDialog.open();
+			}
+		} catch (Exception ex) {
+			PluginUtil.displayErrorDialogAndLog(new Shell(),
+					Messages.errTtl,
+					Messages.wzrdCrtErMsg, ex);
+		}
 		return null;
 	}
 }

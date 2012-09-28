@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Vector;
 
 import javax.xml.xpath.XPath;
@@ -58,6 +60,8 @@ public class WindowsAzureRole {
             new HashMap<String, WindowsAzureLocalStorage>();
     protected List<WindowsAzureRoleComponent> winCompList  =
             new ArrayList<WindowsAzureRoleComponent>();
+    protected Map<String, WindowsAzureNamedCache> cacheMap =
+            new HashMap<String, WindowsAzureNamedCache>();
 
     protected WindowsAzureProjectManager getWinProjMgr()
             throws WindowsAzureInvalidProjectOperationException {
@@ -213,12 +217,35 @@ public class WindowsAzureRole {
 
             }
 
-            //set server name in property
-            String serProp = String.format(WindowsAzureConstants.SERVER_PROP_PATH,getName());
-            Element property = (Element) xPath.evaluate(serProp, projDoc, XPathConstants.NODE);
-            if (property !=  null) {
-            	property.setAttribute(WindowsAzureConstants.ATTR_NAME,
-            			String.format(WindowsAzureConstants.SERVER_PROP_NAME, name));
+            //changes to rename role name in property
+            String parentNodeExpr = WindowsAzureConstants.PROJ_PROPERTY;
+            String eleName = WindowsAzureConstants.PROJ_PROPERTY_ELEMENT_NAME;
+            Map<String, String> attrs = new HashMap<String, String>();
+
+            //server property
+            if(getServerName() != null && !getServerName().isEmpty()) {
+                attrs.put(WindowsAzureConstants.ATTR_NAME,
+                        String.format(WindowsAzureConstants.SERVER_PROP_NAME, name));
+                String serExpr = String.format(WindowsAzureConstants.SERVER_PROP_PATH,getName());
+                updateOrCreateElement(projDoc, serExpr, parentNodeExpr, eleName, false, attrs);
+            }
+            // cache account name
+            if(getCacheStorageAccountName() != null && !getCacheStorageAccountName().isEmpty()) {
+                attrs.clear();
+                attrs.put(WindowsAzureConstants.ATTR_NAME,
+                        String.format(WindowsAzureConstants.CACHE_ST_ACC_NAME_PROP, name));
+                String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_NAME_PROP,getName());
+                String nodeExpr =  String.format(WindowsAzureConstants.ROLE_PROP, propName);
+                updateOrCreateElement(projDoc, nodeExpr, parentNodeExpr, eleName, false, attrs);
+            }
+            // cache account key
+            if (getCacheStorageAccountKey() != null && !getCacheStorageAccountKey().isEmpty()) {
+                attrs.clear();
+                attrs.put(WindowsAzureConstants.ATTR_NAME,
+                        String.format(WindowsAzureConstants.CACHE_ST_ACC_KEY_PROP, name));
+                String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_KEY_PROP,getName());
+                String nodeExpr =  String.format(WindowsAzureConstants.ROLE_PROP, propName);
+                updateOrCreateElement(projDoc, nodeExpr, parentNodeExpr, eleName, false, attrs);
             }
 
             String expr = String.format(
@@ -234,9 +261,6 @@ public class WindowsAzureRole {
                 .setNodeValue(String.format("%s%s%s",
                         "${basedir}\\", name, "\\approot"));
             }
-
-
-
 
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(
@@ -440,9 +464,15 @@ public class WindowsAzureRole {
             winAzureEndpoint.setName(
                     endptEle.getAttribute(
                             WindowsAzureConstants.ATTR_NAME));
-            winAzureEndpoint.setPrivatePort(
-                    xPath.evaluate("./FixedPort/@port",
-                            endptEle));
+            String port = xPath.evaluate("./FixedPort/@port",
+                    endptEle);
+            if(port == null || port.isEmpty()) {
+                port = String.format("%s-%s", xPath.evaluate("./FixedPortRange/@min",
+                        endptEle),xPath.evaluate("./FixedPortRange/@max",
+                                endptEle)) ;
+            }
+
+            winAzureEndpoint.setPrivatePort(port);
             return winAzureEndpoint;
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(
@@ -537,17 +567,26 @@ public class WindowsAzureRole {
                         WindowsAzureConstants.ATTR_NAME, endpointName);
                 eleInternalEpt.setAttribute("protocol", "tcp");
                 Node node = endPoint.appendChild(eleInternalEpt);
-                Element eleFixedport = doc.createElement("FixedPort");
-                eleFixedport.setAttribute("port", localPortNumber);
-                node.appendChild(eleFixedport);
-
+                if(localPortNumber.contains("-")) {
+                    String[] ports = localPortNumber.split("-");
+                    String minPort = ports[0];
+                    String maxPort = ports[1];
+                    Element eleFxdPortRan = doc.createElement("FixedPortRange");
+                    eleFxdPortRan.setAttribute(WindowsAzureConstants.ATTR_MINPORT, minPort);
+                    eleFxdPortRan.setAttribute(WindowsAzureConstants.ATTR_MAXPORT, maxPort);
+                    node.appendChild(eleFxdPortRan);
+                } else {
+                	Element eleFixedport = doc.createElement("FixedPort");
+                    eleFixedport.setAttribute("port", localPortNumber);
+                    node.appendChild(eleFixedport);
+                }
                 newEndPoint.setName(endpointName);
                 newEndPoint.setPrivatePort(localPortNumber);
             }
             if (endpointType == WindowsAzureEndpointType.InstanceInput) {
                 String minPort = externPortNo;
                 String maxPort = externPortNo;
-                if(externPortNo.contains("-")) {
+                if (externPortNo.contains("-")) {
                     String[] ports = externPortNo.split("-");
                     minPort = ports [0];
                     maxPort = ports [1];
@@ -591,7 +630,7 @@ public class WindowsAzureRole {
      * @return true if the specified endpoint name is valid; false otherwise.
      * @throws WindowsAzureInvalidProjectOperationException .
      */
-    public Boolean isAvailableEndpointName(String endpointName)
+    public Boolean isAvailableEndpointName(String endpointName, WindowsAzureEndpointType epType)
             throws WindowsAzureInvalidProjectOperationException {
         Boolean isAvlEpName = true;
         try {
@@ -601,16 +640,25 @@ public class WindowsAzureRole {
                 isAvlEpName = false;
             }
             if (isAvlEpName) {
-                List<WindowsAzureRole> roles = getWinProjMgr()
-                        .getRoles();
-                for (int i = 0; i < roles.size(); i++) {
-                    List<WindowsAzureEndpoint> endPoints = roles.get(i)
-                            .getEndpoints();
-                    for (int nEndpoint = 0; nEndpoint < endPoints.size();
-                            nEndpoint++) {
-                        if (endPoints.get(nEndpoint).getName()
-                                .equalsIgnoreCase(endpointName)) {
+                if(epType == WindowsAzureEndpointType.Internal) {
+                    List<WindowsAzureEndpoint> eps =  getEndpoints();
+                    for (WindowsAzureEndpoint ep : eps) {
+                        if(ep.getName().equalsIgnoreCase(endpointName)) {
                             isAvlEpName = false;
+                        }
+                    }
+                } else {
+                    List<WindowsAzureRole> roles = getWinProjMgr()
+                            .getRoles();
+                    for (int i = 0; i < roles.size(); i++) {
+                        List<WindowsAzureEndpoint> endPoints = roles.get(i)
+                                .getEndpoints();
+                        for (int nEndpoint = 0; nEndpoint < endPoints.size();
+                                nEndpoint++) {
+                            if (endPoints.get(nEndpoint).getName()
+                                    .equalsIgnoreCase(endpointName)) {
+                                isAvlEpName = false;
+                            }
                         }
                     }
                 }
@@ -620,7 +668,6 @@ public class WindowsAzureRole {
                     WindowsAzureConstants.EXCP_RETRIEVING_ENDPOINT_NAME, ex);
         }
         return isAvlEpName;
-
     }
 
     /**
@@ -638,180 +685,184 @@ public class WindowsAzureRole {
             String externPortNo)
                     throws WindowsAzureInvalidProjectOperationException {
         Boolean isValidEp = true;
-
         try {
-            Boolean ischkLocal = true; // need to check local variable or not
-            Boolean ischkExt = true; // need to check external variable or not
-
             if ((endpointName == null) || (endpointType == null)
                     || (localPortNumber == null) || (externPortNo == null)) {
                 isValidEp = false;
-            } else if ((endpointType == WindowsAzureEndpointType.Internal)
-                    && (localPortNumber.equalsIgnoreCase(externPortNo))) {
-                isValidEp = false;
-            } else if (endpointType == WindowsAzureEndpointType.InstanceInput) {
-                // check local port should not conatain range.
-                //for other values and non integer will be handled in isValidPort
-
-                if(localPortNumber.contains("-")) {
-                    isValidEp = false;
-                }
             }
-            if (isValidEp) {
-                //Search existing endpoint list. If it is present the call is for edit
-                WindowsAzureEndpoint waEpt = null;
-                List<WindowsAzureEndpoint> list =  getEndpoints();
-                for (WindowsAzureEndpoint waEp : list) {
-                    if (waEp.getName().equals(endpointName)) {
-                        waEpt = waEp;
-                        break;
-                    }
+            //Check for number
+            try {
+                if (localPortNumber.contains("-")) {
+                    String[] str = localPortNumber.split("-");
+                    String min = str[0];
+                    String max = str[1];
+                    Integer.valueOf(min);
+                    Integer.valueOf(max);
+                } else {
+                    Integer.valueOf(localPortNumber);
                 }
-                if (null != waEpt) {
-                    //Endpoint edit
-                    if(waEpt.getEndPointType() == WindowsAzureEndpointType.InstanceInput) {
-                        //if the new local port place in between any range of
-                        if(waEpt.getPort().contains("-")) {
-                        	try {
-                            String[] ports = waEpt.getPort().split("-");
-                            int min = Integer.parseInt(ports[0]);
-                            int max = Integer.parseInt(ports[1]);
-                            if (externPortNo.contains("-")) {
-                                String[] extPorts = externPortNo.split("-");
-                                int newMin = Integer.parseInt(extPorts[0]);
-                                int newMax = Integer.parseInt(extPorts[1]);
-                                if(newMax < newMin) {
-                                	return false;
-                                }
-                                if (newMin >= min && newMin <= max) {
-                                    if (newMax >= min && newMax <= max) {
-                                        ischkExt = false;
-                                    } else { //overlapping ranges
-                                        for(int i=max+1; i<=newMax; i++ ) {
-                                            if(i != Integer.parseInt(waEpt.getPrivatePort())) {
-                                                //if old private port of the same endpoint is overlaps with new range of public port,
-                                                //no need to validate for the particular port value.
-                                                //because it is already valid and assigned to private port of the same ep
-                                                //e.g. old public port 12-15 private 16
-                                                //new public port 12-17 private 16
-                                                boolean isvalid = winProjMgr.isValidPort(String.valueOf(i), endpointType);
-                                                if (!isvalid) {
-                                                    return false;
-                                                }
-                                            }
-                                    }
-                                    ischkExt = false;
-                                    }
-                                }
-                                //check for new private port with new public port range
-                                int local = Integer.parseInt(localPortNumber);
-                                if ((local >= newMin) && (local <= newMax)) {
-                                    ischkLocal = false;
-                                }
-
-                            } else {
-                            	if(!externPortNo.isEmpty()) {
-                            		int newExt = Integer.parseInt(externPortNo);
-                            		if (newExt >= min && newExt <= max) {
-                            			//local port is in between range do NOT validate local port
-                            			ischkExt = false;
-                            		}
-                            	}
-                            }
-                            //check for new private port with old public port range
-                            int local = Integer.parseInt(localPortNumber);
-                            if ((local >= min) && (local <= max)) {
-                                ischkLocal = false;
-                            }
-                            if(isDuplcatePort(localPortNumber,  WindowsAzureEndpointType.InstanceInput)) {
-                            	ischkLocal = false;
-                            }
-
-                        } catch(Exception ex) {
-                        	return false;
-                        }
-                        }
-                    }
-
-              if (waEpt.getPrivatePort().equalsIgnoreCase(
-                            localPortNumber)) {
-                        // new local port is equal to old one so need to validate it
-                        ischkLocal = false;
-                        if (localPortNumber.equalsIgnoreCase(externPortNo)) {
-                            //if local port number and external port number are same and equal to getPrivatePort() then
-                            // no need to chk for external port
-                            ischkExt = false;
-                        }
-                    }
-                    if (waEpt.getPort().equalsIgnoreCase(externPortNo)) {
-                        if (localPortNumber.equalsIgnoreCase(externPortNo)) {
-                            ischkLocal = false;
-                        }
-                        ischkExt = false;
-                    }
+                if (externPortNo.contains("-")) {
+                    String[] str = externPortNo.split("-");
+                    String min = str[0];
+                    String max = str[1];
+                    Integer.valueOf(min);
+                    Integer.valueOf(max);
+                } else if (!externPortNo.isEmpty()){
+                    Integer.valueOf(externPortNo);
                 }
-
-                if(isDuplcatePort(localPortNumber, endpointType)) {
-                	ischkLocal = false;
-                }
-
-                if (ischkLocal && !getWinProjMgr().isValidPort(
-                        localPortNumber, endpointType)) {
-                    isValidEp = false;
-                }
-
+            } catch (NumberFormatException ex) {
+                return false;
             }
 
-            if (isValidEp) {
-                if ((endpointType == WindowsAzureEndpointType.Internal)
-                        && (externPortNo.isEmpty())
-                        || (localPortNumber.equalsIgnoreCase(externPortNo))) {
-                    isValidEp = true;
-                } else if (ischkExt && !getWinProjMgr().isValidPort(
-                        externPortNo, endpointType)) {
-                    isValidEp = false;
-                }
+            if (endpointType == WindowsAzureEndpointType.Input) {
+                isValidEp = isValidInputEp(endpointName, localPortNumber, externPortNo);
+            } else if (endpointType == WindowsAzureEndpointType.Internal) {
+                isValidEp = isValidInternalEp(endpointName, localPortNumber,externPortNo);
+            } else {
+                isValidEp = isValidInstanceEp(endpointName, localPortNumber, externPortNo);
             }
-
         } catch (Exception ex) {
-            return false;
+            isValidEp = false;
         }
         return isValidEp;
     }
 
+    /**
+     * This method will check input endpoint is valid or not
+     * @param endpointName
+     * @param localPort
+     * @param pubPort
+     * @return
+     */
+    private boolean isValidInputEp(String endpointName, String localPort, String pubPort) {
+        try {
+            boolean isValidEp = true;
+            if(localPort.contains("-") || pubPort.contains("-") ||
+                    localPort.isEmpty() || pubPort.isEmpty()) {
+                isValidEp = false;
+            } else {
+                //check that localPort should be unique in role
+                List<WindowsAzureEndpoint> eps = getEndpoints();
+                for (WindowsAzureEndpoint ep : eps) {
+                    if(endpointName.equalsIgnoreCase(ep.getName())) {
+                        //edit case
+                        continue;
+                    }
 
-    private boolean isDuplcatePort (String port, WindowsAzureEndpointType  type) {
-    	boolean result = false;
-    	//Azure accepts overlaps between the provate port of an instance input end point and private port of a regular input endpoint.
-    	try {
-    		if (type == WindowsAzureEndpointType.InstanceInput) {
-    			// check inputep is having same private port:
-    			List<WindowsAzureEndpoint> eps =  getEndpoints();
-    			for (WindowsAzureEndpoint waEp : eps) {
-					if(waEp.getEndPointType().equals(WindowsAzureEndpointType.Input) &&
-							waEp.getPrivatePort().equalsIgnoreCase(port)) {
-						result = true;
-						break;
-					}
-				}
-    		} else if (type == WindowsAzureEndpointType.Input) {
-    			List<WindowsAzureEndpoint> eps =  getEndpoints();
-    			for (WindowsAzureEndpoint waEp : eps) {
-					if (waEp.getEndPointType().equals(WindowsAzureEndpointType.InstanceInput) &&
-							waEp.getPrivatePort().equalsIgnoreCase(port)) {
-						result = true;
-						break;
-					}
-				}
-    		}
-    	} catch (WindowsAzureInvalidProjectOperationException e) {
-    		result = false;
-    	}
+                    //Private port of instance endpoint  and input endpoint's private port can be same.
+                    if (!ep.getEndPointType().equals(WindowsAzureEndpointType.InstanceInput) &&
+                    		ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), localPort)) {
+                        isValidEp = false;
+                        break;
+                    }
 
-    	return result;
+                    if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), localPort) ||
+                            (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), pubPort) ||
+                                    ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), pubPort))) {
+                        isValidEp = false;
+                        break;
+                    }
+                }
+                if(isValidEp) {
+                    isValidEp = winProjMgr.isDupInputPubPort(pubPort, endpointName);
+                }
+            }
+            return isValidEp;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
+    /**
+     * This method will check internal endpoint is valid or not
+     * @param endpointName
+     * @param localPort
+     * @param pubPort
+     * @return
+     */
+    private boolean isValidInternalEp(String endpointName, String localPort, String pubPort) {
+        boolean isValid = true;
+        try {
+            if(!pubPort.isEmpty()) {
+                //For internal endpoint public port must be empty.
+                isValid = false;
+            } else {
+                // check for max range should be greater than or equal to min
+                if(localPort.contains("-")) {
+                    isValid = ParserXMLUtility.isValidRange(localPort);
+                }
+                if(isValid) {
+                    //check that localPort should be unique in role
+                    List<WindowsAzureEndpoint> eps = getEndpoints();
+                    for (WindowsAzureEndpoint ep : eps) {
+                        if(endpointName.equalsIgnoreCase(ep.getName())) {
+                            //edit case
+                            continue;
+                        }
+                        if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), localPort) ||
+                                ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), localPort)) {
+                            isValid = false;
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            isValid = false;
+        }
+        return isValid;
+    }
 
+    /**
+     * This method will check instance endpoint is valid or not
+     * @param endpointName
+     * @param localPort
+     * @param pubPort
+     * @return
+     */
+    private boolean isValidInstanceEp(String endpointName, String localPort, String pubPort) {
+        boolean isValid = true;
+        try {
+            if(localPort.isEmpty() || pubPort.isEmpty() || localPort.contains("-")) {
+                isValid = false;
+            } else {
+                // check for max range should be greater than or equal to min
+                if(pubPort.contains("-")) {
+                    isValid = ParserXMLUtility.isValidRange(pubPort);
+                }
+                if(isValid) {
+                    //check that localPort should be unique in role
+                    List<WindowsAzureEndpoint> eps = getEndpoints();
+                    for (WindowsAzureEndpoint ep : eps) {
+                        if(endpointName.equalsIgnoreCase(ep.getName())) {
+                            //edit case
+                            continue;
+                        }
+                        //Private port of instance endpoint  and input endpoint's private port can be same.
+                        if (!ep.getEndPointType().equals(WindowsAzureEndpointType.Input) &&
+                        		ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), localPort)) {
+                            isValid = false;
+                            break;
+                        }
+
+                        if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), localPort) ||
+                                ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), pubPort) ||
+                                ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), pubPort)) {
+                            isValid = false;
+                            break;
+                        }
+                    }
+                    if (isValid) {
+                        //validate public port in project
+                        isValid = winProjMgr.isDupInputPubPort(pubPort, endpointName);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            isValid = false;
+        }
+        return isValid;
+    }
 
     /**
      * Deletes the endpoint from WindowsAzureProjectManager.
@@ -1779,25 +1830,28 @@ public class WindowsAzureRole {
     /** This API is for enabling or disabling session affinity */
     public void setSessionAffinityInputEndpoint(WindowsAzureEndpoint value)
                         throws WindowsAzureInvalidProjectOperationException {
-       if(value != null )
+       if(value != null ) {
            configureSessionAffinity(value);
-       else
+       }
+       else {
            disableSessionAffinity();
+       }
 
     }
     /** This API is for configuring  session affinity */
     private void configureSessionAffinity(WindowsAzureEndpoint windowsAzureEndpoint)
     throws WindowsAzureInvalidProjectOperationException {
         // Check if end point is input end point or not
-        if(windowsAzureEndpoint == null || (windowsAzureEndpoint.getEndPointType() != WindowsAzureEndpointType.Input))
+        if(windowsAzureEndpoint == null || (windowsAzureEndpoint.getEndPointType() != WindowsAzureEndpointType.Input)) {
             throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_EMPTY_OR_INVALID_ENDPOINT);
+        }
 
 
         // Check if sessionAffinity is already enabled, if yes then throw error
         WindowsAzureEndpoint saEndpt = getSessionAffinityInputEndpoint();
-        if(saEndpt != null && saEndpt.getName().equalsIgnoreCase(windowsAzureEndpoint.getName()))
+        if(saEndpt != null && saEndpt.getName().equalsIgnoreCase(windowsAzureEndpoint.getName())) {
             throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_SA_ENABLED);
-
+        }
         // Remove previous configuration except file copy
         if(saEndpt != null ) {
             removeSASettingsFromDefDoc();
@@ -1818,7 +1872,7 @@ public class WindowsAzureRole {
             addSASettingsInSvcDef(windowsAzureEndpoint,saInternalEndPointName,iisArrPort);
             stepsCompleted = WindowsAzureConstants.DEFINITION_DOC_SA_CHANGES;
 
-			// create SA configuration files
+            // create SA configuration files
             Vector<String> saInfo = new Vector<String>();
             saInfo.add(this.getName());
             if(getWinProjMgr().mapActivity.get("addSAFilesForRole") != null)
@@ -1893,7 +1947,7 @@ public class WindowsAzureRole {
 
         // Add SA input end point and SA internal end point
         String inputEndPointLocalPort = inpEndPt.getPrivatePort();
-        nodeExpr  = String.format(WindowsAzureConstants.INPUT_ENDPOINT,inpEndPt.getName());
+        nodeExpr  = String.format(WindowsAzureConstants.INPUT_ENDPOINT, getName(), inpEndPt.getName());
         int index = winEndPtList.indexOf(inpEndPt);
         winEndPtList.get(index).setPrivatePort(String.valueOf(iisArrPort));
         addEndpoint(intEndPt, WindowsAzureEndpointType.Internal, inputEndPointLocalPort, "");
@@ -2007,10 +2061,12 @@ public class WindowsAzureRole {
        try {
            Vector<String> saInfo = new Vector<String>();
            saInfo.add(this.getName());
-            if(getWinProjMgr().mapActivity.get("addSAFilesForRole") != null)
+            if(getWinProjMgr().mapActivity.get("addSAFilesForRole") != null) {
                 getWinProjMgr().mapActivity.remove("addSAFilesForRole");
-            if(getWinProjMgr().mapActivity.get("delSAFilesForRole") != null)
+            }
+            if(getWinProjMgr().mapActivity.get("delSAFilesForRole") != null) {
                 getWinProjMgr().mapActivity.remove("delSAFilesForRole");
+            }
             getWinProjMgr().mapActivity.put("delSAFilesForRole", saInfo);
 
         }catch(Exception e) {
@@ -2045,7 +2101,7 @@ public class WindowsAzureRole {
     private int  getSessionAffinityPort() throws WindowsAzureInvalidProjectOperationException {
         int port = WindowsAzureConstants.IIS_ARR_PORT ;
 
-        while(!winProjMgr.isValidPort(port+"", WindowsAzureEndpointType.Input)){
+        while(!winProjMgr.isValidPort(String.valueOf(port), WindowsAzureEndpointType.Input)){
                 port++ ;
         }
         return port ;
@@ -2834,16 +2890,16 @@ public class WindowsAzureRole {
               app.setAttribute(map.item(j).getNodeName(), map.item(j).getNodeValue());
           }
           } else {
-        	  app.setAttribute(WindowsAzureConstants.ATTR_DDIR, "%SERVER_APPS_LOCATION%");
-        	  app.setAttribute(WindowsAzureConstants.ATTR_DMETHOD, "copy");
-        	  app.setAttribute(WindowsAzureConstants.ATTR_TYPE, "server.app");
+              app.setAttribute(WindowsAzureConstants.ATTR_DDIR, "%SERVER_APPS_LOCATION%");
+              app.setAttribute(WindowsAzureConstants.ATTR_DMETHOD, "copy");
+              app.setAttribute(WindowsAzureConstants.ATTR_TYPE, "server.app");
           }
           app.setAttribute(WindowsAzureConstants.ATTR_IPATH, importSrc);
           app.setAttribute(WindowsAzureConstants.ATTR_IMPORTAS, importAs);
           app.setAttribute(WindowsAzureConstants.ATTR_IMETHOD, importMethod);
 
           if (serStartNode == null ) {
-        	  role.appendChild(app);
+              role.appendChild(app);
           } else {
           role.insertBefore(app, serStartNode);
           }
@@ -2862,7 +2918,7 @@ public class WindowsAzureRole {
    * @return
    * @throws WindowsAzureInvalidProjectOperationException
    */
-  public ArrayList<WindowsAzureRoleComponent> getServerApplications() throws WindowsAzureInvalidProjectOperationException {
+  public List<WindowsAzureRoleComponent> getServerApplications() throws WindowsAzureInvalidProjectOperationException {
 
       try {
           ArrayList<WindowsAzureRoleComponent> serverComp = new ArrayList<WindowsAzureRoleComponent>();
@@ -2991,7 +3047,7 @@ public class WindowsAzureRole {
           Document doc = getWinProjMgr().getPackageFileDoc();
           String expr = String.format(WindowsAzureConstants
                   .WA_PACK_SENV_NAME,
-                  getName(), name)  + "/@type";
+                  getName(), varName)  + "/@type";
           String type = xPath.evaluate(expr, doc);
           if (type.isEmpty()) {
               type = null;
@@ -3011,7 +3067,7 @@ public class WindowsAzureRole {
    */
   public void setRuntimeEnvType(String varName, String envType)
           throws WindowsAzureInvalidProjectOperationException {
-      if (name == null || name.isEmpty()) {
+      if (varName == null || varName.isEmpty() || envType == null) {
           throw new IllegalArgumentException(
                   WindowsAzureConstants.INVALID_ARG);
       }
@@ -3019,7 +3075,7 @@ public class WindowsAzureRole {
           Document doc = getWinProjMgr().getPackageFileDoc();
           XPath xPath = XPathFactory.newInstance().newXPath();
           //check first the env is already present, if yes. edit the same
-          String env = String.format(WindowsAzureConstants.WA_PACK_SENV_NAME, getName(), name);
+          String env = String.format(WindowsAzureConstants.WA_PACK_SENV_NAME, getName(), varName);
           Element envNode = (Element) xPath.evaluate(env,doc, XPathConstants.NODE);
 
           if (envNode == null) {
@@ -3032,5 +3088,524 @@ public class WindowsAzureRole {
                   WindowsAzureConstants.EXCP, ex);
       }
 
+  }
+
+  /**
+   * This API to set cache memory size (and enable caching)
+   * @param value
+   * @throws WindowsAzureInvalidProjectOperationException
+   * @throws XPathExpressionException
+   */
+  public void setCacheMemoryPercent(int value)
+          throws WindowsAzureInvalidProjectOperationException {
+      if (value > 100 || value < 0) {
+          throw new IllegalArgumentException(
+                  WindowsAzureConstants.INVALID_ARG);
+      }
+
+      if (value == 0) {
+          //if value is 0 then disable all cache.
+          if (isCachingEnable()) {
+              disableCache();
+              setCacheStorageAccountName("");
+              setCacheStorageAccountKey("");
+          }
+      } else {
+          try {
+              // check cache is already exist...
+              if (!isCachingEnable()) {
+                  //enable Cache
+                  enableCache();
+              }
+
+              Element ele = getSettingElement(WindowsAzureConstants.SET_CACHESIZEPER);
+              ele.setAttribute("value", String.valueOf(value));
+
+          } catch (Exception ex) {
+              throw new WindowsAzureInvalidProjectOperationException(
+                      WindowsAzureConstants.EXCP, ex);
+          }
+      }
+  }
+
+
+  private Element getSettingElement(String settingName)
+          throws WindowsAzureInvalidProjectOperationException {
+      Element ele = null;
+      try {
+          Document doc = getWinProjMgr().getConfigFileDoc();
+          XPath xPath = XPathFactory.newInstance().newXPath();
+          String expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE,getName(),
+                  settingName);
+          ele = (Element) xPath.evaluate(expr, doc,
+                  XPathConstants.NODE);
+      } catch (Exception  ex) {
+          ele = null;
+      }
+      return ele;
+  }
+
+  /**
+   * This API will remove all setting from
+   * CSDEF: For corresponding WorkerRole element, in Imports, ensure  presence of <Import moduleName="Caching" />
+   * CSCFG: For corresponding Role element, in ConfigurationSettings, ensure presence of:
+   *   <Setting name="Microsoft.WindowsAzure.Plugins.Caching.CacheSizePercentage" value="value" />
+   *   <Setting name="Microsoft.WindowsAzure.Plugins.Caching.Loglevel" value="" />
+   *   <Setting name="Microsoft.WindowsAzure.Plugins.Caching.ConfigStoreConnectionString" value="UseDevelopmentStorage=true" />
+   *   <Setting name="Microsoft.WindowsAzure.Plugins.Caching.NamedCaches"
+   *   value="{&quot;caches&quot;:[{&quot;name&quot;:&quot;default&quot;,&quot;policy&quot;:{&quot;expiration&quot;:{&quot;defaultTTL&quot;:10,&quot;isExpirable&quot;:true,&quot;type&quot;:1}}}]}"/>*(The goo inside is HTML-encoded JSON)
+ * @throws WindowsAzureInvalidProjectOperationException
+ * @throws XPathExpressionException
+   *
+   */
+  private void disableCache()
+          throws WindowsAzureInvalidProjectOperationException {
+      try {
+
+      HashMap<String, WindowsAzureNamedCache> mapcache = (HashMap<String, WindowsAzureNamedCache>) getNamedCaches();
+      // Remove entries from CSDEF file
+      Element eleImport = getImportEle("Caching");
+      eleImport.getParentNode().removeChild(eleImport);
+
+      //Remove all memcache including default
+      //Get all cache from role and remove all by iterating on map
+
+
+      List< WindowsAzureNamedCache> list = new ArrayList<WindowsAzureNamedCache>();
+      for (WindowsAzureNamedCache cache : mapcache.values()) {
+          list.add(cache);
+      }
+      for (int i = 0; i < list.size(); i++) {
+          list.get(i).delete();
+      }
+      getLocalStorage(WindowsAzureConstants.CACHE_LS_NAME).delete();
+
+      // Remove entries from CSDFG file
+      Document doc = getWinProjMgr().getConfigFileDoc();
+      String expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE,getName(),
+              WindowsAzureConstants.SET_CACHESIZEPER);
+      ParserXMLUtility.deleteElement(doc, expr);
+
+      expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE,getName(),
+              WindowsAzureConstants.SET_CONFIGCONN);
+      ParserXMLUtility.deleteElement(doc, expr);
+
+      expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE,getName(),
+              WindowsAzureConstants.SET_DIAGLEVEL);
+      ParserXMLUtility.deleteElement(doc, expr);
+
+      expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE,getName(),
+              WindowsAzureConstants.SET_NAMEDCACHE);
+      ParserXMLUtility.deleteElement(doc, expr);
+
+      } catch (Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+
+  }
+
+  /**
+   * This API will add import statement, local storege and endpoint in csdef file
+   * and settings tags in cscfg file.
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  private void enableCache()
+          throws WindowsAzureInvalidProjectOperationException {
+      try {
+          //add import
+          Document doc = winProjMgr.getdefinitionFileDoc();
+          String expr = String.format(WindowsAzureConstants.IMPORT_NANE,
+                  getName(), "Caching");
+          String parentNodeExpr = String.format(
+                  WindowsAzureConstants.IMPORT, getName());
+          HashMap<String, String> map = new HashMap<String, String>();
+          map.put("moduleName", "Caching");
+          updateOrCreateElement(doc, expr, parentNodeExpr, "Import", false, map);
+
+          //add local storage
+          addLocalStorage(WindowsAzureConstants.CACHE_LS_NAME, 20000,
+                  false, WindowsAzureConstants.CACHE_LS_PATH);
+
+          //add setting tags
+
+          doc = winProjMgr.getConfigFileDoc();
+          expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE, getName(),
+                  WindowsAzureConstants.SET_CACHESIZEPER);
+          parentNodeExpr = String.format(
+                  WindowsAzureConstants.CONFIG_ROLE_SET, getName());
+          map.clear();
+          map.put("name", WindowsAzureConstants.SET_CACHESIZEPER);
+          map.put("value", "");
+          updateOrCreateElement(doc, expr, parentNodeExpr, "Setting", false, map);
+
+          expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE, getName(),
+                  WindowsAzureConstants.SET_DIAGLEVEL);
+          map.clear();
+          map.put("name", WindowsAzureConstants.SET_DIAGLEVEL);
+          map.put("value", "1");
+          updateOrCreateElement(doc, expr, parentNodeExpr, "Setting", false, map);
+
+          expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE, getName(),
+                  WindowsAzureConstants.SET_CONFIGCONN);
+          map.clear();
+          map.put("name", WindowsAzureConstants.SET_CONFIGCONN);
+          map.put("value", WindowsAzureConstants.SET_CONFIGCONN_VAL);
+          updateOrCreateElement(doc, expr, parentNodeExpr, "Setting", false, map);
+
+          //add Internal endpoint
+          String newCache = JSONHelper.createObject();
+          // Add setting in config file
+          parentNodeExpr = String.format(
+                  WindowsAzureConstants.CONFIG_ROLE_SET, getName());
+          expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE, getName(),
+                  WindowsAzureConstants.SET_NAMEDCACHE);
+          map.clear();
+          map.put("name", WindowsAzureConstants.SET_NAMEDCACHE);
+          map.put("value", newCache);
+          updateOrCreateElement(doc, expr, parentNodeExpr, "Setting", false, map);
+          addNamedCache("default", 11211);
+
+      } catch (Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+
+  }
+
+  /**
+   * This method is to tell whether caching is enable or not.
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  protected boolean isCachingEnable() throws WindowsAzureInvalidProjectOperationException {
+      boolean isEnable = false;
+      Element eleCache = getImportEle("Caching");
+      if (eleCache != null) {
+          isEnable = true;
+      }
+      return isEnable;
+  }
+
+
+  private Element getImportEle(String moduleName) throws WindowsAzureInvalidProjectOperationException {
+      Element eleImport = null;
+      try {
+          Document doc = getWinProjMgr().getdefinitionFileDoc();
+          XPath xPath = XPathFactory.newInstance().newXPath();
+          String expr = String.format(WindowsAzureConstants.IMPORT_NANE,
+                  getName(), moduleName);
+          eleImport = (Element) xPath.evaluate(expr, doc,
+                  XPathConstants.NODE);
+      } catch (Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+      return eleImport;
+  }
+
+
+  /**
+   * API to read Cache memory setting (and to determine if
+   * caching is enabled if this returns > 0).
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException .
+   */
+  public int getCacheMemoryPercent()
+          throws WindowsAzureInvalidProjectOperationException {
+      int per = 0;
+      try {
+          if (isCachingEnable()) {
+              Document doc = getWinProjMgr().getConfigFileDoc();
+              XPath xPath = XPathFactory.newInstance().newXPath();
+              String expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE_VAL,getName(),
+                      WindowsAzureConstants.SET_CACHESIZEPER);
+              String val = xPath.evaluate(expr, doc);
+              per = Integer.valueOf(val);
+          }
+      } catch (Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+      return per;
+  }
+
+
+  /**
+   * set the storage account name associated with the cache.
+   * The information is persisted on the plug-in property in package.xml named
+   * project.workerrole1.cachestorageaccount.name.
+   * It also written to the CSCFG but what exactly is put into the CSCFG
+   * depends on whether the project is built for the cloud or for the emulator.
+   * The basic idea is that as long as it's for Emulator, dev storage is enabled in the CSCFG
+   * (regardless of storage account settings), and if it's for the Cloud, then the account credentials are enabled in the CSCFG.
+   * @param name .
+   * @throws WindowsAzureInvalidProjectOperationException .
+   */
+
+  public void setCacheStorageAccountName(String name) throws WindowsAzureInvalidProjectOperationException {
+      try {
+          String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_NAME_PROP,getName());
+          if(name.isEmpty()) {
+              //remove property from package.xml
+              ParserXMLUtility.deleteElement(winProjMgr.getPackageFileDoc(),
+                      String.format(WindowsAzureConstants.ROLE_PROP,  propName));
+          } else {
+              //add entry in package.xml
+              addPropertyInPackageXML(propName, name);
+          }
+          //sets entry in cscfg
+          setCacheSettingInCscfg(name, getCacheStorageAccountKey());
+      } catch(Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+  }
+
+  /**
+   * Sets the storage account name from the plugin property and
+   * sets setting value in config depending upon the package type.
+   * @param key
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setCacheStorageAccountKey(String key) throws WindowsAzureInvalidProjectOperationException {
+      try {
+          String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_KEY_PROP,getName());
+          if(key.isEmpty()) {
+              //remove property from package.xml
+              ParserXMLUtility.deleteElement(winProjMgr.getPackageFileDoc(),
+                      String.format(WindowsAzureConstants.ROLE_PROP,  propName));
+          } else {
+              //add entry in package.xml
+              addPropertyInPackageXML(propName, key);
+          }
+          //sets entry in cscfg
+          setCacheSettingInCscfg(getCacheStorageAccountName(), key);
+      } catch(Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+  }
+
+  /**
+   * This API sets cache setting in config file.
+   * If package type is local then the the value will be UseDevelopmentStorage=true
+   * else  "DefaultEndpointsProtocol=https;AccountName=name;AccountKey=key".
+   * @param name
+   * @param value
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  protected void setCacheSettingInCscfg(String name, String value) throws WindowsAzureInvalidProjectOperationException {
+      try {
+          Document doc = winProjMgr.getConfigFileDoc();
+          String expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE, getName(),
+                  WindowsAzureConstants.SET_CONFIGCONN);
+          String parentNodeExpr = String.format(
+                  WindowsAzureConstants.CONFIG_ROLE_SET, getName());
+          HashMap<String, String> map = new HashMap<String, String>();
+          if(isCachingEnable()) {
+              if(winProjMgr.getPackageType() == WindowsAzurePackageType.LOCAL || name == null || value == null ||
+                      name.isEmpty() || value.isEmpty()) {
+                  map.clear();
+                  map.put(WindowsAzureConstants.ATTR_NAME, WindowsAzureConstants.SET_CONFIGCONN);
+                  map.put(WindowsAzureConstants.ATTR_VALUE, WindowsAzureConstants.SET_CONFIGCONN_VAL);
+                  updateOrCreateElement(doc, expr, parentNodeExpr, "Setting", false, map);
+              } else if(name != null && value != null) {
+                  String val =  String.format(WindowsAzureConstants.SET_CONFIGCONN_VAL_CLOULD,
+                          name,value);
+                  map.clear();
+                  map.put(WindowsAzureConstants.ATTR_NAME, WindowsAzureConstants.SET_CONFIGCONN);
+                  map.put(WindowsAzureConstants.ATTR_VALUE, val);
+                  updateOrCreateElement(doc, expr, parentNodeExpr, "Setting", false, map);
+              }
+          }
+      } catch(Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+  }
+
+  /**
+   * Gets the storage account key from the plugin property.
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getCacheStorageAccountKey() throws WindowsAzureInvalidProjectOperationException {
+      String key = null;
+      try {
+          Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
+          if(packageFileDoc != null ){
+              String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_KEY_PROP,getName());
+              String nodeExpr =  String.format(WindowsAzureConstants.ROLE_PROP_VAL, propName);
+              XPath xPath = XPathFactory.newInstance().newXPath();
+              key = xPath.evaluate(nodeExpr, packageFileDoc);
+          }
+      } catch(Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+      return key;
+  }
+
+  /**
+   * Gets the storage account name from the plug-in property.
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getCacheStorageAccountName() throws WindowsAzureInvalidProjectOperationException {
+      String name = null;
+      try {
+          Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
+          if(packageFileDoc != null ){
+              String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_NAME_PROP,getName());
+              String nodeExpr =  String.format(WindowsAzureConstants.ROLE_PROP_VAL, propName);
+              XPath xPath = XPathFactory.newInstance().newXPath();
+              name = xPath.evaluate(nodeExpr, packageFileDoc);
+          }
+      } catch(Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+      return name;
+  }
+
+  /**
+   * This API will set property in package.xml in waprojectproperties target.
+   * @param name
+   * @param value
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  private void addPropertyInPackageXML(String name, String value) throws WindowsAzureInvalidProjectOperationException {
+      Document packageFileDoc;
+      try {
+          packageFileDoc = getWinProjMgr().getPackageFileDoc();
+          if(packageFileDoc != null ){
+              String nodeExpr       =  String.format(WindowsAzureConstants.ROLE_PROP,  name);
+              String parentNodeExpr =  WindowsAzureConstants.PROJ_PROPERTY;
+
+              HashMap<String,String> nodeAttr = new HashMap<String, String>();
+              nodeAttr.put(WindowsAzureConstants.ATTR_NAME,name);
+              nodeAttr.put(WindowsAzureConstants.ATTR_VALUE, value);
+              updateOrCreateElement(packageFileDoc,nodeExpr,parentNodeExpr,WindowsAzureConstants.PROJ_PROPERTY_ELEMENT_NAME,false,nodeAttr);
+          }
+      } catch (WindowsAzureInvalidProjectOperationException ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+  }
+
+  /**
+   * This function will add a new named cache.
+   * Throw if getCacheMemoryPercent() returns 0, or
+   * name is null or in use by another cache (case insensitive comparison) or
+   * port is not between 1-65535, or already in use by anything else
+   * Create internal endpoint named “memcache_name” and the supplied port
+   * Inject the new cache object into the JSON with the specified name and return a WindowsAzureNamedCache object from the API.
+   * @param name
+   * @param port
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+
+  public WindowsAzureNamedCache addNamedCache(String name, int port) throws WindowsAzureInvalidProjectOperationException {
+      if(name == null || name.isEmpty() || port < 1 || port > 65535 ) {
+          throw new IllegalArgumentException(WindowsAzureConstants.INVALID_ARG);
+      }
+
+      if(!isCachingEnable()) {
+          throw new WindowsAzureInvalidProjectOperationException("Caching is not enabled");
+      }
+
+      if(getNamedCaches().keySet().contains(name)) {
+          throw new WindowsAzureInvalidProjectOperationException(name + " already exist");
+      }
+//
+//	  if(!getWinProjMgr().isValidPort(String.valueOf(port), WindowsAzureEndpointType.Internal)) {
+//		  throw new WindowsAzureInvalidProjectOperationException(port + " already exist");
+//	  }
+
+      WindowsAzureNamedCache cache = null;
+      try {
+          Document doc = getWinProjMgr().getConfigFileDoc();
+
+          //Create JSON Object
+          String expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE_VAL, getName(),
+                  WindowsAzureConstants.SET_NAMEDCACHE);
+          String encodedCache = ParserXMLUtility.getExpressionValue(doc, expr);
+          String newEncCompCache = JSONHelper.addCache(encodedCache, name, 0, 10, 1);
+          ParserXMLUtility.setExpressionValue(doc, expr, newEncCompCache);
+
+          String newCache = JSONHelper.getCaches(newEncCompCache).get(name);
+          // Add endpoint
+          addEndpoint("memcache_" + name, WindowsAzureEndpointType.Internal, String.valueOf(port), "");
+
+          cache =  getWindowsCacheObjFromEle(newCache);
+          cacheMap.put(name, cache);
+
+      } catch (Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+      return cache;
+  }
+
+  /**
+   * Creates a WindowsAzureNamedCache object with given encoded string.
+   * @param str
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  private WindowsAzureNamedCache getWindowsCacheObjFromEle(String str) throws WindowsAzureInvalidProjectOperationException {
+
+      try {
+      WindowsAzureNamedCache waCache = new WindowsAzureNamedCache(this,getWinProjMgr());
+      waCache.setName(JSONHelper.getParamVal(str, "name"));
+
+      String type = JSONHelper.getParamVal(str, "policy.expiration.type");
+      waCache.setExpirationPolicy(WindowsAzureCacheExpirationPolicy.values()[Integer.parseInt(type)]
+              );
+
+      if(JSONHelper.getParamVal(str, "secondaries").equals("1")) {
+          waCache.setBackups(true);
+      } else {
+          waCache.setBackups(false);
+      }
+
+      waCache.setMinutesToLive(Integer.parseInt(
+              JSONHelper.getParamVal(str, "policy.expiration.defaultTTL")));
+      return waCache;
+      }catch (Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
+  }
+
+  /**
+   * This API will return the collection of caches associated with this cache
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public Map<String, WindowsAzureNamedCache> getNamedCaches()
+          throws WindowsAzureInvalidProjectOperationException {
+      if (!cacheMap.isEmpty()) {
+          return cacheMap;
+      }
+      try {
+          Document doc = getWinProjMgr().getConfigFileDoc();
+          String expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE_VAL, getName(),
+                  WindowsAzureConstants.SET_NAMEDCACHE);
+          String encodedCache = ParserXMLUtility.getExpressionValue(doc, expr);
+          if (!encodedCache.isEmpty()) {
+              Map<String, String> encodedMap = JSONHelper.getCaches(encodedCache);
+              Set<Entry<String, String>> set = encodedMap.entrySet();
+              for (Entry<String, String> entry : set) {
+                  cacheMap.put(entry.getKey(), getWindowsCacheObjFromEle(entry.getValue()));
+              }
+          }
+          return cacheMap;
+      } catch (Exception ex) {
+          throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP, ex);
+      }
   }
 }

@@ -109,22 +109,4 @@
       <InputEndpoint localPort="7070" name="DbgEp" port="7070" protocol="tcp"/>
     </Endpoints>
   </WorkerRole>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </ServiceDefinition>

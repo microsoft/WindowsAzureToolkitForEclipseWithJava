@@ -18,21 +18,31 @@ package com.persistent.util;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-
-//This Class is a utility class for handling application parameters
-//while adding a component.
+/**
+ * This Class is a utility class for handling application parameters
+ * while adding a component.
+ */
 public class AppCmpntParam {
     private String impSrc;
     private String impAs;
     private String impMethod;
     private static final String BASE_PATH = "${basedir}\\..";
 
-
+    /**
+     * Method returns import source of application.
+     * @return
+     */
     public String getImpSrc() {
         return impSrc;
     }
+
+    /**
+     * Method sets parameterized value of
+     * import source to application.
+     * @param impSrc
+     */
     public void setImpSrc(String impSrc) {
-        String pathLoc= impSrc;
+        String pathLoc = impSrc;
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IWorkspaceRoot root = workspace.getRoot();
         if (pathLoc.contains(root.getLocation().toOSString())) {
@@ -48,15 +58,37 @@ public class AppCmpntParam {
         this.impSrc = impSrc;
         }
     }
+
+    /**
+     * Method returns import as of application.
+     * @return
+     */
     public String getImpAs() {
         return impAs;
     }
+
+    /**
+     * Method sets parameterized value of
+     * import as to application.
+     * @param impAs
+     */
     public void setImpAs(String impAs) {
         this.impAs = impAs;
     }
+
+    /**
+     * Method returns import method of application.
+     * @return
+     */
     public String getImpMethod() {
         return impMethod;
     }
+
+    /**
+     * Method sets parameterized value of
+     * import method to application.
+     * @param impMethod
+     */
     public void setImpMethod(String impMethod) {
         this.impMethod = impMethod;
     }

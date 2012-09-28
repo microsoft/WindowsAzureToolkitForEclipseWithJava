@@ -11,6 +11,7 @@ exit
 :: Deploy the package to emulator
 :Deploy
 SET _ELEVATED=
+"${EmulatorDir}\csrun.exe" /devstore
 "${EmulatorDir}\csrun.exe" "${PackageDir}\${PackageFileName}" "${PackageDir}\${ConfigurationFileName}"
 
 :: Ensure that emulator UI is running
@@ -21,3 +22,4 @@ start dfui.exe
 
 :Bye
 choice /d y /t 5 /c Y /N
+exit

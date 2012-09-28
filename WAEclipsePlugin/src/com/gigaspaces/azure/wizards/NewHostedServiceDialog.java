@@ -16,6 +16,8 @@
 
 package com.gigaspaces.azure.wizards;
 
+import java.awt.Color;
+
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
@@ -36,7 +38,11 @@ import org.eclipse.ui.PlatformUI;
 import com.gigaspaces.azure.model.CreateHostedService;
 import com.gigaspaces.azure.model.Location;
 import com.gigaspaces.azure.model.Locations;
+import com.gigaspaces.azure.rest.RestAPIException;
 import com.gigaspaces.azure.runnable.NewHostedServiceWithProgressWindow;
+import com.gigaspaces.azure.util.CommandLineException;
+import com.gigaspaces.azure.util.UIUtils;
+import com.persistent.util.MessageUtil;
 
 public class NewHostedServiceDialog extends WADialog {
 
@@ -46,9 +52,15 @@ public class NewHostedServiceDialog extends WADialog {
 	private ProgressBar bar;
 	boolean valid = false;
 	private String hostedServiceNameToCreate;
+	private String hostedServiceLocation;
+	private String defaultLocation;
 
 	public NewHostedServiceDialog(Shell parentShell) {
 		super(parentShell);
+	}
+	
+	public void setDefaultLocation(final String location) {
+		this.defaultLocation = location;
 	}
 
 	@Override
@@ -70,7 +82,7 @@ public class NewHostedServiceDialog extends WADialog {
 
 		Button okButton = getButton(IDialogConstants.OK_ID);
 		if (okButton != null) {
-			okButton.setText(Messages.hostedCreate);
+			okButton.setText("OK");
 
 			okButton.addSelectionListener(new SelectionListener() {
 
@@ -82,14 +94,27 @@ public class NewHostedServiceDialog extends WADialog {
 									.getText(), locationComb.getText());
 					
 					hostedServiceNameToCreate = hostedServiceTxt.getText();
+					hostedServiceLocation = locationComb.getText();
 
 					body.setDescription(descriptionTxt.getText());
-
-					NewHostedServiceWithProgressWindow progress = new NewHostedServiceWithProgressWindow(null, Display.getDefault().getActiveShell());
-					progress.setCreateHostedService(body);
-					Display.getDefault().syncExec(progress);
-					valid = true;
-					close();
+					
+					
+					boolean isNameAvailable = false;
+					try {
+						isNameAvailable = WizardCacheManager.isHostedServiceNameAvailable(hostedServiceNameToCreate);
+						if (isNameAvailable) {
+							WizardCacheManager.createHostedServiceMock(hostedServiceNameToCreate, hostedServiceLocation, descriptionTxt.getText());						
+							valid = true;
+							close();
+						} else {
+							MessageUtil.displayErrorDialog(getShell(), "DNS Conflict", Messages.hostedServiceConflictError);
+							hostedServiceTxt.setFocus();
+							hostedServiceTxt.selectAll();
+						}
+					} catch (final Exception e1) {
+						MessageUtil.displayErrorDialogAndLog(getShell(), "Error", e1.getMessage(), e1);
+					}
+										
 				}
 
 				@Override
@@ -170,6 +195,17 @@ public class NewHostedServiceDialog extends WADialog {
 			locationComb.add(location.getName());
 			locationComb.setData(location.getName(), location);
 		}
+		
+		// default location will exist if the user has created a storage account before creating the hosted service
+		if (defaultLocation != null) {
+			int selection = UIUtils.findSelectionByText(defaultLocation, locationComb);
+			if (selection != -1) {
+				locationComb.select(selection);
+			}
+			else {
+				locationComb.select(0);
+			}			
+		}
 	}
 
 	@Override
@@ -198,5 +234,9 @@ public class NewHostedServiceDialog extends WADialog {
 
 	public String getHostedServiceName() {
 		return hostedServiceNameToCreate;
+	}
+	
+	public String getLocation() {
+		return hostedServiceLocation;
 	}
 }

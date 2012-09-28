@@ -16,9 +16,12 @@
 package com.persistent.ui.propertypage;
 
 import org.eclipse.osgi.util.NLS;
-
+/**
+ * Stores common strings.
+ */
 public final class Messages extends NLS {
-    private static final String BUNDLE_NAME = "com.persistent.ui.propertypage.messages"; //$NON-NLS-1$
+    private static final String BUNDLE_NAME =
+    		"com.persistent.ui.propertypage.messages";
     public static String proPageErrMsgBox1;
     public static String proPageErrMsgBox2;
     public static String proPageErrTitle;
@@ -97,11 +100,15 @@ public final class Messages extends NLS {
     public static String certDlgImgErr;
     public static String certDlgPwdWrong;
     public static String certDlgPwNtMatch;
+    public static String proPageTgtOSLbl;
+    public static String waProjNature;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);
     }
-
+    /**
+     * Constructor.
+     */
     private Messages() {
         super();
     }

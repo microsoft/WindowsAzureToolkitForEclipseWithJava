@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.6"?>
 <plugin>
+  <!-- Windows Azure Deployment wizard -->
    <extension
          point="org.eclipse.ui.newWizards">
         <category
@@ -26,6 +27,8 @@
          </newWizardShortcut>
       </perspectiveExtension>
    </extension>
+   
+   <!-- Propert pages -->
    <extension
          point="org.eclipse.ui.propertyPages">
       <page
@@ -85,6 +88,28 @@
          </or>
          </enabledWhen>
       </page>
+      <!--
+      <page
+            name="Caching"
+            class="com.persistent.winazureroles.WARCaching"
+            id="com.persistent.ui.rolepage.caching"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page> -->
       <page
             name="Components"
             class="com.persistent.winazureroles.WARComponents"
@@ -469,7 +494,8 @@
      </enabledWhen>
     </handler>
    </extension>
-   <!--fly menu on dynamic web project-->
+   
+   <!-- fly menu on dynamic web project -->
    <extension point="org.eclipse.ui.commands">
 	  <command
 	  		description="Package for Windows Azure..."
@@ -518,6 +544,169 @@
 		</enabledWhen>
 	  </handler>
 	  </extension>
+	  
+   <!-- fly menu on Worker role folder -->
+   <!-- Commands for fly menu on Worker role -->
+   <extension point="org.eclipse.ui.commands">
+	  <command
+	  		description="Worker Role General Properties"
+	        id="com.persistent.winazure.eclipseplugin.role.general"
+	        name="Properties...">
+	  </command>
+	  
+	  <!--
+	  <command
+	  		description="Worker Role Caching"
+	        id="com.persistent.winazure.eclipseplugin.role.caching"
+	        name="Caching...">
+	  </command> -->
+	  
+	  <command
+	  		description="Worker Role Components"
+	        id="com.persistent.winazure.eclipseplugin.role.components"
+	        name="Components...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Debugging"
+	        id="com.persistent.winazure.eclipseplugin.role.debugging"
+	        name="Debugging...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Endpoints"
+	        id="com.persistent.winazure.eclipseplugin.role.endpoints"
+	        name="Endpoints...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Environment Variables"
+	        id="com.persistent.winazure.eclipseplugin.role.envvar"
+	        name="Environment Variables...">
+	  </command>
+	  
+	   <command
+	  		description="Worker Role Load Balancing"
+	        id="com.persistent.winazure.eclipseplugin.role.loadbal"
+	        name="Load Balancing...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Local Storage"
+	        id="com.persistent.winazure.eclipseplugin.role.localstr"
+	        name="Local Storage...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Server Configuration"
+	        id="com.persistent.winazure.eclipseplugin.role.srvconf"
+	        name="Server Configuration...">
+	  </command>
+	</extension>
+	
+	<!-- Context Menu entries for fly menu on Worker role -->
+	<extension point="org.eclipse.ui.menus">
+  	<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+	  	<menu 
+	         label="Windows Azure" icon="icons/File menu.png">
+		    	 <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.general">
+			     </command>
+			     
+			     <!--
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.caching">
+			     </command> -->
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.components">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.debugging">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.endpoints">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.envvar">
+			     </command>
+			     
+			      <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.loadbal">
+			     </command>
+			     
+			      <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.localstr">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.srvconf">
+			     </command>
+			     
+			     <visibleWhen checkEnabled="false">
+			    <with 
+				variable="selection"> 
+				<iterate 
+					operator="or"> 
+					<adapt type="org.eclipse.core.resources.IFolder">
+        				<test property="com.persistent.ui.property.isRoleFolder"/>
+            		</adapt>
+				</iterate> 
+		    	</with>
+			    </visibleWhen>
+	  	</menu>
+    </menuContribution>
+    </extension>
+    <!-- Handlers for fly menu on Worker role -->
+    <extension point="org.eclipse.ui.handlers">
+   	  <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.general">
+      </handler>
+      <!--
+       <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.caching">
+      </handler> -->
+      
+       <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.components">
+      </handler>
+      
+       <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.debugging">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.endpoints">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.envvar">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.loadbal">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.localstr">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.srvconf">
+      </handler>
+    </extension>
    
    <!-- GigaSpaces Extensions -->
    <extension point="org.eclipse.ui.commands">

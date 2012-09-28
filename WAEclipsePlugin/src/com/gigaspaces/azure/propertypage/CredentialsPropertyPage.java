@@ -139,7 +139,6 @@ public class CredentialsPropertyPage extends PropertyPage {
 
 		String subsciptionId = txtSubscriptionId.getText();
 		String thumbprint = txtThumbPrint.getText();
-		boolean result = false;
 		
 		if ((subsciptionId != null && !subsciptionId.isEmpty()) && (thumbprint != null && !thumbprint.isEmpty())) {			
 			PublishData publishDataToCache = null;
@@ -156,13 +155,9 @@ public class CredentialsPropertyPage extends PropertyPage {
 				if (settings.isCompletedSuccesfully() && edit) {
 					WizardCacheManager.removeSubscription(subsciptionId,publishData.getThumbprint());
 				}
-				result = true;
 			}
 		}
-		else {
-			result = super.performOk();
-		}
-		return result;
+		return super.performOk();
 	}
 
 	private PublishData handleAdd(String subsciptionId, String thumbprint) {
@@ -178,7 +173,7 @@ public class CredentialsPropertyPage extends PropertyPage {
 			pd.getPublishProfile().getSubscriptions().add(s);
 		} 
 		else {
-			// TODO - show message saying that it already exists
+			return null; // TODO - bad practice to return null as a valid return value.
 		}
 		return pd;
 	}
@@ -188,17 +183,15 @@ public class CredentialsPropertyPage extends PropertyPage {
 
 		if (pd == null) {
 			pd = createPublishData(subsciptionId, thumbprint);
-//			WizardCacheManager.removeSubscription(subsciptionId,publishData.getThumbprint());
 			return pd;
 		} 
 		if (!doesSubscriptionExist(pd, subsciptionId)) {
 			Subscription s = new Subscription();
 			s.setSubscriptionID(subsciptionId);
 			pd.getPublishProfile().getSubscriptions().add(s);
-//			WizardCacheManager.removeSubscription(subsciptionId,publishData.getThumbprint());
 		} 
 		else {
-			// TODO - add message that exists
+			return null; // TODO - bad practice to return null as a valid return value.
 		}
 		return pd;
 	}

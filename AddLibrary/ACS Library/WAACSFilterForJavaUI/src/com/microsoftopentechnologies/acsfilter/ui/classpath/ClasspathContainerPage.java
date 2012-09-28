@@ -68,6 +68,9 @@ import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.Bundle;
 import org.eclipse.jface.window.Window;
 
+import com.microsoftopentechnologies.wacommon.utils.Base64;
+import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
+import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
 import com.microsoftopentechnologies.acsfilter.ui.activator.Activator;
 
 
@@ -99,7 +102,6 @@ public class ClasspathContainerPage extends WizardPage implements
     private Button embedCertCheck;
     private static final int BUFF_SIZE = 1024;
     private HashMap<String,String> paramMap;
-    private static String pathFrmNewCert;
 
     /**
      * Default constructor.
@@ -656,26 +658,28 @@ public class ClasspathContainerPage extends WizardPage implements
      * Listener for new button.
      */
     protected void newCertBtnListener() {
-        NewCertificateDialog dialog = new
-                NewCertificateDialog(getShell());
+    	NewCertificateDialogData data = new NewCertificateDialogData();
+        NewCertificateDialog dialog = new NewCertificateDialog(getShell(),data);
         int returnCode = dialog.open();
         if (returnCode == Window.OK) {
-                certTxt.setText(pathFrmNewCert != null ? pathFrmNewCert.replace('\\', '/') : pathFrmNewCert);
+        		String certPath = data.getCerFilePath();
+                certTxt.setText(certPath != null ? certPath.replace('\\', '/') : certPath );
             	certInfoTxt.setText(getCertInfo(certTxt.getText()));
         }
     }
     
     private static String getCertInfo(String certURL) {
     	InputStream inputStream = null;
+    	String url = certURL;
     	try {
-    		certURL = getCertificatePath(certURL);
-    		if(certURL == null || certURL.isEmpty())
+    		url = getCertificatePath(url);
+    		if(url == null || url.isEmpty())
     			return null;
-    		File file = new File(certURL);
+    		File file = new File(url);
     		if(!file.exists())
     			return null;
     		
-	    	inputStream = new FileInputStream(certURL);
+	    	inputStream = new FileInputStream(url);
 			CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
 			X509Certificate acsCert = (X509Certificate)certificateFactory.generateCertificate(inputStream);
 			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -1024,9 +1028,10 @@ public class ClasspathContainerPage extends WizardPage implements
      */
     private static String getCertificatePath(String rawPath) {
 		String certPath = null;
-		if (rawPath != null && rawPath.length() > 0) {
-			rawPath = rawPath.replace('\\', '/');
-			String[] result = rawPath.split("/");
+		String pathToUse = rawPath;
+		if (pathToUse != null && pathToUse.length() > 0) {
+			pathToUse = pathToUse.replace('\\', '/');
+			String[] result = pathToUse.split("/");
 			StringBuilder  path = new StringBuilder();
 
 			for (int x = 0; x < result.length; x++) {
@@ -1043,11 +1048,4 @@ public class ClasspathContainerPage extends WizardPage implements
 		}
 		return certPath;
 	}
-    
-    public static void setNewCertPathfromDialog(String path) {
-    	pathFrmNewCert = path;
-    }
-    
-    
-	
 }

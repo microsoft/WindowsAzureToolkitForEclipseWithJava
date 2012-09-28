@@ -53,8 +53,9 @@ public class WADependencyBuilder extends IncrementalProjectBuilder {
     private static List<WindowsAzureRole> waRoles;
     private static List<WindowsAzureRoleComponent> listComponents;
 
-    @Override
-    public IProject[] build(int arg0, Map<String, String> arg1,
+    @SuppressWarnings("rawtypes")
+	@Override
+    public IProject[] build(int arg0, Map arg1,
             IProgressMonitor arg2) throws CoreException {
         try {
             OpenRunConfigurations con = new OpenRunConfigurations();
@@ -115,7 +116,7 @@ public class WADependencyBuilder extends IncrementalProjectBuilder {
                             		getProjectNature(iProj);
 
                             // Calculate destination path for exporting project
-                            if (asName.endsWith((type.name().toLowerCase()))) {
+                            if (asName.endsWith(type.name().toLowerCase())) {
                                 impDestPath = String.format("%s%s%s",
                                 		approotPath, "\\", asName);
                             }

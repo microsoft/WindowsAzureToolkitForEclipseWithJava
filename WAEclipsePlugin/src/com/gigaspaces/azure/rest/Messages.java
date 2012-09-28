@@ -18,11 +18,11 @@ package com.gigaspaces.azure.rest;
 
 import org.eclipse.osgi.util.NLS;
 
-public class Messages extends NLS {
+public final class Messages extends NLS {
 	private static final String BUNDLE_NAME = "com.gigaspaces.azure.rest.messages"; //$NON-NLS-1$
 	public static String acceptCharsetConst;
 	public static String authorization;
-	public static String authorizationConst;
+	public static String authrztnConst;
 	public static String contentLen;
 	public static String contentLenConst;
 	public static String contentType;
@@ -33,7 +33,7 @@ public class Messages extends NLS {
 	public static String error;
 	public static String get;
 	public static String head;
-	public static String invalidStorageAccount;
+	public static String invalidStrgAcc;
 	public static String invalidStorageKey;
 	public static String msDateConst;
 	public static String msRequestIdConst;
@@ -44,15 +44,15 @@ public class Messages extends NLS {
 	public static String post;
 	public static String put;
 	public static String requestId;
-	public static String RestAPIException;
+	public static String restAPIException;
 	public static String timeZone;
 	public static String utfFormat;
 	public static String version;
-	public static String x_msVersion;
-	public static String x_msVersion2;
-	public static String x_msVersion3;
+	public static String xMsVersion;
+	public static String xMsVersion2;
+	public static String xMsVersion3;
 	public static String dnsNameTaken;
-	public static String deserializationError;
+	public static String deserializtnErr;
 
 	static {
 		// initialize resource bundle

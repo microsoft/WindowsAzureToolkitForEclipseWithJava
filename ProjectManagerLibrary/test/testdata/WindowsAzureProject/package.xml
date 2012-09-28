@@ -152,41 +152,6 @@
       <workerrole approotdir="${basedir}\WorkerRole3\approot" name="WorkerRole3">
           <startupenv name="_JAVA_OPTIONS" value="-agentlib:jdwp=transport=dt_socket,server=y,address=8093,suspend=y"/>
         </workerrole>
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
       </windowsazurepackage>
 		</parallel>
 

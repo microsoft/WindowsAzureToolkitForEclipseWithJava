@@ -88,8 +88,6 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 				}
 				return true;
 			}
-
-
 		};
 		try {
 			resourcedelta.accept(visitor);
@@ -444,12 +442,18 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 				};
 				closeProject.schedule();
 			}
-		} catch (WindowsAzureInvalidProjectOperationException e) {
+			// correct project name if its invalid.
+			if (!project.getName().
+					equalsIgnoreCase(projMngr.getProjectName())) {
+				WAEclipseHelper.
+				correctProjectName(project, projMngr);
+			}
+		} catch (Exception e) {
 			//As project open has been occurred already
 			//user should not get any exception prompt.
 			Activator.getDefault().log(Messages.resCLExProjUpgrd, e);
 		}
-	}
+}
 
 	/**
 	 * Refreshes the workspace.

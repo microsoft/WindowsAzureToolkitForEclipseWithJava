@@ -54,7 +54,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="Jetty 7" type="server" detectpath="lib\jetty-server-7.*">
 		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="\%ROLENAME%" type="server.deploy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
 	</componentset>
@@ -62,7 +62,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="Jetty 8" type="server" detectpath="lib\jetty-server-8.*">
 		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="\%ROLENAME%" type="server.deploy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
 	</componentset>
@@ -86,7 +86,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="JBoss AS 6" type="server" detectpath="lib\jboss-main.jar">
 		<startupenv name="JBOSS_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JBOSS_HOME%\server\default\deploy" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="\%ROLENAME%" type="server.deploy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%JBOSS_HOME%\bin" importas="run.bat -b 0.0.0.0" type="server.start"/>
 	</componentset>
@@ -94,7 +94,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="JBoss AS 7 (Standalone)" type="server" detectpath="bin\standalone.bat">
 		<startupenv name="JBOSS_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JBOSS_HOME%\standalone\deployments" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="\%ROLENAME%" type="server.deploy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%JBOSS_HOME%\bin" importas="standalone.bat -b 0.0.0.0 -bmanagement 0.0.0.0" type="server.start"/>
 	</componentset>

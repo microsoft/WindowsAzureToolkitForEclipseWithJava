@@ -1,6 +1,5 @@
 rd "\%ROLENAME%"
 mklink /D "\%ROLENAME%" "%ROLEROOT%\approot"
-cd /d "\%ROLENAME%"
 set SERVER_APPS_LOCATION=\%ROLENAME%
 
 ${Variables}

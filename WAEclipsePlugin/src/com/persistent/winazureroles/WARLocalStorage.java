@@ -56,10 +56,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.persistent.util.WAEclipseHelper;
 import com.persistent.util.MessageUtil;
 
-
 /**
  * Property page for Local Storage Resources table.
- *
  */
 public class WARLocalStorage extends PropertyPage {
 
@@ -74,12 +72,14 @@ public class WARLocalStorage extends PropertyPage {
     private Map<String, WindowsAzureLocalStorage> mapLclStg;
     private Button btnEdit;
     private Button btnRemove;
+    private boolean isPageDisplayed = false;
 
     @Override
     public String getTitle() {
-        if (tblViewer != null) {
-            tblViewer.refresh();
-        }
+    	if (isPageDisplayed
+    			&& tblViewer != null) {
+    		tblViewer.refresh();
+    	}
         return super.getTitle();
     }
 
@@ -108,8 +108,7 @@ public class WARLocalStorage extends PropertyPage {
         container.setLayout(gridLayout);
         container.setLayoutData(gridData);
 
-        tblResources = new Table(container, SWT.MULTI | SWT.BORDER
-                | SWT.FULL_SELECTION);
+        tblResources = new Table(container, SWT.BORDER | SWT.FULL_SELECTION);
         tblResources.setHeaderVisible(true);
         tblResources.setLinesVisible(true);
         gridData = new GridData();
@@ -165,6 +164,7 @@ public class WARLocalStorage extends PropertyPage {
         createRemoveButton(containerButtons);
 
         createTableViewer();
+        isPageDisplayed = true;
         return container;
     }
 
@@ -256,7 +256,6 @@ public class WARLocalStorage extends PropertyPage {
         @Override
         public void inputChanged(Viewer viewer,
                 Object oldInput, Object newInput) {
-
         }
 
         @Override
@@ -279,7 +278,6 @@ public class WARLocalStorage extends PropertyPage {
     /**
      * Label provider class for local storage table,
      * to provide column names.
-     *
      */
     private class LclStgTableLabelProvider implements ITableLabelProvider {
 
@@ -589,7 +587,23 @@ public class WARLocalStorage extends PropertyPage {
           */
          @Override
          public boolean canModify(Object element, String property) {
-             return true;
+        	 boolean retVal = true;
+        	 @SuppressWarnings("unchecked")
+        	 Entry<String, WindowsAzureLocalStorage> entry =
+        	 (Entry<String, WindowsAzureLocalStorage>) element;
+        	 /*
+        	  * If local storage selected for in place editing
+        	  * is related to caching then don't allow.
+        	  */
+        	 if (entry.getValue().getName().
+        			 equals(Messages.cachLclStrNm)
+        			 && (property.equals(Messages.lclStgRname)
+        					 || property.equals(Messages.lclStgSize)
+        					 || property.equals(Messages.lclStgRcl)
+        					 || property.equals(Messages.lclStgPath))) {
+        		 retVal = false;
+        	 }
+        	 return retVal;
          }
     }
 
@@ -598,29 +612,40 @@ public class WARLocalStorage extends PropertyPage {
      * deletes the selected local storage resource.
      */
     @SuppressWarnings("unchecked")
-	protected void removeBtnListener() {
-        int selIndex = tblViewer.getTable().getSelectionIndex();
-        if (selIndex > -1) {
-            try {
-                boolean choice = MessageDialog.openQuestion(new Shell(),
-                        Messages.lclStgRmvTtl, Messages.lclStgRmvMsg);
-                if (choice) {
-                    Entry<String, WindowsAzureLocalStorage> mapEntry =
-                            (Entry<String, WindowsAzureLocalStorage>)
-                            tblViewer.getTable().getItem(selIndex).getData();
-                    WindowsAzureLocalStorage delRes = mapEntry.getValue();
-                    delRes.delete();
-                    tblViewer.refresh();
-                }
-
-            } catch (WindowsAzureInvalidProjectOperationException e) {
-                errorTitle = Messages.lclStgSetErrTtl;
-                errorMessage = Messages.lclStgSetErrMsg;
-                MessageUtil.displayErrorDialog(getShell(),
-                        errorTitle, errorMessage);
-                Activator.getDefault().log(errorMessage, e);
-            }
-        }
+    protected void removeBtnListener() {
+    	int selIndex = tblViewer.getTable().getSelectionIndex();
+    	if (selIndex > -1) {
+    		try {
+    			Entry<String, WindowsAzureLocalStorage> mapEntry =
+    					(Entry<String, WindowsAzureLocalStorage>)
+    					tblViewer.getTable().getItem(selIndex).getData();
+    			WindowsAzureLocalStorage delRes = mapEntry.getValue();
+    			/*
+    			 * Check local storage selected for removal
+    			 * is associated with caching then give error
+    			 * and does not allow to remove.
+    			 */
+    			if (delRes.isCachingLocalStorage()) {
+    				errorTitle = Messages.cachDsblErTtl;
+    				errorMessage = Messages.lclStrRmvErMsg;
+    				MessageUtil.displayErrorDialog(getShell(),
+    						errorTitle, errorMessage);
+    			} else {
+    				boolean choice = MessageDialog.openQuestion(new Shell(),
+    						Messages.lclStgRmvTtl, Messages.lclStgRmvMsg);
+    				if (choice) {
+    					delRes.delete();
+    					tblViewer.refresh();
+    				}
+    			}
+    		} catch (WindowsAzureInvalidProjectOperationException e) {
+    			errorTitle = Messages.lclStgSetErrTtl;
+    			errorMessage = Messages.lclStgSetErrMsg;
+    			MessageUtil.displayErrorDialog(getShell(),
+    					errorTitle, errorMessage);
+    			Activator.getDefault().log(errorMessage, e);
+    		}
+    	}
     }
 
     /**
@@ -640,26 +665,38 @@ public class WARLocalStorage extends PropertyPage {
      * a local storage resource.
      */
     @SuppressWarnings("unchecked")
-	protected void editBtnListener() {
-        int selIndex = tblViewer.getTable().getSelectionIndex();
-        if (selIndex > -1) {
-            try {
-                Entry<String, WindowsAzureLocalStorage> mapEntry =
-                        (Entry<String, WindowsAzureLocalStorage>)
-                        tblViewer.getTable().getItem(selIndex).getData();
-                LocalStorageResourceDialog dialog =
-                		new LocalStorageResourceDialog(getShell(),
-                        mapLclStg , windowsAzureRole, mapEntry.getKey());
-                dialog.open();
-                tblViewer.refresh();
-            } catch (Exception e) {
-                errorTitle = Messages.lclStgSetErrTtl;
-                errorMessage = Messages.lclStgSetErrMsg;
-                MessageUtil.displayErrorDialog(getShell(),
-                        errorTitle, errorMessage);
-                Activator.getDefault().log(errorMessage, e);
-            }
-        }
+    protected void editBtnListener() {
+    	int selIndex = tblViewer.getTable().getSelectionIndex();
+    	if (selIndex > -1) {
+    		try {
+    			Entry<String, WindowsAzureLocalStorage> mapEntry =
+    					(Entry<String, WindowsAzureLocalStorage>)
+    					tblViewer.getTable().getItem(selIndex).getData();
+    			/*
+    			 * Check local storage selected for modification
+    			 * is associated with caching then give error
+    			 * and does not allow to edit.
+    			 */
+    			if (mapEntry.getValue().isCachingLocalStorage()) {
+    				errorTitle = Messages.cachDsblErTtl;
+    				errorMessage = Messages.lclStrEdtErMsg;
+    				MessageUtil.displayErrorDialog(getShell(),
+    						errorTitle, errorMessage);		
+    			} else {
+    				LocalStorageResourceDialog dialog =
+    						new LocalStorageResourceDialog(getShell(),
+    								mapLclStg , windowsAzureRole, mapEntry.getKey());
+    				dialog.open();
+    				tblViewer.refresh();
+    			}
+    		} catch (Exception e) {
+    			errorTitle = Messages.lclStgSetErrTtl;
+    			errorMessage = Messages.lclStgSetErrMsg;
+    			MessageUtil.displayErrorDialog(getShell(),
+    					errorTitle, errorMessage);
+    			Activator.getDefault().log(errorMessage, e);
+    		}
+    	}
     }
 
 
@@ -706,6 +743,9 @@ public class WARLocalStorage extends PropertyPage {
 
     @Override
     public boolean performOk() {
+    	if (!isPageDisplayed) {
+    		return super.performOk();
+    	}
         boolean okToProceed = true;
         try {
             if (!Activator.getDefault().isSaved()) {

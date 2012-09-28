@@ -27,6 +27,7 @@ public class StorageService {
 	private String url;
 	private String serviceName;
 	private StorageServiceKeys storageServiceKeys;
+	private StorageServiceProperties storageServiceProperties;
 	
 	@XmlElement(name="Url")
 	public String getUrl() {
@@ -53,5 +54,14 @@ public class StorageService {
 
 	public void setStorageServiceKeys(StorageServiceKeys storageServiceKeys) {
 		this.storageServiceKeys = storageServiceKeys;
+	}
+	
+	@XmlElement(name = "StorageServiceProperties")
+	public StorageServiceProperties getStorageServiceProperties() {
+		return storageServiceProperties;
+	}
+
+	public void setStorageServiceProperties(StorageServiceProperties storageServiceProperties) {
+		this.storageServiceProperties = storageServiceProperties;
 	}
 }

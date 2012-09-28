@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?NLS TYPE="org.eclipse.help.contexts"?>
+<contexts>
+    <context id="new_cert_dialog" >
+     <description>
+     	This dialog allows you to create a new self-signed X.509 certificate that you can use for 
+     	testing purposes in scenarios involving encryption or digital signing. 
+     	Two files will be generated: a certificate file with the public key only (*.CER), 
+     	and a file containing both the private and the public key (*.PFX).
+	 </description>
+        <topic label="Enabling Remote Access in Windows Azure Using Eclipse" href="http://go.microsoft.com/fwlink/?LinkID=262381"/>
+   </context>
+</contexts>

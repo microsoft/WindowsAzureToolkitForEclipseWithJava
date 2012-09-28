@@ -24,6 +24,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
 import com.gigaspaces.azure.rest.InvalidRestAPIArgument;
+import com.microsoftopentechnologies.wacommon.utils.Base64;
 
 @XmlRootElement(name = "CreateStorageServiceInput")
 @XmlType(propOrder = { "serviceName", "description", "label",  "location", "affinityGroup" })
@@ -62,7 +63,7 @@ public class CreateStorageServiceInput {
 
 		String labelLength = label;
 		try {
-			this.label = Base64Persistent.encode(label.getBytes("UTF-8"));
+			this.label = Base64.encode(label.getBytes("UTF-8"));
 		} catch (UnsupportedEncodingException e) {
 		}
 		if (labelLength.length() > 100)

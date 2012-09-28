@@ -18,8 +18,9 @@ package com.gigaspaces.azure.handler;
 
 import org.eclipse.osgi.util.NLS;
 
-public class Messages extends NLS {
-	private static final String BUNDLE_NAME = "com.gigaspaces.azure.handler.messages"; //$NON-NLS-1$
+public final class Messages extends NLS {
+	private static final String BUNDLE_NAME =
+			"com.gigaspaces.azure.handler.messages";
 	public static String publish;
 	public static String unpublish;
 	static {

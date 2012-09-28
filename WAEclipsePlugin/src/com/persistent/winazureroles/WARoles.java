@@ -21,19 +21,11 @@ import java.util.List;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.preference.IPreferenceNode;
-import org.eclipse.jface.preference.PreferenceDialog;
-import org.eclipse.jface.preference.PreferenceNode;
 import org.eclipse.jface.viewers.ILabelProviderListener;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
-import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.window.IShellProvider;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
@@ -46,7 +38,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.ui.dialogs.PropertyDialogAction;
 
 import waeclipseplugin.Activator;
 
@@ -57,9 +48,7 @@ import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
 
 /**
- *
  * This class creates Roles table and buttons.
- *
  */
 public class WARoles {
     private static Table tblRoles;
@@ -79,13 +68,13 @@ public class WARoles {
      * @param composite
      * @param isWizard
      */
-    public static void displayRoles(Composite composite, boolean isWizard){
-
+    public static void displayRoles(Composite composite,
+    		boolean isWizard) {
 
         final Composite parent = composite;
         WARoles.isWizard = isWizard;
         //Roles table
-        tblRoles = new Table(composite, SWT.MULTI | SWT.BORDER |
+        tblRoles = new Table(composite, SWT.BORDER |
                 SWT.FULL_SELECTION);
         tblRoles.setHeaderVisible(true);
         tblRoles.setLinesVisible(true);
@@ -291,12 +280,25 @@ public class WARoles {
                 		MessageDialog.openQuestion(composite.getShell(),
                         Messages.rolsDelTitle, Messages.rolsDelMsg);
                 if (choice) {
-                    WindowsAzureRole windowsAzureRole = listRoles.get(selIndex);
-                    windowsAzureRole.delete();
-                    waProjManager.save();
-                    tableViewer.refresh();
-                    WAEclipseHelper.refreshWorkspace(
-                    		Messages.rolsRefTitle, Messages.rolsRefMsg);
+                	/*
+                	 * If the role selected for deletion is the last role,
+                	 * then do not delete it and give error message.
+                	 */
+                	if (listRoles.size() == 1) {
+                		MessageUtil.displayErrorDialog(
+                				composite.getShell(),
+                                Messages.rolsDelTitle,
+                                Messages.lastRolDelMsg);
+                	} else {
+                		WindowsAzureRole windowsAzureRole =
+                				listRoles.get(selIndex);
+                		windowsAzureRole.delete();
+                		waProjManager.save();
+                		tableViewer.refresh();
+                		WAEclipseHelper.refreshWorkspace(
+                				Messages.rolsRefTitle,
+                				Messages.rolsRefMsg);
+                	}
                 }
             }
         } catch (WindowsAzureInvalidProjectOperationException e) {
@@ -326,7 +328,9 @@ public class WARoles {
                 Activator.getDefault().setWaRole(windowsAzureRole);
                 Activator.getDefault().setEdit(true);
 
-                int btnID = openPropertyDialog(windowsAzureRole);
+                int btnID = WAEclipseHelper.
+                		openRolePropertyDialog(windowsAzureRole,
+                		Messages.cmhIdGeneral);
                 if (btnID == Window.OK) {
                     tableViewer.refresh();
                 }
@@ -340,69 +344,6 @@ public class WARoles {
                 Activator.getDefault().log(errorMessage, ex);
             }
         }
-    }
-
-    protected static int openPropertyDialog(WindowsAzureRole windowsAzureRole) {
-        int retVal = Window.CANCEL; //value corresponding to cancel
-        try {
-            //Create the nodes
-            IPreferenceNode nodeGeneral = new PreferenceNode(
-                    Messages.cmhIdGeneral, Messages.cmhLblGeneral,
-                    null, WARGeneral.class.toString());
-            IPreferenceNode nodeEndPts = new PreferenceNode(
-                    Messages.cmhIdEndPts, Messages.cmhLblEndPts,
-                    null, WAREndpoints.class.toString());
-            IPreferenceNode nodeDebugging = new PreferenceNode(
-                    Messages.cmhIdDbg, Messages.cmhLblDbg,
-                    null, WARDebugging.class.toString());
-            IPreferenceNode nodeEnvVars = new PreferenceNode(
-                    Messages.cmhIdEnvVars, Messages.cmhLblEnvVars,
-                    null, WAREnvVars.class.toString());
-            IPreferenceNode nodeLclStg = new PreferenceNode(
-                    Messages.cmhIdLclStg, Messages.cmhLblLclStg,
-                    null, WARLocalStorage.class.toString());
-            IPreferenceNode nodeCmpnts = new PreferenceNode(
-                    Messages.cmhIdCmpnts, Messages.cmhLblCmpnts,
-                    null, WARComponents.class.toString());
-            IPreferenceNode nodeSrvCnfg = new PreferenceNode(
-                    Messages.cmhIdSrvCnfg, Messages.cmhLblSrvCnfg,
-                    null, WAServerConfiguration.class.toString());
-            IPreferenceNode nodeLdBlnc = new PreferenceNode(
-                    Messages.cmhIdLdBlnc, Messages.cmhLblLdBlnc,
-                    null, WARLoadBalance.class.toString());
-
-            nodeGeneral.add(nodeEndPts);
-            nodeGeneral.add(nodeDebugging);
-            nodeGeneral.add(nodeEnvVars);
-            nodeGeneral.add(nodeLclStg);
-            nodeGeneral.add(nodeCmpnts);
-            nodeGeneral.add(nodeSrvCnfg);
-            nodeGeneral.add(nodeLdBlnc);
-            SelectionProvider selProvider = new SelectionProvider();
-            PropertyDialogAction action =
-            		new PropertyDialogAction(new IShellProvider() {
-
-                @Override
-                public Shell getShell() {
-                    return new Shell();
-                }
-            } , selProvider);
-
-            selProvider.setSelection(new StructuredSelection(nodeGeneral));
-            PreferenceDialog dlg = action.createDialog();
-
-            String dlgTitle = String.format(Messages.cmhPropFor,
-                                        windowsAzureRole.getName());
-            dlg.getShell().setText(dlgTitle);
-            retVal = dlg.open();
-        } catch (Exception ex) {
-            errorTitle = Messages.rolsDlgErr;
-            errorMessage = Messages.rolsDlgErrMsg;
-            MessageUtil.displayErrorDialog(new Shell(),
-                    errorTitle, errorMessage);
-            Activator.getDefault().log(errorMessage, ex);
-        }
-        return retVal;
     }
 
     /**
@@ -453,7 +394,8 @@ public class WARoles {
                 strBfr.append(roleNo++);
             }
             String strKitLoc = String.format("%s%s%s%s%s%s",
-					Platform.getInstallLocation().getURL().getPath().toString(),
+					Platform.getInstallLocation().
+					getURL().getPath().toString(),
 					File.separator, Messages.pluginFolder,
 					File.separator, Messages.pluginId,
 					Messages.pWizStarterKit);
@@ -464,13 +406,18 @@ public class WARoles {
             Activator.getDefault().setWaProjMgr(waProjManager);
             Activator.getDefault().setWaRole(windowsAzureRole);
             Activator.getDefault().setEdit(false);
-
-            int btnID = openPropertyDialog(windowsAzureRole);
-
+            /*
+             * Check whether user has pressed OK or Cancel button.
+             * If OK : Refresh roles table so that newly added role is visible
+             * else CANCEL : remove added role from list of roles.
+             */
+            int btnID = WAEclipseHelper.
+            		openRolePropertyDialog(windowsAzureRole,
+            				Messages.cmhIdGeneral);
             if (btnID == Window.OK) {
-                tableViewer.refresh();
+            	tableViewer.refresh();
             } else {
-                getRoles().remove(windowsAzureRole);
+            	getRoles().remove(windowsAzureRole);
             }
             WAEclipseHelper.refreshWorkspace(
             		Messages.rolsRefTitle, Messages.rolsRefMsg);
@@ -483,10 +430,17 @@ public class WARoles {
         }
     }
 
+    /**
+     * Method returns list of windows azure roles.
+     * @return List<WindowsAzureRole>
+     */
     public static List<WindowsAzureRole> getRoles() {
         return listRoles;
     }
 
+    /**
+     * Method saves PML object.
+     */
     public static void performSave() {
             try {
                 waProjManager.save();
@@ -498,35 +452,5 @@ public class WARoles {
                         errorMessage);
                 Activator.getDefault().log(errorMessage, e);
             }
-    }
-
-    /**
-     * Selection provider for custom property dialog.
-     *
-     */
-    private static class SelectionProvider implements ISelectionProvider {
-        ISelection sel;
-
-        @Override
-        public void addSelectionChangedListener(ISelectionChangedListener arg0) {
-
-        }
-
-        @Override
-        public ISelection getSelection() {
-            return sel;
-        }
-
-        @Override
-        public void removeSelectionChangedListener(
-                ISelectionChangedListener arg0) {
-
-        }
-
-        @Override
-        public void setSelection(ISelection selection) {
-            sel = selection;
-        }
-
     }
 }

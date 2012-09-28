@@ -47,25 +47,28 @@ public abstract class WARest {
 	public final static String CONTENT_LENGTH = Messages.contentLen; 
 	public final static String AUTHORIZATION = Messages.authorization; 
 
-	public final static DateFormat dateTimeFormatter = new SimpleDateFormat(
+	public final static DateFormat DATE_TIME_FORMAT = new SimpleDateFormat(
 			Messages.dateTimeFormat, Locale.US); 
 
 //	protected WARest() {
 //		dateTimeFormatter.setTimeZone(TimeZone.getTimeZone(Messages.timeZone)); 
 //	}
 
-	protected void addx_ms_version2011_08_01(HashMap<String, Object> headers) {
-		headers.put(X_MS_VERSION, Messages.msVersion1); 
+	protected void addXMsVer2011(HashMap<String, Object> headers) {
+		// addx_ms_version2011_08_01
+		headers.put(X_MS_VERSION, Messages.msVersion1);
 	}
 
-	protected void addx_ms_version2010_10_28(HashMap<String, Object> headers) {
-		headers.put(X_MS_VERSION, Messages.msVersion2); 
+	protected void addXMsVer2010(HashMap<String, Object> headers) {
+		// addx_ms_version2010_10_28
+		headers.put(X_MS_VERSION, Messages.msVersion2);
 	}
 
-	protected void addx_ms_version2009_10_01(HashMap<String, Object> headers) {
-		headers.put(X_MS_VERSION, Messages.msVersion3); 
+	protected void addXMsVer2009(HashMap<String, Object> headers) {
+		// addx_ms_version2009_10_01
+		headers.put(X_MS_VERSION, Messages.msVersion3);
 	}
-	
+
 	protected String path(String[] path, String[][] kv) {
 
 		String p1 = "";  //$NON-NLS-1$

@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: com.interopbridges.tools.windowsazure.WindowsAzureProjectManager
+Class-Path: jettison-1.1.jar
+
+

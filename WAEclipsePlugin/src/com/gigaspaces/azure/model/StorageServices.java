@@ -58,5 +58,19 @@ public class StorageServices implements Iterable<StorageService> {
 		}
 		storageServices.add(storageService);
 	}
+	
+	public void remove(final String storageAccountName) {
+		
+		StorageService toRemove = null;
+		for (StorageService st : storageServices) {
+			if (st.getServiceName().equals(storageAccountName)) {
+				toRemove = st;
+			}
+		}
+		if (toRemove != null) {
+			storageServices.remove(toRemove);
+		}
+		
+	}
 
 }

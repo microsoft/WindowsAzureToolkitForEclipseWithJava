@@ -142,4 +142,16 @@ public class WindowsAzureLocalStorageTest  {
         wLoSto.delete();
         assertEquals(null, role.getLocalStorage().get("WAStorage"));
     }
+
+    @Test(expected=IllegalArgumentException.class)
+    public final void testDeleteLsEnvWithNull()
+            throws WindowsAzureInvalidProjectOperationException {
+        wLoSto.deleteLsEnv(null);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public final void testDeleteLsEnvWithEmpty()
+            throws WindowsAzureInvalidProjectOperationException {
+        wLoSto.deleteLsEnv(null);
+    }
 }

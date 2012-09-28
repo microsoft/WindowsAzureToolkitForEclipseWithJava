@@ -80,10 +80,10 @@ public class WindowsAzureServiceImpl implements WindowsAzureService {
 
 		} catch (IOException e) {
 			Activator.getDefault().log(Messages.error, e);
-			throw new CommandLineException(Messages.deserializationError, e);
+			throw new CommandLineException(Messages.deserializtnErr, e);
 
 		} catch (JAXBException e) {
-			throw new CommandLineException(Messages.deserializationError, e);
+			throw new CommandLineException(Messages.deserializtnErr, e);
 		}
 		return result;
 	}

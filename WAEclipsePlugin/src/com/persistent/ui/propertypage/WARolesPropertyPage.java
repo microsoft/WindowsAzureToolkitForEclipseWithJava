@@ -28,7 +28,6 @@ import com.persistent.winazureroles.WARoles;
 /**
  *
  * This class creates property page for Roles under Windows Azure in properties
- *
  */
 public class WARolesPropertyPage extends PropertyPage {
 
@@ -37,7 +36,8 @@ public class WARolesPropertyPage extends PropertyPage {
         noDefaultAndApplyButton();
         //display help content
         PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,
-                "com.persistent.winazure.eclipseplugin.windows_azure_project_roles");
+                "com.persistent.winazure.eclipseplugin." +
+                "windows_azure_project_roles");
         Composite composite = new Composite(parent, SWT.NONE);
         GridLayout gridLayout = new GridLayout();
         gridLayout.numColumns = 2;

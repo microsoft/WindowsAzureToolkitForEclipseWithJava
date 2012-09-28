@@ -29,28 +29,27 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PropertyPage;
 
-import waeclipseplugin.Activator;
-
+import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
-import com.persistent.util.MessageUtil;
 
 /**
- *
  * This class creates Windows Azure Property Page
- *
  */
 public class WAWinAzurePropertyPage extends PropertyPage {
     private Text  txtServiceName;
     private WindowsAzureProjectManager waProjManager;
     private IProject selProject;
-    private String errorTitle;
     private String errorMessage;
     private Combo comboType;
+    private Combo targetOSComboType;
     private static String[] arrType = {Messages.proPageBFEmul,
         Messages.proPageBFCloud };
+    private static String[] targetOSType =
+    	{OSFamilyType.WINDOWS_SERVER_2008_R2.getName()};
     /**
      * Draw controls for property page.
      *
@@ -78,12 +77,11 @@ public class WAWinAzurePropertyPage extends PropertyPage {
         try {
             txtServiceName.setText(waProjManager.getServiceName());
         } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorTitle = Messages.proPageErrTitle;
             errorMessage = Messages.proPageErrMsgBox1
             + Messages.proPageErrMsgBox2;
-            MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                    errorMessage);
-            Activator.getDefault().log(errorMessage, e);
+            PluginUtil.displayErrorDialogAndLog(this.getShell(),
+            		Messages.proPageErrTitle,
+            		errorMessage, e);
         }
         GridData gridData = new GridData();
         gridData.horizontalAlignment = SWT.FILL;
@@ -98,6 +96,16 @@ public class WAWinAzurePropertyPage extends PropertyPage {
         gridData.grabExcessHorizontalSpace = true;
         comboType.setLayoutData(gridData);
         comboType.setItems(arrType);
+
+        Label lblTargetOS = new Label(container, SWT.LEFT);
+        lblTargetOS.setText(Messages.proPageTgtOSLbl);
+
+        targetOSComboType = new Combo(container, SWT.READ_ONLY);
+        gridData = new GridData();
+        gridData.grabExcessHorizontalSpace = true;
+        targetOSComboType.setLayoutData(gridData);
+        targetOSComboType.setItems(targetOSType);
+
         WindowsAzurePackageType type;
         try {
             type = waProjManager.getPackageType();
@@ -106,14 +114,15 @@ public class WAWinAzurePropertyPage extends PropertyPage {
             } else {
                 comboType.setText(arrType[1]);
             }
+            //Set current value for target OS
+            targetOSComboType.setText(waProjManager.getOSFamily().getName());
         } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorTitle = Messages.proPageErrTitle;
             errorMessage = Messages.proPageErrMsgBox1
             +
             Messages.proPageErrMsgBox2;
-            MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                    errorMessage);
-            Activator.getDefault().log(errorMessage, e);
+           PluginUtil.displayErrorDialogAndLog(this.getShell(),
+        		   Messages.proPageErrTitle,
+        		   errorMessage, e);
         }
         return container;
     }
@@ -130,13 +139,11 @@ public class WAWinAzurePropertyPage extends PropertyPage {
             waProjManager = WindowsAzureProjectManager.
             load(projDirPath);
         } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorTitle = Messages.proPageErrTitle;
             errorMessage = Messages.proPageErrMsgBox1
             +
             Messages.proPageErrMsgBox2;
-            MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                    errorMessage);
-            Activator.getDefault().log(Messages.remAccErProjLoad, e);
+            PluginUtil.displayErrorDialogAndLog(this.getShell(),
+            		Messages.proPageErrTitle, errorMessage, e);
         }
     }
 
@@ -154,17 +161,25 @@ public class WAWinAzurePropertyPage extends PropertyPage {
             } else {
                 waProjManager.setPackageType(WindowsAzurePackageType.CLOUD);
             }
+
+            if (targetOSComboType.getText().
+            		equals(OSFamilyType.WINDOWS_SERVER_2008_R2.getName())) {
+            	waProjManager.setOSFamily(OSFamilyType.WINDOWS_SERVER_2008_R2);
+            }
+            else if (targetOSComboType.getText().
+            		equals(OSFamilyType.WINDOWS_SERVER_2012.getName())) {
+            	waProjManager.setOSFamily(OSFamilyType.WINDOWS_SERVER_2012);
+            }
             waProjManager.save();
             WAEclipseHelper.refreshWorkspace(
             		Messages.proPageRefWarn, Messages.proPageRefMsg);
         } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorTitle = Messages.proPageErrTitle;
             errorMessage = Messages.proPageErrMsgBox1
             +
             Messages.proPageErrMsgBox2;
-            MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                    errorMessage);
-            Activator.getDefault().log(errorMessage, e);
+            PluginUtil.displayErrorDialogAndLog(this.getShell(),
+            		Messages.proPageErrTitle,
+            		errorMessage, e);
         }
         return super.performOk();
     }

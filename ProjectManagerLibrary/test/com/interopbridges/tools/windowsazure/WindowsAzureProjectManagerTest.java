@@ -301,7 +301,7 @@ public class WindowsAzureProjectManagerTest {
     @Test(expected=IllegalArgumentException.class)
     public void testAddRoleWithEmpty()
     throws WindowsAzureInvalidProjectOperationException {
-        wProj.addRole("", "");
+        wProj.addRole("","");
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -322,7 +322,7 @@ public class WindowsAzureProjectManagerTest {
     @Test(expected=WindowsAzureInvalidProjectOperationException.class)
     public void testAddRoleWithException()
     throws WindowsAzureInvalidProjectOperationException {
-        wProjErr1.addRole("NewRole",Messages.getString("WinAzureTestConstants.StarterKit"));
+        wProjErr1.addRole("NewRole",  Messages.getString("WinAzureTestConstants.StarterKit"));
     }
 
     @Test
@@ -983,28 +983,34 @@ public class WindowsAzureProjectManagerTest {
     public void testIsCurrVersion()
             throws WindowsAzureInvalidProjectOperationException, IOException
     {
-
         assertTrue(wProj.isCurrVersion());
-
     }
 
     @Test()
-    public void testUpgradeProject()
-            throws WindowsAzureInvalidProjectOperationException
-    {
-        wProj.upgradeProject(new File(Messages.getString("WinAzureTestConstants.WAUpgrade")),
-                Messages.getString("WinAzureTestConstants.StarterKit"));
-        assertTrue(new File(Messages.getString("WinAzureTestConstants.WAUpgrade_new")).exists());
+    public void testGetOSFamily()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	 assertEquals(OSFamilyType.WINDOWS_SERVER_2008_R2, wProj.getOSFamily());
     }
 
-    @Test(expected=WindowsAzureInvalidProjectOperationException.class)
-    public void testUpgradeProjectWithException()
-            throws WindowsAzureInvalidProjectOperationException
-    {
-        wProj.upgradeProject(new File(Messages.getString("WinAzureTestConstants.WAUpgrade")),
-                "inalidLocation");
+    @Test()
+    public void testSetOSFamily()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	wProj.setOSFamily(OSFamilyType.WINDOWS_SERVER_2012);
+    	assertEquals(OSFamilyType.WINDOWS_SERVER_2012, wProj.getOSFamily());
     }
-
-
+    
+    @Test()
+    public void testVersion() throws WindowsAzureInvalidProjectOperationException {
+    	String newVersion = "1.8.0";
+    	String oldVersion = wProj.getVersion();
+    	wProj.setVersion(newVersion);
+    	wProj.save();
+    	assertEquals(newVersion, wProj.getVersion());
+    	
+    	//Resetting back test data
+    	wProj.setVersion(oldVersion);
+    	wProj.save();
+    }
+    
 
 }

@@ -16,8 +16,6 @@
 package com.persistent.winazureroles;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.FocusEvent;
-import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
@@ -37,25 +35,26 @@ import waeclipseplugin.Activator;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.persistent.util.WAEclipseHelper;
 import com.persistent.util.MessageUtil;
+import com.persistent.util.WAEclipseHelper;
 
 /**
  * Property page for windows azure role.
- *
  */
 public class WARGeneral extends PropertyPage {
 
     private Text txtRoleName;
     private Combo comboVMSize;
     private Text txtNoOfInstances;
-    private String[] arrVMSize = {"ExtraLarge", "Large", "Medium", "Small",
-    "ExtraSmall"};
+    private String[] arrVMSize = {"ExtraLarge", "Large",
+    		"Medium", "Small", "ExtraSmall"};
     private boolean isValidRoleName = false;
+    private boolean isValidinstances = true;
     private WindowsAzureProjectManager waProjManager;
     private WindowsAzureRole windowsAzureRole;
     private String errorTitle;
     private String errorMessage;
+    private boolean isPageDisplayed = false;
 
     /**
      * Creates components for role name, VM size and number of instances.
@@ -102,6 +101,7 @@ public class WARGeneral extends PropertyPage {
                     errorMessage);
             Activator.getDefault().log(errorMessage, ex);
         }
+        isPageDisplayed = true;
         return container;
     }
 
@@ -192,46 +192,57 @@ public class WARGeneral extends PropertyPage {
         gridData.grabExcessHorizontalSpace = true;
         txtNoOfInstances.setLayoutData(gridData);
         txtNoOfInstances.setText("1");
-        txtNoOfInstances.addFocusListener(new FocusListener() {
-
-            @Override
-            public void focusLost(FocusEvent arg0) {
-                instancesModifyListener();
-            }
-
-            @Override
-            public void focusGained(FocusEvent arg0) {
-                setValid(true);
-            }
-        });
+        txtNoOfInstances.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent arg0) {
+				instancesModifyListener();
+			}
+		});
     }
 
     /**
      * Modify listener for number of instances textbox.
+     * Validate number of instances field.
      */
     protected void instancesModifyListener() {
-        setValid(true);
+    	if (isValidRoleName) {
+    		setValid(true);
+    	} else  {
+    		setValid(false);
+    	}
         String noOfInstances = txtNoOfInstances.getText();
-        boolean isValidinstances = true;
-        try {
-            // validate noOfInstances field
-            int instances = Integer.parseInt(noOfInstances);
-            if (instances < 1) {
-                isValidinstances = false;
-            }
-        } catch (NumberFormatException ex) {
-            isValidinstances = false;
+        /*
+         * If text box is not empty
+         * then only get integer value using casting.
+         */
+        if (!noOfInstances.isEmpty()) {
+        	try {
+        		int instances = Integer.parseInt(noOfInstances);
+        		if (instances < 1) {
+        			isValidinstances = false;
+        		} else {
+        			isValidinstances = true;
+        		}
+        	} catch (NumberFormatException ex) {
+        		isValidinstances = false;
+        	}
         }
         try {
-            if (noOfInstances.isEmpty() || !isValidinstances) {
+        	/*
+        	 * If text box is empty then do not show error
+        	 * as user may be giving input.
+        	 * Just disable OK button.
+        	 */
+        	if (noOfInstances.isEmpty()) {
+        		setValid(false);
+        	} else if (!isValidinstances) {
                 setValid(false);
-                errorTitle = Messages.dlgInvldInst1;
-                errorMessage = Messages.dlgInvldInst2;
-                MessageUtil.displayErrorDialog(getShell(), errorTitle,
-                        errorMessage);
-            } else {
-                windowsAzureRole.setInstances(txtNoOfInstances.getText());
-            }
+                MessageUtil.displayErrorDialog(getShell(),
+                		Messages.dlgInvldInst1,
+                		Messages.dlgInvldInst2);
+        	} else {
+        		windowsAzureRole.setInstances(txtNoOfInstances.getText());
+        	}
         } catch (Exception ex) {
             errorTitle = Messages.adRolErrTitle;
             errorMessage = Messages.adRolErrMsgBox1
@@ -265,8 +276,12 @@ public class WARGeneral extends PropertyPage {
      * @param event : ModifyEvent
      */
     private void roleNameModifyListener(ModifyEvent event) {
-        setValid(true);
-        String roleName = ((Text) event.widget).getText();
+    	if (isValidinstances) {
+    		setValid(true);
+    	} else {
+    		setValid(false);
+    	}
+        String roleName = ((Text) event.widget).getText().trim();
         try {
             if (roleName.equalsIgnoreCase(
                     windowsAzureRole.getName())) {
@@ -275,14 +290,20 @@ public class WARGeneral extends PropertyPage {
                 isValidRoleName = waProjManager
                         .isAvailableRoleName(roleName);
             }
-            if (isValidRoleName) {
-                windowsAzureRole.setName(txtRoleName.getText());
+            /*
+        	 * If text box is empty then do not show error
+        	 * as user may be giving input.
+        	 * Just disable OK button.
+        	 */
+            if (txtRoleName.getText().isEmpty()) {
+            	setValid(false);
+            } else if (isValidRoleName) {
+                windowsAzureRole.setName(txtRoleName.getText().trim());
             } else {
-                setValid(false);
-                errorTitle = Messages.dlgInvldRoleName1;
-                errorMessage = Messages.dlgInvldRoleName2;
-                MessageUtil.displayErrorDialog(getShell(), errorTitle,
-                        errorMessage);
+            	setValid(false);
+            	MessageUtil.displayErrorDialog(getShell(),
+            			Messages.dlgInvldRoleName1,
+            			Messages.dlgInvldRoleName2);
             }
         } catch (WindowsAzureInvalidProjectOperationException e) {
             errorTitle = Messages.adRolErrTitle;
@@ -322,6 +343,9 @@ public class WARGeneral extends PropertyPage {
 
     @Override
     public boolean performOk() {
+    	if (!isPageDisplayed) {
+    		return super.performOk();
+    	}
         boolean okToProceed = true;
         try {
             if (!Activator.getDefault().isSaved()) {

@@ -45,23 +45,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-/*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
-
-
 import javax.xml.xpath.XPathFactory;
 
 import org.eclipse.core.resources.IProject;
@@ -70,23 +53,26 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import waeclipseplugin.Activator;
-import com.gigaspaces.azure.model.Base64Persistent;
+
 import com.gigaspaces.azure.model.CertificateFile;
 import com.gigaspaces.azure.model.Container;
 import com.gigaspaces.azure.model.CreateDeployment;
+import com.gigaspaces.azure.model.CreateHostedService;
+import com.gigaspaces.azure.model.CreateStorageServiceInput;
 import com.gigaspaces.azure.model.DeployDescriptor;
 import com.gigaspaces.azure.model.Deployment;
 import com.gigaspaces.azure.model.EnumerationResults;
+import com.gigaspaces.azure.model.HostedService;
 import com.gigaspaces.azure.model.InstanceStatus;
 import com.gigaspaces.azure.model.Operation;
 import com.gigaspaces.azure.model.RemoteDesktopDescriptor;
 import com.gigaspaces.azure.model.RoleInstance;
 import com.gigaspaces.azure.model.Status;
+import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.rest.RestAPIException;
 import com.gigaspaces.azure.rest.WindowsAzureRestUtils;
 import com.gigaspaces.azure.rest.WindowsAzureServiceManagement;
@@ -97,9 +83,10 @@ import com.gigaspaces.azure.wizards.WizardCacheManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
-import com.persistent.util.EncUtilHelper;
+import com.microsoftopentechnologies.wacommon.utils.Base64;
+import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 
-public class DeploymentManager {
+public final class DeploymentManager {
 
 	private final HashMap<String, DeployDescriptor> deployments = new HashMap<String, DeployDescriptor>();
 
@@ -132,8 +119,13 @@ public class DeploymentManager {
 		String deployState = deploymentDesc.getDeployState();
 		try {
 
-			String serviceName = deploymentDesc.getHostedService().getServiceName();
-			addDeployment(serviceName,deploymentDesc);
+			int conditionalProgress = 20;
+			
+			HostedService hostedService = deploymentDesc.getHostedService();
+			addDeployment(hostedService.getServiceName(),deploymentDesc);
+			
+			StorageService storageAccount = deploymentDesc.getStorageAccount();
+			
 
 			WindowsAzureServiceManagement service = WizardCacheManager.createServiceManagementHelper();
 
@@ -144,7 +136,23 @@ public class DeploymentManager {
 				notifyProgress(deploymentDesc.getDeploymentId(), 100,RequestStatus.Succeeded, Messages.deplCompleted);
 				return;
 			}
-
+			
+			// need to improve this check (maybe hostedSerivce.isExisting())?
+			if (hostedService.getUrl() == null || hostedService.getUrl().isEmpty()) { // the hosted service was not yet created.
+				notifyProgress(deploymentDesc.getDeploymentId(), 5,RequestStatus.InProgress, String.format("%s - %s", Messages.createHostedService, hostedService.getServiceName()));
+				createHostedService(hostedService.getServiceName(), hostedService.getServiceName(), 
+						hostedService.getHostedServiceProperties().getLocation(), hostedService.getHostedServiceProperties().getDescription());
+				conditionalProgress -= 5;
+			}
+			
+			// same goes here
+			if (storageAccount.getUrl() == null || storageAccount.getUrl().isEmpty()) { // the storage account was not yet created
+				notifyProgress(deploymentDesc.getDeploymentId(), 10,RequestStatus.InProgress, String.format("%s - %s", Messages.createStorageAccount, storageAccount.getServiceName()));
+				createStorageAccount(storageAccount.getServiceName(), storageAccount.getServiceName(), 
+						storageAccount.getStorageServiceProperties().getLocation(), storageAccount.getStorageServiceProperties().getDescription());
+				conditionalProgress -= 10;
+			}
+			
 			checkContainerExistance(deploymentDesc.getSubscriptionId(), service);
 
 			if (deploymentDesc.getRemoteDesktopDescriptor().isEnabled()) {
@@ -153,12 +161,12 @@ public class DeploymentManager {
 
 				uploadCertificateIfNeeded(service, deploymentDesc);
 
-				notifyProgress(deploymentDesc.getDeploymentId(), 20,RequestStatus.InProgress, Messages.deplConfigRdp);
+				notifyProgress(deploymentDesc.getDeploymentId(), conditionalProgress,RequestStatus.InProgress, Messages.deplConfigRdp);
 
 				configureRemoteDesktop(deploymentDesc);
 			} 
 			else {
-				notifyProgress(deploymentDesc.getDeploymentId(), 20,RequestStatus.InProgress, Messages.deplConfigRdp);
+				notifyProgress(deploymentDesc.getDeploymentId(), conditionalProgress,RequestStatus.InProgress, Messages.deplConfigRdp);
 			}			
 
 			Notifier notifier = new NotifierImp();
@@ -181,14 +189,14 @@ public class DeploymentManager {
 			String cspkgUrl = String.format(Messages.cspkgUrl, deploymentDesc.getStorageAccount().getServiceName(),
 					Messages.eclipseDeployContainer.toLowerCase(), targetCspckgName);
 			
-			String deploymentName = serviceName + deployState;
+			String deploymentName = hostedService.getServiceName() + deployState;
 			
 			String requestId = createDeployment(deploymentDesc, service,cspkgUrl);
 			RequestStatus status = waitForStatus(deploymentDesc.getSubscriptionId(), service, requestId);			
 			
 			notifyProgress(deploymentDesc.getDeploymentId(), 20, RequestStatus.InProgress,Messages.waitingForDeployment);
 			
-			Deployment deployment = waitForDeployment(deploymentDesc.getSubscriptionId(), serviceName, service, deploymentName);
+			Deployment deployment = waitForDeployment(deploymentDesc.getSubscriptionId(), hostedService.getServiceName(), service, deploymentName);
 
 			notifyProgress(deploymentDesc.getDeploymentId(), 20, status,
 					deployment.getStatus().toString());
@@ -208,6 +216,26 @@ public class DeploymentManager {
 			}
 			throw new DeploymentException(t.getMessage(), t);
 		}
+	}
+
+	private void createStorageAccount(final String storageServiceName, final String label, final String location, final String description) throws RestAPIException, InterruptedException, CommandLineException  {
+		
+		final CreateStorageServiceInput body = new CreateStorageServiceInput(
+				storageServiceName, storageServiceName, location);
+
+		body.setDescription(description);
+		WizardCacheManager.createStorageAccount(body);
+		
+	}
+
+	private void createHostedService(final String hostedServiceName, final String label, final String location, final String description) throws RestAPIException, InterruptedException, CommandLineException {
+		
+		final CreateHostedService body = new CreateHostedService(
+				hostedServiceName, label, location);
+
+		body.setDescription(description);
+		WizardCacheManager.createHostedService(body);
+		
 	}
 
 	private void checkContainerExistance(String subscriptionId,
@@ -294,7 +322,7 @@ public class DeploymentManager {
 
 		String label = deploymentDesc.getHostedService().getServiceName(); //$NON-NLS-1$
 
-		label = Base64Persistent.encode(label.getBytes(Messages.utfFormat)); //$NON-NLS-1$
+		label = Base64.encode(label.getBytes(Messages.utfFormat)); //$NON-NLS-1$
 
 		File cscfgFile = new File(deploymentDesc.getCscfgFile());
 
@@ -316,7 +344,7 @@ public class DeploymentManager {
 				fileInputStream.close();
 			}
 		}
-		String configuration = Base64Persistent.encode(cscfgBuff); //$NON-NLS-1$
+		String configuration = Base64.encode(cscfgBuff); //$NON-NLS-1$
 		
 		String serviceName = deploymentDesc.getHostedService().getServiceName().toLowerCase();
 		String deployState = deploymentDesc.getDeployState().toLowerCase();
@@ -367,102 +395,6 @@ public class DeploymentManager {
 		arg.setStartTime(new Date());
 		arg.setStatus(inprogress);
 		Activator.getDefault().fireDeploymentEvent(arg);
-	}
-
-	private void removeRemoteDesktopConfiguration(
-			DeployDescriptor deploymentDesc) throws DeploymentException {
-		DocumentBuilder docBuilder = null;
-		Document doc = null;
-		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
-				.newInstance();
-		docBuilderFactory.setIgnoringElementContentWhitespace(true);
-		try {
-			docBuilder = docBuilderFactory.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		}
-		File cscfg = new File(WizardCacheManager.getCurrentDeployConfigFile());
-
-		try {
-			doc = docBuilder.parse(cscfg);
-
-			XPathFactory factory = XPathFactory.newInstance();
-			XPath xpath = factory.newXPath();
-			removeConfigureSettings(doc, xpath,
-					Messages.remoteAccessEnabledSetting);
-			removeConfigureSettings(doc, xpath,
-					Messages.remoteFormarderEnabledSetting);
-			removeConfigureSettings(doc, xpath,
-					Messages.remoteAccessAccountUsername);
-			removeConfigureSettings(doc, xpath,
-					Messages.remoteAccessAccountEncryptedPassword);
-			removeConfigureSettings(doc, xpath,
-					Messages.remoteAccessAccountExpiration);
-
-			removeConfigureRdpCertificate(doc, xpath);
-
-			doc.normalize();
-
-			Transformer transformer = TransformerFactory.newInstance()
-					.newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, Messages.yesProp);
-
-			// initialize StreamResult with File object to save to file
-			StreamResult result = new StreamResult(cscfg);
-			DOMSource source = new DOMSource(doc);
-			transformer.transform(source, result);
-		} catch (SAXException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (IOException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (TransformerConfigurationException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (TransformerFactoryConfigurationError e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (TransformerException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		}
-
-	}
-
-	private void removeConfigureRdpCertificate(Document doc, XPath xpath)
-			throws DeploymentException {
-
-		XPathExpression expr;
-
-		try {
-			expr = xpath.compile(Messages.remoteAccessPasswordEncryptionPath);
-			Object result = expr.evaluate(doc, XPathConstants.NODESET);
-
-			NodeList nodes = (NodeList) result;
-
-			for (int i = 0; i < nodes.getLength(); i++) {
-				Node node = nodes.item(i);
-				node.getParentNode().removeChild(node);
-			}
-		} catch (XPathExpressionException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		}
-	}
-
-	private void removeConfigureSettings(Document doc, XPath xpath, String key)
-			throws DeploymentException {
-		XPathExpression expr;
-
-		try {
-			expr = xpath.compile(String.format(
-					Messages.configurationSettingPath, key));
-			Object result = expr.evaluate(doc, XPathConstants.NODESET);
-
-			NodeList nodes = (NodeList) result;
-
-			for (int i = 0; i < nodes.getLength(); i++) {
-				Node node = nodes.item(i);
-				node.getParentNode().removeChild(node);
-			}
-		} catch (XPathExpressionException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		}
 	}
 
 	private void configureRemoteDesktop(DeployDescriptor deploymentDesc) throws DeploymentException {
@@ -524,6 +456,8 @@ public class DeploymentManager {
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
 		} catch (XPathExpressionException e) {
+			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
+		} catch (Exception e) {
 			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
 		}
 	}

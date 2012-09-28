@@ -62,9 +62,11 @@ import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
+import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
+import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
-import com.persistent.util.EncUtilHelper;
-import com.persistent.util.MessageUtil;
 
 
 public class WARemoteAccessPropertyPage extends PropertyPage {
@@ -85,7 +87,6 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
     private WindowsAzureProjectManager waProjManager;
     private IProject selProject;
     private Button remoteChkBtn;
-    private static String pathFrmEncUtil;
     private Button newButton;
     private Button workspaceButton;
     private Button fileSystemButton;
@@ -168,9 +169,11 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         } catch (WindowsAzureInvalidProjectOperationException e1) {
             txtExpiryDate.setText("");
             remoteChkBtn.setSelection(false);
-            //When user data is not consistent we are making
-            //isInconsistent as true and later on we are checking the status
-            //of this variable and throwing the error message to user.
+            /*
+             * When user data is not consistent we are making
+             * isInconsistent as true and later on we are checking the status
+             * of this variable and throwing the error message to user.
+             */
             isInconsistent = true;
             Activator.getDefault().log(Messages.remAccErExpDate,
                     e1);
@@ -190,13 +193,14 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
             makeAllTextBlank();
         }
 
-        //Here we are checking the isInconsistent value and showing the
-        //error message to user on UI.
+        /*
+         * Here we are checking the isInconsistent value
+         * and showing the error message to user on UI.
+         */
         if (isInconsistent) {
-            errorTitle = Messages.remAccErTxtTitle;
-            errorMessage = Messages.remAccDataInc;
-            MessageUtil.displayErrorDialog(this.getShell(),
-                    errorTitle, errorMessage);
+            PluginUtil.displayErrorDialog(this.getShell(),
+            		Messages.remAccErTxtTitle,
+            		Messages.remAccDataInc);
         }
         return parent;
     }
@@ -212,12 +216,9 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         try {
             isEnabled = waProjManager.getRemoteAccessAllRoles();
         } catch (WindowsAzureInvalidProjectOperationException e2) {
-            errorTitle = Messages.remAccErrTitle;
-            errorMessage = Messages.remAccErAllRoles;
-            MessageUtil.displayErrorDialog(getShell(),
-                    errorTitle, errorMessage);
-            Activator.getDefault().log(Messages.remAccErAllRoles,
-                    e2);
+            PluginUtil.displayErrorDialogAndLog(getShell(),
+            		Messages.remAccErrTitle,
+            		Messages.remAccErAllRoles, e2);
         }
         //grid data for remote check box.
         GridData gridData = new GridData();
@@ -263,9 +264,11 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         } catch (WindowsAzureInvalidProjectOperationException e1) {
             txtUserName.setText("");
             remoteChkBtn.setSelection(false);
-            //When user data is not consistent we are making
-            //isInconsistent as true and later on we are checking the status
-            //of this variable and throwing the error message to user.
+            /*
+             * When user data is not consistent we are making
+             * isInconsistent as true and later on we are checking the status
+             * of this variable and throwing the error message to user.
+             */
             isInconsistent = true;
             Activator.getDefault().log(Messages.remAccErUserName, e1);
         }
@@ -286,8 +289,10 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         gridData.grabExcessHorizontalSpace = true;
         gridData.horizontalSpan = 2;
         txtPassword.setLayoutData(gridData);
-        //Listener for key event when user click on password text box
-        //it will set flag for entering the new values.
+        /*
+         * Listener for key event when user click on password text box
+         * it will set flag for entering the new values.
+         */
         txtPassword.addKeyListener(new KeyListener() {
             @Override
             public void keyReleased(KeyEvent event) {
@@ -299,10 +304,12 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
             }
         });
 
-        //Listener for handling focus event on password text box on focus gain
-        //text box will blank.on focus lost we will be checking for strong
-        //password.if password has not changed then we will display old
-        //password only.
+        /*
+         * Listener for handling focus event on password text box on focus gain
+         * text box will blank.on focus lost we will be checking for strong
+         * password. If password has not changed then we will display old
+         * password only.
+         */
         txtPassword.addFocusListener(new PasswordFocusListener());
 
         try {
@@ -311,9 +318,11 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         } catch (WindowsAzureInvalidProjectOperationException e1) {
             txtPassword.setText("");
             remoteChkBtn.setSelection(false);
-            //When user data is not consistent we are making
-            //isInconsistent as true and later on we are checking the status
-            //of this variable and throwing the error message to user.
+            /*
+             * When user data is not consistent we are making
+             * isInconsistent as true and later on we are checking the status
+             * of this variable and throwing the error message to user.
+             */
             isInconsistent = true;
             Activator.getDefault().log(Messages.remAccErPwd, e1);
         }
@@ -347,11 +356,9 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                         }
                     }
                 } catch (WindowsAzureInvalidProjectOperationException e1) {
-                    errorTitle = Messages.remAccErrTitle;
-                    errorMessage = Messages.remAccErPwd;
-                    MessageUtil.displayErrorDialog(getShell(),
-                            errorTitle, errorMessage);
-                    Activator.getDefault().log(Messages.remAccErPwd, e1);
+                    PluginUtil.displayErrorDialogAndLog(getShell(),
+                    		Messages.remAccErrTitle,
+                    		Messages.remAccErPwd, e1);
                 }
             }
 
@@ -367,9 +374,11 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         } catch (WindowsAzureInvalidProjectOperationException e1) {
             txtConfirmPwd.setText("");
             remoteChkBtn.setSelection(false);
-            //When user data is not consistent we are making
-            //isInconsistent as true and later on we are checking the status
-            //of this variable and throwing the error message to user.
+            /*
+             * When user data is not consistent we are making
+             * isInconsistent as true and later on we are checking the status
+             * of this variable and throwing the error message to user.
+             */
             isInconsistent = true;
             Activator.getDefault().log(Messages.remAccErPwd, e1);
         }
@@ -407,9 +416,11 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         } catch (WindowsAzureInvalidProjectOperationException e1) {
             txtPath.setText("");
             remoteChkBtn.setSelection(false);
-            //When user data is not consistent we are making
-            //isInconsistent as true and later on we are checking the status
-            //of this variable and throwing the error message to user.
+            /*
+             * When user data is not consistent we are making
+             * isInconsistent as true and later on we are checking the status
+             * of this variable and throwing the error message to user.
+             */
             isInconsistent = true;
             Activator.getDefault().log(Messages.remAccErCertPath, e1);
         }
@@ -485,23 +496,27 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
      * Listener for new button.
      */
     protected void newBtnListener() {
-        NewCertificateDialog dialog = new
-                NewCertificateDialog(getShell());
+    	NewCertificateDialogData data = new NewCertificateDialogData();
+        NewCertificateDialog dialog =
+        		new NewCertificateDialog(getShell(), data);
+
         int returnCode = dialog.open();
         if (returnCode == Window.OK) {
-            if (pathFrmEncUtil.contains(selProject.getLocation()
-                    .toOSString() + File.separator)) {
-                String workspacePath = selProject.getLocation()
-                .toOSString();
-                String replaceString = pathFrmEncUtil;
-                String subString = pathFrmEncUtil .
-                substring(pathFrmEncUtil.indexOf(workspacePath),
-                        workspacePath.length());
-                replaceString = replaceString.replace(subString, BASE_PATH);
-                txtPath.setText(replaceString);
-            } else {
-                txtPath.setText(pathFrmEncUtil);
-            }
+        		String certPath = data.getCerFilePath();
+        		if (certPath != null
+        				&& certPath.contains(selProject.getLocation()
+                        .toOSString() + File.separator)) {
+                    String workspacePath = selProject.getLocation()
+                    .toOSString();
+                    String replaceString = certPath;
+                    String subString = certPath .
+                    substring(certPath.indexOf(workspacePath),
+                            workspacePath.length());
+                    replaceString = replaceString.replace(subString, BASE_PATH);
+                    txtPath.setText(replaceString);
+                } else {
+                    txtPath.setText(certPath);
+                }
         }
     }
 
@@ -519,7 +534,8 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         dialog.addFilter(new ViewerFilter() {
 
             @Override
-            public boolean select(Viewer arg0, Object arg1, Object arg2) {
+            public boolean select(Viewer arg0,
+            		Object arg1, Object arg2) {
                 if (arg2 instanceof IProject) {
                     return ((IProject) arg2).isOpen();
                 } else if (arg2 instanceof IFile) {
@@ -554,11 +570,10 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                     txtPath.setText(exactPath);
                 }
             } else {
-                errorTitle = Messages.certDlgWrongTitle;
-                errorMessage = Messages.remAccWkspWrngSel;
-                MessageUtil.displayErrorDialog(getShell(),
-                        errorTitle, errorMessage);
-                txtPath.setText("");
+            	PluginUtil.displayErrorDialog(getShell(),
+            			Messages.certDlgWrongTitle,
+            			Messages.remAccWkspWrngSel);
+            	txtPath.setText("");
             }
         }
     }
@@ -613,7 +628,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
             errorTitle = Messages.remAccSyntaxErr;
             errorMessage = Messages.proPageErrMsgBox1
             + Messages.proPageErrMsgBox2;
-            MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
+            PluginUtil.displayErrorDialog(this.getShell(), errorTitle,
                     errorMessage);
             Activator.getDefault().log(Messages.remAccErProjLoad, e);
         }
@@ -654,6 +669,9 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         return retVal;
     }
 
+    /**
+     * Method specifies action to be executed when OK button is pressed.
+     */
     public boolean performOk() {
         try {
             loadProject();
@@ -669,38 +687,49 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                 DateFormat formatter = new SimpleDateFormat(
                         Messages.remAccDateFormat, Locale.getDefault());
                 if (userName == null || userName.equalsIgnoreCase("")) {
-                    errorTitle = Messages.remAccErTxtTitle;
-                    errorMessage = Messages.remAccNameNull;
-                    MessageUtil.displayErrorDialog(this.getShell(),
-                            errorTitle, errorMessage);
+                    PluginUtil.displayErrorDialog(this.getShell(),
+                    		Messages.remAccErTxtTitle,
+                    		Messages.remAccNameNull);
                     return false;
                 } else {
                     waProjManager.setRemoteAccessUsername(userName);
                 }
                 if (!newPath.equals(waProjManager.
-                        getRemoteAccessCertificatePath()) && !newPath.isEmpty()) {
+                        getRemoteAccessCertificatePath())
+                        && !newPath.isEmpty()) {
                     isPathChanged = true;
-                    //check for if certificate file path has changed.if yes then prompt user
-                    //for changing the password as well if that is not changed.becuase we
-                    //have to encrypt the new password and then we will generate certificate
-                    //based on that.
-                    //Case 1 :- if user has changed the path and password is old then it
-                    //will prompt for new password or re-enter the password.
-                    //if user changes the password then it will generate certificate based
-                    //on that new password.
-                    //Case 2 :- if user set the blank password even after displaying that
-                    //password change prompt in that case we will display warning messages
-                    //to use that whether he want to continue with empty password if yes
-                    //then we will consider that blank password else use will have to enter
-                    //new password.
-                    if (pwd.equals(waProjManager.getRemoteAccessEncryptedPassword())
+                    /*
+                     * check If certificate file path has changed,
+                     * If yes then prompt user
+                     * for changing the password as well,
+                     * if that is not changed.
+                     * Because we have to encrypt the new password
+                     * and then we will generate certificate
+                     * based on that.
+                     * Case 1 :- If user has changed the path
+                     * and password is old then it
+                     * will prompt for new password or re-enter the password.
+                     * If user changes the password
+                     * then it will generate certificate based
+                     * on that new password.
+                     * Case 2 :- If user set the blank password
+                     * even after displaying that
+                     * password change prompt, in that case
+                     * we will display warning messages
+                     * to user that whether he want to continue
+                     * with empty password, If yes
+                     * then we will consider that blank password
+                     * else use will have to enter
+                     * new password.
+                     */
+                    if (pwd.equals(waProjManager.
+                    		getRemoteAccessEncryptedPassword())
                             && !pwd.isEmpty()) {
                         txtPassword.setText("");
                         txtConfirmPwd.setText("");
-                        errorTitle = Messages.remAccErTxtTitle;
-                        errorMessage = Messages.remAccPwdMstChng;
-                        MessageUtil.displayErrorDialog(this.getShell(),
-                                errorTitle, errorMessage);
+                        PluginUtil.displayErrorDialog(this.getShell(),
+                        		Messages.remAccErTxtTitle,
+                        		Messages.remAccPwdMstChng);
                         return false;
                     }
                 }
@@ -713,10 +742,9 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                     }
                 }
                 if (expDate == null || expDate.equalsIgnoreCase("")) {
-                    errorTitle = Messages.remAccErTxtTitle;
-                    errorMessage = Messages.remAccExpDateNull;
-                    MessageUtil.displayErrorDialog(this.getShell(),
-                            errorTitle, errorMessage);
+                    PluginUtil.displayErrorDialog(this.getShell(),
+                    		Messages.remAccErTxtTitle,
+                    		Messages.remAccExpDateNull);
                     return false;
                 } else {
                     boolean status =  validateExpDate(expDate, formatter);
@@ -725,15 +753,17 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                     }
                 }
                 if (newPath == null || newPath.equalsIgnoreCase("")) {
-                    errorTitle = Messages.remAccErTxtTitle;
-                    errorMessage = Messages.remAccPathNull;
-                    MessageUtil.displayErrorDialog(this.getShell(),
-                            errorTitle, errorMessage);
+                    PluginUtil.displayErrorDialog(this.getShell(),
+                    		Messages.remAccErTxtTitle,
+                    		Messages.remAccPathNull);
                     return false;
                 }
-                //Check for displaying the relative path in case when user select the
-                // certificate file path as workspace or of current project.We will be
-                //showing relative path in that case on UI.
+                /*
+                 * Check for displaying the relative path
+                 * in case when user select the certificate file path
+                 * as workspace or of current project.
+                 * We will be showing relative path in that case on UI.
+                 */
                 if (tempPath.startsWith(BASE_PATH)) {
                     tempPath = tempPath.substring(tempPath.indexOf("}") + 1
                             , tempPath.length());
@@ -746,10 +776,9 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                 if (file.exists() && tempPath.endsWith(".cer")) {
                     waProjManager.setRemoteAccessCertificatePath(newPath);
                 } else {
-                    errorTitle = Messages.remAccErTxtTitle;
-                    errorMessage = Messages.remAccInvldPath;
-                    MessageUtil.displayErrorDialog(this.getShell(),
-                            errorTitle, errorMessage);
+                    PluginUtil.displayErrorDialog(this.getShell(),
+                    		Messages.remAccErTxtTitle,
+                    		Messages.remAccInvldPath);
                     return false;
                 }
                 try {
@@ -760,18 +789,19 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                         setRemoteAccessCertificateFingerprint(thumbprint);
                     }
                 } catch (Exception e) {
-                    Activator.getDefault().log(Messages.remAccErTmbPrint, e);
-                    errorTitle = Messages.remAccSyntaxErr;
-                    errorMessage = Messages.remAccErTmbPrint;
-                    MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
-                            errorMessage);
+                    PluginUtil.displayErrorDialogAndLog(this.getShell(),
+                    		Messages.remAccSyntaxErr,
+                    		Messages.remAccErTmbPrint, e);
                     return false;
                 }
                 if (cnfPwd.equals(pwd)) {
                     try {
-                        //Encrypting the password if it is not dummy from xml and it is not
-                        //blank and isPwdChanged is true that means user has changes the
-                        //password.
+                        /*
+                         * Encrypting the password
+                         * if it is not dummy & blank from xml
+                         * and isPwdChanged is true that means
+                         * user has changes the password.
+                         */
                         String modifiedPwd = Messages.remAccDummyPwd;
                         if (!pwd.equals(modifiedPwd)
                         		&& !pwd.isEmpty()
@@ -785,19 +815,15 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                             waProjManager.setRemoteAccessEncryptedPassword(pwd);
                         }
                     } catch (Exception e) {
-                        Activator.getDefault().log(Messages.
-                                remAccErPwd, e);
-                        errorTitle = Messages.remAccSyntaxErr;
-                        errorMessage = Messages.remAccErPwd;
-                        MessageUtil.displayErrorDialog(this.getShell(),
-                        		errorTitle, errorMessage);
+                        PluginUtil.displayErrorDialogAndLog(getShell(),
+                        		Messages.remAccSyntaxErr,
+                        		Messages.remAccErPwd, e);
                         return false;
                     }
                 } else {
-                    errorTitle = Messages.remAccErTxtTitle;
-                    errorMessage = Messages.remAccPwdNotMatch;
-                    MessageUtil.displayErrorDialog(this.getShell(),
-                            errorTitle, errorMessage);
+                    PluginUtil.displayErrorDialog(this.getShell(),
+                    		Messages.remAccErTxtTitle,
+                    		Messages.remAccPwdNotMatch);
                     return false;
                 }
             } else {
@@ -808,31 +834,18 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
             errorTitle = Messages.remAccSyntaxErr;
             errorMessage = Messages.proPageErrMsgBox1
             + Messages.proPageErrMsgBox2;
-            MessageUtil.displayErrorDialog(this.getShell(), errorTitle,
+            PluginUtil.displayErrorDialog(this.getShell(), errorTitle,
                     errorMessage);
             Activator.getDefault().log(Messages.remAccErConfigErr, e);
         } catch (ParseException e) {
-            errorTitle = Messages.remAccErrTitle;
-            errorMessage = Messages.remAccErDateParse;
-            MessageUtil.displayErrorDialog(getShell(), errorTitle,
-                    errorMessage);
-            Activator.getDefault().log(Messages.remAccErDateParse,
-                    e);
+            PluginUtil.displayErrorDialogAndLog(getShell(),
+            		Messages.remAccErrTitle,
+            		Messages.remAccErDateParse, e);
             return false;
         }
         WAEclipseHelper.refreshWorkspace(
         		Messages.remAccWarning, Messages.remAccWarnMsg);
         return super.performOk();
-    }
-
-    /**
-     * This method sets the user selected certificate file path from
-     * new certificate dialog box to path text field on remote access page.
-     *
-     * @param cpath : path of certificate file
-     */
-    protected static void setNewPathfromDialog(String cpath) {
-        pathFrmEncUtil = cpath;
     }
 
     /**
@@ -879,41 +892,31 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
             txtUserName.setText(waProjManager.
                     getRemoteAccessUsername());
         } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorTitle = Messages.remAccErrTitle;
-            errorMessage = Messages.remAccErUserName;
-            MessageUtil.displayErrorDialog(getShell(),
-                    errorTitle, errorMessage);
-            Activator.getDefault().log(Messages.remAccErUserName, e);
+            PluginUtil.displayErrorDialogAndLog(getShell(),
+            		Messages.remAccErrTitle,
+            		Messages.remAccErUserName, e);
         }
         try {
             txtPassword.setText(waProjManager.
                     getRemoteAccessEncryptedPassword());
         } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorTitle = Messages.remAccErrTitle;
-            errorMessage = Messages.remAccErPwd;
-            MessageUtil.displayErrorDialog(getShell(),
-                    errorTitle, errorMessage);
-            Activator.getDefault().log(Messages.remAccErPwd, e);
+
         }
         try {
             txtConfirmPwd.setText(waProjManager.
                     getRemoteAccessEncryptedPassword());
         } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorTitle = Messages.remAccErrTitle;
-            errorMessage = Messages.remAccErPwd;
-            MessageUtil.displayErrorDialog(getShell(),
-                    errorTitle, errorMessage);
-            Activator.getDefault().log(Messages.remAccErPwd, e);
+        	PluginUtil.displayErrorDialogAndLog(getShell(),
+            		Messages.remAccErrTitle,
+            		Messages.remAccErPwd, e);
         }
         try {
             txtPath.setText(waProjManager.
                     getRemoteAccessCertificatePath());
         } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorTitle = Messages.remAccErrTitle;
-            errorMessage = Messages.remAccErCertPath;
-            MessageUtil.displayErrorDialog(getShell(),
-                    errorTitle, errorMessage);
-            Activator.getDefault().log(Messages.remAccErCertPath, e);
+            PluginUtil.displayErrorDialogAndLog(getShell(),
+            		Messages.remAccErrTitle,
+            		Messages.remAccErCertPath, e);
         }
         SimpleDateFormat dateFormat = new SimpleDateFormat(
                 Messages.remAccDateFormat, Locale.getDefault());
@@ -933,11 +936,9 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                 txtExpiryDate.setText(newDate);
             }
         } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorTitle = Messages.remAccErrTitle;
-            errorMessage = Messages.remAccErExpDate;
-            MessageUtil.displayErrorDialog(getShell(),
-                    errorTitle, errorMessage);
-            Activator.getDefault().log(Messages.remAccErExpDate, e);
+            PluginUtil.displayErrorDialogAndLog(getShell(),
+            		Messages.remAccErrTitle,
+            		Messages.remAccErExpDate, e);
         }
     }
 
@@ -962,10 +963,9 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
             GregorianCalendar todayCal = new GregorianCalendar();
             todaySeconds = todayCal.getTimeInMillis();
             if ((userDateSeconds - todaySeconds) < 0) {
-                errorTitle = Messages.remAccErTxtTitle;
-                errorMessage = Messages.remAccDateWrong;
-                MessageUtil.displayErrorDialog(new Shell(),
-                        errorTitle, errorMessage);
+                PluginUtil.displayErrorDialog(new Shell(),
+                		Messages.remAccErTxtTitle,
+                		Messages.remAccDateWrong);
                 isValid = false;
             } else {
                 waProjManager
@@ -989,14 +989,17 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                 + "(?=^.{6,}$)(?=.*[A-Z])(?=.*[a-z])(?!.*\\s)(?=.*\\p{Punct}).*$");
             Matcher match = pattern.matcher(txtPassword.getText());
             try {
-                //checking if user has changed the password and that field is not
-                //blank then check for strong password thing else set the old password.
+            	/*
+            	 * checking if user has changed the password
+            	 * and that field is not blank
+            	 * then check for strong password else set the old password.
+            	 */
                 if (isPwdChanged) {
-                    if (!txtPassword.getText().isEmpty() && !match.find()) {
-                        errorTitle = Messages.remAccErPwdNtStrg;
-                        errorMessage = Messages.remAccPwdNotStrg;
-                        MessageUtil.displayErrorDialog(new Shell(),
-                                errorTitle, errorMessage);
+                    if (!txtPassword.getText().isEmpty()
+                    		&& !match.find()) {
+                        PluginUtil.displayErrorDialog(new Shell(),
+                        		Messages.remAccErPwdNtStrg,
+                        		Messages.remAccPwdNotStrg);
                         txtPassword.setFocus();
                     }
                 } else {
@@ -1004,11 +1007,9 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                             getRemoteAccessEncryptedPassword());
                 }
             } catch (WindowsAzureInvalidProjectOperationException e1) {
-                errorTitle = Messages.remAccErrTitle;
-                errorMessage = Messages.remAccErPwd;
-                MessageUtil.displayErrorDialog(getShell(),
-                        errorTitle, errorMessage);
-                Activator.getDefault().log(Messages.remAccErPwd, e1);
+                PluginUtil.displayErrorDialogAndLog(getShell(),
+                		Messages.remAccErrTitle,
+                		Messages.remAccErPwd, e1);
             }
         }
 
@@ -1058,22 +1059,18 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                         GregorianCalendar todayCal = new GregorianCalendar();
                         todaySeconds = todayCal.getTimeInMillis();
                         if ((userDateSeconds - todaySeconds) < 0) {
-                            errorTitle = Messages.remAccErTxtTitle;
-                            errorMessage = Messages.remAccDateWrong;
-                            MessageUtil.displayErrorDialog(shell,
-                                    errorTitle, errorMessage);
+                        	PluginUtil.displayErrorDialog(shell,
+                        			Messages.remAccErTxtTitle,
+                        			Messages.remAccDateWrong);
                         }
                         else {
                             setExpiryDate(expiryDate);
                             shell.close();
                         }
                     } catch (ParseException e1) {
-                        errorTitle = Messages.remAccErrTitle;
-                        errorMessage = Messages.remAccErDateParse;
-                        MessageUtil.displayErrorDialog(getShell(),
-                                errorTitle, errorMessage);
-                        Activator.getDefault().log(Messages.remAccErDateParse,
-                                e1);
+                        PluginUtil.displayErrorDialogAndLog(getShell(),
+                        		Messages.remAccErrTitle,
+                        		Messages.remAccErDateParse, e1);
                     }
                 }
             });

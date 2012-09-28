@@ -31,6 +31,8 @@ import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
 import org.eclipse.ui.model.WorkbenchContentProvider;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 
+import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
+
 public class WorkSpaceTreeSelectorListener implements SelectionListener {
 
 	private final Shell shell;
@@ -38,10 +40,12 @@ public class WorkSpaceTreeSelectorListener implements SelectionListener {
 	private final IProject selProject;
 	private final Text target;
 
-	public WorkSpaceTreeSelectorListener(Shell shell, String filter, Text target, IProject project) {
+	public WorkSpaceTreeSelectorListener(Shell shell, String filter, Text target, IProject project)
+			throws WindowsAzureInvalidProjectOperationException {
 
-		if (shell == null || target == null)
-			throw new RuntimeException();
+		if (shell == null || target == null) {
+			throw new WindowsAzureInvalidProjectOperationException();
+		}
 		// type
 		this.shell = shell;
 		this.filter = filter;

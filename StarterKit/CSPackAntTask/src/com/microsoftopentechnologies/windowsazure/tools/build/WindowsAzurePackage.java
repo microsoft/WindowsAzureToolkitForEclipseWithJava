@@ -33,6 +33,7 @@ import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.taskdefs.Zip;
 import org.apache.tools.ant.types.FileSet;
+import org.apache.tools.ant.types.selectors.FilenameSelector;
 
 /**
  * 
@@ -682,10 +683,15 @@ public class WindowsAzurePackage extends Task {
 		zipTask.init();
 
 		// Determine src and dest type
-		zipTask.setBasedir(src.getParentFile());
 		if (src.isDirectory()) {
-			zipTask.setIncludes(src.getName() + File.separator + "**");
+			FileSet fileSet = new FileSet();
+			fileSet.setDir(src.getParentFile());
+			FilenameSelector filenameSelector = new FilenameSelector();
+			filenameSelector.setName(src.getName() + File.separator + "**");
+			fileSet.addFilename(filenameSelector);
+			zipTask.addFileset(fileSet);
 		} else if (src.isFile()) {
+			zipTask.setBasedir(src.getParentFile());
 			zipTask.setIncludes(src.getName());
 		} else {
 			throw new BuildException(String.format("Cannot import '%s' because it is not a directory", src));
@@ -709,9 +715,10 @@ public class WindowsAzurePackage extends Task {
 			return;
 		}
 		
-		// Strip out command line parameters if any
         String fileName = component.getImportAs();
-        if(fileName != null)
+
+        // Strip out command line parameters if any, but only for deploymethod=EXEC
+		if(component.getDeployMethod() == DeployMethod.EXEC && fileName != null)
                fileName = fileName.split(" ")[0];
         
         File destFile = new File(approotDir, fileName);
@@ -747,7 +754,13 @@ public class WindowsAzurePackage extends Task {
 			this.log(String.format("\tNothing to import for component '%s'", component.getImportSrc()));
 		} else if (component.getImportMethod() != ImportMethod.NONE) {
 			// Confirm that the file actually got imported into the approot, unless import method is NONE
-			String fileName = component.getImportAs().split(" ")[0]; // Strip out command line parameters if any
+			String fileName = component.getImportAs();
+			
+			// Strip out command line parameters if any, but for deploymethod=EXEC only
+			if(fileName != null && component.getDeployMethod() == DeployMethod.EXEC) {
+				fileName = fileName.split(" ")[0]; 
+			}
+			
 			File destFile = new File(approot, fileName);
 			if (destFile.exists()) {
 				this.log(String.format("\tImported as '%s' from \"%s\"", fileName, component.getImportSrc()));
@@ -776,20 +789,30 @@ public class WindowsAzurePackage extends Task {
 	 */
 	private static String createComponentDeployCommandLine(String importedPath, DeployMethod deployMethod, String deployPath) {
 		File destFile = new File(importedPath);
-
+		String cmdLineTemplate; 
+		
 		switch(deployMethod)
 		{
 		case COPY:
-			// Support for deploy method: copy
-			return String.format("copy /Y %s \"%s\"", destFile.getName(), deployPath);
+			// Support for deploy method: copy - ensuring non-existent target directories get created as needed
+			cmdLineTemplate = "if exist \"$destName\"\\* (echo d | xcopy /y /e \"$destName\" \"$deployPath\\$destName\") else (echo f | xcopy /y \"$destName\" \"$deployPath\\$destName\")";
+			return cmdLineTemplate
+					.replace("$destName", destFile.getName())
+					.replace("$deployPath", deployPath);
 		case UNZIP:
 			// Support for deploy method: unzip return
-			return String.format("cscript /NoLogo %s%s%s %s %s", DEFAULT_UTIL_SUBDIR, File.separator, UNZIP_SCRIPT_FILE_NAME, destFile.getName(), deployPath);
+			cmdLineTemplate = "cscript /NoLogo $utilSubdir\\$unzipFilename \"$destName\" $deployPath";
+			return cmdLineTemplate
+					.replace("$utilSubdir", DEFAULT_UTIL_SUBDIR)
+					.replace("$unzipFilename", UNZIP_SCRIPT_FILE_NAME)
+					.replace("$destName", destFile.getName())
+					.replace("$deployPath", deployPath);
 		case EXEC:
 			// Support for deploy method: exec
 			StringBuilder s = new StringBuilder("start \"Windows Azure\" ");
+			
+			// If deploy dir specified, treat it as a change directory request
 			if(deployPath != null) {
-				// If deploy dir specified, treat it as a change directory request
 				s.append("/D\"");
 				s.append(deployPath);
 				s.append("\" ");

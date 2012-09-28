@@ -16,9 +16,12 @@
 package com.persistent.ui.projwizard;
 
 import org.eclipse.osgi.util.NLS;
-
+/**
+ * Stores common strings.
+ */
 public final class Messages extends NLS {
-    private static final String BUNDLE_NAME = "com.persistent.ui.projwizard.messages";
+    private static final String BUNDLE_NAME =
+    		"com.persistent.ui.projwizard.messages";
     public static String pWizErrMsg;
     public static String pWizErrMsgBox1;
     public static String pWizErrMsgBox2;
@@ -46,7 +49,6 @@ public final class Messages extends NLS {
     public static String sdkInsErrMsg;
     public static String sdkInsUrl;
     public static String imgDplDlg;
-    public static String dplPageShlTxt;
     public static String dplPageMsg;
     public static String dplPageSerTxt;
     public static String dplPageSelLbl;
@@ -87,12 +89,36 @@ public final class Messages extends NLS {
     public static String pluginId;
     public static String cmpntFile;
     public static String starterKitFileName;
-
+    public static String keyFtrPgMsg;
+    public static String chkLbSsnAff;
+    public static String chkLblCach;
+    public static String chkLblDebug;
+    public static String lblSsnAff;
+    public static String lblCache;
+    public static String lblDebug;
+    public static String keyFtrPgNote;
+    public static String ssnAffLnk;
+    public static String cachLnk;
+    public static String debugLnk;
+    public static String httpEp;
+    public static String dbgEp;
+    public static String lnkOpenErrMsg;
+    public static String waWizardId;
+    public static String wzrdCrtErMsg;
+    public static String waProjNature;
+    public static String methodCopy;
+    public static String methodAuto;
+    public static String adRolErrTitle;
+    public static String helloWorld;
+    public static String rsrcPage;
+    public static String javaPage;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);
     }
-
+    /**
+     * Constructor.
+     */
     private Messages() {
         super();
     }

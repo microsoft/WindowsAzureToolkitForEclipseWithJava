@@ -62,7 +62,10 @@ import com.persistent.util.WAEclipseHelper;
 import com.persistent.util.MessageUtil;
 import com.persistent.util.ProjectNatureHelper;
 import com.persistent.util.ProjectNatureHelper.ProjExportType;
-
+/**
+ * Class creates UI controls and respective listeners
+ * for add or edit component dialog.
+ */
 public class ImportExportDialog extends TitleAreaDialog {
 	private String errorTitle;
 	private String errorMessage;
@@ -154,10 +157,12 @@ public class ImportExportDialog extends TitleAreaDialog {
 		createImportGrp(container);
 		createDeployGrp(container);
 		try {
-			for (int i = 0; i < windowsAzureRole.getComponents().size(); i++) {
+			for (int i = 0; i < windowsAzureRole.
+					getComponents().size(); i++) {
 				WindowsAzureRoleComponent cmpnt =
 						windowsAzureRole.getComponents().get(i);
-				cmpList.add(ProjectNatureHelper.getAsName(cmpnt.getImportPath(),
+				cmpList.add(ProjectNatureHelper.
+						getAsName(cmpnt.getImportPath(),
 						cmpnt.getImportMethod(),
 						cmpnt.getDeployName()).toLowerCase());
 			}
@@ -177,7 +182,8 @@ public class ImportExportDialog extends TitleAreaDialog {
 	protected void okPressed() {
 		if (validateData()) {
 			try {
-				IWorkspace workspace = ResourcesPlugin.getWorkspace();
+				IWorkspace workspace =
+						ResourcesPlugin.getWorkspace();
 				IWorkspaceRoot root = workspace.getRoot();
 				String newMethod = comboImport.getText();
 				// if UI shows import method as war, jar or ear then internally its auto
@@ -188,7 +194,8 @@ public class ImportExportDialog extends TitleAreaDialog {
 				}
 
 				if (isEdit) {
-					/* If project manager object returns import method as null then in UI its none
+					/* If project manager object returns
+					 * import method as null then in UI its none
 					 * and if From Path as empty then its .\ i.e approot
 					 */
 					WindowsAzureRoleComponentImportMethod oldImpMethod =
@@ -216,7 +223,8 @@ public class ImportExportDialog extends TitleAreaDialog {
 							|| !txtFromPath.getText().equalsIgnoreCase(oldPath)) {
 						String cmpntPath = String.format("%s%s%s%s%s",
 								root.getProject(winAzureProjMgr.getProjectName()).getLocation(),
-								"\\", windowsAzureRole.getName(), "\\approot\\", oldAsName);
+								"\\", windowsAzureRole.getName(),
+								Messages.approot, oldAsName);
 						File file = new File(cmpntPath);
 						if (file.exists()) {
 							if (file.isFile()) {
@@ -226,18 +234,21 @@ public class ImportExportDialog extends TitleAreaDialog {
 							}
 						}
 					}
-					/* if import as is changed while import method and from path is same
+					/* if import as is changed while import method
+					 * and from path is same
 					 * then rename exported cmpnt file from approot
 					 */
 					if (!txtName.getText().equalsIgnoreCase(winAzureRoleCmpnt.getDeployName())) {
 						String cmpntPath = String.format("%s%s%s%s%s",
 								root.getProject(winAzureProjMgr.getProjectName()).getLocation(),
-								"\\", windowsAzureRole.getName(), "\\approot\\", oldAsName);
+								"\\", windowsAzureRole.getName(),
+								Messages.approot, oldAsName);
 						File file = new File(cmpntPath);
 						if (file.exists()) {
 							String dest = String.format("%s%s%s%s%s",
 									root.getProject(winAzureProjMgr.getProjectName()).getLocation(),
-									"\\", windowsAzureRole.getName(), "\\approot\\", txtName.getText());
+									"\\", windowsAzureRole.getName(),
+									Messages.approot, txtName.getText());
 							file.renameTo(new File(dest));
 						}
 					}
@@ -264,15 +275,18 @@ public class ImportExportDialog extends TitleAreaDialog {
 						|| !txtToDir.getText().equalsIgnoreCase("\\.")) {
 					winAzureRoleCmpnt.setDeployDir(txtToDir.getText().trim());
 				}
-				winAzureRoleCmpnt.setDeployMethod(WindowsAzureRoleComponentDeployMethod.
+				winAzureRoleCmpnt.setDeployMethod(
+						WindowsAzureRoleComponentDeployMethod.
 						valueOf(comboDeploy.getText()));
 				winAzureRoleCmpnt.setDeployname(txtName.getText().trim());
 				if (comboImport.getText().equalsIgnoreCase("WAR")
 						|| comboImport.getText().equalsIgnoreCase("JAR")
 						|| comboImport.getText().equalsIgnoreCase("EAR")) {
-					winAzureRoleCmpnt.setImportMethod(WindowsAzureRoleComponentImportMethod.auto);
+					winAzureRoleCmpnt.setImportMethod(
+							WindowsAzureRoleComponentImportMethod.auto);
 				} else {
-					winAzureRoleCmpnt.setImportMethod(WindowsAzureRoleComponentImportMethod.
+					winAzureRoleCmpnt.setImportMethod(
+							WindowsAzureRoleComponentImportMethod.
 							valueOf(comboImport.getText()));
 				}
 				if (!txtFromPath.getText().startsWith(BASE_PATH)
@@ -281,12 +295,15 @@ public class ImportExportDialog extends TitleAreaDialog {
 					String wrkSpcPath = root.getLocation().toOSString();
 					String replaceString = txtFromPath.getText().trim();
 					String subString = txtFromPath.getText().substring(
-							txtFromPath.getText().indexOf(wrkSpcPath), wrkSpcPath.length());
-					txtFromPath.setText(replaceString.replace(subString, BASE_PATH));
+							txtFromPath.getText().indexOf(wrkSpcPath),
+							wrkSpcPath.length());
+					txtFromPath.setText(replaceString.
+							replace(subString, BASE_PATH));
 				}
 				if (!txtFromPath.getText().isEmpty()
 						|| !txtFromPath.getText().equalsIgnoreCase("\\.")) {
-					winAzureRoleCmpnt.setImportPath(txtFromPath.getText().trim());
+					winAzureRoleCmpnt.setImportPath(
+							txtFromPath.getText().trim());
 				}
 				super.okPressed();
 			} catch (WindowsAzureInvalidProjectOperationException e) {
@@ -382,6 +399,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 	 * Listener for workspace Button.
 	 */
 	private void workspaceBtnListener() {
+		String oldPath = txtFromPath.getText();
 		ElementListSelectionDialog dialog = new ElementListSelectionDialog(
 				this.getShell(), new WorkbenchLabelProvider());
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -392,7 +410,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 		try {
 			for (IProject wRoot : root.getProjects()) {
 				if (wRoot.isOpen()
-						&& !wRoot.hasNature("com.persistent.ui.projectnature")) {
+						&& !wRoot.hasNature(Messages.waProjNature)) {
 					projList.add(wRoot);
 				}
 			}
@@ -420,6 +438,13 @@ public class ImportExportDialog extends TitleAreaDialog {
 						}
 					}
 					txtFromPath.setText(projPath);
+					/*
+					 * If new from path is selected then
+					 * remove previous As name text.
+					 */
+					if (!oldPath.equals(projPath)) {
+						txtName.setText("");
+					}
 					updateImportMethodCombo(projPath);
 					updateDeployMethodCombo();
 				}
@@ -439,6 +464,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 	 */
 	protected void dirBtnListener() {
 		try {
+			String oldPath = txtFromPath.getText();
 			DirectoryDialog dialog = new DirectoryDialog(this.getShell());
 			String directory = dialog.open();
 			if (directory != null) {
@@ -455,6 +481,13 @@ public class ImportExportDialog extends TitleAreaDialog {
 
 				}
 				txtFromPath.setText(directory);
+				/*
+				 * If new from path is selected then
+				 * remove previous As name text.
+				 */
+				if (!oldPath.equals(directory)) {
+					txtName.setText("");
+				}
 				updateImportMethodCombo(directory);
 				updateDeployMethodCombo();
 			}
@@ -469,6 +502,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 	 */
 	protected void fileBtnListener() {
 		try {
+			String oldPath = txtFromPath.getText();
 			FileDialog dialog = new FileDialog(this.getShell());
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			IWorkspaceRoot root = workspace.getRoot();
@@ -488,6 +522,13 @@ public class ImportExportDialog extends TitleAreaDialog {
 						selFile = replaceString.replace(subString, BASE_PATH);
 					}
 					txtFromPath.setText(selFile);
+					/*
+					 * If new from path is selected then
+					 * remove previous As name text.
+					 */
+					if (!oldPath.equals(selFile)) {
+						txtName.setText("");
+					}
 					updateImportMethodCombo(selFile);
 					updateDeployMethodCombo();
 				}
@@ -684,6 +725,10 @@ public class ImportExportDialog extends TitleAreaDialog {
 					File file = new File(ProjectNatureHelper.
 							convertPath(txtFromPath.getText()));
 					String name = file.getName();
+					
+					// Replacing spaces with underscore
+					if(name != null && !name.isEmpty())
+						name = name.trim().replaceAll("\\s+", "_");
 					if (comboImport.getText().equalsIgnoreCase("EAR")) {
 						name = name.concat(".ear");
 					} else if (comboImport.getText().equalsIgnoreCase("WAR")) {
@@ -805,16 +850,16 @@ public class ImportExportDialog extends TitleAreaDialog {
 			path = ProjectNatureHelper.convertPath(path);
 		}
 		String nature = findSrcPathNature(path);
-		if (nature.equalsIgnoreCase("Project")) {
+		if (nature.equalsIgnoreCase(Messages.proj)) {
 			ProjExportType type = ProjectNatureHelper.getProjectNature(
 					ProjectNatureHelper.findProjectFromWorkSpace(path));
 			comboImport.add(type.name());
 			comboImport.setText(type.name());
-		} else if (nature.equalsIgnoreCase("Directory")) {
+		} else if (nature.equalsIgnoreCase(Messages.dir)) {
 			comboImport.add(WindowsAzureRoleComponentImportMethod.zip.name());
 			comboImport.add(WindowsAzureRoleComponentImportMethod.none.name());
 			comboImport.setText(WindowsAzureRoleComponentImportMethod.zip.name());
-		} else if (nature.equalsIgnoreCase("File")) {
+		} else if (nature.equalsIgnoreCase(Messages.file)) {
 			comboImport.add(WindowsAzureRoleComponentImportMethod.none.name());
 			if (path.endsWith(".zip")) {
 				comboImport.setText(WindowsAzureRoleComponentImportMethod.copy.name());
@@ -927,17 +972,17 @@ public class ImportExportDialog extends TitleAreaDialog {
 			IProject project = ProjectNatureHelper.
 					findProjectFromWorkSpace(path);
 			if (project == null) {
-				nature = "Directory";
+				nature = Messages.dir;
 			} else {
-				nature = "Project";
+				nature = Messages.proj;
 			}
 		}
 		else {
 			//consider it as file
-			nature = "File";
+			nature = Messages.file;
 		}
 		return nature;
-	}	
+	}
 
 	/**
 	 * This method validated the data entered by user.

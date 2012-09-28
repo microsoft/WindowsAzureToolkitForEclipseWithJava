@@ -16,24 +16,12 @@
 
 package com.gigaspaces.azure.rest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-
-import waeclipseplugin.Activator;
-
 import com.gigaspaces.azure.model.AffinityGroups;
-import com.gigaspaces.azure.model.Base64Persistent;
+import com.gigaspaces.azure.model.AvailabilityResponse;
 import com.gigaspaces.azure.model.CertificateFile;
 import com.gigaspaces.azure.model.CreateDeployment;
 import com.gigaspaces.azure.model.CreateHostedService;
@@ -47,11 +35,11 @@ import com.gigaspaces.azure.model.Operation;
 import com.gigaspaces.azure.model.Response;
 import com.gigaspaces.azure.model.Status;
 import com.gigaspaces.azure.model.StorageService;
+import com.gigaspaces.azure.model.StorageServiceKeys;
 import com.gigaspaces.azure.model.StorageServices;
 import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.model.UpdateDeploymentStatus;
 import com.gigaspaces.azure.util.CommandLineException;
-import com.gigaspaces.azure.util.Messages;
 
 public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
@@ -68,7 +56,7 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public Subscription getSubscription(String subscriptionId) throws RestAPIException, InterruptedException, CommandLineException {
 
-		String url = Management_Services_URL.replace(SUBSCRIPTION_ID,subscriptionId);
+		String url = MNGMT_SERV_URL.replace(SUBSCRIPTION_ID,subscriptionId);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
@@ -87,9 +75,9 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	public HostedService getHostedServiceWithProperties(String subscriptionId,
 			String serviceName) throws RestAPIException, InterruptedException, CommandLineException {
 
-		String url = Management_Services_URL
+		String url = MNGMT_SERV_URL
 				.replace(SUBSCRIPTION_ID, subscriptionId)
-				.concat(List_Hosted_Services).concat(Hosted_Services)
+				.concat(LIST_HOST_SERV).concat(HOST_SERV)
 				.replace(SERVICE_NAME, serviceName)
 				.concat("?embed-detail=true"); //$NON-NLS-1$
 
@@ -110,14 +98,14 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	public StorageService getStorageAccount(String subscriptionId,
 			String serviceName) throws RestAPIException, InterruptedException, CommandLineException {
 
-		String url = Management_Services_URL
+		String url = MNGMT_SERV_URL
 				.replace(SUBSCRIPTION_ID, subscriptionId)
-				.concat(List_Storage_Accounts).concat(Hosted_Services)
+				.concat(LIST_STRG_ACC).concat(HOST_SERV)
 				.replace(SERVICE_NAME, serviceName);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		headers.put(X_MS_VERSION, "2009-10-01"); //$NON-NLS-1$
+		addXMsVer2012(headers);
 
 		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
 				headers, null, thumbprint);
@@ -127,21 +115,65 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		validateResponse(response);
 
 		StorageService storageService = (StorageService) response.getBody();
-		StorageService storageServiceWithKeys = getStorageKeys(subscriptionId, storageService.getServiceName());
-		storageServiceWithKeys.setServiceName(storageService.getServiceName());
+		StorageServiceKeys storageServiceKeys = getStorageKeys(subscriptionId, storageService.getServiceName()).getStorageServiceKeys();
+		storageService.setStorageServiceKeys(storageServiceKeys);
 
-		return storageServiceWithKeys;
+		return storageService;
 	}
-
-
-	public Operation getOperationStatus(String subscriptionId, String requestId) throws RestAPIException, InterruptedException, CommandLineException {
-		String url = Management_Services_URL
+	
+	public boolean checkForStorageAccountDNSAvailability(final String subscriptionId, final String storageAccountName) throws InterruptedException, CommandLineException, RestAPIException {
+		
+		String url = MNGMT_SERV_URL
 				.replace(SUBSCRIPTION_ID, subscriptionId)
-				.concat(Get_Operation_Status).replace(REQUEST_ID, requestId);
+				.concat("/services/storageservices/operations/isavailable/" + storageAccountName);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2009_10_01(headers);
+		addXMsVer2012(headers);
+		
+		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
+				headers, null, thumbprint);
+
+		Response<?> response = ((Response<?>) deserialize(result));
+
+		validateResponse(response);
+		
+		AvailabilityResponse availabilityResponse = (AvailabilityResponse) response.getBody();
+		return availabilityResponse.getResult();
+
+	}
+	
+	public boolean checkForCloudServiceDNSAvailability(final String subscriptionId, final String hostedServiceName) throws InterruptedException, CommandLineException, RestAPIException {
+		
+		String url = MNGMT_SERV_URL
+				.replace(SUBSCRIPTION_ID, subscriptionId)
+				.concat("/services/hostedservices/operations/isavailable/" + hostedServiceName);
+
+		HashMap<String, String> headers = new HashMap<String, String>();
+
+		addXMsVer2012(headers);
+		
+		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
+				headers, null, thumbprint);
+
+		Response<?> response = ((Response<?>) deserialize(result));
+
+		validateResponse(response);
+		
+		AvailabilityResponse availabilityResponse = (AvailabilityResponse) response.getBody();
+		return availabilityResponse.getResult();
+
+	}	
+
+
+	public Operation getOperationStatus(String subscriptionId, String requestId) throws RestAPIException, InterruptedException, CommandLineException {
+		String url = MNGMT_SERV_URL
+				.replace(SUBSCRIPTION_ID, subscriptionId)
+				.concat(GET_OPERTN_STAT).replace(REQUEST_ID, requestId);
+
+		HashMap<String, String> headers = new HashMap<String, String>();
+
+		addXMsVer2012(headers);
 
 		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
 				headers, null, thumbprint);
@@ -155,12 +187,12 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public synchronized List<StorageService> listStorageAccounts(
 			String subscriptionId) throws InterruptedException, CommandLineException {
-		String url = Management_Services_URL.replace(SUBSCRIPTION_ID,
-				subscriptionId).concat(List_Storage_Accounts);
+		String url = MNGMT_SERV_URL.replace(SUBSCRIPTION_ID,
+				subscriptionId).concat(LIST_STRG_ACC);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2009_10_01(headers);
+		addXMsVer2012(headers);
 
 		List<StorageService> storageServices = new ArrayList<StorageService>();
 
@@ -186,14 +218,14 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public StorageService getStorageKeys(String subscriptionId,
 			String serviceName) throws InterruptedException, CommandLineException {
-		String url = Management_Services_URL
+		String url = MNGMT_SERV_URL
 				.replace(SUBSCRIPTION_ID, subscriptionId)
-				.concat(List_Storage_Accounts).concat(Get_Storage_Keys)
+				.concat(LIST_STRG_ACC).concat(GET_STRG_KEYS)
 				.replace(SERVICE_NAME, serviceName);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2009_10_01(headers);
+		addXMsVer2012(headers);
 
 		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
 				headers, null, thumbprint);
@@ -205,12 +237,12 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public synchronized Locations listLocations(String subscriptionId) throws InterruptedException, CommandLineException {
 
-		String url = Management_Services_URL.replace(SUBSCRIPTION_ID,
-				subscriptionId).concat(List_Locations);
+		String url = MNGMT_SERV_URL.replace(SUBSCRIPTION_ID,
+				subscriptionId).concat(LIST_LOC);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2010_10_28(headers);
+		addXMsVer2012(headers);
 
 		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
 				headers, null, thumbprint);
@@ -222,12 +254,12 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public AffinityGroups listAffinityGroups(String subscriptionId) throws InterruptedException, CommandLineException {
 
-		String url = Management_Services_URL.replace(SUBSCRIPTION_ID,
-				subscriptionId).concat(List_Affinity_Groups);
+		String url = MNGMT_SERV_URL.replace(SUBSCRIPTION_ID,
+				subscriptionId).concat(LIST_AFF_GRPS);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2009_10_01(headers);
+		addXMsVer2012(headers);
 
 		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
 				headers, null, thumbprint);
@@ -239,12 +271,12 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public synchronized HostedServices listHostedServices(String subscriptionId) throws InterruptedException, CommandLineException {
 
-		String url = Management_Services_URL.replace(SUBSCRIPTION_ID,
-				subscriptionId).concat(List_Hosted_Services);
+		String url = MNGMT_SERV_URL.replace(SUBSCRIPTION_ID,
+				subscriptionId).concat(LIST_HOST_SERV);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2009_10_01(headers);
+		addXMsVer2012(headers);
 
 		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
 				headers, null, thumbprint);
@@ -256,12 +288,12 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public String createHostedService(String subscriptionId, CreateHostedService body) throws RestAPIException, InterruptedException, CommandLineException {
 
-		String url = Management_Services_URL.replace(SUBSCRIPTION_ID,
-				subscriptionId).concat(List_Hosted_Services);
+		String url = MNGMT_SERV_URL.replace(SUBSCRIPTION_ID,
+				subscriptionId).concat(LIST_HOST_SERV);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2010_10_28(headers);
+		addXMsVer2012(headers);
 
 		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
 
@@ -278,12 +310,12 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public String createStorageAccount(String subscriptionId, CreateStorageServiceInput body) throws RestAPIException, InterruptedException, CommandLineException {
 
-		String url = Management_Services_URL.replace(SUBSCRIPTION_ID,
-				subscriptionId).concat(List_Storage_Accounts);
+		String url = MNGMT_SERV_URL.replace(SUBSCRIPTION_ID,
+				subscriptionId).concat(LIST_STRG_ACC);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2011_06_01(headers);
+		addXMsVer2012(headers);
 
 		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
 
@@ -299,10 +331,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 
 	public Deployment getDeployment(String subscriptionId, String serviceName,String deploymentName) throws RestAPIException, InterruptedException, CommandLineException {
-		String url = Management_Services_URL
+		String url = MNGMT_SERV_URL
 				.replace(SUBSCRIPTION_ID, subscriptionId)
-				.concat(List_Hosted_Services).concat(Hosted_Services)
-				.replace(SERVICE_NAME, serviceName).concat(Deployment_Name)
+				.concat(LIST_HOST_SERV).concat(HOST_SERV)
+				.replace(SERVICE_NAME, serviceName).concat(DPLY_NAME)
 				.replace(DEPLOYMENT_NAME, deploymentName);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
@@ -321,15 +353,15 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public String deleteDeployment(String subscriptionId, String serviceName,
 			String deploymentName) throws RestAPIException, InterruptedException, CommandLineException {
-		String url = Management_Services_URL
+		String url = MNGMT_SERV_URL
 				.replace(SUBSCRIPTION_ID, subscriptionId)
-				.concat(List_Hosted_Services).concat(Hosted_Services)
-				.replace(SERVICE_NAME, serviceName).concat(Deployment_Name)
+				.concat(LIST_HOST_SERV).concat(HOST_SERV)
+				.replace(SERVICE_NAME, serviceName).concat(DPLY_NAME)
 				.replace(DEPLOYMENT_NAME, deploymentName);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2009_10_01(headers);
+		addXMsVer2012(headers);
 
 		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.DELETE, url,
 				headers, null, thumbprint);
@@ -341,10 +373,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	public String updateDeploymentStatus(String subscriptionId,
 			String serviceName, String deploymentName, Status status) throws RestAPIException, InterruptedException, CommandLineException {
-		String url = Management_Services_URL
+		String url = MNGMT_SERV_URL
 				.replace(SUBSCRIPTION_ID, subscriptionId)
-				.concat(List_Hosted_Services).concat(Hosted_Services)
-				.replace(SERVICE_NAME, serviceName).concat(Deployment_Name)
+				.concat(LIST_HOST_SERV).concat(HOST_SERV)
+				.replace(SERVICE_NAME, serviceName).concat(DPLY_NAME)
 				.replace(DEPLOYMENT_NAME, deploymentName)
 				.concat("/?comp=status");
 
@@ -369,17 +401,17 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	public String createDeployment(String subscriptionId, String serviceName,
 			String slotName, CreateDeployment body) throws RestAPIException , InterruptedException, CommandLineException{
 
-		String url = Management_Services_URL
+		String url = MNGMT_SERV_URL
 				.replace(SUBSCRIPTION_ID, subscriptionId)
-				.concat(List_Hosted_Services).concat(Hosted_Services)
+				.concat(LIST_HOST_SERV).concat(HOST_SERV)
 				.replace(SERVICE_NAME, serviceName.toLowerCase())
-				.concat(Create_Deployment)
+				.concat(CREATE_DPLY)
 				.replace(DEPLOYMENT_SLOT_NAME, slotName);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
 
-		addx_ms_version2011_08_01(headers);
+		addXMsVer2012(headers);
 
 		addContentLength(headers, body);
 
@@ -396,13 +428,13 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	public String addCertificate(String subscriptionId, String serviceName,
 			CertificateFile body) throws RestAPIException, InterruptedException, CommandLineException {
 
-		String url = Management_Services_URL
+		String url = MNGMT_SERV_URL
 				.replace(SUBSCRIPTION_ID, subscriptionId)
-				.concat(List_Hosted_Services).concat(Add_Certificate)
+				.concat(LIST_HOST_SERV).concat(ADD_CERT)
 				.replace(SERVICE_NAME, serviceName);
 		HashMap<String, String> headers = new HashMap<String, String>();
 
-		addx_ms_version2009_10_01(headers);
+		addXMsVer2012(headers);
 
 		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
 
@@ -413,20 +445,9 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 		return getXRequestId(response);
 	}
-
-	private void addx_ms_version2011_08_01(HashMap<String, String> headers) {
-		headers.put(X_MS_VERSION, "2011-08-01"); //$NON-NLS-1$
-	}
-
-	private void addx_ms_version2010_10_28(HashMap<String, String> headers) {
-		headers.put(X_MS_VERSION, "2010-10-28"); //$NON-NLS-1$
-	}
-
-	private void addx_ms_version2011_06_01(HashMap<String, String> headers) {
-		headers.put(X_MS_VERSION, "2011-06-01"); //$NON-NLS-1$
-	}
-
-	private void addx_ms_version2009_10_01(HashMap<String, String> headers) {
-		headers.put(X_MS_VERSION, "2009-10-01"); //$NON-NLS-1$
+	
+	private void addXMsVer2012(HashMap<String, String> headers) {
+		// addx_ms_version2012_03_01
+		headers.put(X_MS_VERSION, "2012-03-01"); //$NON-NLS-1$
 	}
 }

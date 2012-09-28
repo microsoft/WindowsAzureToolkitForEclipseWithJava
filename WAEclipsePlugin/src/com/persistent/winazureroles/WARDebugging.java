@@ -53,7 +53,6 @@ import com.persistent.util.MessageUtil;
 
 /**
  * Property page for debugging.
- *
  */
 public class WARDebugging extends PropertyPage {
 
@@ -70,9 +69,14 @@ public class WARDebugging extends PropertyPage {
     private WindowsAzureEndpoint dbgSelEndpoint;
     private Map<String,String> debugMap = new HashMap<String, String>();
     private int childOk;
+    private boolean isPageDisplayed = false;
+    private final int DEBUG_PORT = 8090;
 
     @Override
     public String getTitle() {
+    	if (!isPageDisplayed) {
+    		return super.getTitle();
+    	}
         try {
             if (windowsAzureRole != null) {
                 WindowsAzureEndpoint endPt =
@@ -166,7 +170,7 @@ public class WARDebugging extends PropertyPage {
                 && comboEndPoint.getText().equals("")) {
             setValid(false);
         }
-
+        isPageDisplayed = true;
         return container;
     }
 
@@ -280,10 +284,12 @@ public class WARDebugging extends PropertyPage {
         gridData.horizontalAlignment = GridData.END;
         comboEndPoint.setLayoutData(gridData);
         try {
-            List<WindowsAzureEndpoint> endpointsList = new ArrayList<WindowsAzureEndpoint>(
+            List<WindowsAzureEndpoint> endpointsList =
+            		new ArrayList<WindowsAzureEndpoint>(
                     windowsAzureRole.getEndpoints());
             for (WindowsAzureEndpoint endpoint : endpointsList) {
-                if ((endpoint.getEndPointType().equals(WindowsAzureEndpointType.Input)
+                if ((endpoint.getEndPointType().equals(
+                		WindowsAzureEndpointType.Input)
                 		|| endpoint.getEndPointType().equals(
                 				WindowsAzureEndpointType.InstanceInput))
                         && !endpoint.equals(windowsAzureRole.
@@ -384,17 +390,18 @@ public class WARDebugging extends PropertyPage {
             StringBuffer strBfr = new StringBuffer(Messages.dlgDebug);
             WindowsAzureEndpoint endpt = null;
             while (!windowsAzureRole.
-            		isAvailableEndpointName(strBfr.toString())) {
+            		isAvailableEndpointName(strBfr.toString(),
+            				WindowsAzureEndpointType.Input)) {
                 strBfr.delete(9, strBfr.length());
                 strBfr.append(endPointSuffix++);
             }
-            int publicPort = 8090;
+            int publicPort = DEBUG_PORT;
             while (!waProjManager.isValidPort(
                     String.valueOf(publicPort),
                     WindowsAzureEndpointType.Input)) {
                 publicPort++;
             }
-            int privatePort = 8090;
+            int privatePort = DEBUG_PORT;
             while (!waProjManager
                     .isValidPort(String.valueOf(privatePort),
                             WindowsAzureEndpointType.Input)) {
@@ -542,7 +549,8 @@ public class WARDebugging extends PropertyPage {
      * @param hostName :- host where debug should happen
      * @param port :- debugging port number
      */
-    protected void createLaunchConfig(String configName, String projName,
+    protected void createLaunchConfig(String configName,
+    		String projName,
             String hostName, String port) {
         try {
             ILaunchManager manager =
@@ -598,6 +606,9 @@ public class WARDebugging extends PropertyPage {
 
     @Override
     public boolean performOk() {
+    	if (!isPageDisplayed) {
+    		return super.performOk();
+    	}
         //check for child window's OK button was pressed or not
         //if not then we do not need to create a debug configuration otherwise
         //we do need to create debug configuration based on the user

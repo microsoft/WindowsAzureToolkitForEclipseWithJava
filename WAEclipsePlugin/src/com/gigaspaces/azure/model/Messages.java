@@ -18,7 +18,7 @@ package com.gigaspaces.azure.model;
 
 import org.eclipse.osgi.util.NLS;
 
-public class Messages extends NLS {
+public final class Messages extends NLS {
 	private static final String BUNDLE_NAME = "com.gigaspaces.azure.model.messages"; //$NON-NLS-1$
 	public static String busy;
 	public static String busyRole;
@@ -43,7 +43,7 @@ public class Messages extends NLS {
 	public static String invalidName;
 	public static String invalidPackageUrl;
 	public static String invalidServiceName;
-	public static String ModelFactory_error;
+	public static String modelFactoryErr;
 	public static String production;
 	public static String ready;
 	public static String readyRole;

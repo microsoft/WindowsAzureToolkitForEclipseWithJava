@@ -17,24 +17,38 @@ package com.persistent.util;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Shell;
-import waeclipseplugin.Activator;
-import com.persistent.winazureroles.Messages;
 
+import waeclipseplugin.Activator;
+/**
+ * Class has methods to display and log the error.
+ */
 public class MessageUtil {
 
     /**
-     * This method will display the error message box when any error occurs.It takes two parameters
+     * This method will display the error message box
+     * when any error occurs.
      *
      * @param shell       parent shell
      * @param title       the text or title of the window.
      * @param message     the message which is to be displayed
      */
-    public static void displayErrorDialog (Shell shell , String title , String message ){
+    public static void displayErrorDialog(Shell shell,
+    		String title, String message) {
          MessageDialog.openError(shell, title, message);
     }
-    
-    public static void displayErrorDialogAndLog(Shell shell, String title, String message, Exception e) { 
-    	Activator.getDefault().log(Messages.jdkDirErrMsg, e); 
-    	displayErrorDialog(shell, title, message);	
-    } 
+
+    /**
+     * This method will display the error message box
+     * when any error occurs and also logs error.
+     * @param shell
+     * @param title : Error title
+     * @param message : Error message
+     * @param e : exception
+     */
+    public static void displayErrorDialogAndLog(Shell shell,
+    		String title, String message,
+    		Exception e) {
+    	Activator.getDefault().log(message, e);
+    	displayErrorDialog(shell, title, message);
+    }
 }

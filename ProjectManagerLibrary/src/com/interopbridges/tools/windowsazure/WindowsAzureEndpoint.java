@@ -82,15 +82,15 @@ public class WindowsAzureEndpoint {
 
                 if (getEndPointType().equals(WindowsAzureEndpointType.Input)) {
                     expr = String.format(
-                            WindowsAzureConstants.INPUT_ENDPOINT,
+                            WindowsAzureConstants.INPUT_ENDPOINT, wRole.getName(),
                             getName());
                 } else if(getEndPointType().equals(WindowsAzureEndpointType.Internal)) {
                     expr = String.format(
-                            WindowsAzureConstants.INTERNAL_ENDPOINT,
+                            WindowsAzureConstants.INTERNAL_ENDPOINT, wRole.getName(),
                             getName());
                 } else  {
                     expr = String.format(
-                            WindowsAzureConstants.INSTANCE_ENDPOINT,
+                            WindowsAzureConstants.INSTANCE_ENDPOINT, wRole.getName(),
                             getName());
                 }
                 epNode = (Node) xPath.evaluate(expr, doc,
@@ -115,11 +115,18 @@ public class WindowsAzureEndpoint {
             throw new IllegalArgumentException(
                     WindowsAzureConstants.INVALID_ARG);
         }
+
         try {
             if (getName().isEmpty()) {
                 this.name = endPointName;
                 return;
             }
+
+//            if(isCachingEndPoint()) {
+//            	throw new WindowsAzureInvalidProjectOperationException(
+//            			"Endpoint is associated with caching");
+//            }
+
             WindowsAzureEndpoint saEndPt = wRole.getSessionAffinityInputEndpoint();
             if(saEndPt != null && getName().equalsIgnoreCase(saEndPt.getName()))
                 wRole.reconfigureSessionAffinity(wRole.getEndpoint(getName()),endPointName);
@@ -232,35 +239,75 @@ public class WindowsAzureEndpoint {
             throw new IllegalArgumentException(
                     WindowsAzureConstants.EXCP_EMPTY_PRIVATE_PORT);
         }
-        Node epNode = getThisEndPointNode();
+        try {
+        Element epNode = (Element) getThisEndPointNode();
         if (getEndPointType().equals(WindowsAzureEndpointType.Input)||
                 (getEndPointType().equals(WindowsAzureEndpointType.InstanceInput))) {
-//            epNode.getAttributes().getNamedItem("port")
-//            .setNodeValue(endPointPort);
             setLocalPort(endPointPort);
         } else {
             for (Node child = epNode.getFirstChild();
                     child != null; child = child.getNextSibling()) {
                 if (child.getNodeName().equalsIgnoreCase("FixedPort")) {
-                    child.getAttributes().getNamedItem("port")
-                    .setNodeValue(endPointPort);
+                    Element eleChild = (Element) child;
+                    
+                    if(endPointPort.contains("-")) { 
+                    	// create internal input range
+                    	Element eleFxdPortRan = winProjMgr.getdefinitionFileDoc().createElement("FixedPortRange");
+                    	String[] ports = endPointPort.split("-");
+                        String minPort = ports[0];
+                        String maxPort = ports[1];
+                        eleFxdPortRan.setAttribute(WindowsAzureConstants.ATTR_MINPORT, minPort);
+                        eleFxdPortRan.setAttribute(WindowsAzureConstants.ATTR_MAXPORT, maxPort);
+                        eleChild.getParentNode().appendChild(eleFxdPortRan);
+                        
+                        // Remove fixed port
+                        eleChild.getParentNode().removeChild(eleChild);
+                    } else { // Just update port
+                    	eleChild.setAttribute("port", endPointPort);
+                    }
+                } else if(child.getNodeName().equalsIgnoreCase("FixedPortRange")) {
+                	Element eleChild = (Element) child;
+                	
+                	if(endPointPort.contains("-")) {
+                		// updates port range values
+                		String[] ports = endPointPort.split("-");
+                        String minPort = ports[0];
+                        String maxPort = ports[1];
+                        eleChild.setAttribute(WindowsAzureConstants.ATTR_MINPORT, minPort);
+                        eleChild.setAttribute(WindowsAzureConstants.ATTR_MAXPORT, maxPort);
+                        
+                	} else { 
+                		//create internal fixed port
+                		Element eleFxdPort = winProjMgr.getdefinitionFileDoc().createElement("FixedPort");
+                		eleFxdPort.setAttribute("port", endPointPort);
+                		eleChild.getParentNode().appendChild(eleFxdPort);
+                		
+                		// Removing internal port range
+                		eleChild.getParentNode().removeChild(eleChild);
+                	}
                 }
             }
         }
         this.localPort = endPointPort;
+        } catch (Exception e) {
+            throw new WindowsAzureInvalidProjectOperationException(
+                    "Exception occured" , e);
+        }
     }
 
     /**
      * Gets Endpoint type.
      *
      * @return internalFixedPort
+     * @throws WindowsAzureInvalidProjectOperationException
      */
-    public WindowsAzureEndpointType getEndPointType() {
+    public WindowsAzureEndpointType getEndPointType()
+            throws WindowsAzureInvalidProjectOperationException {
         WindowsAzureEndpointType type = null;
         try {
             XPath xPath = XPathFactory.newInstance().newXPath();
             Document doc = getWindowsAzureProjMgr().getdefinitionFileDoc();
-            String expr = WindowsAzureConstants.ENDPOINT + "/*[@name='" + getName() + "']" ;
+            String expr = String.format(WindowsAzureConstants.ENDPOINT+ "/*[@name='" + getName() + "']", wRole.getName());
             Node epNode = (Node) xPath.evaluate(expr, doc,
                     XPathConstants.NODE);
             if (epNode.getNodeName().equalsIgnoreCase("InternalEndpoint")) {
@@ -271,7 +318,8 @@ public class WindowsAzureEndpoint {
                 type = WindowsAzureEndpointType.InstanceInput;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new WindowsAzureInvalidProjectOperationException(
+                    "Exception occured" , e);
         }
         return type;
     }
@@ -309,6 +357,9 @@ public class WindowsAzureEndpoint {
                         // while changing internal to input, private and public port
                         // are similar
                         newPubPort = getPrivatePort();
+                        if(newPubPort.contains("-")) {
+                            newPubPort = (newPubPort.split("-"))[0];
+                        }
                     } else {
                         //old type is instance
                         newPubPort = getPort();
@@ -359,6 +410,9 @@ public class WindowsAzureEndpoint {
                        // while changing internal to instance, private and public port
                        // are similar
                        newPubPort = getPrivatePort();
+                       if(newPubPort.contains("-")) {
+                           newPubPort = (newPubPort.split("-"))[0];
+                       }
                    } else {
                        //old type is input
                        newPubPort = getPort();
@@ -372,8 +426,6 @@ public class WindowsAzureEndpoint {
                    Element eleInstanceNode = doc.createElement("InstanceInputEndpoint");
                    eleInstanceNode.setAttribute(WindowsAzureConstants.ATTR_NAME, getName());
                    eleInstanceNode.setAttribute("protocol", "tcp");
-                   eleInstanceNode.setAttribute(WindowsAzureConstants.ATTR_MINPORT, newPubPort);
-                   eleInstanceNode.setAttribute(WindowsAzureConstants.ATTR_MAXPORT, newPubPort);
                    eleInstanceNode.setAttribute("localPort", getPrivatePort());
 
                    Element eleAllPubPort = doc.createElement("AllocatePublicPortFrom");
@@ -415,6 +467,11 @@ public class WindowsAzureEndpoint {
     public void delete() throws WindowsAzureInvalidProjectOperationException {
         try {
 
+            if (isCachingEndPoint() && wRole.isCachingEnable()) {
+                 throw new WindowsAzureInvalidProjectOperationException(
+                         "Endpoint is assoiciated with caching");
+            }
+
             if(getEndPointType().equals(WindowsAzureEndpointType.InstanceInput)) {
                 XPath xPath = XPathFactory.newInstance().newXPath();
                 Document doc = getWindowsAzureProjMgr().getdefinitionFileDoc();
@@ -434,6 +491,27 @@ public class WindowsAzureEndpoint {
             throw new WindowsAzureInvalidProjectOperationException(
                     WindowsAzureConstants.EXCP_DEL_ENDPOINT, ex);
         }
+    }
+
+    /**
+     * This API will return true if this endpoint is associated with windows azure cache.
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public boolean isCachingEndPoint() throws WindowsAzureInvalidProjectOperationException {
+        boolean isCachingAssociated = false;
+        try {
+
+            if(getName().startsWith("memcache_") &&	wRole.getNamedCaches().keySet().contains(
+                    getName().subSequence("memcache_".length(), getName().length()))) {
+                isCachingAssociated = true;
+            }
+        }catch(Exception ex) {
+            throw new WindowsAzureInvalidProjectOperationException(
+                    WindowsAzureConstants.EXCP);
+        }
+
+        return isCachingAssociated;
     }
 
 }

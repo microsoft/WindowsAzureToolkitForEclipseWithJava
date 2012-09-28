@@ -271,7 +271,7 @@ public class WindowsAzureProjectManager {
                     return false;
                 }
                 for (int i = min; i <= max; i++) {
-                    isValidPort = isValidPort(""+i, WindowsAzureEndpointType.InstanceInput);
+                    isValidPort = isValidPort(String.valueOf(i), WindowsAzureEndpointType.InstanceInput);
                     if (!isValidPort) {
                         break;
                     }
@@ -314,6 +314,30 @@ public class WindowsAzureProjectManager {
         return isValidPort;
     }
 
+
+    protected boolean isDupInputPubPort(String port, String inputEpName) {
+    	boolean isvalidInpPort = true;
+    	try {
+    		List<WindowsAzureRole> roles = getRoles();
+    		for (WindowsAzureRole role : roles) {
+    			List<WindowsAzureEndpoint> eps = role.getEndpoints();
+    			for (WindowsAzureEndpoint ep : eps) {
+    				if(ep.getName().equalsIgnoreCase(inputEpName)) {
+    					//edit case of ep
+    					continue;
+    				}
+    				if(ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), port)) {
+    					isvalidInpPort = false;
+    					break;
+    				}
+    			}
+    		}
+    	} catch (Exception ex) {
+    		isvalidInpPort = false;
+    	}
+    	return isvalidInpPort;
+    }
+
     public boolean checkForInstanceEp(String port) {
         //Get all instance endpoint and check range
         boolean isvalid = true;
@@ -326,9 +350,9 @@ public class WindowsAzureProjectManager {
             NodeList epList = (NodeList) xPath.evaluate(expr, doc, XPathConstants.NODESET);
 
             for (int i = 0; i < epList.getLength(); i++) {
-                Element ep = (Element) epList.item(i);
-                int min = Integer.parseInt(ep.getAttribute(WindowsAzureConstants.ATTR_MINPORT));
-                int max = Integer.parseInt(ep.getAttribute(WindowsAzureConstants.ATTR_MAXPORT));
+                Element endPt = (Element) epList.item(i);
+                int min = Integer.parseInt(endPt.getAttribute(WindowsAzureConstants.ATTR_MINPORT));
+                int max = Integer.parseInt(endPt.getAttribute(WindowsAzureConstants.ATTR_MAXPORT));
                 int newport = Integer.parseInt(port);
                 if (newport >= min && newport <= max) {
                     isvalid = false;
@@ -361,9 +385,9 @@ public class WindowsAzureProjectManager {
         String destPath = String.format("%s%s%s%s%s%s%s%s", projDirPath,File.separator,roleName,File.separator,
                           WindowsAzureConstants.APPROOT_NAME,File.separator,WindowsAzureConstants.SA_FOLDER_NAME,File.separator);
 
-        File f = new File(destPath);
-        if(!f.exists()) {
-            boolean result = f.mkdirs();
+        File file = new File(destPath);
+        if(!file.exists()) {
+            boolean result = file.mkdirs();
 
             if (!result) {
                 throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.DIR_NOT_CREATED+destPath);
@@ -407,10 +431,8 @@ public class WindowsAzureProjectManager {
                         throw new WindowsAzureInvalidProjectOperationException(
                                 WindowsAzureConstants.DIR_NOT_CREATED + path);
                     }
-
-                    Vector<String> sName = mapActivity.get("strPath");
-
-                    ZipFile zipFile = new ZipFile(sName.get(0));
+                    Vector<String> skpath = mapActivity.get("skPath");
+                    ZipFile zipFile = new ZipFile(skpath.get(0));
                     Enumeration<? extends ZipEntry> entries = zipFile.entries();
                     while (entries.hasMoreElements()) {
                     	ZipEntry entry = (ZipEntry) entries.nextElement();
@@ -421,9 +443,9 @@ public class WindowsAzureProjectManager {
                     			new File(str).mkdirs();
                     		} else {
                     			String outFilename = entry.getName().replace("%proj%/WorkerRole1", path);
-                    			InputStream in = zipFile.getInputStream(entry);
+                    			InputStream inStream = zipFile.getInputStream(entry);
                     			OutputStream out = new FileOutputStream(new File(outFilename));
-                    			ParserXMLUtility.writeFile(in, out);
+                    			ParserXMLUtility.writeFile(inStream, out);
                     		}
                     	}
                     }
@@ -525,6 +547,44 @@ public class WindowsAzureProjectManager {
     }
 
     /**
+     * Gets target OS family value.
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public OSFamilyType getOSFamily() throws WindowsAzureInvalidProjectOperationException {
+        try {
+        	String value = ParserXMLUtility.getExpressionValue(getConfigFileDoc(), WindowsAzureConstants.CONFIG_OSFAMILY);
+        	if(value != null && !value.isEmpty()) {
+        		if(value.equals(WindowsAzureConstants.OSFAMILY_WINDOWS_SERVER_2008_R2)) {
+        				return OSFamilyType.WINDOWS_SERVER_2008_R2;
+        		}
+        		else if(value.equals(WindowsAzureConstants.OSFAMILY_WINDOWS_SERVER_2012)) {
+        				return OSFamilyType.WINDOWS_SERVER_2012;
+        		}
+        		else {
+        			throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_TARGET_OS_NAME);
+        		}
+        	}else{
+        		throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_TARGET_OS_NAME);
+        	}
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+        	throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_TARGET_OS_NAME, ex);
+        }
+    }
+
+    /**
+     * Sets target OS family.
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public void setOSFamily(OSFamilyType osFamilyType) throws WindowsAzureInvalidProjectOperationException {
+    	try {
+    		ParserXMLUtility.setExpressionValue(getConfigFileDoc(), WindowsAzureConstants.CONFIG_OSFAMILY,osFamilyType.getValue()+"");
+        } catch (Exception ex) {
+            throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_SET_TARGET_OS_NAME, ex);
+        }
+    }
+
+    /**
      * Gets the package type.
      *
      * @return
@@ -564,6 +624,13 @@ public class WindowsAzureProjectManager {
                     packageFileDoc,
                     XPathConstants.NODE);
             node.setNodeValue(packageType.name().toLowerCase());
+
+            //iterate on each role and call setCacheSettingInCscfg
+            List<WindowsAzureRole> roles = getRoles();
+            for (WindowsAzureRole role : roles) {
+				role.setCacheSettingInCscfg(role.getCacheStorageAccountName()
+						, role.getCacheStorageAccountKey());
+			}
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(
                     WindowsAzureConstants.EXCP_SET_PACKAGE_TYPE, ex);
@@ -731,9 +798,9 @@ public class WindowsAzureProjectManager {
                 mapActivity.put("add", values);
             }
             values.add(roleName);
-            Vector<String> sPath = new Vector<String>();
-            sPath.add(strPath);
-            mapActivity.put("strPath", sPath);
+            Vector<String> skPath = new Vector<String>();
+            skPath.add(strPath);
+            mapActivity.put("skPath", skPath);
 
             return newWinAzureRole;
         } catch (Exception ex) {
@@ -1534,9 +1601,6 @@ public class WindowsAzureProjectManager {
         }
     }
 
-
-
-
     public boolean isCurrVersion() throws WindowsAzureInvalidProjectOperationException {
         boolean isCurrVersion = true;
         try {
@@ -1562,6 +1626,23 @@ public class WindowsAzureProjectManager {
         }
         return isCurrVersion;
     }
+
+    public void setVersion(String version) throws WindowsAzureInvalidProjectOperationException {
+    	try {
+			ParserXMLUtility.setExpressionValue(getPackageFileDoc(),WindowsAzureConstants.CREATOR_VER + "/@value",version);
+		} catch (XPathExpressionException e) {
+			throw new WindowsAzureInvalidProjectOperationException("Error occured while setting project version");
+		}
+    }
+
+    public String getVersion() throws WindowsAzureInvalidProjectOperationException {
+    	try {
+			return ParserXMLUtility.getExpressionValue(getPackageFileDoc(),WindowsAzureConstants.CREATOR_VER + "/@value");
+		} catch (XPathExpressionException e) {
+			throw new WindowsAzureInvalidProjectOperationException("Error occured while setting project version");
+		}
+    }
+
     /**
      * Gets document for ServiceConfiguration.cscfg.
      *
@@ -1850,6 +1931,7 @@ public class WindowsAzureProjectManager {
             for (Iterator<String> iterator = sortedDirs.descendingIterator(); iterator.hasNext();) {
                 File versionedSdkDir = new File(sdkDir, iterator.next());
                 if (versionedSdkDir.isDirectory()) {
+
                     File csPackPath = new File(String.format("%s%sbin%scspack.exe", versionedSdkDir.toString(), File.separatorChar, File.separatorChar));
                     if (csPackPath.exists()) {
                         latestVersionSdkDir = versionedSdkDir.toString();
@@ -1904,21 +1986,25 @@ public class WindowsAzureProjectManager {
             "ResetEmulator.cmd");
             OutputStream out = new FileOutputStream(new File(outputPath));
             ParserXMLUtility.writeFile(urlStream, out);
-            final File fp = new File(outputPath);
+            final File filePt = new File(outputPath);
+            if(!filePt.exists()) {
+                throw new WindowsAzureInvalidProjectOperationException(
+                        "ResetEmulator.cmd not found");
+            }
             Thread cmdTh = new Thread() {
                 @Override
                 public void run() {
                     try {
-                        Runtime.getRuntime().exec("cmd /c start " + fp.getAbsolutePath());
+                        Runtime.getRuntime().exec("cmd /c start " + filePt.getAbsolutePath());
                     } catch (IOException ex) {
-                        throw new RuntimeException(ex.getMessage());
+                    	//catching exception silently
                     }
                 }
             };
             cmdTh.start();
         } catch (Exception e) {
             throw new WindowsAzureInvalidProjectOperationException(
-                    "Exception while resetting emmulator", e);
+                    "Exception while resetting emulator", e);
         }
     }
 
@@ -1951,7 +2037,7 @@ public class WindowsAzureProjectManager {
                     try {
                         Runtime.getRuntime().exec("cmd /c start " + scriptPath);
                     } catch (Exception ex) {
-                        throw new RuntimeException(ex.getMessage());
+                    	//catching exception silently
                     }
                 }
             };
@@ -2121,7 +2207,6 @@ public class WindowsAzureProjectManager {
         }
         return status;
     }
-
 
     public String upgradeProject(File oldProjectFile, String newProjectTemplateLoc) throws WindowsAzureInvalidProjectOperationException {
         return ProjectUpgrader.upgradeProject(oldProjectFile, newProjectTemplateLoc);

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-
 package com.gigaspaces.azure.wizards;
 
 import java.io.File;
@@ -26,16 +25,7 @@ import java.util.Map.Entry;
 import javax.xml.bind.JAXBException;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IncrementalProjectBuilder;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.dialogs.MessageDialogWithToggle;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -52,11 +42,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
-
-import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.model.HostedService;
 import com.gigaspaces.azure.model.HostedServices;
@@ -71,17 +57,15 @@ import com.gigaspaces.azure.runnable.LoadAccountWithProgressBar;
 import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PublishData;
+import com.gigaspaces.azure.util.UIUtils;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
-import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.persistent.util.MessageUtil;
+
+import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
+import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
 
 public class SignInPage extends WindowsAzurePage {
 
-	private static Map<String, Boolean> rememberMydecisions = new HashMap<String, Boolean>();
-	private static Map<String, Integer> decisions = new HashMap<String, Integer>();
-	
-	private Text txtcspkg;
-	private Text txtcscfg;
 	private Combo storageAccountCmb;
 	private Combo storageAccessKeyCmb;
 	private Combo hostedServiceCombo;
@@ -105,9 +89,9 @@ public class SignInPage extends WindowsAzurePage {
 	private Button importBtn;
 	private Button newCertBtn;
 	private Button newHostedServiceBtn;
-	private Button deploymentFileButton;
-	private Button deployConfigFileButton;
 	private Button newStorageAccountBtn;
+	
+	private String defaultLocation;
 
 	private IProject selectedProject;
 
@@ -357,12 +341,16 @@ public class SignInPage extends WindowsAzurePage {
 					if (maxStorageAccounts > publishData.getStoragesPerSubscription().get(currentSubscriptionId).size()) {
 
 						NewStorageAccountDialog storageAccountDialog = new NewStorageAccountDialog(getShell());
+						if (defaultLocation != null) { // user has created a hosted service before a storage account
+							storageAccountDialog.setDefaultLocation(defaultLocation);
+						}
 						int result = storageAccountDialog.open();
 
 						if (result == 0) {
 
 							populateStorageAccounts();
 							selectByText(storageAccountCmb, storageAccountDialog.getStorageAccountName());
+							defaultLocation = WizardCacheManager.getStorageAccountFromCurrentPublishData(storageAccountDialog.getStorageAccountName()).getStorageServiceProperties().getLocation();
 						}
 					} else {
 						MessageUtil.displayErrorDialog(getShell(),Messages.storageAccountsLimitTitle,Messages.storageAccountsLimitErr);
@@ -556,6 +544,9 @@ public class SignInPage extends WindowsAzurePage {
 
 						NewHostedServiceDialog hostedService = new NewHostedServiceDialog(
 								getShell());
+						if (defaultLocation != null) { // user has created a storage account before creating the hosted service
+							hostedService.setDefaultLocation(defaultLocation);
+						}
 
 						int result = hostedService.open();
 
@@ -563,6 +554,7 @@ public class SignInPage extends WindowsAzurePage {
 
 							populateHostedServices();
 							selectByText(hostedServiceCombo, hostedService.getHostedServiceName());
+							defaultLocation = WizardCacheManager.getHostedServiceFromCurrentPublishData(hostedService.getHostedServiceName()).getHostedServiceProperties().getLocation();
 						}
 					} else {
 						MessageUtil.displayErrorDialog(getShell(),
@@ -584,7 +576,7 @@ public class SignInPage extends WindowsAzurePage {
 
 	private void selectByText(Combo combo , String name) {
 		if (combo.getItemCount() > 0) {
-			int selection = findSelectionByText(name, combo);
+			int selection = UIUtils.findSelectionByText(name, combo);
 			if (selection != -1) {
 				combo.select(selection);
 			}
@@ -667,7 +659,8 @@ public class SignInPage extends WindowsAzurePage {
 	}
 
 	protected void newCertCreate() {
-		NewCertificateDialog dialog = new NewCertificateDialog(getShell());
+		NewCertificateDialogData data = new NewCertificateDialogData(); 
+		NewCertificateDialog dialog = new NewCertificateDialog(getShell(),data);
 		int returnCode = dialog.open();
 		if (returnCode == Window.OK) {
 			if (WizardCacheManager.getCurrentPublishData() != null) {
@@ -725,74 +718,6 @@ public class SignInPage extends WindowsAzurePage {
 		return composite;
 	}
 
-	private void showProjectBuildMessageDialog(Shell shell,final IProject selectedProject,final WindowsAzureProjectManager waProjManager, final Composite group) {
-
-		MessageDialogWithToggle dialog = null;
-		
-		String projectName = selectedProject.getName();
-		
-		Boolean rememberMyDecisionForSelectedProject = rememberMydecisions.get(projectName);
-		
-		if (rememberMyDecisionForSelectedProject == null || rememberMyDecisionForSelectedProject == false) {
-			dialog = MessageDialogWithToggle.open(
-					MessageDialog.QUESTION, shell,
-					Messages.deplConfirmConfigChangeMsg,
-					Messages.deplFullProjBuildConfirmMsg,
-					Messages.deplRememberMyDecisionMsg, false, null, null,
-					SWT.SHEET);						
-		}
-
-		if (dialog != null) { // user did not want to remember his decision for this project. dialog was opened.
-			
-			boolean toogleState = dialog.getToggleState();
-			if (toogleState == true) {
-				rememberMydecisions.put(projectName, true);
-			}
-			else {
-				rememberMydecisions.put(projectName, false);
-			}
-			decisions.put(projectName, dialog.getReturnCode());
-		}
-		if  (decisions.get(projectName) == IDialogConstants.YES_ID) {
-			
-			try {
-				getContainer().run(true, true, new IRunnableWithProgress() {
-					
-					@Override
-					public void run(IProgressMonitor arg0) throws InvocationTargetException, InterruptedException {
-						Job job = new Job(String.format(Messages.buildingProjTask,selectedProject.getName())) {
-							@Override
-							protected IStatus run(IProgressMonitor monitor) {
-								monitor.beginTask(String.format(Messages.buildingProjTask,selectedProject.getName()), IProgressMonitor.UNKNOWN);
-								try {
-									waProjManager.setPackageType(deployMode);
-									selectedProject.build(IncrementalProjectBuilder.CLEAN_BUILD,monitor);
-									waProjManager.save();
-									selectedProject.build(IncrementalProjectBuilder.INCREMENTAL_BUILD,null);
-									selectedProject.refreshLocal(IResource.DEPTH_INFINITE, monitor);
-								} catch (Exception e) {
-									Activator.getDefault().log(Messages.error, e);
-									super.setName("");
-									monitor.done();
-									return Status.CANCEL_STATUS;
-								}
-								super.setName("");
-								monitor.done();
-								return Status.OK_STATUS;
-							}
-						};
-						job.schedule();	
-						job.join();
-					}
-				});
-			} 
-			catch (InvocationTargetException e1) {
-			} 
-			catch (InterruptedException e1) {
-			}			
-		}
-	}
-
 	private void importBtn() {
 
 		FileDialogDelegator dialog = new FileDialogDelegator(getShell());
@@ -837,15 +762,6 @@ public class SignInPage extends WindowsAzurePage {
 					return i;
 				}
 			}
-		}
-		return 0;
-	}
-
-	private int findSelectionByText(String txt, Combo combo) {
-		if (txt == null || txt.isEmpty()) return 0;
-		for (int i = 0 ; i < combo.getItemCount() ; i++) {
-			String itemText = combo.getItem(i);
-			if (itemText.equals(txt)) return i;
 		}
 		return 0;
 	}

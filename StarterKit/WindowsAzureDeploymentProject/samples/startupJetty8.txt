@@ -31,7 +31,7 @@ cscript /NoLogo util\unzip.vbs jdk.zip "%CD%"
 
 :: Deploy server
 set JETTY_HOME=\%ROLENAME%\%SERVER_DIR_NAME%
-cscript /NoLogo util\unzip.vbs jetty8.zip "%CD%"
+cscript /NoLogo util\unzip.vbs jetty8.zip "\%ROLENAME%"
 
 :: Deploy application
 copy "%WAR_NAME%" "%JETTY_HOME%\webapps"

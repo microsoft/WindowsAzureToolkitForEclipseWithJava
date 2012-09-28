@@ -70,6 +70,9 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.persistent.util.MessageUtil;
 
+import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
+import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
+
 public class RemoteDesktopPage extends WindowsAzurePage {
 
 	class ModificationValidator implements ModifyListener {
@@ -819,12 +822,14 @@ public class RemoteDesktopPage extends WindowsAzurePage {
 	}
 
 	protected void newBtnListener() {
-		NewCertificateDialog dialog = new NewCertificateDialog(getShell());
+		NewCertificateDialogData data = new NewCertificateDialogData();
+        NewCertificateDialog dialog = new NewCertificateDialog(getShell(),data);
+        
 		int returnCode = dialog.open();
 		if (returnCode == Window.OK) {
-			txtCertPath.setText(dialog.getCertPath());
-			txtPfxPath.setText(dialog.getPfxPath());
-			txtPfxPassword.setText(dialog.getPfxPassword());
+			txtCertPath.setText(data.getCerFilePath());
+			txtPfxPath.setText(data.getPfxFilePath());
+			txtPfxPassword.setText(data.getPassword());
 			setPageComplete(validatePageComplete());
 		}
 	}

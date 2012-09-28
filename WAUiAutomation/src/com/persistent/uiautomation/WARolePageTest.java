@@ -1154,7 +1154,7 @@ public class WARolePageTest {
 
 	@Test
 	// (New Test Cases for 1.7) test case 130
-	public void testAddMax_MinPblPortRange() throws Exception {
+	public void testAddMaxMinPblPortRange() throws Exception {
 		Utility.closeProjPropertyPage(Messages.projWithEp);
 		SWTBotTreeItem proj1 = Utility.
 				selProjFromExplorer(Messages.projWithEp);
@@ -1178,7 +1178,7 @@ public class WARolePageTest {
 
 	@Test
 	// (New Test Cases for 1.7) test case 131
-	public void testInPlaceEditMax_MinPblPortRange() throws Exception {
+	public void testInPlaceEditMaxMinPblPortRange() throws Exception {
 		Utility.closeProjPropertyPage(Messages.projWithEp);
 		SWTBotTreeItem proj1 = Utility.
 				selProjFromExplorer(Messages.projWithEp);
@@ -1204,7 +1204,7 @@ public class WARolePageTest {
 
 	@Test
 	// (New Test Cases for 1.7) test case 132
-	public void testEditMax_MinPblPortRange() throws Exception {
+	public void testEditMaxMinPblPortRange() throws Exception {
 		Utility.closeProjPropertyPage(Messages.projWithEp);
 		SWTBotTreeItem proj1 = Utility.
 				selProjFromExplorer(Messages.projWithEp);

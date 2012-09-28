@@ -21,7 +21,7 @@ import org.eclipse.core.runtime.CoreException;
 
 public class WAProjectNature implements IProjectNature {
 
-    public static final String NATURE_ID = "com.persistent.ui.projectnature";
+    public static final String NATURE_ID = Messages.waProjNature;
     private IProject project;
 
     @Override

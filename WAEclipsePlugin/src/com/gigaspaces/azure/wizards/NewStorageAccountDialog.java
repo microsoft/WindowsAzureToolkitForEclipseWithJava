@@ -37,6 +37,8 @@ import com.gigaspaces.azure.model.CreateStorageServiceInput;
 import com.gigaspaces.azure.model.Location;
 import com.gigaspaces.azure.model.Locations;
 import com.gigaspaces.azure.runnable.NewStorageAccountWithProgressWindow;
+import com.gigaspaces.azure.util.UIUtils;
+import com.persistent.util.MessageUtil;
 
 public class NewStorageAccountDialog extends WADialog {
 	
@@ -46,11 +48,18 @@ public class NewStorageAccountDialog extends WADialog {
 	private ProgressBar bar;
 	boolean valid = false;
 	private String storageAccountNameToCreate;
+	private String storageAccountLocation;
+	private String defaultLocation;
+
 	
 	private final static String STORAGE_ACCOUNT_NAME_PATTERN = "^[a-z0-9]+$";
 
 	public NewStorageAccountDialog(Shell parentShell) {
 		super(parentShell);
+	}
+	
+	public void setDefaultLocation(final String location) {
+		this.defaultLocation = location;
 	}
 
 	@Override
@@ -72,7 +81,7 @@ public class NewStorageAccountDialog extends WADialog {
 
 		Button okButton = getButton(IDialogConstants.OK_ID);
 		if (okButton != null) {
-			okButton.setText(Messages.hostedCreate);
+			okButton.setText("OK");
 
 			okButton.addSelectionListener(new SelectionListener() {
 
@@ -86,12 +95,24 @@ public class NewStorageAccountDialog extends WADialog {
 					body.setDescription(descriptionTxt.getText());
 					
 					storageAccountNameToCreate = storageAccountTxt.getText();
+					storageAccountLocation = locationComb.getText();
 
-					NewStorageAccountWithProgressWindow progress = new NewStorageAccountWithProgressWindow(null, Display.getDefault().getActiveShell());
-					progress.setCreateStorageAccount(body);
-					Display.getDefault().syncExec(progress);
-					valid = true;
-					close();
+					boolean isNameAvailable = false;
+					try {
+						isNameAvailable = WizardCacheManager.isStorageAccountNameAvailable(storageAccountNameToCreate);
+						if (isNameAvailable) {
+							WizardCacheManager.createStorageServiceMock(storageAccountNameToCreate, storageAccountLocation, descriptionTxt.getText());
+							valid = true;
+							close();
+						} else {
+							MessageUtil.displayErrorDialog(getShell(), "DNS Conflict", Messages.storageAccountConflictError);
+							storageAccountTxt.setFocus();
+							storageAccountTxt.selectAll();
+						}
+					} catch (final Exception e1) {
+						MessageUtil.displayErrorDialogAndLog(getShell(), "Error", e1.getMessage(), e1);
+					}
+					
 				}
 
 				@Override
@@ -172,6 +193,17 @@ public class NewStorageAccountDialog extends WADialog {
 			locationComb.add(location.getName());
 			locationComb.setData(location.getName(), location);
 		}
+		
+		// default location will exist if the user has created a hosted servicebefore creating the storage account
+		if (defaultLocation != null) {
+			int selection = UIUtils.findSelectionByText(defaultLocation, locationComb);
+			if (selection != -1) {
+				locationComb.select(selection);
+			}
+			else {
+				locationComb.select(0);
+			}			
+		}
 	}
 
 	@Override
@@ -217,6 +249,10 @@ public class NewStorageAccountDialog extends WADialog {
 
 	public String getStorageAccountName() {
 		return storageAccountNameToCreate;
+	}
+	
+	public String getLocation() {
+		return storageAccountLocation; 
 	}
 
 

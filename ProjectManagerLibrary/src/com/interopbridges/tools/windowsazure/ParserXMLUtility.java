@@ -184,5 +184,82 @@ final class ParserXMLUtility {
         }
     }
 
+    /** This API evaluates  XPath expression and return the result as a String.*/
+    public static String getExpressionValue(Document doc ,String expr) throws XPathExpressionException {
+           if (doc == null || expr == null || expr.isEmpty())
+            throw new IllegalArgumentException(WindowsAzureConstants.INVALID_ARG);
+
+           XPath xPath = XPathFactory.newInstance().newXPath();
+           return xPath.evaluate(expr,doc);
+    }
+
+    /** This API evaluates  XPath expression and sets the value.*/
+    public static void setExpressionValue(Document doc ,String expr, String value) throws XPathExpressionException {
+           if (doc == null || expr == null || expr.isEmpty())
+            throw new IllegalArgumentException(WindowsAzureConstants.INVALID_ARG);
+
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        Node node = (Node) xPath.evaluate(expr,doc,XPathConstants.NODE);
+        node.setNodeValue(value);
+    }
+
+    protected static boolean isEpPortEqualOrInRange(String oldPort, String newPort) {
+        boolean isEqual = false;
+        try {
+
+            int oldMin, oldMax, newMin, newMax;
+            if(oldPort.contains("-")) {
+                String[] rang = oldPort.split("-");
+                oldMin = Integer.valueOf(rang[0]);
+                oldMax = Integer.valueOf(rang[1]);
+            } else {
+                oldMax = Integer.valueOf(oldPort);
+                oldMin = Integer.valueOf(oldPort);
+            }
+
+            if(newPort.contains("-")) {
+                String[] rang = newPort.split("-");
+                newMin = Integer.valueOf(rang[0]);
+                newMax = Integer.valueOf(rang[1]);
+            } else {
+                newMax = Integer.valueOf(newPort);
+                newMin = Integer.valueOf(newPort);
+            }
+
+
+            //check for newmin range is in between old range
+            if((newMin == oldMin) || newMin == oldMax || (newMin > oldMin && newMin < oldMax)) {
+                isEqual = true;
+            } else if((newMax == oldMin) || newMax == oldMax || (newMax > oldMin && newMax < oldMax)) {
+                    //check for newmax range is in between old range
+                isEqual = true;
+            } else if( (oldMin > newMin && oldMin < newMax)) {
+                // check for oldnim should not be in new range i.e. check for overlapping
+                isEqual = true;
+            } else if(oldMax > newMin && oldMax < newMax) {
+                isEqual = true;
+            }
+
+
+        } catch (Exception e) {
+            isEqual = false;
+        }
+        return isEqual;
+    }
+
+    protected static boolean isValidRange(String range) {
+        boolean isValid = true;
+        try {
+            String[] ports = range.split("-");
+            int min = Integer.parseInt(ports[0]);
+            int max = Integer.parseInt(ports[1]);
+            if(min > max) {
+                isValid = false;
+            }
+        } catch (Exception e) {
+            isValid = false;
+        }
+        return isValid;
+    }
 
 }

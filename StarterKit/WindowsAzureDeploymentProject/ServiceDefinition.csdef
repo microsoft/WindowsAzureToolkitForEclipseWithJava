@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
-<ServiceDefinition xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" name="WindowsAzureDeploymentProject" schemaVersion="2012-05.1.7">
+<ServiceDefinition xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" name="WindowsAzureDeploymentProject">
   <WorkerRole name="WorkerRole1" vmsize="Small">
     <Startup>
       <!-- Sample startup task calling startup.cmd from the role's approot folder -->

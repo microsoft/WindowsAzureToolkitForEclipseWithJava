@@ -91,7 +91,10 @@ namespace Gigaspaces.Rest
                 request = CreateRequest();
             }
 
-            request.Timeout = 500000; // 500 seconds timeout in case of slow connections 
+            if (request != null)
+            {
+                request.Timeout = 500000; // 500 seconds timeout in case of slow connections
+            } 
 
             HttpWebResponse response = null;
 
@@ -118,7 +121,8 @@ namespace Gigaspaces.Rest
 
                     if (response == null)
                     {
-                        throw;
+                        Console.Error.Write(ex.Status.ToString());
+                        return;
                     }
                      
                 }
