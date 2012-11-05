@@ -1,0 +1,17 @@
+-------------------------------------------------------------------------------------------------------------------------
+Third Party Notices
+
+This file is based on or incorporates material from the projects listed below (collectively, “Third Party Code”).   Microsoft Open Technologies, Inc. ("Microsoft Open Tech") is not the original author of the Third Party Code.  The original copyright notice and the license under which Microsoft Open Tech received such Third Party Code, are set forth below.  Such licenses and notices are provided for informational purposes only.  Microsoft Open Tech licenses the Third Party Code to you under the terms set forth in the COMMUNITY TECHNOLOGY PREVIEW (PRE-RELEASE) SOFTWARE LICENSE TERMS for the PACKAGE FOR APACHE QPID CLIENT LIBRARIES FOR JMS (BY MICROSOFT OPEN TECHNOLOGIES, INC.).  Microsoft Open Tech reserves all other rights not expressly granted under this agreement, whether by implication, estoppel or otherwise.  
+
+Apache Qpid
+Copyright 2006-2012 Apache Software Foundation
+http://qpid.apache.org/
+
+Provided for Informational Purposes Only:
+Apache 2.0 License
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0  
+
+THIS CODE IS PROVIDED *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT. 
+
+See the Apache Version 2.0 License for specific language governing permissions and limitations under the License.
+-------------------------------------------------------------------------------------------------------------------------

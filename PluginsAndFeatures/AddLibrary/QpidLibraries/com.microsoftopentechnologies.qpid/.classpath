@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/geronimo-jms_1.1_spec-1.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/qpid-amqp-1-0-client-jms-0.19.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/qpid-amqp-1-0-common-0.19.jar"/>
+	<classpathentry exported="true" kind="lib" path="qpid-amqp-1-0-client-0.19.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

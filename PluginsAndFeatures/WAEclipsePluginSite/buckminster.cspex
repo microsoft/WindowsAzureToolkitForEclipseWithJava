@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cspecExtension
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:bc="http://www.eclipse.org/buckminster/Common-1.0"
+	xmlns="http://www.eclipse.org/buckminster/CSpec-1.0">
+    <actions>
+        <public name="site.p2.publish" actor="ant">
+            <actorProperties>
+                <property key="buildFile" value="build/publishUpdateSite.ant" />
+                <property key="targets" value="publish.p2" />
+            </actorProperties>
+            <properties>
+                <property key="source" value="${buckminster.output}/site.p2/" />
+                <property key="destination" value="${updatesite.destination}" />
+            </properties>
+            <prerequisites alias="repository">
+                <attribute name="site.p2" />
+            </prerequisites>
+            <products base="${updatesite.destination}" upToDatePolicy="ACTOR"/>
+        </public>
+    </actions>
+</cspecExtension>

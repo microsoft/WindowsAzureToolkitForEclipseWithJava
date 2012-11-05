@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.microsoftopentechnologies.wap4ej.build</groupId>
+  <artifactId>parent</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <modules>
+	<module>AddLibrary/AzureLibraries/com.microsoftopentechnologies.windowsazure.tools.sdk</module>
+    <module>AddLibrary/AzureLibraries/com.microsoftopentechnologies.windowsazure.tools.sdk.feature</module>
+	<module>AddLibrary/AzureLibraries/com.microsoftopentechnologies.windowsazure.tools.wasdkjava.ui</module>
+    <module>com.microsoftopentechnologies.wacommon</module>   
+	<module>com.microsoftopentechnologies.wacommon.feature</module>   
+    <module>AddLibrary/ACSLibrary/com.microsoftopentechnologies.acsfilter</module>
+    <module>AddLibrary/ACSLibrary/com.microsoftopentechnologies.acsfilter.feature</module>
+    <module>AddLibrary/ACSLibrary/com.microsoftopentechnologies.acsfilter.ui</module>
+    <module>AddLibrary/JDBCLibrary/JavaEE6/com.microsoft.sqljdbc4</module>
+	<module>AddLibrary/JDBCLibrary/JavaEE6/com.microsoft.sqljdbc4.feature</module>
+    <module>AddLibrary/JDBCLibrary/JavaEE6/com.microsoft.sqljdbc4.ui</module>
+	<module>AddLibrary/QpidLibraries/com.microsoftopentechnologies.qpid</module>
+	<module>AddLibrary/QpidLibraries/com.microsoftopentechnologies.qpid.feature</module>
+    <module>AddLibrary/QpidLibraries/com.microsoftopentechnologies.qpid.ui</module>
+	<module>com.persistent.winazure.eclipseplugin</module>   
+	<module>com.persistent.winazure.eclipseplugin.feature</module>   
+	<module>WindowsAzurePlugin4EJ</module>   
+  </modules>
+  <properties>
+	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <tycho-version>0.15.0</tycho-version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>juno</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/releases/juno</url>
+    </repository>
+  </repositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-maven-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <extensions>true</extensions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-p2-director-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <executions>
+          <execution>
+            <id>materialize-products</id>
+            <goals>
+              <goal>materialize-products</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>archive-products</id>
+            <goals>
+              <goal>archive-products</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+	  <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <environments>
+            <environment>
+              <os>win32</os>
+              <ws>win32</ws>
+              <arch>x86</arch>
+            </environment>
+			</environments>			
+        </configuration>
+      </plugin>
+    </plugins>
+  </build> 
+
+</project>

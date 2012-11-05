@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="WAEclipsePluginSite"
+      label="WAEclipsePluginSite"
+      version="1.0.0.qualifier">
+
+   <description url="http://www.example.com/description">
+      [Enter Feature Description here.]
+   </description>
+
+   <copyright url="http://www.example.com/copyright">
+      [Enter Copyright Description here.]
+   </copyright>
+
+   <license url="http://www.example.com/license">
+      [Enter License Description here.]
+   </license>
+
+   <includes
+         id="com.microsoft.sqljdbc4.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="com.microsoftopentechnologies.acsfilter.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="com.microsoftopentechnologies.wacommon.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="com.microsoftopentechnologies.windowsazure.tools.sdk.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="com.persistent.winazure.eclipseplugin.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="com.microsoftopentechnologies.qpid.feature"
+         version="0.0.0"/>
+
+</feature>

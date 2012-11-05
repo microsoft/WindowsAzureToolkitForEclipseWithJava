@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry exported="true" kind="lib" path="dependencies/activation-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/commons-lang3-3.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/commons-logging-1.1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/jackson-core-asl-1.8.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/jackson-jaxrs-1.8.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/jackson-mapper-asl-1.8.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/jackson-xc-1.8.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/javax.inject-1.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/jaxb-impl-2.2.3-1.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/jersey-client-1.10-b02.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/jersey-core-1.10-b02.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/jersey-json-1.10-b02.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/jettison-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/mail-1.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/stax-api-1.0.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry exported="true" kind="lib" path="microsoft-windowsazure-api-0.3.3.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

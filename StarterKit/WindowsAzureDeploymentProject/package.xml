@@ -28,7 +28,7 @@
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
     <property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-    <property name="creator.version" value="1.7.0"/>
+    <property name="creator.version" value="1.8.0"/>
   </target>
 
   <!-- Force emulator reset to ensure no locks on deploy directory -->
@@ -100,9 +100,22 @@
 					The directory of the Windows Azure Emulator installation. If not specified, an attempt will be made to find it automatically.
 
 			[usectppackageformat]:
-					If set to true and packagetype=cloud, then the package is built in OPC file format, supported by Windows Azure SDK v1.7.
+					If set to true and packagetype=cloud, then the package is built in OPC file format, supported by Windows Azure SDK v1.7 and later.
+
+			[rolepropertiesfilename]:
+					The file name of a properties file in the project to associate with each role.
+			
+			[portalurl]:
+					The URL of the Windows Azure portal used to generate the shortcut link
 			-->
-      <windowsazurepackage configurationfilename="ServiceConfiguration.cscfg" definitionfilename="ServiceDefinition.csdef" packagedir="${wapackagedir}" packagefilename="WindowsAzurePackage.cspkg" packagetype="local" projectdir="${basedir}">
+      <windowsazurepackage 
+      	configurationfilename="ServiceConfiguration.cscfg" 
+      	definitionfilename="ServiceDefinition.csdef" 
+      	packagedir="${wapackagedir}" 
+      	packagefilename="WindowsAzurePackage.cspkg" 
+      	packagetype="local" 
+      	projectdir="${basedir}"
+      	portalurl="http://windows.azure.com">
 
         <!-- Create a sample role -->
         <workerrole approotdir="${basedir}\WorkerRole1\approot" name="WorkerRole1">
@@ -134,7 +147,7 @@
 							
 					[deploydir]:
 							The directory, relative to approot, where the component will be deployed from approot based on deploymethod.
-						-->
+			-->
           <component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importas="HelloWorld.war" type="server.app" />
         </workerrole>
 

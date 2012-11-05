@@ -4,6 +4,8 @@ set SERVER_APPS_LOCATION=\%ROLENAME%
 
 ${Variables}
 
+netsh advfirewall firewall add rule name="allowjava" dir=in action=allow program="%JAVA_HOME%\bin\java.exe"
+
 ${Components}
 
 ${UserStartup}

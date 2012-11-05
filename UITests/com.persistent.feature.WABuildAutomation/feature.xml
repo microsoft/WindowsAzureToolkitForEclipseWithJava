@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.persistent.feature.WABuildAutomation"
+      label="WABuildAutomation"
+      version="1.0.0.qualifier"
+      provider-name="PERSISTENT">
+
+   <description url="http://www.example.com/description">
+      Provides support for automating complete build process.This feature helps to build and automate the build process as well as it runs all Junits and UI Automation test cases.
+   </description>
+
+   <copyright url="http://www.example.com/copyright">
+      Copyright 2011 Persistent Systems Ltd.
+   </copyright>
+
+   <license url="http://www.example.com/license">
+      Copyright 2011 Persistent Systems Ltd.
+
+Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+   </license>
+
+   <includes
+         id="com.persistent.winazure.eclipseplugin.feature"
+         version="0.0.0"/>
+
+   <plugin
+         id="WAUiAutomation"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

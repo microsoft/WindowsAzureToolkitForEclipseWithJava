@@ -1,0 +1,11 @@
+<project>
+    <target name="publish.p2">
+        <echo message="Source:      ${source}"/>
+        <echo message="Destination: ${destination}"/>
+        
+        <mkdir dir="${destination}"/>
+        <copy todir="${destination}" preservelastmodified="true">
+            <fileset dir="${source}"/>
+        </copy>
+    </target>
+</project>

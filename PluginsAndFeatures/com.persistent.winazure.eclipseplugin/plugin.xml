@@ -1,0 +1,854 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.6"?>
+<plugin>
+  <!-- Windows Azure Deployment wizard -->
+   <extension
+         point="org.eclipse.ui.newWizards">
+        <category
+           name="Windows Azure Deployment Project"
+          id="com.persistent.ui.projwizard.category">
+         </category>
+         <wizard
+            name="Windows Azure Deployment Project"
+           category="com.persistent.ui.projwizard.category"
+           icon="icons/File menu.png"
+           project="true"
+           class="com.persistent.ui.projwizard.WAProjectWizard"
+           id="com.persistent.ui.projwizard.waprojectwizard">
+        <description>New Windows Azure Deployment Project</description>
+         </wizard>
+   </extension>
+    <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="*">
+         <newWizardShortcut
+               id="com.persistent.ui.projwizard.waprojectwizard">
+         </newWizardShortcut>
+      </perspectiveExtension>
+   </extension>
+   
+   <!-- Propert pages -->
+   <extension
+         point="org.eclipse.ui.propertyPages">
+      <page
+            name="Windows Azure"
+            class="com.persistent.ui.propertypage.WAWinAzurePropertyPage"
+            id="com.persistent.ui.propertypage.windowsazure">
+         <enabledWhen>
+            <instanceof
+                  value="org.eclipse.core.resources.IProject">
+            </instanceof>
+         </enabledWhen>
+         <filter name="nature" value="com.persistent.ui.projectnature"/>
+      </page>
+      <page
+            name="Roles"
+            class="com.persistent.ui.propertypage.WARolesPropertyPage"
+            id="com.persistent.ui.propertypage.roles"
+            category="com.persistent.ui.propertypage.windowsazure">
+         <enabledWhen>
+            <instanceof
+                  value="org.eclipse.core.resources.IProject">
+            </instanceof>
+         </enabledWhen>
+          <filter name="nature" value="com.persistent.ui.projectnature"/>
+      </page>
+
+      <page
+            name="Remote Access"
+            class="com.persistent.ui.propertypage.WARemoteAccessPropertyPage"
+            id="com.persistent.ui.propertypage.remoteaccess"
+            category="com.persistent.ui.propertypage.windowsazure">
+         <enabledWhen>
+            <instanceof
+                  value="org.eclipse.core.resources.IProject">
+            </instanceof>
+         </enabledWhen>
+          <filter name="nature" value="com.persistent.ui.projectnature"/>
+      </page>
+
+      <page
+            name="Windows Azure Role"
+            class="com.persistent.winazureroles.WARGeneral"
+            id="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+           <instanceof
+              value="org.eclipse.core.resources.IFolder">
+           </instanceof>
+           <test
+              property="com.persistent.ui.property.isRoleFolder">
+           </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+      <page
+            name="Caching"
+            class="com.persistent.winazureroles.WARCaching"
+            id="com.persistent.ui.rolepage.caching"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+      <page
+            name="Components"
+            class="com.persistent.winazureroles.WARComponents"
+            id="com.persistent.ui.rolepage.components"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+      <page
+            name="Endpoints"
+            class="com.persistent.winazureroles.WAREndpoints"
+            id="com.persistent.ui.rolepage.endpoints"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+      <page
+            name="Debugging"
+            class="com.persistent.winazureroles.WARDebugging"
+            id="com.persistent.ui.rolepage.debugging"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+      <page
+            name="Environment Variables"
+            class="com.persistent.winazureroles.WAREnvVars"
+            id="com.persistent.ui.rolepage.envvars"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+      <page
+            name="Local Storage"
+            class="com.persistent.winazureroles.WARLocalStorage"
+            id="com.persistent.ui.rolepage.localstorage"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+      <page
+            name="Load Balancing"
+            class="com.persistent.winazureroles.WARLoadBalance"
+            id="com.persistent.ui.rolepage.loadbalancing"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+	  <page
+            name="Server Configuration"
+            class="com.persistent.winazureroles.WAServerConfiguration"
+            id="com.persistent.ui.rolepage.serverconfiguration"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+   </extension>
+
+  <extension point="org.eclipse.core.expressions.propertyTesters">
+    <propertyTester
+      id="com.persistent.ui.property.testRoleFolder"
+      type="org.eclipse.core.resources.IFolder"
+      namespace="com.persistent.ui.property"
+      properties="isRoleFolder"
+      class="com.persistent.util.WAPropertyTester">
+    </propertyTester>
+    <propertyTester
+      id="com.persistent.ui.property.testRolePrefNode"
+      type="java.lang.Object"
+      namespace="com.persistent.ui.property"
+      properties="isRolePrefNode"
+      class="com.persistent.util.WAPropertyTester">
+    </propertyTester>
+    <propertyTester
+      id="com.persistent.ui.property.testWebProj"
+      type="org.eclipse.core.resources.IProject"
+      namespace="com.persistent.ui.property"
+      properties="isWebProj"
+      class="com.persistent.util.WAPropertyTester">
+    </propertyTester>
+    <propertyTester
+      id="com.persistent.ui.property.testProjFile"
+      type="org.eclipse.ui.IEditorPart"
+      namespace="com.persistent.ui.property"
+      properties="isProjFile"
+      class="com.persistent.util.WAPropertyTester">
+    </propertyTester>
+  </extension>
+
+  <!-- associate .cscfg,.csdef files with the XML content type -->
+   <extension point="org.eclipse.core.contenttype.contentTypes">
+      <file-association
+            content-type="org.eclipse.core.runtime.xml"
+            file-extensions="csdef,cscfg">
+      </file-association>
+  </extension>
+  <extension
+         point="org.eclipse.help.contexts">
+         <contexts file="contexts.xml">
+         </contexts>
+   </extension>
+   <extension point="org.eclipse.ui.startup">
+     <startup class="com.persistent.util.WAStartUp"/>
+   </extension>
+
+   <extension
+       point="org.eclipse.ui.decorators">
+       <decorator id="com.persistent.lightweight.decorator"
+                label="Lightweight Decorator"
+                class="com.persistent.ui.decorator.LightWeightDecorator"
+                state="true"
+                lightweight="true"
+                adaptable="true">
+      <enablement>
+           <objectClass name="org.eclipse.core.resources.IResource"/>
+      </enablement>
+       </decorator>
+   </extension>
+
+   <!-- WA Dependency Builder -->
+   <extension
+         id="com.persistent.winazure.eclipseplugin.Builder"
+         name="Windows Azure Dependency Builder"
+         point="org.eclipse.core.resources.builders">
+      <builder>
+         <run class="com.persistent.builder.WADependencyBuilder">
+            <parameter name="optimize" value="true"/>
+            <parameter name="comment" value="Windows Azure Dependency Builder"/>
+         </run>
+      </builder>
+   </extension>
+
+  <!-- WA Toolbar -->
+   <!-- Commands -->
+	<extension
+         point="org.eclipse.ui.commands">
+      <command
+            id="com.persistent.ui.toolbar.WARunEmulatorCmd"
+            name="Windows Azure Run Emulator Command">
+      </command>
+      <command
+            id="com.persistent.ui.toolbar.WAResetEmulatorCmd"
+            name="Windows Azure Reset Emulator Command">
+      </command>
+      <command
+            id="com.persistent.ui.toolbar.WABuildCloudCmd"
+            name="Windows Azure Build Cloud Command">
+      </command>
+      <command
+            id="com.persistent.ui.toolbar.WANewProject"
+            name="New Windows Azure Deployment Project">
+      </command>
+ 	</extension>
+
+   <!-- Toolbar buttons -->
+   <extension point="org.eclipse.ui.menus">
+		<menuContribution allPopups="false"
+		locationURI="toolbar:org.eclipse.ui.main.toolbar">
+		<toolbar id="com.persistent.ui.toolbar"
+		label="Windows Azure Toolbar">
+			<command
+                   commandId="com.persistent.ui.toolbar.WARunEmulatorCmd"
+                   icon="icons/RunEmulatorIcon.png"
+                   label="Run in Windows Azure Emulator"
+                   tooltip="Run in Windows Azure Emulator"
+                   style="push">
+			</command>
+
+			<command
+                   commandId="com.persistent.ui.toolbar.WAResetEmulatorCmd"
+                   icon="icons/ResetEmulatorIcon.png"
+                   label="Reset Windows Azure Emulator"
+                   tooltip="Reset Windows Azure Emulator"
+                   style="push">
+			</command>
+
+			<command
+                   commandId="com.persistent.ui.toolbar.WABuildCloudCmd"
+                   icon="icons/BuildToCloudIcon.png"
+                   label="Build Cloud Package for Windows Azure"
+                   tooltip="Build Cloud Package for Windows Azure"
+                   style="push">
+			</command>
+
+			<command
+				commandId="com.persistent.ui.toolbar.WANewProject"
+				icon="icons/File menu.png"
+                label="New Windows Azure Deployment Project"
+				tooltip="New Windows Azure Deployment Project"
+				style="push">
+			</command>
+			
+			<command
+                   commandId="com.gigaspaces.azure.commands.deploy"
+                   icon="icons/publish.png"
+                   label="Publish to Windows Azure Cloud"
+                   tooltip="Publish to Windows Azure Cloud"
+                   style="push">
+			</command>
+			
+			<command
+                   commandId="com.gigaspaces.azure.commands.undeploy"
+                   icon="icons/unpublish.png"
+                   label="Unpublish"
+                   tooltip="Unpublish"
+                   style="push">
+				</command>
+		</toolbar>
+		</menuContribution>
+	</extension>
+
+   <!-- Handlers for commands -->
+	<extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="com.persistent.ui.toolbar.WARunEmulator"
+            commandId="com.persistent.ui.toolbar.WARunEmulatorCmd">
+         <enabledWhen>
+         <or>
+			<with
+				variable="selection">
+				<count value="1"/>
+				<iterate
+					operator="or">
+					<adapt type="org.eclipse.core.resources.IResource">
+        				<test property="org.eclipse.core.resources.projectNature"
+         				value="com.persistent.ui.projectnature"/>
+            		</adapt>
+				</iterate>
+		    </with>
+		  <and>
+		    <with
+              variable="activePart">
+           		<instanceof
+                  value="org.eclipse.ui.IEditorPart">
+                 </instanceof>
+            </with>
+           <with
+              variable="activePart">
+              	<adapt type="org.eclipse.ui.IEditorPart">
+           			<test property="com.persistent.ui.property.isProjFile">
+          			</test>
+          		</adapt>
+          	</with>
+          </and>
+		 </or>
+		</enabledWhen>
+      </handler>
+
+      <handler
+            class="com.persistent.ui.toolbar.WAResetEmulator"
+            commandId="com.persistent.ui.toolbar.WAResetEmulatorCmd">
+      </handler>
+      <handler
+            class="com.persistent.ui.toolbar.WANewProject"
+            commandId="com.persistent.ui.toolbar.WANewProject">
+      </handler>
+
+      <handler
+            class="com.persistent.ui.toolbar.WABuildCloud"
+            commandId="com.persistent.ui.toolbar.WABuildCloudCmd">
+         <enabledWhen>
+         <or>
+      <with
+        variable="selection">
+        <count value="1"/>
+        <iterate
+          operator="or">
+          <adapt type="org.eclipse.core.resources.IResource">
+                <test property="org.eclipse.core.resources.projectNature"
+                value="com.persistent.ui.projectnature"/>
+                </adapt>
+        </iterate>
+        </with>
+       <and>
+        <with
+              variable="activePart">
+           <instanceof
+                  value="org.eclipse.ui.IEditorPart">
+                  </instanceof>
+               </with>
+           <with
+              variable="activePart">
+              <adapt type="org.eclipse.ui.IEditorPart">
+           		<test property="com.persistent.ui.property.isProjFile">
+          		</test>
+          	  </adapt>
+          </with>
+       </and>
+      </or>
+     </enabledWhen>
+    </handler>
+   </extension>
+   
+   <!-- fly menu on dynamic web project -->
+   <extension point="org.eclipse.ui.commands">
+	  <command
+	  		description="Package for Windows Azure..."
+	        id="com.persistent.ui.role.popup"
+	        name="Package for Windows Azure...">
+	  </command>
+	</extension>
+   
+   <extension point="org.eclipse.ui.menus">
+  	<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+	  	<menu 
+	         label="Windows Azure" icon="icons/File menu.png">
+		    	 <command icon="icons/File menu.png"
+		           commandId="com.persistent.ui.role.popup">
+			     </command>
+			    <visibleWhen checkEnabled="false">
+			    <with 
+				variable="selection">
+				<count value="1"/> 
+				<iterate 
+					operator="or">
+					<test
+                      property="com.persistent.ui.property.isWebProj">
+                    </test> 
+				</iterate> 
+		    	</with>
+			    </visibleWhen>
+	  	</menu>
+    </menuContribution>
+  </extension>
+  <extension point="org.eclipse.ui.handlers">
+	  <handler
+	        class="com.persistent.ui.projwizard.ContextMenuHandler"
+	        commandId="com.persistent.ui.role.popup">
+		<enabledWhen>
+			<with
+				variable="selection">
+				<count value="1"/>
+				<iterate
+					operator="or">
+            		<test
+                      property="com.persistent.ui.property.isWebProj">
+                    </test> 
+				</iterate>
+		    </with>
+		</enabledWhen>
+	  </handler>
+	  </extension>
+	  
+   <!-- fly menu on Worker role folder -->
+   <!-- Commands for fly menu on Worker role -->
+   <extension point="org.eclipse.ui.commands">
+	  <command
+	  		description="Worker Role General Properties"
+	        id="com.persistent.winazure.eclipseplugin.role.general"
+	        name="Properties...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Caching"
+	        id="com.persistent.winazure.eclipseplugin.role.caching"
+	        name="Caching...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Components"
+	        id="com.persistent.winazure.eclipseplugin.role.components"
+	        name="Components...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Debugging"
+	        id="com.persistent.winazure.eclipseplugin.role.debugging"
+	        name="Debugging...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Endpoints"
+	        id="com.persistent.winazure.eclipseplugin.role.endpoints"
+	        name="Endpoints...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Environment Variables"
+	        id="com.persistent.winazure.eclipseplugin.role.envvar"
+	        name="Environment Variables...">
+	  </command>
+	  
+	   <command
+	  		description="Worker Role Load Balancing"
+	        id="com.persistent.winazure.eclipseplugin.role.loadbal"
+	        name="Load Balancing...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Local Storage"
+	        id="com.persistent.winazure.eclipseplugin.role.localstr"
+	        name="Local Storage...">
+	  </command>
+	  
+	  <command
+	  		description="Worker Role Server Configuration"
+	        id="com.persistent.winazure.eclipseplugin.role.srvconf"
+	        name="Server Configuration...">
+	  </command>
+	</extension>
+	
+	<!-- Context Menu entries for fly menu on Worker role -->
+	<extension point="org.eclipse.ui.menus">
+  	<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+	  	<menu 
+	         label="Windows Azure" icon="icons/File menu.png">
+		    	 <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.general">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.caching">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.components">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.debugging">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.endpoints">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.envvar">
+			     </command>
+			     
+			      <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.loadbal">
+			     </command>
+			     
+			      <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.localstr">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.srvconf">
+			     </command>
+			     
+			     <visibleWhen checkEnabled="false">
+			    <with 
+				variable="selection"> 
+				<iterate 
+					operator="or"> 
+					<adapt type="org.eclipse.core.resources.IFolder">
+        				<test property="com.persistent.ui.property.isRoleFolder"/>
+            		</adapt>
+				</iterate> 
+		    	</with>
+			    </visibleWhen>
+	  	</menu>
+    </menuContribution>
+    </extension>
+    <!-- Handlers for fly menu on Worker role -->
+    <extension point="org.eclipse.ui.handlers">
+   	  <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.general">
+      </handler>
+      
+       <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.caching">
+      </handler>
+      
+       <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.components">
+      </handler>
+      
+       <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.debugging">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.endpoints">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.envvar">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.loadbal">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.localstr">
+      </handler>
+      
+      <handler
+            class="com.persistent.waroles.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.srvconf">
+      </handler>
+    </extension>
+   
+   <!-- GigaSpaces Extensions -->
+   <extension point="org.eclipse.ui.commands">
+	  <command
+	  		description="Deploy Application to Azure Cloud"
+	        id="com.gigaspaces.azure.commands.deploy"
+	        name="Deploy to Windows Azure Cloud">
+	  </command>
+   <command
+         description="Undeploy Application to Azure Cloud"
+         id="com.gigaspaces.azure.commands.undeploy"
+         name="Undeploy from Windows Azure Cloud">
+   </command>
+	</extension>
+
+	<extension point="org.eclipse.ui.handlers">
+	  <handler
+	        class="com.gigaspaces.azure.handler.DeployCommandHandler"
+	        commandId="com.gigaspaces.azure.commands.deploy">
+			
+		<enabledWhen>
+         <or>
+			<with
+				variable="selection">
+				<count value="1"/>
+				<iterate
+					operator="or">
+					<adapt type="org.eclipse.core.resources.IResource">
+        				<test property="org.eclipse.core.resources.projectNature"
+         				value="com.persistent.ui.projectnature"/>
+            		</adapt>
+				</iterate>
+		    </with>
+		  <and>
+		    <with
+              variable="activePart">
+           		<instanceof
+                  value="org.eclipse.ui.IEditorPart">
+                 </instanceof>
+            </with>
+           <with
+              variable="activePart">
+              	<adapt type="org.eclipse.ui.IEditorPart">
+           			<test property="com.persistent.ui.property.isProjFile">
+          			</test>
+          		</adapt>
+          	</with>
+          </and>
+		 </or>
+		</enabledWhen>
+	     
+	  </handler>
+	  <handler
+	        class="com.gigaspaces.azure.handler.UndeployCommandHandler"
+	        commandId="com.gigaspaces.azure.commands.undeploy">	        
+	  </handler>
+	</extension>
+	
+	<extension point="org.eclipse.ui.menus">
+  	<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+	  	<menu 
+	         label="Windows Azure" icon="icons/File menu.png">
+	    	
+		    	 <command icon="icons/publish.png"
+		           commandId="com.gigaspaces.azure.commands.deploy">
+			     </command>
+	    	
+		    	 <command icon="icons/unpublish.png"
+		           commandId="com.gigaspaces.azure.commands.undeploy">
+			     </command>
+			    
+			    <visibleWhen checkEnabled="false">
+			    <with 
+				variable="selection"> 
+				<iterate 
+					operator="or"> 
+					<adapt type="org.eclipse.core.resources.IProject">
+        				<test property="org.eclipse.core.resources.projectNature"
+         				value="com.persistent.ui.projectnature"/>
+            		</adapt>
+				</iterate> 
+		    	</with>
+			    </visibleWhen>
+	  	</menu>
+    </menuContribution>
+  </extension>
+	
+	<extension point="org.eclipse.core.expressions.propertyTesters">
+      <propertyTester
+            class="com.gigaspaces.azure.commands.AzureProjectPropertyTester"
+            id="com.gigaspaces.azure.commands.AzureProjectPropertyTester"
+            type="org.eclipse.core.resources.IProject"
+            namespace="com.gigaspaces.azure.commands"
+            properties="nature">
+      </propertyTester>
+      <propertyTester
+            class="com.gigaspaces.azure.commands.AzureProjectPropertyTester"
+            id="com.gigaspaces.azure.commands.testSubscriptionPerfNode"
+            namespace="com.gigaspaces.azure.commands"
+            properties="isSubscriptionPerfNode"
+            type="java.lang.Object">
+      </propertyTester>
+	</extension>
+ <extension
+       point="org.eclipse.ui.views">
+    <category
+          id="com.gigaspaces.azure"
+          name="Windows Azure">
+    </category>
+    <view
+          category="com.gigaspaces.azure"
+          class="com.gigaspaces.azure.views.WindowsAzureActivityLogView"
+          icon="icons/RoleFolder.gif"
+          id="com.gigaspaces.azure.views.WindowsAzureActivityLogView"
+          name="Windows Azure Activity Log">
+    </view>
+ </extension>
+ <extension
+       point="org.eclipse.ui.propertyPages">
+    <page
+          category="com.persistent.ui.propertypage.windowsazure"
+          class="com.gigaspaces.azure.propertypage.SubscriptionPropertyPage"
+          id="com.gigaspaces.azure.propertypage.subscriptions"
+          name="Credentials">
+       <enabledWhen>
+          <instanceof
+                value="org.eclipse.core.resources.IProject">
+          </instanceof>
+       </enabledWhen>
+       <filter
+             name="nature"
+             value="com.persistent.ui.projectnature">
+       </filter>
+    </page>
+    <page
+          class="com.gigaspaces.azure.propertypage.CredentialsPropertyPage"
+          id="com.gigaspaces.azure.credentialspage.general"
+          name="Credential">
+       <enabledWhen>
+          <test
+                property="com.gigaspaces.azure.commands.isSubscriptionPerfNode">
+          </test>
+       </enabledWhen>
+    </page>
+ </extension>
+	
+	
+</plugin>

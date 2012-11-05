@@ -65,7 +65,8 @@ public class WindowsAzurePackage extends Task {
 	private static final String TEMPLATE_TOKEN_CONFIGURATIONFILENAME = "${ConfigurationFileName}";
 	private static final String TEMPLATE_TOKEN_COMPONENTS_SCRIPT = "${Components}";
 	private static final String TEMPLATE_TOKEN_VARIABLES_SCRIPT = "${Variables}";
-	private static final String TEMPLATE_TOKEN_USER_STARTUP_SCRIPT = "${UserStartup}";	
+	private static final String TEMPLATE_TOKEN_USER_STARTUP_SCRIPT = "${UserStartup}";
+	private static final String TEMPLATE_TOKEN_PORTALURL = "${PortalURL}";
 
 	private static String newline = System.getProperty("line.separator");
 
@@ -80,6 +81,8 @@ public class WindowsAzurePackage extends Task {
 	private String configurationFileName;
 	private String emulatorToolsDir;
 	private String templatesDir;
+	private String portalURL;
+	private String rolePropertiesFileName = null;
 	private boolean useCtpPackageFormat = false;
 
 	/**
@@ -92,6 +95,22 @@ public class WindowsAzurePackage extends Task {
 		this.configurationFileName = DEFAULT_CONFIGURATION_FILE_NAME;
 	}
 
+	/**
+	 * Sets the Windows Azure portal URL
+	 * @param portalURL
+	 */
+	public void setPortalURL(String portalURL) {
+		this.portalURL = portalURL;
+	}
+	
+	/**
+	 * Selects the role properties file to associate with each role in the project, if any
+	 * @param filePath
+	 */
+	public void setRolePropertiesFileName(String filePath) {
+		this.rolePropertiesFileName = filePath;
+	}
+	
 	/**
 	 * Specifies whether the v1.7 package format shouold be used
 	 * @param value
@@ -330,6 +349,10 @@ public class WindowsAzurePackage extends Task {
 			}
 
 			csPackCmdLine.append(String.format(" /role:%s;\"%s\"", roleName, roleAppRootDir.toString()));
+			
+			if(rolePropertiesFileName != null) {
+				csPackCmdLine.append(String.format(" /rolePropertiesFile:%s;\"%s%s%s\"", roleName, this.projectDir, File.separatorChar, this.rolePropertiesFileName));
+			}
 		}
 
 		// Add package name
@@ -397,12 +420,46 @@ public class WindowsAzurePackage extends Task {
 		// Prepare emulator tools
 		prepareEmulatorTools();
 
-		// Prepare the dev-portal html page if we're creating cloud package
-		if (this.packageType == PackageType.cloud) {
-			copyFile(String.format("%s%s%s%s%s", this.templatesDir, File.separatorChar, DEV_PORTAL_SUBDIR, File.separatorChar, DEV_PORTAL_FILE), String.format("%s%s%s", this.packageDir, File.separatorChar, DEV_PORTAL_FILE));
+		// Prepare the dev-portal html page 
+		preparePortalLink();
+	}
+	
+	/**
+	 * Prepares portal link file
+	 * @throws IOException
+	 */
+	private void preparePortalLink() {
+		// Only if creating cloud package
+		if (this.packageType != PackageType.cloud || this.portalURL == null) {
+			return;
 		}
+		
+		File portalTemplateDirectory = new File(this.templatesDir, DEV_PORTAL_SUBDIR);
+		File portalTemplateFile = new File(portalTemplateDirectory, DEV_PORTAL_FILE);		
+		File destFile = new File(this.packageDir, DEV_PORTAL_FILE);
+		try {
+			CopyFileReplaceTokens(portalTemplateFile, destFile);
+		} catch (IOException e) {
+			// Ignore if portal link missing
+		} 
 	}
 
+	private void CopyFileReplaceTokens(File src, File dest) throws IOException
+	{
+		if(src == null || dest == null || !src.exists() || !src.isFile()) {
+			throw new IOException("Missing template file");
+		}
+
+		// Load the template file
+		String templateText = loadTextFile(src);
+
+		// Replace template tokens
+		templateText = replaceTemplateTokens(templateText);
+
+		// Save the result 
+		saveTextFile(dest, templateText);
+	}
+	
 	/**
 	 * Prepares emulator tools directory
 	 * @throws IOException
@@ -430,17 +487,8 @@ public class WindowsAzurePackage extends Task {
 			// Go through all templates in the directory, and use them to generate scripts
 			for (String templateFileName : emulatorTemplateDirectory.list()) {
 				File templateFile = new File(emulatorTemplateDirectory, templateFileName);
-
-				if (templateFile.isFile()) {
-					// Load the template file
-					String templateText = loadTextFile(new File(emulatorTemplateDirectory, templateFileName));
-
-					// Replace template tokens
-					templateText = replaceTemplateTokens(templateText);
-
-					// Save the result in emulator tools directory
-					saveTextFile(new File(emulatorToolsDirectory, templateFileName), templateText);
-				}
+				File destFile = new File(emulatorToolsDirectory, templateFileName);
+				CopyFileReplaceTokens(templateFile, destFile);
 			}
 		}
 	}
@@ -831,7 +879,7 @@ public class WindowsAzurePackage extends Task {
 	 * Replaces template tokens in text with corresponding values
 	 * @param text Text to replace tokens in
 	 */
-	private String replaceTemplateTokens(String text) {
+	private String replaceTemplateTokens(String text) {		
 		text = text.replace(TEMPLATE_TOKEN_CONFIGURATIONFILENAME, this.configurationFileName);
 		text = text.replace(TEMPLATE_TOKEN_DEFINITIONFILENAME, this.definitionFileName);
 		text = text.replace(TEMPLATE_TOKEN_PACKAGEDIR, this.packageDir);
@@ -839,6 +887,10 @@ public class WindowsAzurePackage extends Task {
 		text = text.replace(TEMPLATE_TOKEN_PROJECTDIR, this.projectDir);
 		text = text.replace(TEMPLATE_TOKEN_SDKDIR, this.sdkDir);
 		text = text.replace(TEMPLATE_TOKEN_EMULATORDIR, this.emulatorDir);
+		
+		if(this.portalURL != null) {
+			text = text.replace(TEMPLATE_TOKEN_PORTALURL, this.portalURL);
+		}
 		return text;
 	}
 
