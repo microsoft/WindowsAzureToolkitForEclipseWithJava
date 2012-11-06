@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SessionAffinityAgent", "ARRConfigurationAgent\SessionAffinityAgent.csproj", "{4D820F4A-19DC-4624-AAEE-5321888B3FA7}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 2
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://tfs1:8085/tfs/interop%20team%20projects
+		SccProjectUniqueName0 = ARRConfigurationAgent\\SessionAffinityAgent.csproj
+		SccProjectName0 = ARRConfigurationAgent
+		SccLocalPath0 = ARRConfigurationAgent
+		SccLocalPath1 = .
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D820F4A-19DC-4624-AAEE-5321888B3FA7}.Debug|x86.ActiveCfg = Debug|x86
+		{4D820F4A-19DC-4624-AAEE-5321888B3FA7}.Debug|x86.Build.0 = Debug|x86
+		{4D820F4A-19DC-4624-AAEE-5321888B3FA7}.Release|x86.ActiveCfg = Release|x86
+		{4D820F4A-19DC-4624-AAEE-5321888B3FA7}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
