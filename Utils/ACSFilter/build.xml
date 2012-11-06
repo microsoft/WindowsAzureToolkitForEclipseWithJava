@@ -1,0 +1,33 @@
+<project name="ACSAuthFilter" basedir="." default="package">
+
+    <property name="src.dir"     value="src"/>
+
+    <property name="build.dir"   value="build"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="jar.dir"     value="${build.dir}/jar"/>
+	
+	<path id="ACSAuthFilter.classpath">
+	    <pathelement location="ext/servlet-api.jar"/>
+	</path>
+
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" >
+        	<classpath refid="ACSAuthFilter.classpath"/>
+        </javac>
+    </target>
+
+    <target name="jar" depends="compile">
+        <mkdir dir="${jar.dir}"/>
+        <jar destfile="${jar.dir}/ACSAuthFilter.jar" basedir="${classes.dir}" />
+    </target>
+
+    <target name="package" depends="clean,jar"/>
+
+
+
+</project>
