@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "encrypt", "encrypt\encrypt.csproj", "{945A9226-8AE3-45AB-BE9A-2EB7EDDB27BC}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 2
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://tfs1.interop.msftlabs.com/tfs/interop%20team%20projects
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = encrypt\\encrypt.csproj
+		SccProjectName1 = encrypt
+		SccLocalPath1 = encrypt
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{945A9226-8AE3-45AB-BE9A-2EB7EDDB27BC}.Debug|x86.ActiveCfg = Release|x86
+		{945A9226-8AE3-45AB-BE9A-2EB7EDDB27BC}.Debug|x86.Build.0 = Release|x86
+		{945A9226-8AE3-45AB-BE9A-2EB7EDDB27BC}.Release|x86.ActiveCfg = Release|x86
+		{945A9226-8AE3-45AB-BE9A-2EB7EDDB27BC}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
