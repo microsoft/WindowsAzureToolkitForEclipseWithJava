@@ -4,6 +4,4 @@
 # generated files
 bin/
 
-*.cer
-*.pfx
 *.publishsettings
