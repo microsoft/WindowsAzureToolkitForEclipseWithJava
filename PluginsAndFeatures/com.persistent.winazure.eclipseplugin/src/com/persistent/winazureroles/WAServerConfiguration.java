@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package com.persistent.winazureroles;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +31,6 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
-import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusEvent;
@@ -38,19 +39,12 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
@@ -60,6 +54,7 @@ import org.eclipse.ui.ide.IDE;
 import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
+import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
@@ -67,6 +62,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMeth
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.ui.projwizard.WAApplicationDialog;
 import com.persistent.util.AppCmpntParam;
+import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.ProjectNatureHelper;
 import com.persistent.util.WAEclipseHelper;
 
@@ -76,25 +72,6 @@ import com.persistent.util.WAEclipseHelper;
 public class WAServerConfiguration extends PropertyPage {
 	private WindowsAzureProjectManager waProjManager;
 	private WindowsAzureRole windowsAzureRole;
-	private Text txtDir;
-	private Text txtJdk;
-	private Button btnSrvLoc;
-	private Combo comboServer;
-	private Group serverGrp;
-	private Group jdkGrp;
-	private Button jdkCheckBtn;
-	private Label lblJdkLoc;
-	private Button btnJdkLoc;
-	private Button serCheckBtn;
-	private Label lblSelect;
-	private Link custLink;
-	private Label lblDir;
-	private Label lblApp;
-	private Table tblApp;
-	private Button btnRemove;
-	private Button btnAdd;
-	private TableViewer tableViewer;
-	private TableColumn colName;
     private ArrayList<AppCmpntParam> appList = new ArrayList<AppCmpntParam>();
 	private File cmpntFile = new File(WAEclipseHelper.getTemplateFile());
 	private IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -103,7 +80,10 @@ public class WAServerConfiguration extends PropertyPage {
 	private String finalSrvPath;
 	private WindowsAzureRoleComponentImportMethod finalImpMethod;
 	private String finalAsName;
+	private String finalJdkPath;
 	private boolean isPageDisplayed = false;
+	private TabFolder folder;
+	private TabItem jdkTab;
 
 	@Override
 	public String getTitle() {
@@ -112,51 +92,121 @@ public class WAServerConfiguration extends PropertyPage {
 		}
 		// Check JDK is already enabled or not
 		// and if enabled show appropriate values on property page
-		String jdkSrcPath = null;
 		try {
+			String jdkSrcPath = null;
 			jdkSrcPath = windowsAzureRole.getJDKSourcePath();
+
+			if (jdkSrcPath == null) {
+				JdkSrvConfig.setEnableJDK(false);
+			} else {
+				JdkSrvConfig.setEnableJDK(true);
+				JdkSrvConfig.
+				getTxtJdk().setText(jdkSrcPath);
+				String jdkUrl = windowsAzureRole.getJDKCloudURL();
+				// JDK download group
+				if (jdkUrl == null || jdkUrl.isEmpty()) {
+					JdkSrvConfig.setEnableDlGrp(false);
+					JdkSrvConfig.getDlCheckBtn().
+					setEnabled(true);
+				} else {
+					JdkSrvConfig.setEnableDlGrp(true);
+					JdkSrvConfig.getTxtUrl().setText(jdkUrl);
+					// Update JAVA_HOME text box
+					if (waProjManager.getPackageType().
+							equals(WindowsAzurePackageType.LOCAL)) {
+						JdkSrvConfig.getTxtJavaHome().
+						setText(windowsAzureRole.getJDKCloudHome());
+					} else {
+						JdkSrvConfig.getTxtJavaHome().
+						setText(windowsAzureRole.
+								getRuntimeEnv(Messages.jvHome));
+					}
+					// Update note below JDK URL text box
+					String dirName = new File(jdkSrcPath).getName();
+					JdkSrvConfig.getLblDlNoteUrl().
+					setText(String.format(
+							Messages.dlNtLblDir, dirName));
+					String jdkKey = windowsAzureRole.getJDKCloudKey();
+					if (jdkKey != null) {
+						JdkSrvConfig.getTxtKey().setText(jdkKey);
+					}
+				}
+			}
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.jdkPathErrTtl,
 					Messages.getJdkErrMsg, e);
 		}
-		if (jdkSrcPath == null) {
-			disableJDKGrp();
-		} else {
-			enableJDKGrp();
-			txtJdk.setText(jdkSrcPath);
-		}
-
 		// Check Server is already enabled or not
 		// and if enabled show appropriate values on property page
-		String srvSrcPath = null;
-		String srvName = null;
 		try {
+			String srvSrcPath = null;
+			String srvName = null;
+
 			srvSrcPath = windowsAzureRole.getServerSourcePath();
 			srvName = windowsAzureRole.getServerName();
+
+			if (srvSrcPath != null && srvName != null) {
+				JdkSrvConfig.getSerCheckBtn().setSelection(true);
+				JdkSrvConfig.setEnableServer(true);
+				JdkSrvConfig.getComboServer().setText(srvName);
+				JdkSrvConfig.getTxtDir().setText(srvSrcPath);
+				// Server download group
+				String srvUrl = windowsAzureRole.getServerCloudURL();
+				if (srvUrl == null || srvUrl.isEmpty()) {
+					JdkSrvConfig.setEnableDlGrpSrv(false);
+					JdkSrvConfig.getDlCheckBtnSrv().
+					setEnabled(true);
+				} else {
+					JdkSrvConfig.setEnableDlGrpSrv(true);
+					JdkSrvConfig.getTxtUrlSrv().setText(srvUrl);
+					// Update server home text box
+					if (waProjManager.getPackageType().
+							equals(WindowsAzurePackageType.LOCAL)) {
+						JdkSrvConfig.getTxtHomeDir().
+						setText(windowsAzureRole.getServerCloudHome());
+					} else {
+						JdkSrvConfig.getTxtHomeDir().
+						setText(windowsAzureRole.
+								getRuntimeEnv(windowsAzureRole.
+										getRuntimeEnvName(
+												Messages.typeSrvHm)));
+					}
+					// Update note below Server URL text box
+					String dirName = new File(srvSrcPath).getName();
+					JdkSrvConfig.getLblDlNoteUrlSrv().
+					setText(String.format(
+							Messages.dlNtLblDir, dirName));
+					String srvKey = windowsAzureRole.getServerCloudKey();
+					if (srvKey != null) {
+						JdkSrvConfig.getTxtKeySrv().setText(srvKey);
+					}
+				}
+			} else {
+				JdkSrvConfig.setEnableServer(false);
+				JdkSrvConfig.setEnableDlGrpSrv(false);
+			}
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.srvErrTtl,
 					Messages.getSrvBothErrMsg, e);
 		}
-		if (srvSrcPath != null && srvName != null) {
-			serCheckBtn.setSelection(true);
-			enableServerGrp();
-			comboServer.setText(srvName);
-			txtDir.setText(srvSrcPath);
+
+		if (JdkSrvConfig.getJdkCheckBtn().getSelection()) {
+			JdkSrvConfig.getSerCheckBtn().setEnabled(true);
+			JdkSrvConfig.getDlCheckBtn().setEnabled(true);
 		} else {
-			disableServerGrp();
+			JdkSrvConfig.setEnableDlGrp(false);
+			JdkSrvConfig.setEnableServer(false);
+			JdkSrvConfig.setEnableDlGrpSrv(false);
 		}
 
-		if (jdkCheckBtn.getSelection()) {
-			serCheckBtn.setEnabled(true);
-		} else {
-			disableServerGrp();
+		if (JdkSrvConfig.getTableViewer() != null) {
+			JdkSrvConfig.getTableViewer().refresh();
 		}
 
-		if (tableViewer != null) {
-			tableViewer.refresh();
-		}
+		// by default set tab to JDK
+		folder.setSelection(jdkTab);
 
 		return super.getTitle();
 	}
@@ -177,28 +227,50 @@ public class WAServerConfiguration extends PropertyPage {
 		windowsAzureRole = Activator.getDefault().getWaRole();
 		Activator.getDefault().setSaved(false);
 
-		Composite container = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 3;
-		GridData gridData = new GridData();
+		// Tab controls
+		folder = new TabFolder(parent, SWT.NONE);
+
+		GridData gridData = new GridData(GridData.FILL_BOTH);
 		gridData.grabExcessHorizontalSpace = true;
 		gridData.horizontalAlignment = SWT.FILL;
-		container.setLayout(gridLayout);
-		container.setLayoutData(gridData);
+		folder.setLayoutData(gridData);
 
-		createJDKGrp(container);
-		createServerGrp(container);
+		// Tab for JDK
+		jdkTab = new TabItem(folder, SWT.NONE);
+		jdkTab.setText(Messages.dplDlgJDKGrp);
+		jdkTab.setControl(createJDK(folder));
+
+		// Tab for Server
+		TabItem srvTab = new TabItem(folder, SWT.NONE);
+		srvTab.setText(Messages.dplDlgSerTxt);
+		srvTab.setControl(createServer(folder));
+
+		// Tab for Application
+		TabItem appTab = new TabItem(folder, SWT.NONE);
+		appTab.setText(Messages.lblApp);
+		appTab.setControl(createAppTblCmpnt(folder));
+
 		isPageDisplayed = true;
-		return container;
+		return folder;
 	}
 
 	/** Sets the JDK.
 	 * @param directory
-	 * @throws WindowsAzureInvalidProjectOperationException 
+	 * @throws WindowsAzureInvalidProjectOperationException
 	 */
 	private void setJDK(String jdkPath)
 			throws WindowsAzureInvalidProjectOperationException {
 		if (jdkPath != null && !jdkPath.isEmpty()) {
+			// deleting JDK entry from approot
+			if (windowsAzureRole.getJDKSourcePath() != null
+					&& !fileToDel.contains("jdk")) {
+				fileToDel.add("jdk");
+				WindowsAzureRoleComponent cmp =
+						getPrevCmpnt(Messages.typeJdkDply);
+				if (cmp != null) {
+					finalJdkPath = cmp.getImportPath();
+				}
+			}
 			File jdkFile = new File(jdkPath);
 			if (jdkFile.exists() && jdkFile.isDirectory()) {
 				windowsAzureRole.setJDKSourcePath(jdkPath,
@@ -209,9 +281,6 @@ public class WAServerConfiguration extends PropertyPage {
 				 * when path is set to correct value.
 				 */
 				setErrorMessage(null);
-				if (!fileToDel.contains("jdk")) {
-					fileToDel.add("jdk");
-				}
 			}
 		}
 	}
@@ -220,53 +289,33 @@ public class WAServerConfiguration extends PropertyPage {
 	 * Creates the JDK component.
 	 *
 	 * @param parent Parent container
+	 * @return Control
 	 */
-	private void createJDKGrp(Composite parent) {
+	private Control createJDK(Composite parent) {
+		Control control = JdkSrvConfig.createJDKGrp(parent);
 
-		jdkGrp =  new Group(parent, SWT.SHADOW_ETCHED_IN);
-		GridLayout groupGridLayout = new GridLayout();
-		GridData groupGridData = new GridData();
-		groupGridData.horizontalSpan = 3;
-		groupGridData.grabExcessHorizontalSpace = true;
-		groupGridData.horizontalIndent = 3;
-		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridData.widthHint = 550;
-		groupGridLayout.numColumns = 3;
-		groupGridLayout.verticalSpacing = 10;
-		jdkGrp.setText(Messages.dplDlgJDKGrp);
-		jdkGrp.setLayout(groupGridLayout);
-		jdkGrp.setLayoutData(groupGridData);
-
-		// JDK Checkbox
-		jdkCheckBtn = new Button(jdkGrp, SWT.CHECK);
-		groupGridData = new GridData();
-		groupGridData.horizontalSpan = 3;
-		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridData.grabExcessHorizontalSpace  = true;
-		jdkCheckBtn.setText(Messages.dplPageJdkChkBtn);
-		jdkCheckBtn.setLayoutData(groupGridData);
-
-		// JDK Directory
-		lblJdkLoc = new Label(jdkGrp, SWT.LEFT);
-		groupGridData = new GridData();
-		groupGridData.horizontalAlignment = SWT.FILL;
-		lblJdkLoc.setText(Messages.dplDlgJdkLbl);
-		lblJdkLoc.setLayoutData(groupGridData);
-
-		txtJdk = new Text(jdkGrp, SWT.LEFT | SWT.BORDER);
-		groupGridData = new GridData();
-		groupGridData.grabExcessHorizontalSpace = true;
-		groupGridData.widthHint = 330;
-		groupGridData.horizontalAlignment = SWT.FILL;
-		txtJdk.setLayoutData(groupGridData);
-		txtJdk.addFocusListener(new FocusListener() {
+		// listener for JDK location text box.
+		JdkSrvConfig.getTxtJdk().
+		addFocusListener(new FocusListener() {
 			private String oldTxt = "";
 			@Override
 			public void focusLost(FocusEvent arg0) {
 				try {
-					if (!txtJdk.getText().
-							equalsIgnoreCase(oldTxt)) {
-						setJDK(txtJdk.getText());
+					String jdkPath = JdkSrvConfig.getTxtJdk().getText();
+					if (!jdkPath.equalsIgnoreCase(oldTxt)) {
+						setJDK(jdkPath.trim());
+					}
+					// Update note below URL text box
+					File file = new File(jdkPath);
+					if (JdkSrvConfig.getDlCheckBtn().getSelection()
+							&& !jdkPath.isEmpty() && file.exists()) {
+						String dirName = file.getName();
+						JdkSrvConfig.getLblDlNoteUrl().
+						setText(String.format(
+								Messages.dlNtLblDir, dirName));
+					} else {
+						JdkSrvConfig.getLblDlNoteUrl().
+						setText(Messages.dlgDlNtLblUrl);
 					}
 				} catch (WindowsAzureInvalidProjectOperationException e) {
 					PluginUtil.displayErrorDialogAndLog(getShell(),
@@ -277,43 +326,55 @@ public class WAServerConfiguration extends PropertyPage {
 
 			@Override
 			public void focusGained(FocusEvent arg0) {
-				oldTxt = txtJdk.getText();
+				oldTxt = JdkSrvConfig.getTxtJdk().getText();
 			}
 		});
 
-		// JDK Browse button
-		btnJdkLoc = new Button(jdkGrp, SWT.PUSH | SWT.CENTER);
-		groupGridData = new GridData();
-		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridData.grabExcessHorizontalSpace = true;
-		btnJdkLoc.setText(Messages.dplDlgBtnTxt);
-		btnJdkLoc.setLayoutData(groupGridData);
-
-		jdkCheckBtn.addSelectionListener(new SelectionListener() {
+		// listener for JDK check button.
+		JdkSrvConfig.getJdkCheckBtn().
+		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				if (jdkCheckBtn.getSelection()) {
+				if (JdkSrvConfig.getJdkCheckBtn().getSelection()) {
 					try {
 						// Pre-populate with auto-discovered JDK if any
 						String jdkDefaultDir =
 								WAEclipseHelper.jdkDefaultDirectory(null);
 						setJDK(jdkDefaultDir);
-						txtJdk.setText(jdkDefaultDir);
+						JdkSrvConfig.getTxtJdk().setText(jdkDefaultDir);
 					} catch (WindowsAzureInvalidProjectOperationException e) {
 						PluginUtil.displayErrorDialogAndLog(
 								getShell(),
 								Messages.jdkPathErrTtl,
 								Messages.jdkDirErrMsg, e);
 					}
-					enableJDKGrp();
-					serCheckBtn.setEnabled(true);
+					JdkSrvConfig.setEnableJDK(true);
+					JdkSrvConfig.getDlCheckBtn().setEnabled(true);
+					JdkSrvConfig.getSerCheckBtn().setEnabled(true);
 				} else {
-					disableJDKGrp();
-					
-					// Remove server setting
-					updateServer(null, null, cmpntFile);
-
 					try {
+						// deleting JDK entry from approot
+						if (windowsAzureRole.getJDKSourcePath() != null
+								&& !fileToDel.contains("jdk")) {
+							fileToDel.add("jdk");
+							WindowsAzureRoleComponent cmp =
+									getPrevCmpnt(Messages.typeJdkDply);
+							if (cmp != null) {
+								finalJdkPath = cmp.getImportPath();
+							}
+						}
+						JdkSrvConfig.setEnableJDK(false);
+						JdkSrvConfig.setEnableDlGrp(false);
+						// Remove JAVA_HOME settings
+						removeJavaHomeSettings();
+						if (windowsAzureRole.getServerName() != null
+								&& windowsAzureRole.
+								getServerSourcePath() != null) {
+							removeServerHomeSettings();
+						}
+						// Remove server setting
+						updateServer(null, null, cmpntFile);
+						// JDK URL and key will get removed if present.
 						windowsAzureRole.setJDKSourcePath(null, cmpntFile);
 					} catch (WindowsAzureInvalidProjectOperationException e) {
 						PluginUtil.displayErrorDialogAndLog(
@@ -327,11 +388,8 @@ public class WAServerConfiguration extends PropertyPage {
 					 * when path is set to correct value.
 					 */
 					setErrorMessage(null);
-					disableServerGrp();
-
-					if (!fileToDel.contains("jdk")) {
-						fileToDel.add("jdk");
-					}
+					JdkSrvConfig.setEnableServer(false);
+					JdkSrvConfig.setEnableDlGrpSrv(false);
 				}
 			}
 			@Override
@@ -339,7 +397,9 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		});
 
-		btnJdkLoc.addSelectionListener(new SelectionListener() {
+		// listener for JDK browse button.
+		JdkSrvConfig.getBtnJdkLoc().
+		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				jdkBrowseBtnListener();
@@ -348,62 +408,52 @@ public class WAServerConfiguration extends PropertyPage {
 			public void widgetDefaultSelected(SelectionEvent arg0) {
 			}
 		});
-	}
 
-	/**
-	 * Creates the server components.
-	 *
-	 * @param parent Parent container
-	 */
-	private void createServerGrp(Composite parent) {
-		serverGrp =  new Group(parent, SWT.SHADOW_ETCHED_IN);
-		GridLayout groupGridLayout = new GridLayout();
-		GridData groupGridData = new GridData();
-		groupGridData.horizontalSpan = 3;
-		/*
-		 * width is not specified for server grid
-		 * as it will automatically adjust
-		 * and avoid scenario of browse
-		 * button getting attached to the wall of pane.
-		 */
-		groupGridData.grabExcessHorizontalSpace = true;
-		groupGridData.horizontalIndent = 3;
-		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridLayout.numColumns = 3;
-		groupGridLayout.verticalSpacing = 5;
-		serverGrp.setText(Messages.dplDlgSerTxt);
-		serverGrp.setLayout(groupGridLayout);
-		serverGrp.setLayoutData(groupGridData);
-
-		// Server checkbox
-		serCheckBtn = new Button(serverGrp, SWT.CHECK);
-		groupGridData = new GridData();
-		groupGridData.horizontalSpan = 3;
-		groupGridData.horizontalAlignment = SWT.FILL;
-		serCheckBtn.setText(Messages.dplPageSerChkBtn);
-		serCheckBtn.setLayoutData(groupGridData);
-		serCheckBtn.addSelectionListener(new SelectionListener() {
+		// JDK download group
+		// listener for JDK download check box.
+		JdkSrvConfig.getDlCheckBtn().
+		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				if (serCheckBtn.getSelection()) {
-					serCheckBtn.setSelection(true);
-					enableServerGrp();
+				if (JdkSrvConfig.getDlCheckBtn().getSelection()) {
+					JdkSrvConfig.setEnableDlGrp(true);
+					// Update note below URL text box
+					String jdkPath = JdkSrvConfig.getTxtJdk().
+							getText();
+					File file = new File(jdkPath);
+					if (!jdkPath.isEmpty() && file.exists()) {
+						String dirName = file.getName();
+						JdkSrvConfig.getLblDlNoteUrl().
+						setText(String.format(
+								Messages.dlNtLblDir, dirName));
+					}
+					// set JAVA_HOME text box value
 					try {
-						String[] servList = WindowsAzureProjectManager.
-								getServerTemplateNames(cmpntFile);
-						Arrays.sort(servList);
-						comboServer.setItems(servList);
+						String jdkHome = windowsAzureRole.
+								constructJdkHome(jdkPath,
+										cmpntFile);
+						JdkSrvConfig.getTxtJavaHome().setText(jdkHome);
 					} catch (WindowsAzureInvalidProjectOperationException e) {
-						PluginUtil.displayErrorDialogAndLog(
-								getShell(),
-								Messages.srvErrTtl,
-								Messages.getSrvNmErrMsg, e);
+						Activator.getDefault().log(e.getMessage());
 					}
 				} else {
-					disableServerGrp();
-					// Remove server setting
-					updateServer(null, null, cmpntFile);
-					serCheckBtn.setEnabled(true);
+					JdkSrvConfig.setEnableDlGrp(false);
+					try {
+						if (windowsAzureRole.
+								getJDKSourcePath() != null) {
+							removeJavaHomeSettings();
+							windowsAzureRole.setJDKCloudKey(null);
+							windowsAzureRole.setJDKCloudURL(null);
+						}
+					} catch (WindowsAzureInvalidProjectOperationException e) {
+						PluginUtil.displayErrorDialog(getShell(),
+								Messages.genErrTitle,
+								Messages.urlKeySetErrMsg);
+					}
+					JdkSrvConfig.getDlCheckBtn().setEnabled(true);
+					// Update note below URL text box
+					JdkSrvConfig.getLblDlNoteUrl().
+					setText(Messages.dlgDlNtLblUrl);
 				}
 			}
 			@Override
@@ -411,53 +461,109 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		});
 
-		// Server directory
-		lblDir = new Label(serverGrp, SWT.LEFT);
-		groupGridData = new GridData();
-		lblDir.setText(Messages.dplDlgJdkLbl);
-		lblDir.setLayoutData(groupGridData);
+		return control;
+	}
 
-		txtDir = new Text(serverGrp, SWT.LEFT | SWT.BORDER);
-		groupGridData = new GridData();
-		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridData.grabExcessHorizontalSpace = true;
-		txtDir.setLayoutData(groupGridData);
-		txtDir.addFocusListener(new FocusListener() {
+	/**
+	 * Creates the server components.
+	 *
+	 * @param parent Parent container
+	 * @return Control
+	 */
+	private Control createServer(Composite parent) {
+		Control control = JdkSrvConfig.createServerGrp(parent);
+		// listener for Server check button.
+		JdkSrvConfig.getSerCheckBtn()
+		.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				if (JdkSrvConfig.getSerCheckBtn().getSelection()) {
+					JdkSrvConfig.getSerCheckBtn().setSelection(true);
+					JdkSrvConfig.getDlCheckBtnSrv().setEnabled(true);
+					JdkSrvConfig.setEnableServer(true);
+					try {
+						String[] servList = WindowsAzureProjectManager.
+								getServerTemplateNames(cmpntFile);
+						Arrays.sort(servList);
+						JdkSrvConfig.getComboServer().setItems(servList);
+					} catch (WindowsAzureInvalidProjectOperationException e) {
+						PluginUtil.displayErrorDialogAndLog(
+								getShell(),
+								Messages.srvErrTtl,
+								Messages.getSrvNmErrMsg, e);
+					}
+				} else {
+					JdkSrvConfig.setEnableServer(false);
+					JdkSrvConfig.setEnableDlGrpSrv(false);
+					// Remove server home settings
+					removeServerHomeSettings();
+					// Remove server setting
+					updateServer(null, null, cmpntFile);
+					JdkSrvConfig.getSerCheckBtn().setEnabled(true);
+				}
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
+
+		// listener for Server location text box.
+		JdkSrvConfig.getTxtDir().
+		addFocusListener(new FocusListener() {
 			private String oldTxt = "";
 			@Override
 			public void focusLost(FocusEvent arg0) {
-				if (!comboServer.getText().isEmpty()
-						&& !txtDir.getText().equalsIgnoreCase(oldTxt)) {
-					File srvPath = new File(txtDir.getText());
-					if (srvPath.exists()
-							&& srvPath.isDirectory()) {
-						// Server auto-detection`
+				String path = null;
+				File file = null;
+				if (!JdkSrvConfig.getComboServer().getText().isEmpty()
+						&& !JdkSrvConfig.getTxtDir().
+						getText().equalsIgnoreCase(oldTxt)) {
+					path = JdkSrvConfig.getTxtDir().getText().trim();
+					file = new File(path);
+					if (file.exists()
+							&& file.isDirectory()) {
+						// Server auto-detection
 						String serverName =
-								WAEclipseHelper.detectServer(srvPath);
+								WAEclipseHelper.detectServer(file);
 						if (serverName != null) {
-							comboServer.setText(serverName);
+							JdkSrvConfig.getComboServer().setText(serverName);
 						} else {
-							comboServer.clearSelection();
+							String srvComboTxt = JdkSrvConfig.
+									getComboServer().getText();
+							if (srvComboTxt != null
+									&& !srvComboTxt.isEmpty()) {
+								serverName = srvComboTxt;
+							}
 						}
 						updateServer(serverName,
-								txtDir.getText(), cmpntFile);
+								path, cmpntFile);
 					}
+				}
+				path = JdkSrvConfig.getTxtDir().getText().trim();
+				file = new File(path);
+				// Update note below URL text box
+				if (JdkSrvConfig.getDlCheckBtnSrv().getSelection()
+						&& !path.isEmpty()
+						&& file.exists()) {
+					String dirName = file.getName();
+					JdkSrvConfig.getLblDlNoteUrlSrv().
+					setText(String.format(
+							Messages.dlNtLblDir, dirName));
+				} else {
+					JdkSrvConfig.getLblDlNoteUrlSrv().
+					setText(Messages.dlgDlNtLblUrl);
 				}
 			}
 
 			@Override
 			public void focusGained(FocusEvent arg0) {
-				oldTxt = txtDir.getText();
+				oldTxt = JdkSrvConfig.getTxtDir().getText();
 			}
 		});
 
-		btnSrvLoc = new Button(serverGrp, SWT.PUSH | SWT.CENTER);
-		groupGridData = new GridData();
-		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridData.grabExcessHorizontalSpace = true;
-		btnSrvLoc.setText(Messages.dplDlgBtnTxt);
-		btnSrvLoc.setLayoutData(groupGridData);
-		btnSrvLoc.addSelectionListener(new SelectionListener() {
+		// listener for Server browse button.
+		JdkSrvConfig.getBtnSrvLoc().
+		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				serBrowseBtnListener();
@@ -467,23 +573,11 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		});
 
-		// Server dropdown
-		lblSelect = new Label(serverGrp, SWT.LEFT);
-		groupGridData = new GridData();
-		groupGridData.horizontalAlignment = SWT.FILL;
-		lblSelect.setText(Messages.dplDlgSelLbl);
-		lblSelect.setLayoutData(groupGridData);
-
-		comboServer = new Combo(serverGrp, SWT.READ_ONLY);
-		groupGridData = new GridData();
-		groupGridData.grabExcessHorizontalSpace = true;
-		groupGridData.horizontalAlignment = SWT.FILL;
-		comboServer.setLayoutData(groupGridData);
 		try {
 			String [] servList = WindowsAzureProjectManager.
 					getServerTemplateNames(cmpntFile);
 			Arrays.sort(servList);
-			comboServer.setItems(servList);
+			JdkSrvConfig.getComboServer().setItems(servList);
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			PluginUtil.displayErrorDialogAndLog(
 					getShell(),
@@ -491,11 +585,13 @@ public class WAServerConfiguration extends PropertyPage {
 					Messages.getSrvNmErrMsg, e);
 		}
 
-		comboServer.addSelectionListener(new SelectionListener() {
+		// listener for Server type combo box.
+		JdkSrvConfig.getComboServer().
+		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				updateServer(comboServer.getText(),
-						txtDir.getText(),
+				updateServer(JdkSrvConfig.getComboServer().getText(),
+						JdkSrvConfig.getTxtDir().getText(),
 						cmpntFile);
 			}
 
@@ -504,14 +600,9 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		});
 
-		custLink = new Link (serverGrp, SWT.CENTER);
-		groupGridData = new GridData();
-		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridData.grabExcessHorizontalSpace = true;
-		groupGridData.horizontalIndent = 10;
-		custLink.setText(Messages.dplDlgSerBtn);
-		custLink.setLayoutData(groupGridData);
-		custLink.addSelectionListener(new SelectionListener() {
+		// listener for Server customize link.
+		JdkSrvConfig.getCustLink().
+		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				custLinkListener();
@@ -521,13 +612,67 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		});
 
-		// Applications list
-		lblApp = new Label(serverGrp, SWT.LEFT);
-		groupGridData = new GridData();
-		groupGridData.horizontalSpan = 3;
-		lblApp.setText(Messages.lblApp);
-		lblApp.setLayoutData(groupGridData);
-		createAppTbl(serverGrp);
+		// Server download group
+		// listener for Server download check box.
+		JdkSrvConfig.getDlCheckBtnSrv().
+		addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				if (JdkSrvConfig.getDlCheckBtnSrv()
+						.getSelection()) {
+					JdkSrvConfig.setEnableDlGrpSrv(true);
+					// Update note below server URL text box
+					String srvPath = JdkSrvConfig.getTxtDir().
+							getText();
+					File file = new File(srvPath);
+					if (!srvPath.isEmpty() && file.exists()) {
+						String dirName = file.getName();
+						JdkSrvConfig.getLblDlNoteUrlSrv().
+						setText(String.format(
+								Messages.dlNtLblDir, dirName));
+					}
+					// set server home directory text box value
+					try {
+						String srvHome = windowsAzureRole.
+								constructServerHome(
+										JdkSrvConfig.getComboServer().getText(),
+										srvPath,
+										cmpntFile);
+						JdkSrvConfig.getTxtHomeDir().setText(srvHome);
+					} catch (WindowsAzureInvalidProjectOperationException e) {
+						Activator.getDefault().log(e.getMessage());
+					}
+				} else {
+					JdkSrvConfig.setEnableDlGrpSrv(false);
+					try {
+						/*
+						 * To avoid exception if user
+						 * un-check text box without configuring
+						 * server.
+						 */
+						if (windowsAzureRole.getServerName() != null
+								&& windowsAzureRole.
+								getServerSourcePath() != null) {
+							removeServerHomeSettings();
+							windowsAzureRole.setServerCloudKey(null);
+							windowsAzureRole.setServerCloudURL(null);
+						}
+					} catch (WindowsAzureInvalidProjectOperationException e) {
+						PluginUtil.displayErrorDialog(getShell(),
+								Messages.genErrTitle,
+								Messages.urlKeySetErMsgSrv);
+					}
+					JdkSrvConfig.getDlCheckBtnSrv().setEnabled(true);
+					// Update note below URL text box
+					JdkSrvConfig.getLblDlNoteUrlSrv().
+					setText(Messages.dlgDlNtLblUrl);
+				}
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
+		return control;
 	}
 
 	/**
@@ -555,7 +700,13 @@ public class WAServerConfiguration extends PropertyPage {
 			if (windowsAzureRole.getServerName() != null
 					&&  !fileToDel.contains("srv")) {
 				fileToDel.add("srv");
-				getPrevCmpntVal();
+				WindowsAzureRoleComponent cmp =
+						getPrevCmpnt(Messages.typeSrvDply);
+				if (cmp != null) {
+					finalSrvPath = cmp.getImportPath();
+					finalImpMethod = cmp.getImportMethod();
+					finalAsName = cmp.getDeployName();
+				}
 			}
 
 			if (path == null
@@ -580,8 +731,7 @@ public class WAServerConfiguration extends PropertyPage {
 			 * when server is set to correct value.
 			 */
 			setErrorMessage(null);
-		}
-		catch (WindowsAzureInvalidProjectOperationException e) {
+		} catch (WindowsAzureInvalidProjectOperationException e) {
 			PluginUtil.displayErrorDialogAndLog(
 					getShell(),
 					Messages.srvErrTtl,
@@ -592,31 +742,22 @@ public class WAServerConfiguration extends PropertyPage {
 	/**
 	 * Creates the application table component.
 	 * @param parent : container
+	 * @return Control
 	 */
-	private void createAppTbl(Composite parent) {
-		tblApp = new Table(parent, SWT.BORDER
-				| SWT.FULL_SELECTION);
-		tblApp.setHeaderVisible(true);
-		tblApp.setLinesVisible(true);
+	private Control createAppTblCmpnt(Composite parent) {
+		Control control = JdkSrvConfig.createAppTbl(parent);
+		// set different height and width for server configuration page.
 		GridData gridData = new GridData();
-		gridData.heightHint = 90;
+		gridData.heightHint = 380;
 		gridData.horizontalIndent = 2;
 		gridData.horizontalAlignment = SWT.FILL;
-		gridData.horizontalSpan = 2;
-		gridData.grabExcessHorizontalSpace = false;
+		gridData.grabExcessHorizontalSpace = true;
+		JdkSrvConfig.getTblApp().setLayoutData(gridData);
+		JdkSrvConfig.getColName().setWidth(400);
 
-
-		GridLayout gridLayoutTable = new GridLayout();
-		tblApp.setLayout(gridLayoutTable);
-		tblApp.setLayoutData(gridData);
-
-		colName = new TableColumn(tblApp, SWT.FILL);
-		colName.setText(Messages.dplPageNameLbl);
-		colName.setWidth(420);
-
-
-		tableViewer = new TableViewer(tblApp);
-		tableViewer.setContentProvider(new IStructuredContentProvider() {
+		JdkSrvConfig.getTableViewer().
+		setContentProvider(
+				new IStructuredContentProvider() {
 			@Override
 			public void inputChanged(Viewer arg0, Object arg1, Object arg2) {
 			}
@@ -649,7 +790,8 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		});
 
-		tableViewer.setLabelProvider(new ITableLabelProvider() {
+		JdkSrvConfig.getTableViewer().
+		setLabelProvider(new ITableLabelProvider() {
 
 			@Override
 			public void removeListener(ILabelProviderListener arg0) {
@@ -687,7 +829,8 @@ public class WAServerConfiguration extends PropertyPage {
 		});
 
 		try {
-			tableViewer.setInput(windowsAzureRole.getServerApplications());
+			JdkSrvConfig.getTableViewer().
+			setInput(windowsAzureRole.getServerApplications());
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			PluginUtil.displayErrorDialogAndLog(
 					getShell(),
@@ -695,28 +838,13 @@ public class WAServerConfiguration extends PropertyPage {
 					Messages.getSrvAppErrMsg, e);
 		}
 
-		//Composite for buttons
-		final Composite containerRoleBtn =
-				new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		GridData cntGridData = new GridData();
-		cntGridData.verticalAlignment = SWT.FILL;
-		containerRoleBtn.setLayout(gridLayout);
-		containerRoleBtn.setLayoutData(cntGridData);
-
-		btnAdd = new Button(containerRoleBtn, SWT.PUSH);
-		btnAdd.setText(Messages.rolsAddBtn);
-		gridData = new GridData();
-		gridData.widthHint = 95;
-		gridData.horizontalAlignment = SWT.FILL;
-		btnAdd.setLayoutData(gridData);
-
 		// Add selection listener for Add Button
-		btnAdd.addSelectionListener(new SelectionListener() {
+		JdkSrvConfig.getBtnAdd().
+		addSelectionListener(new SelectionListener() {
 
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				addButtonListener(containerRoleBtn);
+				addButtonListener();
 			}
 
 			@Override
@@ -724,22 +852,15 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		});
 
-		btnRemove = new Button(containerRoleBtn, SWT.PUSH);
-		btnRemove.setText(Messages.rolsRemoveBtn);
-		btnRemove.setEnabled(false);
-		gridData = new GridData();
-		gridData.widthHint = 95;
-		gridData.horizontalAlignment = SWT.FILL;
-		btnRemove.setLayoutData(gridData);
-
 		/* Enable edit and remove button only when
 		 * entry from table is selected.
 		 */
-		tblApp.addSelectionListener(new SelectionListener() {
+		JdkSrvConfig.getTblApp().
+		addSelectionListener(new SelectionListener() {
 
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				btnRemove.setEnabled(true);
+				JdkSrvConfig.getBtnRemove().setEnabled(true);
 			}
 
 			@Override
@@ -749,7 +870,8 @@ public class WAServerConfiguration extends PropertyPage {
 		});
 
 		// Add selection listener for Remove Button
-		btnRemove.addSelectionListener(new SelectionListener() {
+		JdkSrvConfig.getBtnRemove().
+		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				removeButtonListener();
@@ -760,6 +882,7 @@ public class WAServerConfiguration extends PropertyPage {
 
 			}
 		});
+		return control;
 	}
 
 	@Override
@@ -768,16 +891,68 @@ public class WAServerConfiguration extends PropertyPage {
 		boolean isJdkValid = true;
 		boolean isSrvValid = true;
 		// Validation for JDK
-		if (jdkCheckBtn.getSelection()) {
-			if (txtJdk.getText().isEmpty()) {
+		if (JdkSrvConfig.getJdkCheckBtn().getSelection()) {
+			if (JdkSrvConfig.getTxtJdk().getText().isEmpty()) {
 				isJdkValid = false;
 				setErrorMessage(Messages.jdkPathErrMsg);
 			} else {
-				File file = new File(txtJdk.getText());
+				File file = new File(JdkSrvConfig.
+						getTxtJdk().getText());
 				if (file.exists()
 						&& file.isDirectory()) {
-					isJdkValid = true;
-					setErrorMessage(null);
+					// JDK download group
+					if (JdkSrvConfig.getDlCheckBtn().getSelection()) {
+						// Validate JDK URL
+						String jdkUrl = JdkSrvConfig.
+								getTxtUrl().getText().trim();
+						if (jdkUrl.isEmpty()) {
+							isJdkValid = false;
+							setErrorMessage(Messages.dlgDlUrlErrMsg);
+						} else {
+							try {
+								new URL(jdkUrl);
+								/*
+								 * Validate JDK access key.
+								 * Space not allowed.
+								 */
+								String jdkKey = JdkSrvConfig.
+										getTxtKey().getText().trim();
+								if (!jdkKey.isEmpty()
+										&& jdkKey.contains(" ")) {
+									isJdkValid = false;
+									setErrorMessage(Messages.dlgDlKeyErrMsg);
+								} else {
+									String javaHome = JdkSrvConfig.getTxtJavaHome().
+											getText().trim();
+									if (javaHome.isEmpty()) {
+										isJdkValid = false;
+										setErrorMessage(Messages.jvHomeErMsg);
+									} else {
+										/*
+										 * access key is optional,
+										 * so can be empty.
+										 */
+										try {
+											windowsAzureRole.setJDKCloudURL(jdkUrl);
+											updateJavaHome(javaHome);
+											windowsAzureRole.setJDKCloudKey(jdkKey);
+											isJdkValid = true;
+											setErrorMessage(null);
+										} catch (WindowsAzureInvalidProjectOperationException e) {
+											isJdkValid = false;
+											setErrorMessage(Messages.urlKeySetErrMsg);
+										}
+									}
+								}
+							} catch (MalformedURLException e) {
+								isJdkValid = false;
+								setErrorMessage(Messages.dlgDlUrlErrMsg);
+							}
+						}
+					} else {
+						isJdkValid = true;
+						setErrorMessage(null);
+					}
 				} else {
 					isJdkValid = false;
 					setErrorMessage(Messages.jdkPathErrMsg);
@@ -786,17 +961,72 @@ public class WAServerConfiguration extends PropertyPage {
 		}
 
 		// Validation for Server
-		if (isJdkValid && serCheckBtn.getSelection()) {
-			if (comboServer.getText().isEmpty()) {
+		if (isJdkValid && JdkSrvConfig.
+				getSerCheckBtn().getSelection()) {
+			if (JdkSrvConfig.getComboServer().getText().isEmpty()) {
 				setErrorMessage(Messages.dplEmtSerMsg);
 				isSrvValid = false;
-			} else if (txtDir.getText().isEmpty()) {
+			} else if (JdkSrvConfig.getTxtDir().getText().isEmpty()) {
 				setErrorMessage(Messages.dplWrngSerMsg);
 				isSrvValid = false;
-			} else if ((new File(txtDir.getText()).exists())
-					&& (new File(txtDir.getText()).isDirectory())) {
-				isSrvValid = true;
-				setErrorMessage(null);
+			} else if ((new File(JdkSrvConfig.
+					getTxtDir().getText()).exists())
+					&& (new File(JdkSrvConfig.getTxtDir().
+							getText()).isDirectory())) {
+				// Server download group
+				if (JdkSrvConfig.
+						getDlCheckBtnSrv().getSelection()) {
+					String srvUrl = JdkSrvConfig.
+							getTxtUrlSrv().getText().trim();
+					if (srvUrl.isEmpty()) {
+						isSrvValid = false;
+						setErrorMessage(Messages.dlgDlUrlErrMsg);
+					} else {
+						try {
+							// Validate Server URL
+							new URL(srvUrl);
+							/*
+							 * Validate Server access key.
+							 * Space not allowed.
+							 */
+							String srvKey = JdkSrvConfig.
+									getTxtKeySrv().getText().trim();
+							if (!srvKey.isEmpty()
+									&& srvKey.contains(" ")) {
+								isSrvValid = false;
+								setErrorMessage(Messages.dlgDlKeyErrMsg);
+							} else {
+								String srvHome = JdkSrvConfig.getTxtHomeDir().
+										getText().trim();
+								if (srvHome.isEmpty()) {
+									isSrvValid = false;
+									setErrorMessage(Messages.srvHomeErMsg);
+								} else {
+									/*
+									 * access key is optional,
+									 * so can be empty.
+									 */
+									try {
+										windowsAzureRole.setServerCloudURL(srvUrl);
+										updateServerHome(srvHome);
+										windowsAzureRole.setServerCloudKey(srvKey);
+										isSrvValid = true;
+										setErrorMessage(null);
+									} catch (WindowsAzureInvalidProjectOperationException e) {
+										isSrvValid = false;
+										setErrorMessage(Messages.urlKeySetErrMsg);
+									}
+								}
+							}
+						} catch (MalformedURLException e) {
+							isSrvValid = false;
+							setErrorMessage(Messages.dlgDlUrlErrMsg);
+						}
+					}
+				} else {
+					isSrvValid = true;
+					setErrorMessage(null);
+				}
 			} else {
 				setErrorMessage(Messages.dplWrngSerMsg);
 				isSrvValid = false;
@@ -822,17 +1052,74 @@ public class WAServerConfiguration extends PropertyPage {
 		boolean isJdkValid = true;
 		boolean isSrvValid = true;
 		// Validation for JDK
-		if (jdkCheckBtn.getSelection()) {
-			if (txtJdk.getText().isEmpty()) {
+		if (JdkSrvConfig.getJdkCheckBtn().getSelection()) {
+			if (JdkSrvConfig.getTxtJdk().getText().isEmpty()) {
 				isJdkValid = false;
 				PluginUtil.displayErrorDialogAndLog(getShell(),
 						Messages.jdkPathErrTtl,
 						Messages.jdkPathErrMsg, null);
 			} else {
-				File file = new File(txtJdk.getText());
+				File file = new File(JdkSrvConfig.getTxtJdk().getText());
 				if (file.exists() && file.isDirectory()) {
-					isJdkValid = true;
-
+					// JDK download group
+					if (JdkSrvConfig.getDlCheckBtn().getSelection()) {
+						// Validate JDK URL
+						String jdkUrl = JdkSrvConfig.getTxtUrl().getText().trim();
+						if (jdkUrl.isEmpty()) {
+							isJdkValid = false;
+							PluginUtil.displayErrorDialog(getShell(),
+									Messages.dlgDlUrlErrTtl,
+									Messages.dlgDlUrlErrMsg);
+						} else {
+							try {
+								new URL(jdkUrl);
+								/*
+								 * Validate JDK access key.
+								 * Space not allowed.
+								 */
+								String jdkKey = JdkSrvConfig.getTxtKey().getText().trim();
+								if (!jdkKey.isEmpty()
+										&& jdkKey.contains(" ")) {
+									isJdkValid = false;
+									PluginUtil.displayErrorDialog(getShell(),
+											Messages.dlKeyErrTtl,
+											Messages.dlgDlKeyErrMsg);
+								} else {
+									String javaHome = JdkSrvConfig.getTxtJavaHome().
+											getText().trim();
+									if (javaHome.isEmpty()) {
+										isJdkValid = false;
+										PluginUtil.displayErrorDialog(getShell(),
+												Messages.genErrTitle,
+												Messages.jvHomeErMsg);
+									} else {
+										/*
+										 * access key is optional,
+										 * so can be empty.
+										 */
+										try {
+											windowsAzureRole.setJDKCloudURL(jdkUrl);
+											updateJavaHome(javaHome);
+											windowsAzureRole.setJDKCloudKey(jdkKey);
+											isJdkValid = true;
+										} catch (WindowsAzureInvalidProjectOperationException e) {
+											isJdkValid = false;
+											PluginUtil.displayErrorDialog(getShell(),
+													Messages.genErrTitle,
+													Messages.urlKeySetErrMsg);
+										}
+									}
+								}
+							} catch (MalformedURLException e) {
+								isJdkValid = false;
+								PluginUtil.displayErrorDialog(getShell(),
+										Messages.dlgDlUrlErrTtl,
+										Messages.dlgDlUrlErrMsg);
+							}
+						}
+					} else {
+						isJdkValid = true;
+					}
 				} else {
 					isJdkValid = false;
 					PluginUtil.displayErrorDialogAndLog(
@@ -844,22 +1131,85 @@ public class WAServerConfiguration extends PropertyPage {
 		}
 
 		// Validation for Server
-		if (isJdkValid && serCheckBtn.getSelection()) {
-			if (comboServer.getText().isEmpty()) {
+		if (isJdkValid && JdkSrvConfig.getSerCheckBtn().getSelection()) {
+			if (JdkSrvConfig.getComboServer().getText().isEmpty()) {
 				isSrvValid = false;
 				PluginUtil.displayErrorDialogAndLog(
 						getShell(),
 						Messages.srvErrTtl,
 						Messages.dplEmtSerMsg, null);
-			} else if (txtDir.getText().isEmpty()) {
+			} else if (JdkSrvConfig.getTxtDir().getText().isEmpty()) {
 				isSrvValid = false;
 				PluginUtil.displayErrorDialogAndLog(
 						getShell(),
 						Messages.srvErrTtl,
 						Messages.dplWrngSerMsg, null);
-			} else if ((new File(txtDir.getText()).exists())
-					&& (new File(txtDir.getText()).isAbsolute())) {
-				isSrvValid = true;
+			} else if ((new File(JdkSrvConfig.
+					getTxtDir().getText()).exists())
+					&& (new File(JdkSrvConfig.
+							getTxtDir().getText()).isAbsolute())) {
+				// Server download group
+				if (JdkSrvConfig.
+						getDlCheckBtnSrv().getSelection()) {
+					String srvUrl = JdkSrvConfig.
+							getTxtUrlSrv().getText().trim();
+					if (srvUrl.isEmpty()) {
+						isSrvValid = false;
+						PluginUtil.displayErrorDialog(getShell(),
+								Messages.dlgDlUrlErrTtl,
+								Messages.dlgDlUrlErrMsg);
+					} else {
+						try {
+							// Validate Server URL
+							new URL(srvUrl);
+							/*
+							 * Validate Server access key.
+							 * Space not allowed.
+							 */
+							String srvKey = JdkSrvConfig.
+									getTxtKeySrv().getText().trim();
+							if (!srvKey.isEmpty()
+									&& srvKey.contains(" ")) {
+								isSrvValid = false;
+								PluginUtil.displayErrorDialog(getShell(),
+										Messages.dlKeyErrTtl,
+										Messages.dlgDlKeyErrMsg);
+							} else {
+								String srvHome = JdkSrvConfig.getTxtHomeDir().
+										getText().trim();
+								if (srvHome.isEmpty()) {
+									isSrvValid = false;
+									PluginUtil.displayErrorDialog(getShell(),
+											Messages.genErrTitle,
+											Messages.srvHomeErMsg);
+								} else {
+									/*
+									 * access key is optional,
+									 * so can be empty.
+									 */
+									try {
+										windowsAzureRole.setServerCloudURL(srvUrl);
+										updateServerHome(srvHome);
+										windowsAzureRole.setServerCloudKey(srvKey);
+										isSrvValid = true;
+									} catch (WindowsAzureInvalidProjectOperationException e) {
+										isSrvValid = false;
+										PluginUtil.displayErrorDialog(getShell(),
+												Messages.genErrTitle,
+												Messages.urlKeySetErMsgSrv);
+									}
+								}
+							}
+						} catch (MalformedURLException e) {
+							isSrvValid = false;
+							PluginUtil.displayErrorDialog(getShell(),
+									Messages.dlgDlUrlErrTtl,
+									Messages.dlgDlUrlErrMsg);
+						}
+					}
+				} else {
+					isSrvValid = true;
+				}
 			} else {
 				isSrvValid = false;
 				PluginUtil.displayErrorDialogAndLog(
@@ -871,6 +1221,7 @@ public class WAServerConfiguration extends PropertyPage {
 
 		if (isJdkValid && isSrvValid) {
 			okToProceed = true;
+			Activator.getDefault().setSaved(false);
 		}
 		if (okToProceed) {
 			try {
@@ -920,7 +1271,7 @@ public class WAServerConfiguration extends PropertyPage {
 	 */
 	private void jdkBrowseBtnListener() {
 		try {
-			String oldTxt = txtJdk.getText();
+			String oldTxt = JdkSrvConfig.getTxtJdk().getText();
 			String path = WAEclipseHelper.
 					jdkDefaultDirectory(oldTxt);
 			DirectoryDialog dialog =
@@ -936,8 +1287,15 @@ public class WAServerConfiguration extends PropertyPage {
 			String directory = dialog.open();
 			if (directory != null
 					&& !directory.equalsIgnoreCase(oldTxt)) {
-				txtJdk.setText(directory);
+				JdkSrvConfig.getTxtJdk().setText(directory);
 				setJDK(directory);
+				// Update note below URL text box
+				if (JdkSrvConfig.getDlCheckBtn().getSelection()) {
+					String dirName = new File(directory).getName();
+					JdkSrvConfig.getLblDlNoteUrl().
+					setText(String.format(
+							Messages.dlNtLblDir, dirName));
+				}
 			}
 		}  catch (WindowsAzureInvalidProjectOperationException e) {
 			PluginUtil.displayErrorDialogAndLog(
@@ -945,63 +1303,6 @@ public class WAServerConfiguration extends PropertyPage {
 					Messages.jdkPathErrTtl,
 					Messages.setJdkErrMsg, e);
 		}
-	}
-
-	/**
-	 * Enables the JDK group component.
-	 */
-	private void enableJDKGrp() {
-		jdkCheckBtn.setSelection(true);
-		lblJdkLoc.setEnabled(true);
-		txtJdk.setEnabled(true);
-		btnJdkLoc.setEnabled(true);
-	}
-
-	/**
-	 * Disables the JDK group component.
-	 */
-	private void disableJDKGrp() {
-		jdkCheckBtn.setSelection(false);
-		lblJdkLoc.setEnabled(false);
-		txtJdk.setText("");
-		txtJdk.setEnabled(false);
-		btnJdkLoc.setEnabled(false);
-	}
-
-	/**
-	 * Enables the server group component.
-	 */
-	private void enableServerGrp() {
-		serCheckBtn.setEnabled(true);
-		comboServer.setEnabled(true);
-		lblSelect.setEnabled(true);
-		custLink.setEnabled(true);
-		lblDir.setEnabled(true);
-		btnSrvLoc.setEnabled(true);
-		txtDir.setEnabled(true);
-		lblApp.setEnabled(true);
-		tblApp.setEnabled(true);
-		btnAdd.setEnabled(true);
-	}
-
-	/**
-	 * Disables the server group component.
-	 */
-	private void disableServerGrp() {
-		serCheckBtn.setEnabled(false);
-		serCheckBtn.setSelection(false);
-		comboServer.removeAll();
-		comboServer.setEnabled(false);
-		lblSelect.setEnabled(false);
-		custLink.setEnabled(false);
-		lblDir.setEnabled(false);
-		btnSrvLoc.setEnabled(false);
-		txtDir.setText("");
-		txtDir.setEnabled(false);
-		lblApp.setEnabled(false);
-		tblApp.setEnabled(false);
-		btnAdd.setEnabled(false);
-		btnRemove.setEnabled(false);
 	}
 
 	/**
@@ -1037,7 +1338,7 @@ public class WAServerConfiguration extends PropertyPage {
 	 * It will open the file system location.
 	 */
 	private void serBrowseBtnListener() {
-		String oldTxt = txtDir.getText();
+		String oldTxt = JdkSrvConfig.getTxtDir().getText();
 		DirectoryDialog dialog = new DirectoryDialog(this.getShell());
 		if (oldTxt != null) {
 			File file = new File(oldTxt);
@@ -1050,23 +1351,32 @@ public class WAServerConfiguration extends PropertyPage {
 
 		String directory = dialog.open();
 		if (directory != null) {
-			txtDir.setText(directory);
+			JdkSrvConfig.getTxtDir().setText(directory);
+			JdkSrvConfig.getTxtDir().setText(directory);
 
 			// Auto detect server family
 			String serverName = WAEclipseHelper.
 					detectServer(new File(directory));
 			if (serverName != null && !serverName.isEmpty()) {
-				comboServer.setText(serverName);
+				JdkSrvConfig.getComboServer().setText(serverName);
 			} else {
-				comboServer.clearSelection();
+				JdkSrvConfig.getComboServer().clearSelection();
 			}
 
 			/*
 			 * Check server configured previously
 			 * and now server name is changed.
 			 */
-			updateServer(comboServer.getText(),
-					txtDir.getText(), cmpntFile);
+			updateServer(JdkSrvConfig.getComboServer().getText(),
+					JdkSrvConfig.getTxtDir().getText(), cmpntFile);
+
+			// Update note below server URL text box
+			if (JdkSrvConfig.getDlCheckBtnSrv().getSelection()) {
+				String dirName = new File(directory).getName();
+				JdkSrvConfig.getLblDlNoteUrlSrv().
+				setText(String.format(
+						Messages.dlNtLblDir, dirName));
+			}
 		}
 	}
 
@@ -1105,9 +1415,8 @@ public class WAServerConfiguration extends PropertyPage {
 
 	/**
 	 * Add Application button listener.
-	 * @param parent : parent container
 	 */
-	private void addButtonListener(Composite parent) {
+	private void addButtonListener() {
 		WAApplicationDialog dialog = new WAApplicationDialog(getShell(),
 				null, windowsAzureRole, this);
 		dialog.open();
@@ -1145,7 +1454,8 @@ public class WAServerConfiguration extends PropertyPage {
 					}
 				}
 			}
-			tableViewer.refresh();
+			JdkSrvConfig.getTableViewer()
+			.refresh();
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			PluginUtil.displayErrorDialogAndLog(
 					getShell(),
@@ -1158,23 +1468,25 @@ public class WAServerConfiguration extends PropertyPage {
 	 * Remove application button listener.
 	 */
 	private void removeButtonListener() {
-		int selIndex = tableViewer.getTable().getSelectionIndex();
+		int selIndex = JdkSrvConfig.getTableViewer()
+				.getTable().getSelectionIndex();
 		if (selIndex > -1) {
 			try {
 				boolean choice = MessageDialog.openQuestion(new Shell(),
 						Messages.appRmvTtl, Messages.appRmvMsg);
 				if (choice) {
-					String cmpntName = tableViewer.
+					String cmpntName = JdkSrvConfig.getTableViewer().
 							getTable().getItem(selIndex).getText().toString();
 					String cmpntPath = String.format("%s%s%s%s%s",
-							root.getProject(waProjManager.getProjectName()).getLocation(),
+							root.getProject(waProjManager.
+									getProjectName()).getLocation(),
 							"\\", windowsAzureRole.getName(),
 							Messages.approot, cmpntName);
 					windowsAzureRole.removeServerApplication(cmpntName);
 					if (!fileToDel.contains(cmpntPath)) {
 						fileToDel.add(cmpntPath);
 					}
-					tableViewer.refresh();
+					JdkSrvConfig.getTableViewer().refresh();
 				}
 			} catch (Exception e) {
 				PluginUtil.displayErrorDialogAndLog(
@@ -1192,10 +1504,12 @@ public class WAServerConfiguration extends PropertyPage {
 	private void deleteJdkDir() {
 		String jdkPath = "";
 		try {
+			String jdkDirName = new File(finalJdkPath).getName();
 			jdkPath = String.format("%s%s%s%s%s",
-					root.getProject(waProjManager.getProjectName()).getLocation(),
+					root.getProject(waProjManager.
+							getProjectName()).getLocation(),
 					"\\", windowsAzureRole.getName(),
-					Messages.approot, "jdk");
+					Messages.approot, jdkDirName);
 		} catch (WindowsAzureInvalidProjectOperationException e1) {
 			PluginUtil.displayErrorDialogAndLog(
 					getShell(),
@@ -1220,7 +1534,8 @@ public class WAServerConfiguration extends PropertyPage {
 		File srvFile = null;
 		try {
 			srvFile = new File(String.format("%s%s%s%s%s",
-					root.getProject(waProjManager.getProjectName()).getLocation(),
+					root.getProject(waProjManager.
+							getProjectName()).getLocation(),
 					"\\", windowsAzureRole.getName(),
 					Messages.approot, ProjectNatureHelper.
 					getAsName(finalSrvPath, finalImpMethod, finalAsName)));
@@ -1243,12 +1558,14 @@ public class WAServerConfiguration extends PropertyPage {
 	}
 
 	/**
-	 * Method stores previous values of server component
-	 * while editing sever configuration.
-	 * It is used while deleting server entry from approot.
+	 * Method returns component object according to component type.
+	 * If component not present then returns NULL.
+	 * @param cmpntType
+	 * @return WindowsAzureRoleComponent
 	 */
-	private void getPrevCmpntVal() {
+	private WindowsAzureRoleComponent getPrevCmpnt(String cmpntType) {
 		List<WindowsAzureRoleComponent> listComponents = null;
+		WindowsAzureRoleComponent cmp = null;
 		try {
 			listComponents = windowsAzureRole.getComponents();
 		} catch (WindowsAzureInvalidProjectOperationException e) {
@@ -1258,13 +1575,129 @@ public class WAServerConfiguration extends PropertyPage {
 					Messages.cmpntgetErrMsg, e);
 		}
 		for (int i = 0; i < listComponents.size(); i++) {
-			WindowsAzureRoleComponent cmp = listComponents.get(i);
-			if (cmp.getType().equalsIgnoreCase(
-					Messages.typeSrvDply)) {
-				finalSrvPath = cmp.getImportPath();
-				finalImpMethod = cmp.getImportMethod();
-				finalAsName = cmp.getDeployName();
+			if (listComponents.get(i).getType().
+					equalsIgnoreCase(cmpntType)) {
+				cmp = listComponents.get(i);
 			}
+		}
+		return cmp;
+	}
+
+	/**
+	 * Method updates java home,
+	 * according to current package type.
+	 * Method will get called when user click
+	 * on OK button or tries to navigate to other page.
+	 * @param javaHome
+	 */
+	private void updateJavaHome(String javaHome) {
+		try {
+			if (waProjManager.getPackageType().
+					equals(WindowsAzurePackageType.LOCAL)) {
+				windowsAzureRole.setJDKCloudHome(
+						javaHome);
+				windowsAzureRole.setJDKLocalHome(null);
+			} else {
+				windowsAzureRole.
+				setRuntimeEnv(Messages.jvHome, javaHome);
+				windowsAzureRole.setJDKLocalHome(
+						windowsAzureRole.constructJdkHome(
+								JdkSrvConfig.getTxtJdk().getText().trim(),
+								cmpntFile));
+			}
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialog(
+					getShell(),
+					Messages.genErrTitle,
+					Messages.jvHomeErr);
+		}
+	}
+
+	/**
+	 * Method updates server home,
+	 * according to current package type.
+	 * Method will get called when user click
+	 * on OK button or tries to navigate to other page.
+	 * @param srvHome
+	 */
+	private void updateServerHome(String srvHome) {
+		try {
+			if (waProjManager.getPackageType().
+					equals(WindowsAzurePackageType.LOCAL)) {
+				windowsAzureRole.setServerCloudHome(
+						srvHome);
+				windowsAzureRole.setServerLocalHome(null);
+			} else {
+				windowsAzureRole.
+				setRuntimeEnv(windowsAzureRole.
+						getRuntimeEnvName(
+								Messages.typeSrvHm),
+								srvHome);
+				windowsAzureRole.setServerLocalHome(
+						windowsAzureRole.constructServerHome(
+								JdkSrvConfig.getComboServer().getText(),
+								JdkSrvConfig.getTxtDir().getText().trim(),
+								cmpntFile));
+			}
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialog(
+					getShell(),
+					Messages.genErrTitle,
+					Messages.srvHomeErr);
+		}
+	}
+
+	/**
+	 * Method removes java home settings,
+	 * according to current package type.
+	 * Method will get called on the event of
+	 * check box uncheck.
+	 */
+	private void removeJavaHomeSettings() {
+		try {
+			if (waProjManager.getPackageType().
+					equals(WindowsAzurePackageType.LOCAL)) {
+				windowsAzureRole.setJDKCloudHome(null);
+			} else {
+				String localVal =
+						windowsAzureRole.getJDKLocalHome();
+				windowsAzureRole.
+				setRuntimeEnv(Messages.jvHome, localVal);
+				windowsAzureRole.setJDKLocalHome(null);
+			}
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialog(
+					getShell(),
+					Messages.genErrTitle,
+					Messages.jvHomeErr);
+		}
+	}
+
+	/**
+	 * Method removes server home settings,
+	 * according to current package type.
+	 * Method will get called on the event of
+	 * check box uncheck.
+	 */
+	private void removeServerHomeSettings() {
+		try {
+			if (waProjManager.getPackageType().
+					equals(WindowsAzurePackageType.LOCAL)) {
+				windowsAzureRole.setServerCloudHome(null);
+			} else {
+				String localVal =
+						windowsAzureRole.getServerLocalHome();
+				windowsAzureRole.
+				setRuntimeEnv(windowsAzureRole.
+						getRuntimeEnvName(Messages.typeSrvHm),
+						localVal);
+				windowsAzureRole.setServerLocalHome(null);
+			}
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialog(
+					getShell(),
+					Messages.genErrTitle,
+					Messages.srvHomeErr);
 		}
 	}
 }

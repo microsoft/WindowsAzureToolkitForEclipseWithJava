@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
 
-import com.interopbridges.tools.windowsazure.WindowsAzureConstants;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
@@ -248,7 +247,7 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 			projMngr = WindowsAzureProjectManager.
 					load(project.getLocation().toFile());
 			if (!projMngr.isCurrVersion()) {
-
+				
 				//step1:check if latest SDK is available or not
 				String sdkPath = null;
 				try {
@@ -280,20 +279,11 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 						});
 					}
 				}
-
-				// close project if version is below V1.7	
-				if (!WindowsAzureConstants.V17_VERSION.
-						equals(projMngr.getVersion())) {
-					errorTitle = Messages.resChgOldPrjOpenTtl;
-					errorMessage = Messages.resChgOldPrjOpenMsg;
-					Display.getDefault().syncExec(new Runnable() {
-						public void run() {
-							MessageDialog.
-							openWarning(null, errorTitle, errorMessage);
-						}
-					});
-				}
 			}
+			
+	        if (!projMngr.isCurrVersion()) {
+              	WAEclipseHelper.handleProjectUpgrade(project,projMngr);
+            }
 			// correct project name if its invalid.
 			if (!project.getName().
 					equalsIgnoreCase(projMngr.getProjectName())) {

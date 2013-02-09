@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.gigaspaces.azure.propertypage;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -52,10 +53,13 @@ import org.eclipse.ui.dialogs.PropertyDialogAction;
 import org.eclipse.ui.dialogs.PropertyPage;
 
 import com.gigaspaces.azure.model.Subscription;
+import com.gigaspaces.azure.runnable.CacheAccountWithProgressWindow;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressWindow;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PublishData;
+import com.gigaspaces.azure.util.UIUtils;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
+import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
 
 public class SubscriptionPropertyPage extends PropertyPage {
 
@@ -64,6 +68,7 @@ public class SubscriptionPropertyPage extends PropertyPage {
 	private Button btnAddSubscription;
 	private Button btnRemoveSubscription;
 	private Button btnEditSubscription;
+	private Button btnImpFrmPubSetFile;
 
 	@Override
 	protected Control createContents(Composite parent) {
@@ -78,10 +83,83 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		gridData.grabExcessHorizontalSpace = true;
 		composite.setLayout(gridLayout);
 		composite.setLayoutData(gridData);
+		// create Import From Publish settings file button
+		createImportBtnCmpnt(composite);
 
 		createSubscriptionTable(composite);
 
 		return composite;
+	}
+
+	/**
+	 * Method creates Import From Publish Settings File
+	 * button and add listener to it.
+	 * @param parent
+	 */
+	private void createImportBtnCmpnt(Composite parent) {
+		btnImpFrmPubSetFile = UIUtils.
+				createImportFromPublishSettingsFileBtn(parent, 2);
+		btnImpFrmPubSetFile.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				ImportSubscriptionDialog dlg = new
+						ImportSubscriptionDialog(new Shell());
+				dlg.open();
+				String fileName = ImportSubscriptionDialog.
+						getPubSetFilePath();
+				handleFile(fileName);
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+
+			}
+		});
+	}
+
+	/**
+	 * Method checks file selected by user is valid
+	 * and call method which extracts data from it.
+	 * @param fileName
+	 */
+	public void handleFile(String fileName) {
+		if (fileName != null && !fileName.isEmpty()) {
+			File file = new File(fileName);
+			PublishData publishDataToCache = null;
+			if (file.getName().
+					endsWith(Messages.publishSettExt)) {
+				publishDataToCache =
+						handlePublishSettings(file);
+			}
+
+			if (publishDataToCache == null) {
+				return;
+			}
+			WizardCacheManager.
+			setCurrentPublishData(publishDataToCache);
+			tableViewer.refresh();
+		}
+	}
+
+	/**
+	 * Method extracts data from publish settings file.
+	 * @param file
+	 * @return
+	 */
+	private PublishData handlePublishSettings(File file) {
+		PublishData data = UIUtils.createPublishDataObj(file);
+		/*
+		 * If data is equal to null,
+		 * then publish settings file already exists.
+		 * So don't load information again.
+		 */
+		if (data != null) {
+			Display.getDefault().syncExec(new
+					CacheAccountWithProgressWindow(data, getShell(),
+							Messages.loadingCred));
+			PreferenceUtil.save();
+		}
+		return data;
 	}
 
 	private void createSubscriptionTable(Composite composite) {
@@ -95,6 +173,7 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		GridData gridData = new GridData();
 		gridData.heightHint = 75;
 		gridData.horizontalIndent = 3;
+		gridData.verticalIndent = 15;
 		gridData.horizontalAlignment = SWT.FILL;
 		gridData.grabExcessHorizontalSpace = false;
 
@@ -113,11 +192,11 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		TableColumn subscriptionIdCol = new TableColumn(tblSubscriptions,
 				SWT.FILL);
 		subscriptionIdCol.setText(Messages.subscriptionIdColName);
-		subscriptionIdCol.setWidth(180);
+		subscriptionIdCol.setWidth(170);
 
 		TableColumn thumbprintCol = new TableColumn(tblSubscriptions, SWT.FILL);
 		thumbprintCol.setText(Messages.thumbprintColName);
-		thumbprintCol.setWidth(180);
+		thumbprintCol.setWidth(170);
 
 		tableViewer = new TableViewer(tblSubscriptions);
 		tableViewer.setContentProvider(new IStructuredContentProvider() {
@@ -195,13 +274,14 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		gridData = new GridData();
 		gridData.horizontalAlignment = SWT.END;
 		gridData.verticalAlignment = GridData.BEGINNING;
+		gridData.verticalIndent = 15;
 		containerButtons.setLayout(gridLayout);
 		containerButtons.setLayoutData(gridData);
 
 		btnAddSubscription = new Button(containerButtons, SWT.PUSH);
 		btnAddSubscription.setText(Messages.addBtnText);
 		gridData = new GridData();
-		gridData.widthHint = 80;
+		gridData.widthHint = 70;
 		btnAddSubscription.setLayoutData(gridData);
 
 		btnAddSubscription.addSelectionListener(new SelectionListener() {
@@ -220,7 +300,7 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		btnEditSubscription.setEnabled(false);
 		btnEditSubscription.setText(Messages.editBtnText);
 		gridData = new GridData();
-		gridData.widthHint = 80;
+		gridData.widthHint = 70;
 		btnEditSubscription.setLayoutData(gridData);
 
 		tblSubscriptions.addSelectionListener(new SelectionListener() {
@@ -252,7 +332,7 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		btnRemoveSubscription.setEnabled(false);
 		btnRemoveSubscription.setText(Messages.emoveBtnText);
 		gridData = new GridData();
-		gridData.widthHint = 80;
+		gridData.widthHint = 70;
 		btnRemoveSubscription.setLayoutData(gridData);
 
 		btnRemoveSubscription.addSelectionListener(new SelectionListener() {
@@ -314,7 +394,6 @@ public class SubscriptionPropertyPage extends PropertyPage {
 	}
 
 	protected void addButtonListener() {
-		
 		CredentialsPropertyPage.setAdd(true);
 		CredentialsPropertyPage.setEdit(false);
 		if (openPropertyDialog(null) == Window.OK) {
@@ -420,5 +499,5 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		PreferenceUtil.setLoaded(true);
 		tableViewer.refresh();
 		super.setVisible(visible);
-	}		
+	}
 }

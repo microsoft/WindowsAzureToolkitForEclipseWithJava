@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ public class WindowsAzureProjectManager {
             }
         }
     }
-    
+
     /**
      * Creates a new instance of WindowsAzureProjectManager.
      *
@@ -633,6 +633,8 @@ public class WindowsAzureProjectManager {
             throw new IllegalArgumentException(
                     WindowsAzureConstants.INVALID_ARG);
         }
+        WindowsAzurePackageType prevType = getWindowsAzureProjMgr().
+        		getPackageType();
         try {
         	HashMap <String, String> InstanceMap = new HashMap<String, String>();
         	 List<WindowsAzureRole> roles = getRoles();
@@ -651,13 +653,141 @@ public class WindowsAzureProjectManager {
 				role.setCacheSettingInCscfg(role.getCacheStorageAccountName()
 						, role.getCacheStorageAccountKey());
 				role.setInstances(InstanceMap.get(role.getName()));
-			}
+				// check the current package type is not equal
+				// to the one which are setting
+				if (!prevType.equals(packageType)) {
+					//create JAVA_HOME settings
+					doJavaHomeSettings(packageType, role);
+					doServerHomeSettings(packageType, role);
+				}
+            }
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(
                     WindowsAzureConstants.EXCP_SET_PACKAGE_TYPE, ex);
         }
+    }
 
+    /**
+     * Method checks package type and accordingly does
+     * JAVA_HOME settings.
+     * @param packageType
+     * @param role
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    private void doJavaHomeSettings(
+    		WindowsAzurePackageType packageType, WindowsAzureRole role)
+    				throws WindowsAzureInvalidProjectOperationException {
+    	String jdkPath = role.getJDKSourcePath();
+    	if (jdkPath != null && !jdkPath.isEmpty()) {
+    		String jdkUrl = role.getJDKCloudURL();
+    		if (jdkUrl != null && !jdkUrl.isEmpty()) {
+    			if (packageType.equals(WindowsAzurePackageType.LOCAL)) {
+    				String javaLocal = role.getJDKLocalHome();
+    				role.setJDKCloudHome(role.getRuntimeEnv(
+    						WindowsAzureConstants.JAVA_HOME_ENV_VAR));
+    				role.setRuntimeEnv(
+    						WindowsAzureConstants.JAVA_HOME_ENV_VAR,
+    						javaLocal);
+    				role.setJDKLocalHome("");
+    			} else {
+    				// package type Cloud
+    				String javaCloud = role.getJDKCloudHome();
+    				role.setJDKLocalHome(role.getRuntimeEnv(
+    						WindowsAzureConstants.JAVA_HOME_ENV_VAR));
+    				role.setRuntimeEnv(
+    						WindowsAzureConstants.JAVA_HOME_ENV_VAR,
+    						javaCloud);
+    				role.setJDKCloudHome("");
+    			}
+    		}
+    	}
+    }
 
+    /**
+     * Method checks package type and accordingly does
+     * SERVER_HOME settings.
+     * @param packageType
+     * @param role
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    private void doServerHomeSettings(
+    		WindowsAzurePackageType packageType,
+    		WindowsAzureRole role)
+    				throws WindowsAzureInvalidProjectOperationException {
+    	String srvPath = role.getServerSourcePath();
+    	String srvName = role.getServerName();
+    	if (srvPath != null && !srvPath.isEmpty()
+    			&& srvName != null && !srvName.isEmpty()) {
+    		String srvUrl = role.getServerCloudURL();
+    		if (srvUrl != null && !srvUrl.isEmpty()) {
+    			String srvEnvName =
+    					role.getRuntimeEnvName("server.home");
+    			if (packageType.equals(WindowsAzurePackageType.LOCAL)) {
+    				String srvLocal = role.getServerLocalHome();
+    				role.setServerCloudHome(role.
+    						getRuntimeEnv(srvEnvName));
+    				role.setRuntimeEnv(srvEnvName,
+    						srvLocal);
+    				role.setServerLocalHome("");
+    			} else {
+    				// package type Cloud
+    				String srvCloud = role.getServerCloudHome();
+    				role.setServerLocalHome(role.getRuntimeEnv(
+    						srvEnvName));
+    				role.setRuntimeEnv(
+    						srvEnvName,
+    						srvCloud);
+    				role.setServerCloudHome("");
+    			}
+    		}
+    	}
+    }
+
+    /**
+     * Gets the portal URL.
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public String getPortalURL()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	 try {
+             XPath xPath = XPathFactory.newInstance().newXPath();
+             String expr = WindowsAzureConstants.PORTAL_URL;
+             Document doc = packageFileDoc;
+             String portalURL = xPath.evaluate(expr, doc);
+             return portalURL;
+         } catch (Exception ex) {
+             throw new WindowsAzureInvalidProjectOperationException(
+                     WindowsAzureConstants.EXCP_GET_PORTAL_URL, ex);
+         }
+    }
+
+    /**
+     * Sets the portal URL.
+     * If URL is null then remove the attribute.
+     * @param url
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public void setPortalURL(String url)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	try {
+    		XPath xPath = XPathFactory.newInstance().newXPath();
+    		Element element = (Element) xPath.evaluate(
+    				WindowsAzureConstants.WINAZURE_PACKAGE,
+    				packageFileDoc,
+    				XPathConstants.NODE);
+    		if ((url == null || url.isEmpty())
+    				&& element.hasAttribute(WindowsAzureConstants.ATTR_PORTALURL) ) {
+    			element.
+    			removeAttribute(WindowsAzureConstants.ATTR_PORTALURL);
+    		} else {
+    			element.
+    			setAttribute(WindowsAzureConstants.ATTR_PORTALURL, url);
+    		}
+    	} catch (Exception ex) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				WindowsAzureConstants.EXCP_SET_PORTAL_URL, ex);
+    	}
     }
 
     /**

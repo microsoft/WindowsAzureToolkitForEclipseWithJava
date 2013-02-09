@@ -1,5 +1,5 @@
 /*
- Copyright 2012 Microsoft Open Technologies, Inc.
+ Copyright 2013 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -21,9 +21,17 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.Arrays;
@@ -34,6 +42,7 @@ import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.taskdefs.Zip;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.selectors.FilenameSelector;
+import org.w3c.dom.NodeList;
 
 /**
  * 
@@ -46,15 +55,21 @@ public class WindowsAzurePackage extends Task {
 	private static final String DEFAULT_CONFIGURATION_FILE_NAME = "ServiceConfiguration.cscfg";
 	private static final String DEFAULT_PACKAGE_SUBDIR = "deploy";
 	private static final String DEFAULT_EMULATOR_TOOLS_SUBDIR = "emulatorTools";
-	private static final String DEFAULT_UTIL_SUBDIR = "util";
-	private static final String UNZIP_SCRIPT_FILE_NAME = "unzip.vbs";
-	private static final String INTERNAL_STARTUP_FILE_NAME = ".startup.cmd";
+	
+	public static final String DEFAULT_UTIL_SUBDIR = "util"; // relative to approot
+	public static final String UTIL_UNZIP_FILENAME = "unzip.vbs";
+	public static final String UTIL_DOWNLOAD_FILENAME = "download.vbs";
+	public static final String UTIL_WASH_FILENAME = "wash.cmd";
+	
+	public static final String INTERNAL_STARTUP_FILE_NAME = ".startup.cmd";
 	private static final String INTERNAL_STARTUP_SUBDIR = "startup";
-	private static final String USER_STARTUP_FILE_NAME = "startup.cmd";
+	public static final String USER_STARTUP_FILE_NAME = "startup.cmd";
 	private static final String DEV_PORTAL_SUBDIR = "devPortal";
 	private static final String DEV_PORTAL_FILE = "WindowsAzurePortal.url";
 	private static final String ENV_PROGRAMFILES_WOW64 = "ProgramW6432";
 	private static final String ENV_PROGRAMFILES = "ProgramFiles";
+	public static final String STORAGEDLL_SUBDIR = "..\\ref"; // relative to sdk\bin dir
+	public static final String STORAGEDLL_FILENAME = "Microsoft.WindowsAzure.StorageClient.dll";
 	private static final String TEMPLATES_SUBDIR = ".templates";
 	private static final String TEMPLATE_TOKEN_SDKDIR = "${SDKDir}";
 	private static final String TEMPLATE_TOKEN_EMULATORDIR = "${EmulatorDir}";
@@ -63,12 +78,15 @@ public class WindowsAzurePackage extends Task {
 	private static final String TEMPLATE_TOKEN_PACKAGEFILENAME = "${PackageFileName}";
 	private static final String TEMPLATE_TOKEN_DEFINITIONFILENAME = "${DefinitionFileName}";
 	private static final String TEMPLATE_TOKEN_CONFIGURATIONFILENAME = "${ConfigurationFileName}";
-	private static final String TEMPLATE_TOKEN_COMPONENTS_SCRIPT = "${Components}";
-	private static final String TEMPLATE_TOKEN_VARIABLES_SCRIPT = "${Variables}";
-	private static final String TEMPLATE_TOKEN_USER_STARTUP_SCRIPT = "${UserStartup}";
+	public static final String TEMPLATE_TOKEN_COMPONENTS_SCRIPT = "${Components}";
+	public static final String TEMPLATE_TOKEN_VARIABLES_SCRIPT = "${Variables}";
+	public static final String TEMPLATE_TOKEN_USER_STARTUP_SCRIPT = "${UserStartup}";
 	private static final String TEMPLATE_TOKEN_PORTALURL = "${PortalURL}";
+	// Xpath expression to get names of workerroles whose cache config is referring to development storage
+	private static final String DEV_CACHE_CONFIG = "/ServiceConfiguration/Role[ConfigurationSettings/Setting[" +
+			"@name='Microsoft.WindowsAzure.Plugins.Caching.ConfigStoreConnectionString' and @value='UseDevelopmentStorage=true']]/@name";
 
-	private static String newline = System.getProperty("line.separator");
+	public static String newline = System.getProperty("line.separator");
 
 	private Vector<WorkerRole> roles;
 	private PackageType packageType;
@@ -84,7 +102,9 @@ public class WindowsAzurePackage extends Task {
 	private String portalURL;
 	private String rolePropertiesFileName = null;
 	private boolean useCtpPackageFormat = false;
-
+	private boolean verifyDownloads = true;
+	private Thread downloadVerifierThread = null;
+	
 	/**
 	 * WindowsAzurePackage constructor
 	 */
@@ -130,13 +150,30 @@ public class WindowsAzurePackage extends Task {
 	public void setPackageType(PackageType packageType) {
 		this.packageType = packageType;
 	}
+	public PackageType getPackageType() {
+		return this.packageType;
+	}
 
 	/**
-	 * Sets sdkdir attribute
+	 * Sets/gets sdkdir attribute
 	 * @param sdkDir
 	 */
 	public void setSdkDir(String sdkDir) {
 		this.sdkDir = sdkDir;
+	}
+	public File getSdkDir() {
+		if(this.sdkDir != null) {
+			return new File(this.sdkDir);
+		} else
+			try {
+				if(null != (this.sdkDir = findLatestAzureSdkDir())) {
+					return new File(this.sdkDir);
+				} else {
+					return null;
+				}
+			} catch (IOException e) {
+				return null;
+			}
 	}
 
 	/**
@@ -194,11 +231,22 @@ public class WindowsAzurePackage extends Task {
 	public void setEmulatorToolsDir(String emulatorToolsDir) {
 		this.emulatorToolsDir = emulatorToolsDir;
 	}
+	
+	/**
+	 * Sets verifydownloads attribute
+	 * @param verifyDownloads
+	 */
+	public void setVerifyDownloads(boolean verifyDownloads) {
+		this.verifyDownloads = verifyDownloads;
+	}
+	public boolean getVerifyDownloads() {
+		return this.verifyDownloads;
+	}
 
 	/**
 	 * Executes the task
 	 */
-	public void execute() throws BuildException {
+	public void execute() throws BuildException {		
 		// Initialize and verify attributes
 		this.initialize();
 
@@ -207,17 +255,23 @@ public class WindowsAzurePackage extends Task {
 
 		// Ensure that all approot directories are correctly setup
 		try {
-			this.ensureAppRoots();
+			this.verifyAppRoots();
 		} catch (IOException e) {
 			throw new BuildException(e);
 		}
 
+		// Start verifying downloads if needed, on a separate thread
+		startDownloadVerification();
+		
+		// Include storage library into all roles
+		includeStorageClientLibrary();
+		
 		// Import all components into roles
-		prepareComponentImports();
+		importComponents();
 
 		// Generate deployment startup scripts for all components
 		try {
-			this.prepareStartupScripts();
+			this.createStartupScripts();
 		} catch (IOException e) {
 			throw new BuildException(e);
 		}
@@ -232,7 +286,7 @@ public class WindowsAzurePackage extends Task {
 		} catch (IOException e) {
 			throw new BuildException(e);
 		}
-
+		
 		this.log("Completed package generation.");
 
 		// Prepare any additional deploy files
@@ -241,14 +295,17 @@ public class WindowsAzurePackage extends Task {
 		} catch (IOException e) {
 			throw new BuildException(e);
 		}
-	}
+
+		// Wait for the download verifier thread
+		finishDownloadVerification();
+}
 
 	/**
 	 * Creates a new instance of WorkerRole
 	 * @return New instance of WorkerRole
 	 */
 	public WorkerRole createWorkerRole() {
-		WorkerRole role = new WorkerRole();
+		WorkerRole role = new WorkerRole(this);
 		roles.addElement(role);
 		return role;
 	}
@@ -314,8 +371,36 @@ public class WindowsAzurePackage extends Task {
 
 		// Initialize templateDir
 		this.templatesDir = String.format("%s%s%s", this.projectDir, File.separator, TEMPLATES_SUBDIR);
-
+		
+		// Validate Windows Azure Project Configuration
+		checkProjectConfiguration();
 		this.log("Verified attributes.");
+		
+		// Determine whether to verify downloads depending on network availability
+		if(!isNetworkAvailable()) {
+			this.verifyDownloads = false;
+		}
+			
+	}
+    
+	/**
+	 * Checks for project configuration Errors and displays error message as part of build output.
+	 */
+	private void checkProjectConfiguration() {
+		Map<ErrorType,List<String>> errorMap = verifyConfiguration();
+		if (errorMap != null ) {
+			StringBuilder sb = new StringBuilder();
+			
+			// We just need map values no need of key here , map key may be useful for some other callers of 
+			// validate API.
+			for(List<String> valueList : errorMap.values()) {
+				for(String errorMsg : valueList) {
+					sb.append(errorMsg);
+					sb.append("\n");
+				}
+			}
+			throw new BuildException("Project build failed due to below validation errors \n"+sb);
+		}
 	}
 
 	/**
@@ -365,7 +450,7 @@ public class WindowsAzurePackage extends Task {
 	 * Ensures that approot directories are properly setup
 	 * @throws IOException
 	 */
-	private void ensureAppRoots() throws IOException {
+	private void verifyAppRoots() throws IOException {
 		for (WorkerRole role : roles) {
 			File roleAppRootDir = role.getAppRootDir();
 			String roleName = role.getName();
@@ -376,6 +461,15 @@ public class WindowsAzurePackage extends Task {
 			if (!roleAppRootDir.exists()) {
 				throw new BuildException("The approotdir setting points to a directory that does not exist");
 			}
+		}
+	}
+	
+	/**
+	 * Inludes storage client library in all roles
+	 */
+	private void includeStorageClientLibrary() {
+		for (WorkerRole role : roles) {
+			role.includeStorageClientLibrary();
 		}
 	}
 
@@ -415,20 +509,20 @@ public class WindowsAzurePackage extends Task {
 	 */
 	private void prepareDeployFiles() throws IOException {
 		// Copy cscfg file to the package directory
-		copyFile(String.format("%s%s%s", this.projectDir, File.separatorChar, this.configurationFileName), String.format("%s%s%s", this.packageDir, File.separatorChar, this.configurationFileName));
+		copyFile(new File(this.projectDir, this.configurationFileName), new File(this.packageDir, this.configurationFileName));
 
 		// Prepare emulator tools
 		prepareEmulatorTools();
 
 		// Prepare the dev-portal html page 
-		preparePortalLink();
+		createPortalLink();
 	}
 	
 	/**
 	 * Prepares portal link file
 	 * @throws IOException
 	 */
-	private void preparePortalLink() {
+	private void createPortalLink() {
 		// Only if creating cloud package
 		if (this.packageType != PackageType.cloud || this.portalURL == null) {
 			return;
@@ -438,13 +532,13 @@ public class WindowsAzurePackage extends Task {
 		File portalTemplateFile = new File(portalTemplateDirectory, DEV_PORTAL_FILE);		
 		File destFile = new File(this.packageDir, DEV_PORTAL_FILE);
 		try {
-			CopyFileReplaceTokens(portalTemplateFile, destFile);
+			copyFileReplaceTokens(portalTemplateFile, destFile);
 		} catch (IOException e) {
 			// Ignore if portal link missing
 		} 
 	}
 
-	private void CopyFileReplaceTokens(File src, File dest) throws IOException
+	private void copyFileReplaceTokens(File src, File dest) throws IOException
 	{
 		if(src == null || dest == null || !src.exists() || !src.isFile()) {
 			throw new IOException("Missing template file");
@@ -488,129 +582,8 @@ public class WindowsAzurePackage extends Task {
 			for (String templateFileName : emulatorTemplateDirectory.list()) {
 				File templateFile = new File(emulatorTemplateDirectory, templateFileName);
 				File destFile = new File(emulatorToolsDirectory, templateFileName);
-				CopyFileReplaceTokens(templateFile, destFile);
+				copyFileReplaceTokens(templateFile, destFile);
 			}
-		}
-	}
-
-	/**
-	 * Copies the content of one file on disk to another file on disk
-	 * @param srcPath source file path
-	 * @param dstPath destination file path
-	 * @throws IOException
-	 */
-	private void copyFile(String srcPath, String dstPath) {
-		Copy copyTask = new Copy();
-		copyTask.bindToOwner(this);
-		copyTask.init();
-		copyTask.setFile(new File(srcPath));
-		copyTask.setTofile(new File(dstPath));
-		copyTask.perform();
-	}
-
-	/**
-	 * Prepares environment variable settings for each role
-	 * @throws IOException
-	 */
-	private static String createVariablesScript(WorkerRole role) throws IOException {
-
-		if (role == null) {
-			return null;
-		}
-
-		StringBuilder variablesScript = new StringBuilder();
-
-		for (StartupEnv v : role.getVariables()) {
-			String cmdLine = createVariableCommandLine(v.getName(), v.getValue());
-			variablesScript.append(cmdLine);
-			variablesScript.append(newline);
-		}
-
-		return variablesScript.toString();
-	}
-
-	/**
-	 * Ensures the component's deployment settings are ok and it is ready to be deployed
-	 * @param component
-	 */
-	private static void verifyComponentDeploySettings(Component component, File approot) {
-
-		if (component == null || approot == null) {
-			throw new BuildException("Missing component or approot due to an unknown internal error");
-		}
-
-		DeployMethod deployMethod = component.getDeployMethod();
-		ImportMethod importMethod = component.getImportMethod();
-		File deployFile = new File(approot, component.getImportAs());
-
-		// Ensure default value for deploy method
-		if (importMethod == ImportMethod.ZIP && deployMethod == DeployMethod.EXEC) {
-			// It doesn't make sense to call exec on a zip
-			throw new BuildException(String.format("Deployment method '%s' cannot be used with the import method '%s' for component '%s'", deployMethod.toString().toLowerCase(), importMethod.toString().toLowerCase(), deployFile));
-
-		} else if (deployMethod == null) {
-			// Missing deploy method is a problem
-			throw new BuildException(String.format("Missing deployment method for component '%s'", deployFile));
-
-		} else if (deployMethod != DeployMethod.EXEC && !deployFile.exists()) {
-			// Validate that deployment already exists in approot, unless its deployment method is EXEC, in which case skip this check, since it could be an arbitrary commandline
-			throw new BuildException(String.format("Cannot find component '%s'", deployFile));
-
-		} else if (component.getDeployDir() == null && (deployMethod == DeployMethod.COPY || deployMethod ==  DeployMethod.UNZIP)) {
-			// Missing deploy directory for COPY or UNZIP (not required for EXEC and NONE)
-			throw new BuildException(String.format("Missing deployment directory for component '%s'", component.getImportAs()));
-		}
-	}
-
-	/**
-	 * Returns the script for deploying the selected role's components
-	 * @param role
-	 * @return
-	 * @throws IOException
-	 */
-	private static String createComponentsDeployScript(WorkerRole role) throws IOException {
-
-		if (role == null) {
-			return null;
-		}
-
-		StringBuilder componentsScript = new StringBuilder();
-
-		// Process components
-		for (Component component : role.getComponents()) {
-
-			// Verify deployment settings
-			verifyComponentDeploySettings(component, role.getAppRootDir());
-
-			// Create component deployment command line
-			String cmdLine = createComponentDeployCommandLine(component.getImportAs(), component.getDeployMethod(), component.getDeployDir());
-			
-			// Output script, if any
-			if(cmdLine != null) {
-				componentsScript.append(cmdLine);
-				componentsScript.append(newline);
-			}
-		}
-
-		return componentsScript.toString();
-	}
-
-	/**
-	 * Validates component import settings
-	 * @param component
-	 * @param approotDir
-	 */
-	private static void verifyComponentImportSettings(Component component, File approotDir) {
-		// Validate parameters
-		if (component.getImportSrc() == null && component.getImportMethod() != ImportMethod.NONE) {
-			// Missing import source
-			throw new BuildException("Missing import source");
-		} else if (component.getImportAs() == null) {
-			// Missing importAs name
-			throw new BuildException(String.format("Missing import destination for component '%s'", component.getImportSrc()));
-		} else if (component.getImportMethod() == null) {
-			// Missing import method
-			throw new BuildException(String.format("Missing import method for component '%s'", component.getImportAs()));
 		}
 	}
 
@@ -618,28 +591,10 @@ public class WindowsAzurePackage extends Task {
 	 * Prepares component imports for all roles
 	 * @throws IOException
 	 */
-	private void prepareComponentImports() {
+	private void importComponents() {
 		for (WorkerRole role : roles) {
 			this.log(String.format("Role \"%s\": Importing components...", role.getName()));
-
-			// Get the role's approot directory
-			File approotDir = role.getAppRootDir();
-			if (!approotDir.exists() || !approotDir.isDirectory()) {
-				throw new BuildException("Missing approot in role " + role.getName());
-			}
-
-			for (Component c : role.getComponents()) {
-				// Verify import settings
-				verifyComponentImportSettings(c, approotDir);
-
-				// Import component into approot
-				importComponent(c, approotDir);
-
-				// Verify the import worked
-				verifyComponentImportSucceeded(c, approotDir);
-
-			}
-
+			role.importComponents();
 			this.log(String.format("Role \"%s\": Finished importing components", role.getName()));
 		}
 	}
@@ -648,7 +603,7 @@ public class WindowsAzurePackage extends Task {
 	 * Prepares internal startup scripts for each role
 	 * @throws IOException
 	 */
-	private void prepareStartupScripts() throws IOException {
+	private void createStartupScripts() throws IOException {
 
 		// Load the template file
 		File templateFile = new File(this.templatesDir, String.format("%s%s%s", INTERNAL_STARTUP_SUBDIR, File.separator, INTERNAL_STARTUP_FILE_NAME));
@@ -660,36 +615,8 @@ public class WindowsAzurePackage extends Task {
 
 		// Generate an internal startup script for each role
 		for (WorkerRole r : roles) {
-			String outputText = templateText;
-			
-			// Get the role's approot directory
-			File approotDir = r.getAppRootDir();
-			if (!approotDir.exists() || !approotDir.isDirectory()) {
-				throw new IOException("Missing approot in role " + r.getName());
-			}
-
-			// Get the deploy script for the role's components
 			this.log(String.format("Role \"%s\": Generating component deployment script...", r.getName()));
-			String componentsScript = createComponentsDeployScript(r);
-
-			// Get the variables script for the role
-			String variablesScript = createVariablesScript(r);
-
-			// Get the user startup script
-			String userStartupScript = loadTextFile(new File(approotDir, USER_STARTUP_FILE_NAME));
-
-			// Replace components token with script
-			outputText = outputText.replace(TEMPLATE_TOKEN_COMPONENTS_SCRIPT, componentsScript);
-
-			// Replace variables token with script
-			outputText = outputText.replace(TEMPLATE_TOKEN_VARIABLES_SCRIPT, variablesScript);
-
-			// Replace user startup token with script
-			outputText = outputText.replace(TEMPLATE_TOKEN_USER_STARTUP_SCRIPT, userStartupScript);
-
-			// Save the internal startup script in approot
-			saveTextFile(new File(approotDir, INTERNAL_STARTUP_FILE_NAME), outputText);
-
+			r.createStartupScript(templateText);
 			this.log(String.format("Role \"%s\": Created internal startup script", r.getName()));
 		}
 	}
@@ -699,7 +626,7 @@ public class WindowsAzurePackage extends Task {
 	 * @param src
 	 * @param dest
 	 */
-	private void importComponentAsCopy(File src, File dest) {
+	public void copyFile(File src, File dest) {
 
 		Copy copyTask = new Copy();
 		copyTask.bindToOwner(this);
@@ -725,7 +652,7 @@ public class WindowsAzurePackage extends Task {
 	 * @param src
 	 * @param dest
 	 */
-	private void importComponentAsZip(File src, File dest) {
+	public void zipFile(File src, File dest) {
 		Zip zipTask = new Zip();
 		zipTask.bindToOwner(this);
 		zipTask.init();
@@ -749,130 +676,6 @@ public class WindowsAzurePackage extends Task {
 		zipTask.setCompress(false); // No compression to dramatically improve build and deployment performance
 		zipTask.setDestFile(dest);
 		zipTask.perform();
-	}
-
-	/**
-	 * Imports a component into the role's approot
-	 * @param component
-	 * @param approotDir
-	 */
-	private void importComponent(Component component, File approotDir) {
-		// Ignore no import method
-		ImportMethod importMethod = component.getImportMethod();
-		if(importMethod == ImportMethod.NONE) {
-			return;
-		}
-		
-        String fileName = component.getImportAs();
-
-        // Strip out command line parameters if any, but only for deploymethod=EXEC
-		if(component.getDeployMethod() == DeployMethod.EXEC && fileName != null)
-               fileName = fileName.split(" ")[0];
-        
-        File destFile = new File(approotDir, fileName);
-		File srcFile = new File(component.getImportSrc());
-
-		// If relative path, make it relative to approot
-		if (!srcFile.isAbsolute()) {
-			srcFile = new File(approotDir, srcFile.getPath());
-		}
-
-		if (!srcFile.exists())
-			throw new BuildException(String.format("Failed to find component \"%s\"", srcFile.getPath()));
-
-		if (importMethod == ImportMethod.COPY) {
-			// Component import method: copy
-			importComponentAsCopy(srcFile, destFile);
-
-		} else if (importMethod == ImportMethod.ZIP) {
-			// Component import method: zip
-			importComponentAsZip(srcFile, destFile);
-		}
-	}
-
-	/**
-	 * Verifies component import into the approot
-	 * @param component
-	 * @param approot
-	 */
-	private void verifyComponentImportSucceeded(Component component, File approot) {
-		if (component == null || approot == null) {
-			throw new BuildException("Internal failure for unknown reason");
-		} else if (component.getImportAs() == null) {
-			this.log(String.format("\tNothing to import for component '%s'", component.getImportSrc()));
-		} else if (component.getImportMethod() != ImportMethod.NONE) {
-			// Confirm that the file actually got imported into the approot, unless import method is NONE
-			String fileName = component.getImportAs();
-			
-			// Strip out command line parameters if any, but for deploymethod=EXEC only
-			if(fileName != null && component.getDeployMethod() == DeployMethod.EXEC) {
-				fileName = fileName.split(" ")[0]; 
-			}
-			
-			File destFile = new File(approot, fileName);
-			if (destFile.exists()) {
-				this.log(String.format("\tImported as '%s' from \"%s\"", fileName, component.getImportSrc()));
-			} else {
-				throw new BuildException(String.format("Failed importing component '%s' as '%s' into 'approot\\%s'", component.getImportSrc(), component.getImportMethod(), fileName));
-			}
-		}
-	}
-
-	/**
-	 * Returns the environment variable setting commandline
-	 * @param name
-	 * @param value
-	 * @return
-	 */
-	private static String createVariableCommandLine(String name, String value) {
-		return String.format("set %s=%s", name, value);
-	}
-
-	/**
-	 * Returns the component deployment commandline
-	 * @param destFile
-	 * @param deployMethod
-	 * @param deployPath
-	 * @return
-	 */
-	private static String createComponentDeployCommandLine(String importedPath, DeployMethod deployMethod, String deployPath) {
-		File destFile = new File(importedPath);
-		String cmdLineTemplate; 
-		
-		switch(deployMethod)
-		{
-		case COPY:
-			// Support for deploy method: copy - ensuring non-existent target directories get created as needed
-			cmdLineTemplate = "if exist \"$destName\"\\* (echo d | xcopy /y /e \"$destName\" \"$deployPath\\$destName\") else (echo f | xcopy /y \"$destName\" \"$deployPath\\$destName\")";
-			return cmdLineTemplate
-					.replace("$destName", destFile.getName())
-					.replace("$deployPath", deployPath);
-		case UNZIP:
-			// Support for deploy method: unzip return
-			cmdLineTemplate = "cscript /NoLogo $utilSubdir\\$unzipFilename \"$destName\" $deployPath";
-			return cmdLineTemplate
-					.replace("$utilSubdir", DEFAULT_UTIL_SUBDIR)
-					.replace("$unzipFilename", UNZIP_SCRIPT_FILE_NAME)
-					.replace("$destName", destFile.getName())
-					.replace("$deployPath", deployPath);
-		case EXEC:
-			// Support for deploy method: exec
-			StringBuilder s = new StringBuilder("start \"Windows Azure\" ");
-			
-			// If deploy dir specified, treat it as a change directory request
-			if(deployPath != null) {
-				s.append("/D\"");
-				s.append(deployPath);
-				s.append("\" ");
-			}
-			s.append(importedPath);
-			return s.toString();
-		case NONE:
-			// Ignore if deploymethod is NONE
-			return null;
-		default:
-			throw new BuildException("Unsupported deployment method");
-		}
 	}
 
 	/**
@@ -900,7 +703,7 @@ public class WindowsAzurePackage extends Task {
 	 * @return Text from the file
 	 * @throws IOException
 	 */
-	private static String loadTextFile(File file) throws IOException {
+	public static String loadTextFile(File file) throws IOException {
 		char[] buffer = new char[4096];
 		int len;
 		StringBuilder input = new StringBuilder();
@@ -923,7 +726,7 @@ public class WindowsAzurePackage extends Task {
 	 * @param text Text to save
 	 * @throws IOException
 	 */
-	private static void saveTextFile(File file, String text) throws IOException {
+	public static void saveTextFile(File file, String text) throws IOException {
 		FileWriter writer = new FileWriter(file);
 
 		try {
@@ -933,11 +736,12 @@ public class WindowsAzurePackage extends Task {
 		}
 	}
 
+
 	/**
 	 * Deletes a directory including all of its contents
 	 * @param directory Directory to delete
 	 */
-	private static void deleteDirectory(File directory) {
+	public static void deleteDirectory(File directory) {
 		if (directory.isFile()) {
 			directory.delete();
 		} else {
@@ -1014,5 +818,166 @@ public class WindowsAzurePackage extends Task {
 		}
 
 		return String.format("%s%sbin", latestVersionSdkDir, File.separatorChar);
+	}
+	
+	/** Checks whether network is available
+	 * @return
+	 */
+	private static boolean isNetworkAvailable() {
+		Enumeration<NetworkInterface> networkInterfaces;
+		InetAddress inetAddress;
+		
+		try {
+			if(null == (networkInterfaces = NetworkInterface.getNetworkInterfaces())) {
+				return false;
+			}
+
+			while(networkInterfaces.hasMoreElements()) {
+				Enumeration<InetAddress> internetAddresses = networkInterfaces.nextElement().getInetAddresses();
+				while(internetAddresses.hasMoreElements()) {
+					if(null == (inetAddress = internetAddresses.nextElement())) {
+						return false;
+					} else if (inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress()) {
+						continue;
+					} else if (!inetAddress.getHostName().equals(inetAddress.getHostAddress())) {
+						return true;
+					}
+				}
+			}
+		} catch(SocketException e) {
+			return false;
+		}
+		
+		return false;
+	}
+	
+	/** Waits for content on either of the provided streams
+	 * @param stream1
+	 * @param stream2
+	 * @return Returns the stream with the response, or null if error
+	 */
+	public static InputStream waitForStream(InputStream stream1, InputStream stream2) {
+		if(stream1 == null || stream2 == null) {
+			return null;
+		}
+		
+		try {
+			while(true) { 	//TODO: Support time out someday
+				if(stream1.available() > 0) {
+					return stream1;
+				} else if(stream2.available() > 0) {
+					return stream2;
+				}
+				
+				try {
+					Thread.sleep(200);
+				} catch (InterruptedException e) {
+					;
+				}
+			}
+			
+		} catch (IOException e) {
+			return null;
+		}
+	}
+	
+	/**
+	 * Returns the text content from the expected stream if the content is received on that stream, else null
+	 * @param expectedStream
+	 * @param stream1
+	 * @param stream2
+	 * @return
+	 */
+	public static String expectStreamResponse(InputStream expectedStream, InputStream stream1, InputStream stream2) {
+		byte[] responseBytes = new byte[2048];
+		InputStream respondingStream = WindowsAzurePackage.waitForStream(stream1, stream2);
+		if(expectedStream != respondingStream) {
+			return null;
+		} else if(respondingStream == null) {
+			return null;
+		} else {
+			try {
+				respondingStream.read(responseBytes);
+				return new String(responseBytes);
+			} catch (IOException e) {
+				return null;
+			}
+		}		
+	}
+	
+	/** Starts the download verifier thread
+	 */
+	private void startDownloadVerification() {
+		if(getVerifyDownloads() && getPackageType() == PackageType.cloud) {
+			DownloadVerifier downloadVerifier = new DownloadVerifier(this);
+			downloadVerifierThread = new Thread(downloadVerifier);
+			downloadVerifierThread.start();
+		}
+	}
+
+	/** Waits for the download verification to finish
+	 */
+	private void finishDownloadVerification() {
+		if(downloadVerifierThread != null) {
+			try {
+				downloadVerifierThread.join();
+			} catch (InterruptedException e) {
+				;
+			}
+		}		
+	}
+	
+	/**
+	 * Class to implementing the component downloadability check as a separate thread
+	 */
+	private class DownloadVerifier implements Runnable {
+		private WindowsAzurePackage windowsAzurePackage = null;
+		
+		public DownloadVerifier(WindowsAzurePackage windowsAzurePackage) {
+			this.windowsAzurePackage = windowsAzurePackage;
+		}
+		
+	    public void run() {
+	    	for(WorkerRole role : windowsAzurePackage.roles) {
+	    		for(Component component : role.getComponents()) {
+	    			component.verifyDownload();
+	    		}
+	    	}
+	    }
+	}
+
+	/**
+	 * Validates Windows Azure Project configuration
+	 * @return a map with enum ErrorType as key and list of error messages as value.  
+	 */
+	public Map<ErrorType, List<String>> verifyConfiguration() {
+		Map<ErrorType, List<String>> errorMap = null;
+		
+		// For package type CLOUD , check if cache config settings are properly configured
+		if (PackageType.cloud == this.packageType) {
+			try { 
+				NodeList roleNames = XMLUtil.getNodeList(DEV_CACHE_CONFIG, new File(this.projectDir, this.configurationFileName));
+				
+				if(roleNames.getLength() > 0 ) {
+					List<String> errorMessages = new ArrayList<String>();
+					
+					// Populate error message for each role if storage account info is not configured
+					for (int i = 0; i < roleNames.getLength(); i++) {
+						errorMessages.add(String.format("Missing storage account information for the caching " +
+														"feature enabled in role '%s'", roleNames.item(i).getNodeValue()));
+					}
+					
+					if (errorMap == null)
+						errorMap = new HashMap<ErrorType, List<String>>();
+					
+					// Put entry into error map
+					errorMap.put(ErrorType.CACHE_CONFIG, errorMessages);
+				}
+			} catch(Exception e) {
+				throw new BuildException("Error Occured while validating Windows Azure Cache config settings");
+			}
+		}
+		
+		return errorMap;
 	}
 }

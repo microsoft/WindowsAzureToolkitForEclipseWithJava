@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,8 +41,6 @@ import org.eclipse.wst.xml.core.internal.catalog.provisional.ICatalogEntry;
 import org.eclipse.wst.xml.core.internal.catalog.provisional.INextCatalog;
 
 import waeclipseplugin.Activator;
-
-import com.interopbridges.tools.windowsazure.WindowsAzureConstants;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 
 
@@ -81,8 +79,8 @@ public class WAStartUp implements IStartup {
                         WindowsAzureProjectManager projMngr =
                                 WindowsAzureProjectManager.load(
                                         iProject.getLocation().toFile());
-                        if (!projMngr.isCurrVersion() && !WindowsAzureConstants.V17_VERSION.equals(projMngr.getVersion())) {
-                            iProject.close(null);
+                        if (!projMngr.isCurrVersion()) {
+                        	WAEclipseHelper.handleProjectUpgrade(iProject,projMngr);
                         }
                         // Correct name if its invalid
                         if (!iProject.getName().

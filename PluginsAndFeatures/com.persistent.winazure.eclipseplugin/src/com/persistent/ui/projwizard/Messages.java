@@ -1,5 +1,5 @@
 /**
-* Copyright 2011 Persistent Systems Ltd.
+* Copyright 2013 Persistent Systems Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -49,19 +49,13 @@ public final class Messages extends NLS {
     public static String sdkInsErrMsg;
     public static String sdkInsUrl;
     public static String imgDplDlg;
-    public static String dplPageMsg;
+    public static String dplPageJdkMsg;
+    public static String dplPageSrvMsg;
+    public static String dplPageAppMsg;
     public static String dplPageSerTxt;
-    public static String dplPageSelLbl;
     public static String dplPageAppLbl;
     public static String dplPageBtnTxt;
-    public static String dplPageNameLbl;
     public static String dplPageJDKGrp;
-    public static String dplPageJdkLbl;
-    public static String dplPageSerBtn;
-    public static String dplPageJdkChkBtn;
-    public static String dplPageSerChkBtn;
-    public static String dplPageAddBtn;
-    public static String dplPageRmvBtn;
     public static String dplWrngJdkMsg;
     public static String dplWrngSerMsg;
     public static String dplEmtSerMsg;
@@ -112,6 +106,15 @@ public final class Messages extends NLS {
     public static String helloWorld;
     public static String rsrcPage;
     public static String javaPage;
+    public static String dlgDlKeyErrMsg;
+    public static String dlgDlUrlErrMsg;
+    public static String dlNtLblDir;
+    public static String dlgDlNtLblUrl;
+    public static String tbPg;
+    public static String keyPg;
+    public static String projWizPg;
+    public static String jvHomeErMsg;
+    public static String srvHomeErMsg;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

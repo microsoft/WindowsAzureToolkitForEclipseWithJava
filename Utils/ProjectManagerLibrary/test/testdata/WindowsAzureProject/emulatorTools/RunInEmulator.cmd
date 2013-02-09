@@ -1,1 +1,0 @@
-"C:\Program Files\Windows Azure SDK\v1.4\bin\csrun.exe" "C:\WindowsAzureProject\deploy\WindowsAzurePackage.cspkg" "C:\WindowsAzureProject\deploy\ServiceConfiguration.cscfg"

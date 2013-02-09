@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -95,6 +95,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
     private static final String BASE_PATH = "${basedir}";
     private static final String DATE_SEP = "/";
     private boolean isPwdChanged;
+    private boolean isPageDisplayed = false;
 
 
     /**
@@ -202,6 +203,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
             		Messages.remAccErTxtTitle,
             		Messages.remAccDataInc);
         }
+        isPageDisplayed = true;
         return parent;
     }
 
@@ -596,6 +598,20 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         String [] extensions = {"*.cer"};
         dialog.setText(Messages.certDlgBrowFldr);
         dialog.setFilterExtensions(extensions);
+        String path 		= selProject.getLocation().toPortableString();
+        // Default directory should be the cert directory in the project, and if it 
+        // doesn't exist, then it should be the project directory
+        String certPath		= path + File.separator + "cert";
+        if(new File(certPath).exists())
+        	dialog.setFilterPath(certPath);
+        else
+        	dialog.setFilterPath(path);
+        /*
+         * When we use tab to traverse through controls,
+         * focus goes to last selected control i.e password fields.
+         * To avoid that explicitly setting focus on cert path text box.
+         */
+        txtPath.setFocus();
         String directory = dialog.open();
         if (directory != null) {
             if (directory.contains(selProject.getLocation().toOSString()
@@ -673,6 +689,9 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
      * Method specifies action to be executed when OK button is pressed.
      */
     public boolean performOk() {
+    	if (!isPageDisplayed) {
+    		return super.performOk();
+    	}
         try {
             loadProject();
             if (remoteChkBtn.getSelection()) {
@@ -733,8 +752,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                         return false;
                     }
                 }
-                if (pwd.isEmpty() && !waProjManager.
-                        getRemoteAccessEncryptedPassword().isEmpty()) {
+                if (pwd.isEmpty()) {
                      boolean choice = MessageDialog.openQuestion(new Shell(),
                              Messages.remAccErTxtTitle, Messages.remAccWarnPwd);
                     if (!choice) {

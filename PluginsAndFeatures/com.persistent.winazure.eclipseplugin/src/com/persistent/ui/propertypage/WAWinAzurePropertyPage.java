@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,10 +39,10 @@ import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
 /**
- * This class creates Windows Azure Property Page
+ * This class creates Windows Azure Property Page.
  */
 public class WAWinAzurePropertyPage extends PropertyPage {
-    private Text  txtServiceName;
+    private Text txtServiceName;
     private WindowsAzureProjectManager waProjManager;
     private IProject selProject;
     private String errorMessage;
@@ -87,7 +87,7 @@ public class WAWinAzurePropertyPage extends PropertyPage {
             		errorMessage, e);
         }
         GridData gridData = new GridData();
-        gridData.horizontalAlignment = SWT.FILL;
+        gridData.widthHint = 300;
         gridData.grabExcessHorizontalSpace = true;
         txtServiceName.setLayoutData(gridData);
 
@@ -97,14 +97,16 @@ public class WAWinAzurePropertyPage extends PropertyPage {
         comboType = new Combo(container, SWT.READ_ONLY);
         gridData = new GridData();
         gridData.grabExcessHorizontalSpace = true;
+        gridData.widthHint = 150;
         comboType.setLayoutData(gridData);
         comboType.setItems(arrType);
-        
+
         Label lblTargetOS = new Label(container, SWT.LEFT);
         lblTargetOS.setText(Messages.proPageTgtOSLbl);
 
         targetOSComboType = new Combo(container, SWT.READ_ONLY);
         gridData = new GridData();
+        gridData.widthHint = 150;
         gridData.grabExcessHorizontalSpace = true;
         targetOSComboType.setLayoutData(gridData);
         targetOSComboType.setItems(targetOSType);

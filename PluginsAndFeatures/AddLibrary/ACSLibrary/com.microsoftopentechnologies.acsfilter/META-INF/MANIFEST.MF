@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: WAACSFilterForJava
+Bundle-Name: Windows Azure Access Control Services Filter Library (by MS Open Tech)
 Bundle-SymbolicName: com.microsoftopentechnologies.acsfilter
 Bundle-Version: 0.2.0.qualifier
 Bundle-ClassPath: ACSAuthFilter.jar

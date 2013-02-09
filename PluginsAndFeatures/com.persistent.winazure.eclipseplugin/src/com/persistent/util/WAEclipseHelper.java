@@ -1,5 +1,5 @@
 /**
-* Copyright 2012 Persistent Systems Ltd.
+* Copyright 2013 Persistent Systems Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.persistent.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
@@ -48,10 +49,16 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
+import com.gigaspaces.azure.propertypage.SubscriptionPropertyPage;
+import com.interopbridges.tools.windowsazure.WindowsAzureConstants;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.wacommon.utils.FileUtil;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.persistent.ui.propertypage.WARemoteAccessPropertyPage;
+import com.persistent.ui.propertypage.WARolesPropertyPage;
+import com.persistent.ui.propertypage.WAWinAzurePropertyPage;
 import com.persistent.winazureroles.WARCaching;
 import com.persistent.winazureroles.WARComponents;
 import com.persistent.winazureroles.WARDebugging;
@@ -397,13 +404,16 @@ public class WAEclipseHelper {
 	/**
 	 * Method checks if text contains
 	 * alphanumeric characters, underscore only
-	 * and is starting with alphabet or not.
+	 * and is starting with alphanumeric or underscore.
+	 * \p{L} any kind of letter from any language.
+	 * \p{Nd} a digit zero through nine
+	 * in any script except ideographic scripts.
 	 * @param text
 	 * @return Boolean
 	 */
 	public static Boolean isAlphaNumericUnderscore(String text) {
 		Pattern alphaNumUndscor = Pattern.
-				compile("^[A-Za-z]+[A-Za-z0-9_]*$");
+				compile("^[\\p{L}_]+[\\p{L}\\p{Nd}_]*$");
 		Matcher m = alphaNumUndscor.matcher(text);
 		return m.matches();
 	}
@@ -526,6 +536,116 @@ public class WAEclipseHelper {
 	}
 
 	/**
+	 * Method creates tree structure of windows azure deployment
+	 * project property pages.
+	 * and opens property dialog
+	 * with desired property page selected & active.
+	 * @param pageToDisplay : property page Id which should be active
+	 *                        after opening dialog
+	 * @return integer
+	 */
+	public static int openWAProjectPropertyDialog(String pageToDisplay) {
+		int retVal = Window.CANCEL; //value corresponding to cancel
+		// Node creation
+		try {
+			PreferenceNode nodeWindowsAzure = new PreferenceNode(
+					Messages.cmhIdWinAz,
+					Messages.cmhLblWinAz,
+					null, WAWinAzurePropertyPage.class.toString());
+			nodeWindowsAzure.setPage(new WAWinAzurePropertyPage());
+			nodeWindowsAzure.getPage().setTitle(Messages.cmhLblWinAz);
+
+			PreferenceNode nodeRemoteAcess = new PreferenceNode(
+					Messages.cmhIdRmtAces,
+					Messages.cmhLblRmtAces,
+					null, WARemoteAccessPropertyPage.class.toString());
+			nodeRemoteAcess.setPage(new WARemoteAccessPropertyPage());
+			nodeRemoteAcess.getPage().setTitle(Messages.cmhLblRmtAces);
+
+			PreferenceNode nodeRoles = new PreferenceNode(
+					Messages.cmhIdRoles,
+					Messages.cmhLblRoles,
+					null, WARolesPropertyPage.class.toString());
+			nodeRoles.setPage(new WARolesPropertyPage());
+			nodeRoles.getPage().setTitle(Messages.cmhLblRoles);
+
+			PreferenceNode nodeSubscriptions = new PreferenceNode(
+					Messages.cmhIdCrdntls,
+					Messages.cmhLblSubscrpt,
+					null, SubscriptionPropertyPage.class.toString());
+			nodeSubscriptions.setPage(new SubscriptionPropertyPage());
+			nodeSubscriptions.getPage().setTitle(Messages.cmhLblSubscrpt);
+
+			/*
+			 * Tree structure creation.
+			 * Don't change order while adding nodes.
+			 * Its the default alphabetical
+			 * order given by eclipse.
+			 */
+			nodeWindowsAzure.add(nodeRemoteAcess);
+			nodeWindowsAzure.add(nodeRoles);
+			nodeWindowsAzure.add(nodeSubscriptions);
+
+			PreferenceManager mgr = new PreferenceManager();
+			mgr.addToRoot(nodeWindowsAzure);
+			// Dialog creation
+			PreferenceDialog dialog = new
+					PreferenceDialog(PlatformUI.getWorkbench()
+							.getDisplay().getActiveShell(),
+							mgr);
+			// make desired property page active.
+			dialog.setSelectedNode(pageToDisplay);
+			dialog.create();
+			String dlgTitle = String.format(Messages.cmhPropFor,
+					getSelectedProject().getName());
+			dialog.getShell().setText(dlgTitle);
+			dialog.open();
+			// return whether user has pressed OK or Cancel button
+			retVal = dialog.getReturnCode();
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialogAndLog(new Shell(),
+					Messages.rolsDlgErr,
+					Messages.projDlgErrMsg, e);
+		}
+		return retVal;
+	}
+
+	public static int openSubscriptionPropertyDialog() {
+		int retVal = Window.CANCEL; //value corresponding to cancel
+		// Node creation
+		try {
+			PreferenceNode nodeSubscriptions = new PreferenceNode(
+					Messages.cmhIdCrdntls,
+					Messages.cmhLblSubscrpt,
+					null, SubscriptionPropertyPage.class.toString());
+			nodeSubscriptions.setPage(new SubscriptionPropertyPage());
+			nodeSubscriptions.getPage().setTitle(Messages.cmhLblSubscrpt);
+
+			PreferenceManager mgr = new PreferenceManager();
+			mgr.addToRoot(nodeSubscriptions);
+			// Dialog creation
+			PreferenceDialog dialog = new
+					PreferenceDialog(PlatformUI.getWorkbench()
+							.getDisplay().getActiveShell(),
+							mgr);
+			// make desired property page active.
+			dialog.setSelectedNode(Messages.cmhIdCrdntls);
+			dialog.create();
+			String dlgTitle = String.format(Messages.cmhPropFor,
+					getSelectedProject().getName());
+			dialog.getShell().setText(dlgTitle);
+			dialog.open();
+			// return whether user has pressed OK or Cancel button
+			retVal = dialog.getReturnCode();
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialogAndLog(new Shell(),
+					Messages.rolsDlgErr,
+					Messages.projDlgErrMsg, e);
+		}
+		return retVal;
+	}
+
+	/**
 	 * If project name present in package.xml and
 	 * WindowsAzureProjectBuilder.launch does not match
 	 * with the actual one then correct it accordingly.
@@ -549,25 +669,52 @@ public class WAEclipseHelper {
 			Activator.getDefault().log(e.getMessage());
 		}
 	}
-	
-	public static void copyFile(String source, String destination) throws Exception {
-		try{
-		  File f1 = new File(source);
-		  File f2 = new File(destination);
-		  InputStream in = new FileInputStream(f1);
-		  OutputStream out = new FileOutputStream(f2);
 
-		  byte[] buf = new byte[1024];
-		  int len;
-		  while ((len = in.read(buf)) > 0){
-			  out.write(buf, 0, len);
-		  }
-		  in.close();
-		  out.close();
-		}catch(Exception ex) {
+	/**
+	 * Copy file from source to destination.
+	 * @param source
+	 * @param destination
+	 * @throws Exception
+	 */
+	public static void copyFile(String source,
+			String destination) throws Exception {
+		try {
+			File f1 = new File(source);
+			File f2 = new File(destination);
+			InputStream in = new FileInputStream(f1);
+			OutputStream out = new FileOutputStream(f2);
+
+			byte[] buf = new byte[1024];
+			int len;
+			while ((len = in.read(buf)) > 0) {
+				out.write(buf, 0, len);
+			}
+			in.close();
+			out.close();
+		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw ex;
 		}
 	}
+	
+	public static void handleProjectUpgrade(IProject iProject, WindowsAzureProjectManager projMngr) 
+	throws IOException, WindowsAzureInvalidProjectOperationException, CoreException {
+	
+		URL 	url 	= Activator.getDefault().getBundle().getEntry(Messages.starterKitEntry);
+    	URL 	resolve = FileLocator.resolve(FileLocator.toFileURL(url));
+        File 	zipFile = new File(resolve.getFile());
+    	
+    	boolean result = FileUtil.copyJarFromZip(zipFile, "%proj%/"+Messages.skJarName, 
+    			new File(iProject.getLocation().toFile(), Messages.skJarName));
+
+    	// If not able to copy just log the error and close the project.
+    	if (!result) {
+    		Activator.getDefault().log(iProject.getName() + ".cspack.jar file is not updated", null);
+    		iProject.close(null);
+    	} else {
+    		projMngr.setVersion(WindowsAzureConstants.VERSION);
+    		projMngr.save();
+    	}
 		
+	}
 }

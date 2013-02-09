@@ -20,7 +20,7 @@
 	<!-- top level targets -->
 
   <target name="compile" depends="init" description="compile the source code " >
-		<javac srcdir="${src}" includeantruntime="false" destdir="${build}">  
+		<javac srcdir="${src}" includeantruntime="false" destdir="${build}" source="1.6" target="1.6">  
 			<classpath>
 				<fileset dir="${lib}">
 					<include name="**/*.jar"/>
@@ -28,7 +28,7 @@
 			</classpath>
 		</javac>
 		
-		<javac srcdir="${junittest}" includeantruntime="false" destdir="${build}">  
+		<javac srcdir="${junittest}" includeantruntime="false" destdir="${build}" source="1.6" target="1.6">  
 			<classpath>
 				<fileset dir="${lib}">
 					<include name="**/*.jar"/>
@@ -49,7 +49,7 @@
   </target>
 	
 	<target name="compile-sources" depends="init" description="compile the source code " >
-			<javac srcdir="${src}" includeantruntime="false" destdir="${build}">  
+			<javac srcdir="${src}" includeantruntime="false" destdir="${build}" source="1.6" target="1.6">  
 				<classpath>
 					<fileset dir="${lib}">
 						<include name="**/*.jar"/>

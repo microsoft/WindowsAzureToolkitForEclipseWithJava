@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Microsoft Open Technologies Inc.
+ * Copyright 2013 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.microsoftopentechnologies.wacommon.utils;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -22,6 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.eclipse.core.runtime.FileLocator;
 
@@ -81,5 +85,43 @@ public class FileUtil {
             }
         }
     }
+    
+	/**
+	 * Copies jar file from zip 
+	 * @throws IOException 
+	 */
+	public static boolean copyJarFromZip(File zipResource, String jarFileNAme, File destFile) 
+	throws IOException {
+		
+		boolean jarCopied = false;
+		
+		ZipFile zipFile = new ZipFile(zipResource);
+		Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+		while (entries.hasMoreElements()) {
+	            ZipEntry zipEntry = (ZipEntry) entries.nextElement();
+	            if (zipEntry.getName().equals(jarFileNAme)) {
+	            	writeFile(zipFile.getInputStream(zipEntry), new BufferedOutputStream(new FileOutputStream(destFile)));
+	            	jarCopied = true; 
+	            }
+		}
+		zipFile.close();
+		
+		return jarCopied;
+		
+	}
+	
+	/**
+	 * Utility method to check for null conditions or empty strings.
+	 * @param name 
+	 * @return true if null or empty string
+	 */
+	public static boolean isNullOrEmpty(final String name) {
+		boolean isValid = false;
+		if (name == null || name.matches("\\s*")) {
+			isValid = true;
+		}
+		return isValid;
+	}
 
 }

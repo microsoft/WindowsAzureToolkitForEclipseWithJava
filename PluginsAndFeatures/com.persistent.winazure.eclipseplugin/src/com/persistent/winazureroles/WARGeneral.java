@@ -1,5 +1,5 @@
 /**
-* Copyright 2011 Persistent Systems Ltd.
+* Copyright 2013 Persistent Systems Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -423,12 +423,13 @@ public class WARGeneral extends PropertyPage {
      * feature is on then ask input from user,
      * whether to turn off high availability feature
      * or he wants to edit instances.
-     * @param okToProceed
+     * @param val
      * @return boolean
      */
     private boolean handleHighAvailabilityFeature(
-    		boolean okToProceed) {
+    		boolean val) {
     	boolean isBackupSet = false;
+    	boolean okToProceed = val;
     	try {
     		/*
     		 * checks if number of instances are equal to 1

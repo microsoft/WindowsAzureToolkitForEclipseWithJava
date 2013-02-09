@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -414,11 +414,13 @@ public final class DeploymentManager {
 		RemoteDesktopDescriptor rdp = deploymentDesc.getRemoteDesktopDescriptor();
 		boolean enabled = rdp.isEnabled();
 		try {
+			
 			docBuilder = docBuilderFactory.newDocumentBuilder();
 		} catch (ParserConfigurationException e) {
 			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
 		}
 		File cscfg = new File(WizardCacheManager.getCurrentDeployConfigFile());
+
 		try {
 			doc = docBuilder.parse(cscfg);
 
@@ -433,8 +435,19 @@ public final class DeploymentManager {
 			}
 			configureSettings(doc, xpath, Messages.remoteFormarderEnabledSetting, Messages.remoteFormarderEnabledSettingVal);
 			configureSettings(doc, xpath, Messages.remoteAccessAccountUsername, rdp.getUserName());
-
-			String encPassword = EncUtilHelper.encryptPassword(rdp.getPassword(), rdp.getPublicKey());
+			/** Changes for #645 **/
+			String encPassword = null;	
+			//Ignore cscfg file name and deploy folder		
+			String projPath 					 =  cscfg.getParentFile().getParent();
+			WindowsAzureProjectManager waProjMgr =  WindowsAzureProjectManager.load(new File(projPath));
+			encPassword 						 =  waProjMgr.getRemoteAccessEncryptedPassword(); 
+			
+			if (encPassword != null && encPassword.equals(rdp.getPassword())) {
+				encPassword = rdp.getPassword();
+			} else {
+				encPassword =   EncUtilHelper.encryptPassword(rdp.getPassword(), rdp.getPublicKey());
+			}
+			
 			configureSettings(doc, xpath, Messages.remoteAccessAccountEncryptedPassword, encPassword);
 
 			SimpleDateFormat formatter = new SimpleDateFormat(Messages.dateFormat, Locale.getDefault());

@@ -1,5 +1,5 @@
 /**
-* Copyright 2011 Persistent Systems Ltd.
+* Copyright 2013 Persistent Systems Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -523,8 +523,16 @@ public class WindowsAzureRoleTest {
             waRole = (WindowsAzureRole) listRoles.get(0);
             waRole.addEndpoint("test1", WindowsAzureEndpointType.InstanceInput, "76", "110-115");
             assertTrue(waRole.isValidEndpoint("test1",WindowsAzureEndpointType.InstanceInput, "67", "111-116"));
-     }
+    }
 
+
+    @Test
+    public final void testIsValidEndpointInputInstancePortEditSamePort()
+    		throws WindowsAzureInvalidProjectOperationException{
+    	waRole = (WindowsAzureRole) listRoles.get(0);
+    	waRole.addEndpoint("test1", WindowsAzureEndpointType.InstanceInput, "190", "181-185");
+    	assertTrue(waRole.isValidEndpoint("test2",WindowsAzureEndpointType.InstanceInput, "181", "191-195"));
+    }
     /**
      * Method testEnableDebugging.
      * @throws WindowsAzureInvalidProjectOperationException
@@ -1137,6 +1145,7 @@ public class WindowsAzureRoleTest {
     @Test()
     public final void testsetServer()
             throws WindowsAzureInvalidProjectOperationException {
+    	listRoles.get(0).setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
         listRoles.get(0).setServer("Apache Tomcat 7", "c:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
         assertEquals("Apache Tomcat 7", listRoles.get(0).getServerName());
     }
@@ -1144,6 +1153,7 @@ public class WindowsAzureRoleTest {
     @Test()
     public final void testsetServerwithNull()
             throws WindowsAzureInvalidProjectOperationException {
+    	listRoles.get(0).setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
         listRoles.get(0).setServer("Apache Tomcat 7", "c:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
         listRoles.get(0).setServer(null, "c:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
         assertNull(listRoles.get(0).getServerName());
@@ -1159,6 +1169,7 @@ public class WindowsAzureRoleTest {
     @Test()
     public final void testGetServerSourcePath()
             throws WindowsAzureInvalidProjectOperationException {
+    	listRoles.get(0).setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
         listRoles.get(0).setServer("Apache Tomcat 7", "c:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
         assertEquals("c:\\tomcat", listRoles.get(0).getServerSourcePath());
     }
@@ -1166,6 +1177,7 @@ public class WindowsAzureRoleTest {
     @Test()
     public final void testGetServerApplications()
             throws WindowsAzureInvalidProjectOperationException {
+    	waCompMgr.getRoles().get(0).setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).setServer("Apache Tomcat 7", "C:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).addServerApplication("c:\\xcopy", "xcopy.exe", "copy", new File(Messages.getString("WinAzureTestConstants.Comp")));
         assertEquals(1, waCompMgr.getRoles().get(0).getServerApplications().size());
@@ -1174,6 +1186,7 @@ public class WindowsAzureRoleTest {
     @Test()
     public final void testaddServerApplication()
             throws WindowsAzureInvalidProjectOperationException {
+    	waCompMgr.getRoles().get(0).setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).setServer("Apache Tomcat 7", "C:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).addServerApplication("c:\\xcopy", "xcopy.exe", "copy", new File(Messages.getString("WinAzureTestConstants.Comp")));
         assertEquals(1, waCompMgr.getRoles().get(0).getServerApplications().size());
@@ -1182,6 +1195,8 @@ public class WindowsAzureRoleTest {
     @Test(expected=IllegalArgumentException.class)
     public final void testaddServerApplicationWithNull()
             throws WindowsAzureInvalidProjectOperationException {
+    	// Configure JDK before configuring server
+    	waCompMgr.getRoles().get(0).setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).setServer("Apache Tomcat 7", "C:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).addServerApplication(null, null, null, null);
     }
@@ -1189,6 +1204,7 @@ public class WindowsAzureRoleTest {
     @Test(expected=IllegalArgumentException.class)
     public final void testaddServerApplicationWithEmpty()
             throws WindowsAzureInvalidProjectOperationException {
+    	waCompMgr.getRoles().get(0).setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).setServer("Apache Tomcat 7", "C:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).addServerApplication("", "", "", null);
     }
@@ -1197,6 +1213,7 @@ public class WindowsAzureRoleTest {
     @Test()
     public final void testremoveServerApplication()
             throws WindowsAzureInvalidProjectOperationException {
+    	waCompMgr.getRoles().get(0).setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).setServer("Apache Tomcat 7", "C:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).addServerApplication("c:\\xcopy", "xcopy.exe", "copy", new File(Messages.getString("WinAzureTestConstants.Comp")));
         waCompMgr.getRoles().get(0).removeServerApplication("xcopy.exe");
@@ -1232,5 +1249,176 @@ public class WindowsAzureRoleTest {
         assertTrue(waCompMgr.getRoles().get(0).isValidDeployName("xcopy1.exe"));
     }
 
+    @Test()
+    public final void testCmpntAddedInValidOrder()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	waRole = (WindowsAzureRole) listRoles.get(0);
+    	waRole.addComponent("importas", "myApp.war");
+    	waRole.setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
+    	waRole.setServer("Apache Tomcat 7", "c:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
+    	List<WindowsAzureRoleComponent> compList = waRole.getComponents();
+    	boolean val = compList.get(0).getType().equalsIgnoreCase("jdk.deploy")
+    			&& compList.get(1).getType().equalsIgnoreCase("server.deploy")
+    			&& compList.get(2).getType().equalsIgnoreCase("server.start");
+    	assertTrue(val);
+    }
+
+    @Test()
+    public final void testSwapCmpntUp()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	waRole = (WindowsAzureRole) listRoles.get(0);
+    	waRole.addComponent("importas", "myApp.war");
+    	waRole.setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
+    	waRole.setServer("Apache Tomcat 7", "c:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
+    	List<WindowsAzureRoleComponent> compList = waRole.getComponents();
+    	boolean prevOrder = compList.get(0).getType().equalsIgnoreCase("jdk.deploy")
+    			&& compList.get(1).getType().equalsIgnoreCase("server.deploy")
+    			&& compList.get(2).getType().equalsIgnoreCase("server.start")
+    			&& compList.get(3).getDeployName().equalsIgnoreCase("HelloWorld.war")
+    			&& compList.get(4).getDeployName().equalsIgnoreCase("myApp.war");
+    	// swap Up
+    	waRole.swapCmpnt(4, "up");
+    	waRole.swapCmpnt(3, "up");
+    	boolean newOrder = compList.get(0).getType().equalsIgnoreCase("jdk.deploy")
+    			&& compList.get(1).getType().equalsIgnoreCase("server.deploy")
+    			&& compList.get(2).getDeployName().equalsIgnoreCase("myApp.war")
+    			&& compList.get(3).getType().equalsIgnoreCase("server.start")
+    			&& compList.get(4).getDeployName().equalsIgnoreCase("HelloWorld.war");
+    	assertTrue(prevOrder && newOrder);
+    }
+
+    @Test()
+    public final void testSwapCmpntDown()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	waRole = (WindowsAzureRole) listRoles.get(0);
+    	waRole.addComponent("importas", "myApp.war");
+    	waRole.setJDKSourcePath("c:\\jdk", new File(Messages.getString("WinAzureTestConstants.Comp")));
+    	waRole.setServer("Apache Tomcat 7", "c:\\tomcat", new File(Messages.getString("WinAzureTestConstants.Comp")));
+    	List<WindowsAzureRoleComponent> compList = waRole.getComponents();
+    	boolean prevOrder = compList.get(0).getType().equalsIgnoreCase("jdk.deploy")
+    			&& compList.get(1).getType().equalsIgnoreCase("server.deploy")
+    			&& compList.get(2).getType().equalsIgnoreCase("server.start")
+    			&& compList.get(3).getDeployName().equalsIgnoreCase("HelloWorld.war")
+    			&& compList.get(4).getDeployName().equalsIgnoreCase("myApp.war");
+    	// swap down
+    	waRole.swapCmpnt(3, "down");
+    	boolean newOrder = compList.get(0).getType().equalsIgnoreCase("jdk.deploy")
+    			&& compList.get(1).getType().equalsIgnoreCase("server.deploy")
+    			&& compList.get(2).getType().equalsIgnoreCase("server.start")
+    			&& compList.get(3).getDeployName().equalsIgnoreCase("myApp.war")
+    			&& compList.get(4).getDeployName().equalsIgnoreCase("HelloWorld.war");
+    	assertTrue(prevOrder && newOrder);
+    }
+
+    @Test()
+    public final void testSetJdkCloudHome()
+            throws WindowsAzureInvalidProjectOperationException {
+        waCompMgr.getRoles().get(0).
+        setJDKCloudHome("%ROLEROOT%\\approot\\Java6");
+        assertTrue(waCompMgr.getRoles().get(0).
+        		getJDKCloudHome().equals("%ROLEROOT%\\approot\\Java6"));
+    }
+
+    @Test()
+    public final void testSetJdkLocalHome()
+            throws WindowsAzureInvalidProjectOperationException {
+        waCompMgr.getRoles().get(0).
+        setJDKLocalHome("%ROLEROOT%\\approot\\Java6");
+        assertTrue(waCompMgr.getRoles().get(0).
+        		getJDKLocalHome().equals("%ROLEROOT%\\approot\\Java6"));
+    }
+
+    @Test()
+    public final void testConstructJdkHome()
+            throws WindowsAzureInvalidProjectOperationException {
+        String str = waCompMgr.getRoles().get(0).constructJdkHome("c:\\jdk",
+        		new File(Messages.getString("WinAzureTestConstants.Comp")));
+        assertTrue(str.equals("%ROLEROOT%\\approot\\jdk"));
+    }
+
+    @Test()
+    public final void testChangePackageTypeJdkHome()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	waRole = (WindowsAzureRole) waCompMgr.getRoles().get(4);
+    	boolean typeLocal = waRole.getRuntimeEnv("JAVA_HOME").
+    			equals("%ROLEROOT%\\approot\\jdk1.7.0_09")
+    			&& waRole.getJDKCloudHome().
+    			equals("%ROLEROOT%\\approot\\jdk1.7.0")
+    			&& waRole.getJDKLocalHome().
+    			equals("");
+    	// change package type to cloud
+    	waCompMgr.setPackageType(WindowsAzurePackageType.CLOUD);
+    	boolean typeCloud = waRole.getRuntimeEnv("JAVA_HOME").
+    			equals("%ROLEROOT%\\approot\\jdk1.7.0")
+    			&& waRole.getJDKLocalHome().
+    			equals("%ROLEROOT%\\approot\\jdk1.7.0_09")
+    			&& waRole.getJDKCloudHome().
+    			equals("");
+    	assertTrue(typeLocal && typeCloud);
+    }
+
+    @Test()
+    public final void testGetEnvVarName()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waRole = (WindowsAzureRole) waCompMgr.getRoles().get(4);
+    	waRole.setServer("Apache Tomcat 7", "c:\\tomcat",
+    			new File(Messages.getString("WinAzureTestConstants.Comp")));
+    	String name = waRole.getRuntimeEnvName("server.home");
+    	assertTrue(name.equals("CATALINA_HOME"));
+    }
+    
+    @Test()
+    public final void testSetSrvCloudHome()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	waRole = (WindowsAzureRole) waCompMgr.getRoles().get(4);
+    	waRole.setServerCloudHome("\\%ROLENAME%\\apache-tomcat-7.0.28");
+    	assertTrue(waRole.
+    			getServerCloudHome().equals("\\%ROLENAME%\\apache-tomcat-7.0.28"));
+    }
+
+    @Test()
+    public final void testSetSrvLocalHome()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waRole = (WindowsAzureRole) waCompMgr.getRoles().get(4);
+    	waRole.setServerLocalHome("\\%ROLENAME%\\apache-tomcat-7.0.30");
+        assertTrue(waRole.
+        		getServerLocalHome().equals("\\%ROLENAME%\\apache-tomcat-7.0.30"));
+    }
+
+    @Test()
+    public final void testConstructSrvHome()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waRole = (WindowsAzureRole) waCompMgr.getRoles().get(4);
+        String str = waRole.
+        		constructServerHome("Jetty 7", "c:\\jetty-distribution-7.2.2.v20101205",
+        		new File(Messages.getString("WinAzureTestConstants.Comp")));
+        assertTrue(str.equals("\\%ROLENAME%\\jetty-distribution-7.2.2.v20101205"));
+    }
+
+    @Test()
+    public final void testChangePackageTypeSrvHome()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	waRole = (WindowsAzureRole) waCompMgr.getRoles().get(4);
+    	waRole.setServer("Jetty 7", "c:\\jetty-distribution-7.2.2.v20101205",
+    			new File(Messages.getString("WinAzureTestConstants.Comp")));
+    	waRole.setServerCloudURL(
+    			"http://prajstrtest.blob.core.windows.net/prajakta/jetty-distribution-7.2.2.v20101205.zip");
+    	waRole.setServerCloudHome("\\%ROLENAME%\\jetty-distribution");
+    	boolean typeLocal = waRole.getRuntimeEnv("JETTY_HOME").
+    			equals("\\%ROLENAME%\\jetty-distribution-7.2.2.v20101205")
+    			&& waRole.getServerCloudHome().
+    			equals("\\%ROLENAME%\\jetty-distribution")
+    			&& waRole.getServerLocalHome().
+    			equals("");
+    	// change package type to cloud
+    	waCompMgr.setPackageType(WindowsAzurePackageType.CLOUD);
+    	boolean typeCloud = waRole.getRuntimeEnv("JETTY_HOME").
+    			equals("\\%ROLENAME%\\jetty-distribution")
+    			&& waRole.getServerLocalHome().
+    			equals("\\%ROLENAME%\\jetty-distribution-7.2.2.v20101205")
+    			&& waRole.getServerCloudHome().
+    			equals("");
+    	assertTrue(typeLocal && typeCloud);
+    }
 }
 

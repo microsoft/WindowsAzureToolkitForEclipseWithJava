@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
- Copyright 2012 Microsoft Open Technologies, Inc.
+ Copyright 2013 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project basedir="." default="createwapackage" name="Foo">
+<project basedir="." default="createwapackage" name="WindowsAzureDeploymentProject">
 
   <!-- This task is used for storing properties specific to Windows Azure cloud service project -->
   <target description="Stores properties used by Windows Azure project" name="waprojectproperties">
@@ -28,7 +28,7 @@
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
     <property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-    <property name="creator.version" value="1.8.0"/>
+    <property name="creator.version" value="1.8.1"/>
   </target>
 
   <!-- Force emulator reset to ensure no locks on deploy directory -->
@@ -107,6 +107,10 @@
 			
 			[portalurl]:
 					The URL of the Windows Azure portal used to generate the shortcut link
+
+			[verifydownloads = {true | false}]
+					true:	(default) Verifies the download URLs of components that have cloudsrc specified when building for the cloud
+					false:	Disables download URL verification					
 			-->
       <windowsazurepackage 
       	configurationfilename="ServiceConfiguration.cscfg" 
@@ -146,7 +150,22 @@
 							exec:	Interprets importas as a command line and executes it during deployment in the working directory specified by deploydir
 							
 					[deploydir]:
-							The directory, relative to approot, where the component will be deployed from approot based on deploymethod.
+							The directory, relative to approot, into which the component will be deployed based on deploymethod.
+					
+					[cloudsrc]:
+							The URL of the file representing this component that will be downloaded when deploying in the cloud (not emulator). 
+							This will prevent the component from getting included in the package.
+					
+					[cloudkey]:
+							An access key for the storage account the blob is in, if cloudsrc points to a private Windows Azure Blob
+							If not specified, the cloudsrc URL is assumed to be publicly available.
+					
+					[cloudmethod = {none | copy | unzip | exec}]
+							(This setting is applicable only if cloudsrc is specified)
+							none: 	(default) The same deployment method will be applied to the downloaded file as the one specified by deploymethod.
+							copy:	Copies the downloaded file into the directory specified by deploydir
+							unzip: 	Unzips the downloaded file into the directory specified by deploydir
+							exec:	Executes the downloaded file in the working directory specified by deploydir (commandline parameters are not supported)
 			-->
           <component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importas="HelloWorld.war" type="server.app" />
         </workerrole>
@@ -154,9 +173,8 @@
         <!-- $TODO: To add more roles, copy and paste the workerrole element for each new role 
 				 and modify the required settings:
 					name:		Must match the "name" attribute from WorkerRole element from the service definition (.csdef) file
-					approot:	The directory with the files and directories to include in the package (e.g. JRE, server 
-								deployment, .war files, etc). After deployment, the contents of this folder will be available 
-								the role instance's approot directory.
+					approot:	The directory whose contents are to be included in the package. After deployment, the contents of this folder will be available 
+								in the role instance's approot directory.
 			-->
       </windowsazurepackage>
     </parallel>

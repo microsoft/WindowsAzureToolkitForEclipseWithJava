@@ -1,5 +1,5 @@
 /**
-* Copyright 2011 Persistent Systems Ltd.
+* Copyright 2013 Persistent Systems Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -109,6 +109,37 @@ public final class Messages extends NLS {
 	public static String cmhPropFor;
 	public static String rolsDlgErr;
 	public static String rolsDlgErrMsg;
+	public static String cmhIdWinAz;
+	public static String cmhIdRoles;
+	public static String cmhIdRmtAces;
+	public static String cmhIdCrdntls;
+	public static String cmhLblWinAz;
+	public static String cmhLblRoles;
+	public static String cmhLblRmtAces;
+	public static String cmhLblSubscrpt;
+	public static String projDlgErrMsg;
+	public static String dlgDownloadGrp;
+	public static String dlgDlChkTxt;
+	public static String dlgDlUrlLbl;
+	public static String dlgDlAccessKey;
+	public static String dlgDlUrlErrMsg;
+	public static String dlgDlUrlErrTtl;
+	public static String dlgDlKeyErrMsg;
+	public static String dlKeyErrTtl;
+	public static String dlgDlNtLblUrl;
+	public static String dlgDlNoteLbl;
+	public static String dplPageJdkChkBtn;
+	public static String dplDlgJdkLbl;
+	public static String dbgBrowseBtn;
+	public static String dplPageSerChkBtn;
+	public static String dplDlgSelLbl;
+	public static String dplDlgSerBtn;
+	public static String dplPageNameLbl;
+	public static String rolsAddBtn;
+	public static String rolsRemoveBtn;
+	public static String skJarName;
+	public static String lblJavaHome;
+	public static String lblHmDir;
 
     static {
         // initialize resource bundle

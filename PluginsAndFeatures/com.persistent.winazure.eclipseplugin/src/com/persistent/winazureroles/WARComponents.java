@@ -1,5 +1,5 @@
 /**
-* Copyright 2012 Persistent Systems Ltd.
+* Copyright 2013 Persistent Systems Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.persistent.winazureroles;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
@@ -73,6 +74,8 @@ public class WARComponents extends PropertyPage {
     private static List<WindowsAzureRoleComponent> listComponents;
     private Button btnEdit;
     private Button btnRemove;
+    private Button btnMoveUp;
+    private Button btnMoveDn;
     private ArrayList<File> fileToDel = new ArrayList<File>();
     private boolean isPageDisplayed = false;
 
@@ -149,6 +152,7 @@ public class WARComponents extends PropertyPage {
             public void widgetSelected(SelectionEvent arg0) {
                 btnEdit.setEnabled(true);
                 btnRemove.setEnabled(true);
+                updateMoveButtons();
             }
 
             @Override
@@ -167,9 +171,13 @@ public class WARComponents extends PropertyPage {
         containerButtons.setLayout(gridLayout);
         containerButtons.setLayoutData(gridData);
 
+        // Button creation
         createAddButton(containerButtons);
         createEditButton(containerButtons);
         createRemoveButton(containerButtons);
+        createMoveUpButton(containerButtons);
+        createMoveDownButton(containerButtons);
+
         createTableViewer();
         Label note = new Label(parent, SWT.LEFT);
         gridData = new GridData();
@@ -184,8 +192,77 @@ public class WARComponents extends PropertyPage {
     }
 
     /**
+     * Creates 'Move Down' button and adds selection listener to it.
+     * @param containerButtons
+     */
+    private void createMoveDownButton(Composite containerButtons) {
+    	btnMoveDn = new Button(containerButtons, SWT.PUSH);
+    	btnMoveDn.setText(Messages.moveDnBtn);
+    	GridData gridData = new GridData();
+    	gridData.horizontalAlignment = SWT.FILL;
+    	btnMoveDn.setLayoutData(gridData);
+    	btnMoveDn.setEnabled(false);
+    	btnMoveDn.addSelectionListener(new SelectionListener() {
+    		@Override
+    		public void widgetSelected(SelectionEvent arg0) {
+    			try {
+    				windowsAzureRole.swapCmpnt(
+    						tblViewer.getTable().
+    						getSelectionIndex(), "down");
+    				tblViewer.refresh();
+    				updateMoveButtons();
+    			} catch (Exception e) {
+    				PluginUtil.displayErrorDialog(
+    						getShell(),
+    						Messages.cmpntSetErrTtl,
+    						Messages.cmpntSwapErMsg);
+    			}
+    		}
+
+    		@Override
+    		public void widgetDefaultSelected(SelectionEvent arg0) {
+
+    		}
+    	});
+	}
+
+    /**
+     * Creates 'Move Up' button and adds selection listener to it.
+     * @param containerButtons
+     */
+    private void createMoveUpButton(Composite containerButtons) {
+    	btnMoveUp = new Button(containerButtons, SWT.PUSH);
+    	btnMoveUp.setText(Messages.moveUpBtn);
+    	GridData gridData = new GridData();
+    	gridData.horizontalAlignment = SWT.FILL;
+    	btnMoveUp.setLayoutData(gridData);
+    	btnMoveUp.setEnabled(false);
+    	btnMoveUp.addSelectionListener(new SelectionListener() {
+    		@Override
+    		public void widgetSelected(SelectionEvent arg0) {
+    			try {
+    				windowsAzureRole.swapCmpnt(
+    						tblViewer.getTable().
+    						getSelectionIndex(), "up");
+    				tblViewer.refresh();
+    				updateMoveButtons();
+    			} catch (Exception e) {
+    				PluginUtil.displayErrorDialog(
+    						getShell(),
+    						Messages.cmpntSetErrTtl,
+    						Messages.cmpntSwapErMsg);
+    			}
+    		}
+
+    		@Override
+    		public void widgetDefaultSelected(SelectionEvent arg0) {
+
+    		}
+    	});
+    }
+
+	/**
      * Creates 'Add' button and adds selection listener to it.
-     *
      * @param containerButtons
      */
     private void createAddButton(Composite containerButtons) {
@@ -210,7 +287,6 @@ public class WARComponents extends PropertyPage {
 
     /**
      * Creates 'Edit' button and adds selection listener to it.
-     *
      * @param containerButtons
      */
     private void createEditButton(Composite containerButtons) {
@@ -236,7 +312,6 @@ public class WARComponents extends PropertyPage {
 
     /**
      * Creates 'Remove' button and adds selection listener to it.
-     *
      * @param containerButtons
      */
     private void createRemoveButton(Composite containerButtons) {
@@ -441,6 +516,7 @@ public class WARComponents extends PropertyPage {
         		ImportExportDialog(this.getShell(), waProjManager);
         dialog.open();
         tblViewer.refresh(true);
+        updateMoveButtons();
     }
 
     /**
@@ -448,14 +524,38 @@ public class WARComponents extends PropertyPage {
      * to edit a component.
      */
     protected void editBtnListener() {
-        int selIndex = tblViewer.getTable().getSelectionIndex();
-        if (selIndex > -1) {
-        WindowsAzureRoleComponent component = listComponents.get(selIndex);
-        ImportExportDialog dialog = new ImportExportDialog(this.getShell(),
-                 windowsAzureRole , component, waProjManager);
-        dialog.open();
-        tblViewer.refresh(true);
-      }
+    	try {
+    		int selIndex = tblViewer.getTable().getSelectionIndex();
+    		if (selIndex > -1) {
+    			WindowsAzureRoleComponent component =
+    					listComponents.get(selIndex);
+    			/*
+    			 * Checks component is part of a JDK,
+    			 * server configuration then do not allow edit.
+    			 */
+    			if (component.getIsPreconfigured()) {
+    				PluginUtil.displayErrorDialog(
+    						getShell(),
+    						Messages.editNtAlwErTtl,
+    						Messages.editNtAlwErMsg);
+    			} else {
+    				ImportExportDialog dialog =
+    						new ImportExportDialog(
+    								this.getShell(),
+    								windowsAzureRole,
+    								component,
+    								waProjManager);
+    				dialog.open();
+    				tblViewer.refresh(true);
+    				updateMoveButtons();
+    			}
+    		}
+    	} catch (WindowsAzureInvalidProjectOperationException e) {
+    		PluginUtil.displayErrorDialogAndLog(
+    				getShell(),
+    				Messages.cmpntSetErrTtl,
+    				Messages.cmpntEdtErrMsg, e);
+    	}
     }
 
     /**
@@ -484,8 +584,7 @@ public class WARComponents extends PropertyPage {
         					getShell(),
         					Messages.jdkDsblErrTtl,
         					Messages.jdkDsblErrMsg);
-        		}
-                else {
+        		} else {
                     boolean choice = MessageDialog.openQuestion(new Shell(),
                             Messages.cmpntRmvTtl, Messages.cmpntRmvMsg);
                     if (choice) {
@@ -526,8 +625,7 @@ public class WARComponents extends PropertyPage {
                             default:
                                 break;
                             }
-                        }
-                        else {
+                        } else {
                         	component.delete();
                         	tblViewer.refresh();
                         	fileToDel.add(file);
@@ -541,7 +639,7 @@ public class WARComponents extends PropertyPage {
                 		Messages.cmpntRmvErrMsg, e);
             }
         }
-
+        updateMoveButtons();
     }
 
 
@@ -629,5 +727,39 @@ public class WARComponents extends PropertyPage {
             okToProceed = super.performOk();
         }
         return okToProceed;
+    }
+
+    /**
+     * Enable and disable Move Up and Move Down buttons
+     * according to selected component type and index.
+     */
+    private void updateMoveButtons() {
+    	int selIndex = tblViewer.getTable().getSelectionIndex();
+    	if (selIndex >= 0) {
+    		/*
+    		 * Move up and down operation not
+    		 * allowed on JDK and server component.
+    		 */
+    		String cmpntType = listComponents.get(selIndex).getType();
+    		if (cmpntType.equals(Messages.typeJdkDply)
+    				|| cmpntType.equals(Messages.typeSrvDply)
+    				|| cmpntType.equals(Messages.typeSrvStrt)) {
+    			btnMoveUp.setEnabled(false);
+    			btnMoveDn.setEnabled(false);
+    		} else {
+    			// Validation for Move Up button
+    			if (selIndex == 0) {
+    				btnMoveUp.setEnabled(false);
+    			} else {
+    				btnMoveUp.setEnabled(true);
+    			}
+    			// Validation for Move Down button
+    			if (selIndex == listComponents.size() - 1) {
+    				btnMoveDn.setEnabled(false);
+    			} else {
+    				btnMoveDn.setEnabled(true);
+    			}
+    		}
+    	}
     }
 }

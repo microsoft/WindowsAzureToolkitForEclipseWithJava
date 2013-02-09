@@ -1,5 +1,5 @@
 <!--
-Copyright 2012 Microsoft Open Technologies, Inc.
+Copyright 2013 Microsoft Open Technologies, Inc.
  
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,5 +19,6 @@ limitations under the License.
     name="windows.azure.com" 
     publishsettings="https://windows.azure.com/download/publishprofile.aspx" 
     blob="http://${storage-service-name}.blob.core.windows.net" 
-    management="https://management.core.windows.net/${subscription-id}"/>
+    management="https://management.core.windows.net/${subscription-id}"
+    portalURL="http://windows.azure.com"/>
 </preferencesets>

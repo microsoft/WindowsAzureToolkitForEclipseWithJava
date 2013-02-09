@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import waeclipseplugin.Activator;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
+import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 import com.persistent.util.WAEclipseHelper;
 
 /**
@@ -55,6 +57,23 @@ public class WABuildCloud extends AbstractHandler {
 					load(new File(selProject.getLocation().toOSString()));
 			if (waProjManager.getPackageType().equals(WindowsAzurePackageType.LOCAL)) {
 				waProjManager.setPackageType(WindowsAzurePackageType.CLOUD);
+			}
+			try {
+				String prefSetUrl = PreferenceSetUtil.getSelectedPortalURL();
+				/*
+				 * Don't check if URL is empty or null.
+				 * As if it is then we remove "portalurl" attribute
+				 * from package.xml.
+				 */
+				waProjManager.setPortalURL(prefSetUrl);
+			} catch (WACommonException e1) {
+				Display.getDefault().syncExec(new Runnable() {
+					public void run() {
+						MessageDialog.openError(null,
+								Messages.errTtl,
+								Messages.getPrefUrlErMsg);
+					}
+				});
 			}
 			waProjManager.save();
 
@@ -83,7 +102,9 @@ public class WABuildCloud extends AbstractHandler {
 						dplyFolderPath = String.format("%s%s", projPath, dplyFldrName);
 						String cmd = String.format("%s%s", "explorer.exe ", dplyFolderPath);
 						File deployFile = new File(dplyFolderPath);
-						if (deployFile.exists() && deployFile.isDirectory()) {
+						
+						if (deployFile.exists() && deployFile.isDirectory() 
+								&& deployFile.listFiles().length > 0) {
 							Runtime.getRuntime().exec(cmd);
 						}
 						waProjMngr.save();

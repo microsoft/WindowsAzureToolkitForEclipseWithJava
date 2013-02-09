@@ -1,5 +1,5 @@
 /**
-* Copyright 2012 Persistent Systems Ltd.
+* Copyright 2013 Persistent Systems Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ public final class Messages extends NLS {
 	 public static String waWizardId;
 	 public static String wzrdCrtErMsg;
 	 public static String errTtl;
+	 public static String getPrefUrlErMsg;
 
 	 static {
 	        // initialize resource bundle

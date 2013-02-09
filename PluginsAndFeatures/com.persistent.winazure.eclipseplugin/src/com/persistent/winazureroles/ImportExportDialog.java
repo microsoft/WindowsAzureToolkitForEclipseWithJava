@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.persistent.winazureroles;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -57,9 +58,11 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
+import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentCloudMethod;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentDeployMethod;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.ProjectNatureHelper;
 import com.persistent.util.ProjectNatureHelper.ProjExportType;
 import com.persistent.util.WAEclipseHelper;
@@ -69,16 +72,26 @@ import com.persistent.util.WAEclipseHelper;
  */
 public class ImportExportDialog extends TitleAreaDialog {
 	private Text txtFromPath;
+	private Text txtUrl;
+	private Text txtKey;
 	private Text txtName;
 	private Text txtToDir;
 	private Combo comboImport;
 	private Combo comboDeploy;
+	private Combo comboCloud;
 	private boolean isEdit;
+	private Button dlCheckBtn;
+	private Label lblUrl;
+	private Label lblKey;
+	private Label lblDlMethod;
+	private Label lblDlNote;
 	private WindowsAzureRole windowsAzureRole;
 	private WindowsAzureRoleComponent winAzureRoleCmpnt;
 	private WindowsAzureProjectManager winAzureProjMgr;
 	private static final String BASE_PATH = "${basedir}\\..";
 	public ArrayList<String> cmpList = new ArrayList<String>();
+	private String[] cloudMethods = {"same", "unzip",
+	"copy"};
 
 	/**
 	 * Constructor to be called for adding component.
@@ -154,6 +167,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 		container.setLayoutData(gridData);
 		createImportGrp(container);
 		createDeployGrp(container);
+		createDownloadGrp(container);
 		try {
 			for (int i = 0; i < windowsAzureRole.
 					getComponents().size(); i++) {
@@ -174,6 +188,173 @@ public class ImportExportDialog extends TitleAreaDialog {
 			populateData();
 		}
 		return super.createDialogArea(parent);
+	}
+	
+	/**
+	 * Method creates deploy from download
+	 * group and its components.
+	 * @param parent
+	 */
+	private void createDownloadGrp(Composite parent) {
+		Group dlGrp = new Group(parent, SWT.SHADOW_ETCHED_IN);
+		GridLayout groupGridLayout = new GridLayout();
+		GridData groupGridData = new GridData();
+		groupGridData.grabExcessHorizontalSpace = true;
+		groupGridData.horizontalIndent = 10;
+		groupGridData.horizontalAlignment = SWT.FILL;
+		groupGridLayout.numColumns = 2;
+		groupGridLayout.verticalSpacing = 10;
+		dlGrp.setText(Messages.dlgDownloadGrp);
+		dlGrp.setLayout(groupGridLayout);
+		dlGrp.setLayoutData(groupGridData);
+		createDplFrmDlChk(dlGrp);
+		lblUrl = JdkSrvConfig.createUrlComponentLbl(dlGrp);
+		txtUrl = JdkSrvConfig.createUrlComponentTxt(dlGrp);
+		createCloudMethodComponent(dlGrp);
+		createAccessKeyComponent(dlGrp);
+		lblDlNote = JdkSrvConfig.createDlNoteLabel(dlGrp,
+				Messages.dlgDlNoteLbl);
+		setEnableDlGrp(false);
+	}
+	
+	/**
+	 * Method creates deploy from download
+	 * group's check box component.
+	 * @param parent
+	 */
+	private void createDplFrmDlChk(Composite parent) {
+		dlCheckBtn = JdkSrvConfig.createDplFrmDlChk(parent);
+		dlCheckBtn.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				if (dlCheckBtn.getSelection()) {
+					setEnableDlGrp(true);
+				} else {
+					setEnableDlGrp(false);
+				}
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
+	}
+	
+	/**
+	 * Method creates deploy from download
+	 * group's cloud method component.
+	 * @param group
+	 */
+	private void createCloudMethodComponent(Composite group) {
+		lblDlMethod = new Label(group, SWT.LEFT);
+		GridData groupGridData = new GridData();
+		lblDlMethod.setText(Messages.dlgImpMthLbl);
+		lblDlMethod.setLayoutData(groupGridData);
+
+		comboCloud = new Combo(group, SWT.READ_ONLY);
+		groupGridData = new GridData();
+		groupGridData.horizontalIndent = 10;
+		groupGridData.grabExcessHorizontalSpace = true;
+		groupGridData.horizontalAlignment = SWT.FILL;
+		comboCloud.setLayoutData(groupGridData);
+		comboCloud.setItems(cloudMethods);
+		comboCloud.setText(cloudMethods[0]);
+	}
+	
+	/**
+	 * Method creates deploy from download
+	 * group's Access key component.
+	 * @param group
+	 */
+	private void createAccessKeyComponent(Composite group) {
+		lblKey = new Label(group, SWT.LEFT);
+		GridData groupGridData = new GridData();
+		lblKey.setText(Messages.dlgDlAccessKey);
+		lblKey.setLayoutData(groupGridData);
+
+		txtKey = new Text(group, SWT.LEFT | SWT.BORDER);
+		groupGridData = new GridData();
+		groupGridData.horizontalIndent = 10;
+		groupGridData.widthHint = 400;
+		groupGridData.horizontalAlignment = SWT.FILL;
+		groupGridData.grabExcessHorizontalSpace = true;
+		txtKey.setLayoutData(groupGridData);
+	}
+	
+	/**
+	 * Method populates values of deploy from download group
+	 * that is URL, cloud method and access key. 
+	 */
+	private void updateClouldDlGroup() {
+		String url;
+		try {
+			url = winAzureRoleCmpnt.getCloudDownloadURL();
+			if (url == null || url.isEmpty()) {
+				setEnableDlGrp(false);
+			} else {
+				setEnableDlGrp(true);
+				dlCheckBtn.setSelection(true);
+				txtUrl.setText(url);
+				if (winAzureRoleCmpnt.getCloudMethod() != null) {
+					switch (winAzureRoleCmpnt.getCloudMethod()) {
+					case none:
+						comboCloud.setText(cloudMethods[0]);
+						break;
+					case  unzip:
+						comboCloud.setText(cloudMethods[1]);
+						break;
+					default:
+						comboCloud.setText(cloudMethods[2]);
+					}
+				}
+				if (winAzureRoleCmpnt.getCloudKey() != null) {
+					txtKey.setText(winAzureRoleCmpnt.getCloudKey());
+				}
+			}
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialog(
+					this.getShell(),
+					Messages.genErrTitle,
+					Messages.urlKeyGetErMsg);
+		}
+	}
+
+	/**
+	 * Method validates URL and access key given
+	 * for deploy from download group.
+	 * @return
+	 */
+	private boolean validateDlGroup() {
+		boolean isValid = true;
+		try {
+			if (dlCheckBtn.getSelection()) {
+				String url = txtUrl.getText().trim();
+				if (url.isEmpty()) {
+					isValid = false;
+					PluginUtil.displayErrorDialog(
+							this.getShell(),
+							Messages.dlgDlUrlErrTtl,
+							Messages.dlgDlUrlErrMsg);
+				} else {
+					new URL(url);
+					if (!txtKey.getText().trim().isEmpty()
+							&& txtKey.getText().
+							trim().contains(" ")) {
+						PluginUtil.displayErrorDialog(
+								this.getShell(),
+								Messages.dlKeyErrTtl,
+								Messages.dlgDlKeyErrMsg);
+						isValid = false;
+					}
+				}
+			}
+		} catch (MalformedURLException e) {
+			isValid = false;
+			PluginUtil.displayErrorDialogAndLog(
+					this.getShell(),
+					Messages.dlgDlUrlErrTtl,
+					Messages.dlgDlUrlErrMsg, e);
+		}
+		return isValid;
 	}
 
 	@Override
@@ -303,6 +484,18 @@ public class ImportExportDialog extends TitleAreaDialog {
 					winAzureRoleCmpnt.setImportPath(
 							txtFromPath.getText().trim());
 				}
+
+				winAzureRoleCmpnt.setCloudDownloadURL(txtUrl.getText());
+				winAzureRoleCmpnt.setCloudKey(txtKey.getText());
+				if (comboCloud.getText().equalsIgnoreCase(cloudMethods[0])
+						|| comboCloud.getText().isEmpty()) {
+					winAzureRoleCmpnt.setCloudMethod(
+							WindowsAzureRoleComponentCloudMethod.none);
+				} else {
+					winAzureRoleCmpnt.setCloudMethod(
+							WindowsAzureRoleComponentCloudMethod.
+							valueOf(comboCloud.getText()));
+				}
 				super.okPressed();
 			} catch (WindowsAzureInvalidProjectOperationException e) {
 				PluginUtil.displayErrorDialogAndLog(
@@ -344,6 +537,8 @@ public class ImportExportDialog extends TitleAreaDialog {
 
 		updateImportMethodCombo(txtFromPath.getText());
 		updateDeployMethodCombo();
+		updateClouldDlGroup();
+
 	}
 
 	/**
@@ -924,7 +1119,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 				.name())) {
 			comboDeploy.add(WindowsAzureRoleComponentDeployMethod.unzip.name());
 			comboDeploy.setText(WindowsAzureRoleComponentDeployMethod.unzip.name());
-		} else if (impTxt.equalsIgnoreCase(WindowsAzureRoleComponentImportMethod.copy.name()) 
+		} else if (impTxt.equalsIgnoreCase(WindowsAzureRoleComponentImportMethod.copy.name())
 				|| impTxt.equalsIgnoreCase(WindowsAzureRoleComponentImportMethod.none.name())) {
 			File file = new File(ProjectNatureHelper.
 					convertPath(txtFromPath.getText()));
@@ -954,7 +1149,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 				&& txtFromPath.getText().equalsIgnoreCase(oldPath)) {
 			if (winAzureRoleCmpnt.getDeployMethod() != null) {
 				comboDeploy.setText(winAzureRoleCmpnt.getDeployMethod().name());
-			} else if (winAzureRoleCmpnt.getDeployMethod() == null 
+			} else if (winAzureRoleCmpnt.getDeployMethod() == null
 					|| winAzureRoleCmpnt.getDeployMethod().toString().isEmpty()) {
 				comboDeploy.setText(WindowsAzureRoleComponentDeployMethod.none.name());
 			}
@@ -981,8 +1176,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 				txtName.setText("");
 			}
 			return "";
-		}
-		else if (file.isDirectory()) {
+		} else if (file.isDirectory()) {
 			IProject project = ProjectNatureHelper.
 					findProjectFromWorkSpace(path);
 			if (project == null) {
@@ -990,8 +1184,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 			} else {
 				nature = Messages.proj;
 			}
-		}
-		else {
+		} else {
 			//consider it as file
 			nature = Messages.file;
 		}
@@ -1049,7 +1242,8 @@ public class ImportExportDialog extends TitleAreaDialog {
 			isvalidname = true;
 		} else {
 			try {
-					isvalidname = windowsAzureRole.isValidDeployName(name);
+					isvalidname = windowsAzureRole.
+							isValidDeployName(name);
 				} catch (Exception e) {
 				isvalidname = false;
 			}
@@ -1060,7 +1254,9 @@ public class ImportExportDialog extends TitleAreaDialog {
 					Messages.dlgImpInvDplTtl,
 					Messages.dlgImpInvDplMsg);
 		}
-		return isValidPath && isvalidname;
+		boolean isValidDlGrp = validateDlGroup();
+
+		return isValidPath && isvalidname && isValidDlGrp;
 	}
 
 	/**
@@ -1088,5 +1284,28 @@ public class ImportExportDialog extends TitleAreaDialog {
 			Activator.getDefault().log(e.getMessage(), e);
 		}
 		return isWrkspcProj;
+	}
+
+	/**
+	 * Enable or disable components of
+	 * download group according to status.
+	 * @param status
+	 */
+	private void setEnableDlGrp(boolean status) {
+		txtUrl.setEnabled(status);
+		txtKey.setEnabled(status);
+		comboCloud.setEnabled(status);
+		lblKey.setEnabled(status);
+		lblDlMethod.setEnabled(status);
+		lblUrl.setEnabled(status);
+		lblDlNote.setEnabled(status);
+		if (!status) {
+			txtUrl.setText("");
+			txtKey.setText("");
+			comboCloud.removeAll();
+		} else {
+			comboCloud.setItems(cloudMethods);
+			comboCloud.setText(cloudMethods[0]);
+		}
 	}
 }

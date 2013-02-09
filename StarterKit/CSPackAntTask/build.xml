@@ -9,8 +9,25 @@
 	<target name="package" description="Package JARs" depends="clean">
 		<mkdir dir="${basedir}\build" />
 		<mkdir dir="${basedir}\jar" />
-		<javac srcdir="src" destdir="build" />
+		<javac srcdir="src" destdir="build" source="1.6" target="1.6" />
 		<jar destfile="${basedir}\jar\.cspack.jar" basedir="${basedir}\build" />
 		<copy file="${basedir}\jar\.cspack.jar" tofile="${basedir}\..\WindowsAzureDeploymentProject\.cspack.jar" overwrite="true" />
+	</target>
+	
+	<target name="kit" description="Generates starter kit for eclipse" depends="clean, package">
+	    <mkdir dir="${basedir}\build\esk"/> <!-- esk stands for eclipse starter kit -->
+		<mkdir dir="${basedir}\build\esk\%proj%"/> 
+		
+		<!-- Copy entire content of WindowsAzureDeploymentProject into %proj% folder -->
+		<copy todir="${basedir}\build\esk\%proj%" >  
+			<fileset dir="${basedir}\..\WindowsAzureDeploymentProject"/>  
+		</copy>
+		
+		<!-- Zip %proj% folder as  WAStarterKitForJava.zip -->
+		<zip destfile="${basedir}\build\WAStarterKitForJava.zip" basedir="${basedir}\build\esk"/>
+
+		<!-- copy zip to eclipse plugin resources folder -->
+		<copy file="${basedir}\build\WAStarterKitForJava.zip" tofile="${basedir}\..\..\PluginsAndFeatures\com.persistent.winazure.eclipseplugin\resources\WAStarterKitForJava.zip"
+		overwrite="true" />
 	</target>
 </project>

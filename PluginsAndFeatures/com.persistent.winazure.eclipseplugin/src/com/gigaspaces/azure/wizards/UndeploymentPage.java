@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -113,7 +114,8 @@ public class UndeploymentPage extends WindowsAzurePage {
 
 		lblSubscription.setText("Subscription");
 
-		subscriptionCombo = createCombo(container, SWT.READ_ONLY, -1);
+		subscriptionCombo = createCombo(
+				container, SWT.READ_ONLY, -1, GridData.BEGINNING, 200);
 
 
 
@@ -121,7 +123,8 @@ public class UndeploymentPage extends WindowsAzurePage {
 
 		label.setText(Messages.hostedServiceLbl);
 
-		hostedServiceCombo = createCombo(container, SWT.READ_ONLY, -1);
+		hostedServiceCombo = createCombo(
+				container, SWT.READ_ONLY, -1, GridData.BEGINNING, 200);
 
 
 		subscriptionCombo.addModifyListener(new ModifyListener() {
@@ -167,7 +170,8 @@ public class UndeploymentPage extends WindowsAzurePage {
 
 		deploymentLbl.setText(Messages.deploymentsLbl);
 
-		deploymentCombo = createCombo(container, SWT.READ_ONLY, -1);
+		deploymentCombo = createCombo(
+				container, SWT.READ_ONLY, -1, GridData.BEGINNING, 200);
 
 		deploymentCombo.addModifyListener(new ModifyListener() {
 

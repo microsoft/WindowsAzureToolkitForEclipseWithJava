@@ -185,10 +185,10 @@ public class WindowsAzureNamedCache {
      * @throws WindowsAzureInvalidProjectOperationException
      */
     public void setMinutesToLive(int minutes) throws WindowsAzureInvalidProjectOperationException {
-        if(minutes < 0) {
-            new IllegalArgumentException(
-                    WindowsAzureConstants.INVALID_ARG);
-        }
+    	if (minutes < 0) {
+    		throw new IllegalArgumentException(
+    				WindowsAzureConstants.INVALID_ARG);
+    	}
         Element ele = getCachedNode();
         String newCache = JSONHelper.setParamValue(getCache(),
                 "policy.expiration.defaultTTL", String.valueOf(minutes));

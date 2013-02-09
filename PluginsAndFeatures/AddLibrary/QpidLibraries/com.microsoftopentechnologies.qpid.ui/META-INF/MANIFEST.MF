@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: WAQpidJavaUI
+Bundle-Name: Package for Apache Qpid Client Libraries for JMS UI (by MS Open Tech)
 Bundle-SymbolicName: com.microsoftopentechnologies.qpid.ui;singleton:=true
 Bundle-Version: 0.19.0.qualifier
 Bundle-Activator: com.microsoftopentechnologies.waqpidjava.ui.Activator

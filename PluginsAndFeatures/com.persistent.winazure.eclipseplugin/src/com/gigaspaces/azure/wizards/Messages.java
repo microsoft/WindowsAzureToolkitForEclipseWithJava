@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,18 +152,15 @@ public final class Messages extends NLS {
 	public static String hostServLimitTitle;
 	public static String deletingAzureDeployment;
 	public static String deplAccessKeyLbl;
-	public static String deplCertWarn;
 	public static String deplConfirmConfigChangeMsg;
 	public static String deplFillStorageAcc;
 	public static String deplFillSubsciptionId;
 	public static String deplFullProjBuildConfirmMsg;
-	public static String deplImportLbl;
 	public static String deplNewSubscrLbl;
 	public static String deplRememberMyDecisionMsg;
 	public static String deplStorageAccLbl;
 	public static String deplStorageKeyLbl;
 	public static String deplSubscriptionLbl;
-	public static String deplWarn;
 	public static String deplWizTitle;
 	public static String error;
 	public static String deplFillHostedServiceMsg;
@@ -194,7 +191,6 @@ public final class Messages extends NLS {
 	public static String keyStore;
 	public static String locations;
 	public static String locationsTask;
-	public static String mgmtPortalShell;
 	public static String newBtn;
 	public static String stoppingDepl;
 	public static String storageAccountConfig;
@@ -235,6 +231,8 @@ public final class Messages extends NLS {
 	public static String createStorageAccountFailedTitle;
 	public static String cscfgDefaultFileName;
 	public static String cspckDefaultFileName;
+	public static String getPrefUrlErMsg;
+	public static String linkLblSub;
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

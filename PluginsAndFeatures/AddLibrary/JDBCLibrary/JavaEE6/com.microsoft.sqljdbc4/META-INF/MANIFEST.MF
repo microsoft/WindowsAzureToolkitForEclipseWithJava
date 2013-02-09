@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: JDBCDriverForJavaEE6
+Bundle-Name: Microsoft JDBC Driver 4.0 for SQL Server Library
 Bundle-SymbolicName: com.microsoft.sqljdbc4
 Bundle-Version: 4.0.2206.100
 Bundle-ClassPath: sqljdbc4.jar

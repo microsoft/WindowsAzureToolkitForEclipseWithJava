@@ -1,1 +1,0 @@
-"C:\Program Files\Windows Azure SDK\v1.5\bin\csrun.exe" /removeAll /devFabric:clean

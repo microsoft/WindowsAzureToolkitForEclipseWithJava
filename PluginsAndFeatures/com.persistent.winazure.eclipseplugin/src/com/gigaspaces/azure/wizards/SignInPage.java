@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.xml.bind.JAXBException;
-
 import org.eclipse.core.resources.IProject;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
@@ -39,9 +36,9 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 
 import com.gigaspaces.azure.model.HostedService;
@@ -59,15 +56,13 @@ import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
+import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
 import com.persistent.util.MessageUtil;
-
-import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
-import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
+import com.persistent.util.WAEclipseHelper;
 
 public class SignInPage extends WindowsAzurePage {
 
 	private Combo storageAccountCmb;
-	private Combo storageAccessKeyCmb;
 	private Combo hostedServiceCombo;
 	private Combo deployStateCmb;
 
@@ -81,19 +76,16 @@ public class SignInPage extends WindowsAzurePage {
 
 	private WindowsAzurePackageType deployMode = WindowsAzurePackageType.CLOUD;
 
-	private Composite signInDetailsContainer;
-
 	private Combo subscriptionCombo;
 
-	private Button downloadCredentialsBtn;
-	private Button importBtn;
-	private Button newCertBtn;
+	private Link subLink;
 	private Button newHostedServiceBtn;
 	private Button newStorageAccountBtn;
-	
+
 	private String defaultLocation;
 
 	private IProject selectedProject;
+	private Button btnImpFrmPubSetFile;
 
 	protected SignInPage() {
 		super(Messages.deplWizTitle);
@@ -106,26 +98,34 @@ public class SignInPage extends WindowsAzurePage {
 
 	@Override
 	public void createControl(Composite parent) {
+		PlatformUI.getWorkbench().getHelpSystem().
+		setHelp(parent, Messages.pluginPrefix + Messages.publishCommandHelp);
 
-		Composite group = new Composite(parent, SWT.FILL);
+		GridLayout gridLayout = new GridLayout();
+		gridLayout.numColumns = 3;
+		GridData gridData = new GridData();
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
+		Composite container = new Composite(parent, SWT.NONE);
+		container.setLayout(gridLayout);
+		container.setLayoutData(gridData);
 
-		GridLayout layout = new GridLayout();
+		setEnabledState(container, true);
+		// create Import From Publish settings file button
+		createImportBtnCmpnt(container);
+		ImportSubscriptionDialog.
+		createHorizontalSeparator(container);
+		createSubscriptionIdWidget(container);
+		createStorageAccountWidget(container);
+		createHostedServiceWidget(container);
+		createDeploymentStateWidget(container);
 
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,Messages.pluginPrefix + Messages.publishCommandHelp);
-
-		layout.numColumns = 1;
-
-		group.setLayout(layout);
-		setControl(group);
-		setEnabledState(group, true);
-
-		createSignInDetailsWidget(group);
-
+		setControl(container);
 		setComponentState((subscriptionCombo.getData(subscriptionCombo.getText()) != null));
 
 		setPageComplete(validatePageComplete());
 	}
-	
+
 	private void doLoadPreferences() {
 		try {
 			getContainer().run(true, true, new LoadAccountWithProgressBar(null,this.getShell()));
@@ -137,35 +137,15 @@ public class SignInPage extends WindowsAzurePage {
 
 	private void setComponentState(boolean enabled) {
 		subscriptionCombo.setEnabled(enabled);
-		storageAccessKeyCmb.setEnabled(enabled);
 		storageAccountCmb.setEnabled(enabled);
 		newStorageAccountBtn.setEnabled(enabled);
 		hostedServiceCombo.setEnabled(enabled);
-		if (enabled == false)
+		if (enabled == false) {
 			hostedServiceCombo.removeAll();
+			storageAccountCmb.removeAll();
+		}
 		deployStateCmb.setEnabled(enabled);
 		newHostedServiceBtn.setEnabled(enabled);
-//		deploymentFileButton.setEnabled(enabled);
-//		deployConfigFileButton.setEnabled(enabled);
-//		txtcspkg.setEnabled(enabled);
-//		txtcscfg.setEnabled(enabled);
-	}
-
-	private void createSignInDetailsWidget(Composite group) {
-		signInDetailsContainer = new Composite(group, SWT.NONE);
-		GridLayout compositeLayout = new GridLayout();
-		compositeLayout.verticalSpacing = 20;
-		compositeLayout.marginTop = 10;
-		compositeLayout.marginBottom = 5;
-		compositeLayout.numColumns = 1;
-		signInDetailsContainer.setLayout(compositeLayout);
-
-		Composite container = createDefaultComposite(signInDetailsContainer);
-		createSubscriptionIdWidget(container);
-		createStorageAccountWidget(container);
-		createHostedServiceWidget(container);
-		createDeploymentStateWidget(container);
-//		createDeploymentFileWidget(container);
 	}
 
 	private void setEnabledState(Composite composite, boolean enabledState) {
@@ -231,14 +211,15 @@ public class SignInPage extends WindowsAzurePage {
 
 
 		setErrorMessage(null);
-
+ 
 		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.DEPLOY_MODE, deployMode));
 
 		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.SUPSCRIPTION, publishData));
 
 		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.STORAGE_ACCOUNT, currentStorageAccount));
-
-		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.STORAGE_ACCESS_KEY,storageAccessKeyCmb.getText()));
+		// Always set key to primary
+		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.STORAGE_ACCESS_KEY,
+				KeyName.Primary.toString()));
 
 		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.DEPLOY_STATE, deployState));
 		
@@ -255,69 +236,61 @@ public class SignInPage extends WindowsAzurePage {
 		return true;
 	}
 
+	/**
+	 * Method creates Import From Publish Settings File
+	 * button and add listener to it.
+	 * @param parent
+	 */
+	private void createImportBtnCmpnt(Composite parent) {
+		btnImpFrmPubSetFile = UIUtils.
+				createImportFromPublishSettingsFileBtn(parent, 3);
+		btnImpFrmPubSetFile.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				ImportSubscriptionDialog dlg = new
+						ImportSubscriptionDialog(new Shell());
+				dlg.open();
+				String fileName = ImportSubscriptionDialog.
+						getPubSetFilePath();
+				importBtn(fileName);
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+
+			}
+		});
+	}
+
 	private void createStorageAccountWidget(Composite container) {
-
-		GridData dataGrid = new GridData();
-
-		dataGrid.verticalIndent = 20;
 		Label label = new Label(container, SWT.NONE);
-
-		label.setText(Messages.deplStorageAccLbl);
-		label.setLayoutData(dataGrid);
-
-		storageAccountCmb = createCombo(container, SWT.READ_ONLY, 20);
-
 		GridData gridData = new GridData();
+		gridData.horizontalIndent = 3;
+		gridData.verticalIndent = 10;
+		label.setLayoutData(gridData);
+		label.setText(Messages.deplStorageAccLbl);
+
+		storageAccountCmb = createCombo(
+				container, SWT.READ_ONLY, 10, SWT.FILL, 300);
+
+		gridData = new GridData();
 		gridData.widthHint = 80;
+		gridData.verticalIndent = 10;
+		gridData.horizontalIndent = 5;
 		gridData.grabExcessHorizontalSpace = true;
-		gridData.verticalIndent = 20;
 		gridData.horizontalAlignment = SWT.FILL;
 
 		newStorageAccountBtn = new Button(container, SWT.PUSH);
 		newStorageAccountBtn.setLayoutData(gridData);
 		newStorageAccountBtn.setText(Messages.newBtn);
 
-		new Link(container, SWT.NO);
-		new Link(container, SWT.NO);
-
-		Label keyLbl = new Label(container, SWT.NONE);
-
-		keyLbl.setText(Messages.deplAccessKeyLbl);
-
-		storageAccessKeyCmb = createCombo(container, SWT.READ_ONLY, -1);
-
-		storageAccessKeyCmb.add(KeyName.Primary.toString());
-		storageAccessKeyCmb.add(KeyName.Secondary.toString());
-
-		storageAccessKeyCmb.addModifyListener(new ModifyListener() {
-
-			@Override
-			public void modifyText(ModifyEvent e) {
-				String selected = ((Combo) e.getSource()).getText();
-				setStorageKeyAccess(selected);
-			}
-		});
-
 		storageAccountCmb.addModifyListener(new ModifyListener() {
 
 			@Override
 			public void modifyText(ModifyEvent e) {
 				String storageAccount = ((Combo) e.getSource()).getText();
-
 				currentStorageAccount = (StorageService) ((Combo) e.getSource())
 						.getData(storageAccount);
-
-				int sel = storageAccessKeyCmb.getSelectionIndex();
-
-				if (sel < -1)
-					sel = 0;
-
-				if (currentStorageAccount != null) {
-					storageAccessKeyCmb.select(sel);
-					String selected = storageAccessKeyCmb.getText();
-					setStorageKeyAccess(selected);
-				}
-
 				setPageComplete(validatePageComplete());
 			}
 		});
@@ -366,34 +339,20 @@ public class SignInPage extends WindowsAzurePage {
 
 		populateStorageAccounts();
 
-
-		new Link(container, SWT.NONE);
-		new Link(container, SWT.NONE);
-		new Link(container, SWT.NO);
-
 		if (storageAccountCmb.getItemCount() > 0)
 			storageAccountCmb.select(0);
 	}
 
-	private void setStorageKeyAccess(String selected) {
-
-		if (selected != null && !selected.isEmpty()) {
-			KeyName sel = KeyName.valueOf(selected);
-			if (sel == KeyName.Primary)
-				storageAccessKeyCmb.select(0);
-			else
-				storageAccessKeyCmb.select(1);
-		} else
-			storageAccessKeyCmb.select(0);
-	}
-
 	private void createSubscriptionIdWidget(Composite container) {
-
 		Label label = new Label(container, SWT.NONE);
-
+		GridData gridData = new GridData();
+		gridData.horizontalIndent = 3;
+		gridData.verticalIndent = 10;
+		label.setLayoutData(gridData);
 		label.setText(Messages.deplSubscriptionLbl);
-		subscriptionCombo = createCombo(container, SWT.READ_ONLY, -1);
 
+		subscriptionCombo = createCombo(
+				container, SWT.READ_ONLY, 10, SWT.FILL, 300);
 		populateSubscriptionCombo();
 
 		subscriptionCombo.addModifyListener(new ModifyListener() {
@@ -426,80 +385,51 @@ public class SignInPage extends WindowsAzurePage {
 		if (subscriptionCombo.getItemCount() > 0)
 			subscriptionCombo.select(0);
 
-		GridData gridData = new GridData();
+		gridData = new GridData();
 		gridData.widthHint = 80;
+		gridData.verticalIndent = 10;
+		gridData.horizontalIndent = 10;
 		gridData.grabExcessHorizontalSpace = true;
 		gridData.horizontalAlignment = SWT.FILL;
 
-		importBtn = new Button(container, SWT.PUSH | SWT.CENTER);
-		importBtn.setLayoutData(gridData);
-
-		importBtn.setText(Messages.deplImportLbl);
-
-		importBtn.addSelectionListener(new SelectionListener() {
-
+		subLink = new Link(container, SWT.RIGHT);
+		subLink.setText(Messages.linkLblSub);
+		subLink.setLayoutData(gridData);
+		subLink.addSelectionListener(new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent arg0) {
-				importBtn();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent arg0) {
-			}
-		});
-
-		downloadCredentialsBtn = new Button(container, SWT.PUSH | SWT.CENTER);
-		downloadCredentialsBtn.setLayoutData(gridData);
-
-		downloadCredentialsBtn.setText(Messages.downloadCredentialsBut);
-		downloadCredentialsBtn.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent selectionevent) {
-				downloadEvent();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent selectionevent) {
+			public void widgetSelected(SelectionEvent event) {
+				WAEclipseHelper.
+				openSubscriptionPropertyDialog();
+				/*
+				 * Update data in every case.
+				 * No need to check which button (OK/Cancel)
+				 * has been pressed as change is permanent
+				 * even though user presses cancel
+				 * according to functionality.
+				 */
+				doLoadPreferences();
+				populateSubscriptionCombo();
+				// update cache of publish data object
+				publishData = (PublishData) subscriptionCombo
+						.getData(subscriptionCombo.getText());
+				// enable and disable components.
+				setComponentState((subscriptionCombo.
+						getData(subscriptionCombo.getText()) != null));
+				setPageComplete(validatePageComplete());
 			}
 		});
-
-		newCertBtn = new Button(container, SWT.PUSH | SWT.CENTER);
-		newCertBtn.setLayoutData(gridData);
-
-		newCertBtn.setText(Messages.deplNewSubscrLbl);
-
-		newCertBtn.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent arg0) {
-				newCertCreate();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent arg0) {
-			}
-		});
-	}
-
-	protected void downloadEvent() {
-
-		PublishSettingsDialog dialog = new PublishSettingsDialog(getShell());
-
-		dialog.open();
 	}
 
 	private void createHostedServiceWidget(Composite container) {
-
-		GridData dataGrid = new GridData();
-
-		dataGrid.verticalIndent = 20;
 		Label label = new Label(container, SWT.NONE);
-
+		GridData gridData = new GridData();
+		gridData.horizontalIndent = 3;
+		gridData.verticalIndent = 10;
+		label.setLayoutData(gridData);
 		label.setText(Messages.deplHostedServiceLbl);
-		label.setLayoutData(dataGrid);
 
-		hostedServiceCombo = createCombo(container, SWT.READ_ONLY, 20);
+		hostedServiceCombo = createCombo(
+				container, SWT.READ_ONLY, 10, SWT.FILL, 300);
 
 		populateHostedServices();
 
@@ -513,10 +443,11 @@ public class SignInPage extends WindowsAzurePage {
 			}
 		});
 
-		GridData gridData = new GridData();
+		gridData = new GridData();
 		gridData.widthHint = 80;
+		gridData.verticalIndent = 10;
+		gridData.horizontalIndent = 5;
 		gridData.grabExcessHorizontalSpace = true;
-		gridData.verticalIndent = 20;
 		gridData.horizontalAlignment = SWT.FILL;
 
 		newHostedServiceBtn = new Button(container, SWT.PUSH | SWT.CENTER);
@@ -569,9 +500,6 @@ public class SignInPage extends WindowsAzurePage {
 			public void widgetDefaultSelected(SelectionEvent arg0) {
 			}
 		});
-
-		new Link(container, SWT.NO);
-		new Link(container, SWT.NO);
 	}
 
 	private void selectByText(Combo combo , String name) {
@@ -583,7 +511,7 @@ public class SignInPage extends WindowsAzurePage {
 			else {
 				combo.select(0);
 			}
-		}	
+		}
 	}
 
 
@@ -608,11 +536,16 @@ public class SignInPage extends WindowsAzurePage {
 	private void createDeploymentStateWidget(Composite container) {
 		String[] items = { Messages.deplStaging, Messages.deplProd };
 		Label label = new Label(container, SWT.NONE);
-
+		GridData gridData = new GridData();
+		gridData.horizontalIndent = 3;
+		gridData.verticalIndent = 10;
+		label.setLayoutData(gridData);
 		label.setText(Messages.deplState);
+
 		deployState = getFirstItem(items);
 
-		deployStateCmb = createCombo(container, SWT.READ_ONLY, -1);
+		deployStateCmb = createCombo(
+				container, SWT.READ_ONLY, 10, SWT.FILL, 300);
 
 		deployStateCmb.addModifyListener(new ModifyListener() {
 
@@ -629,8 +562,6 @@ public class SignInPage extends WindowsAzurePage {
 				deployStateCmb.select(0);
 		}
 
-		new Link(container, SWT.NO);
-		new Link(container, SWT.NO);
 		new Link(container, SWT.NO);
 	}
 
@@ -656,17 +587,6 @@ public class SignInPage extends WindowsAzurePage {
 		String projectLocation = selectedProject.getLocation().toOSString().replace("/", File.separator);
 		return projectLocation + File.separator + Messages.deployDir + File.separator + Messages.cscfgDefaultFileName;
 		
-	}
-
-	protected void newCertCreate() {
-		NewCertificateDialogData data = new NewCertificateDialogData(); 
-		NewCertificateDialog dialog = new NewCertificateDialog(getShell(),data);
-		int returnCode = dialog.open();
-		if (returnCode == Window.OK) {
-			if (WizardCacheManager.getCurrentPublishData() != null) {
-				MessageDialog.openWarning(getShell(), Messages.deplWarn, Messages.deplCertWarn);
-			}
-		}
 	}
 
 	protected void populateStorageAccounts() {
@@ -709,23 +629,7 @@ public class SignInPage extends WindowsAzurePage {
 		selectByText(subscriptionCombo, currentSelection);
 	}
 
-	private Composite createDefaultComposite(Composite parent) {
-		Group composite = new Group(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 5;
-		composite.setLayout(layout);
-
-		return composite;
-	}
-
-	private void importBtn() {
-
-		FileDialogDelegator dialog = new FileDialogDelegator(getShell());
-
-		dialog.setFilterExtensions(new String[] { Messages.publishSettFileName, Messages.pfxExt });
-
-		String fileName = dialog.open();
-
+	private void importBtn(String fileName) {
 		if (fileName != null && !fileName.isEmpty()) {
 
 			File file = new File(fileName);
@@ -733,7 +637,7 @@ public class SignInPage extends WindowsAzurePage {
 			PublishData publishDataToCache = null;
 			if (file.getName().endsWith(Messages.publishSettExt)) {				
 				publishDataToCache = handlePublishSettings(file);
-			} 
+			}
 			else {
 				publishDataToCache = handlePfx(file);
 			}
@@ -817,34 +721,17 @@ public class SignInPage extends WindowsAzurePage {
 	}
 
 	private PublishData handlePublishSettings(File file) {
-		PublishData data;
-		try {
-			data = WindowsAzureRestUtils.parse(file);
-		} catch (JAXBException e) {
-			MessageUtil.displayErrorDialog(getShell(), Messages.importDlgTitle, String.format(Messages.importDlgMsg, file.getName(), Messages.failedToParse));
-			return null;
+		PublishData data = UIUtils.createPublishDataObj(file);
+		/*
+		 * If data is equal to null,
+		 * then publish settings file already exists.
+		 * So don't load information again.
+		 */
+		if (data != null) {
+			AccountActionRunnable settings =
+					new CacheAccountWithProgressBar(data, getShell(), null);
+			doLoad(file, settings);
 		}
-
-		String thumbprint;
-		try {
-			thumbprint = WindowsAzureRestUtils.getInstance().installPublishSettings(file, null);
-		} catch (InterruptedException e) {
-			MessageUtil.displayErrorDialog(getShell(), Messages.importDlgTitle, String.format(Messages.importDlgMsg, file.getName(), Messages.failedToParse));
-			return null;
-		} catch (CommandLineException e) {
-			MessageUtil.displayErrorDialog(getShell(), Messages.importDlgTitle, String.format(Messages.importDlgMsg, file.getName(), e.getMessage()));
-			return null;
-		}
-
-		if (WizardCacheManager.findPublishDataByThumbprint(thumbprint) != null) {
-			MessageUtil.displayErrorDialog(getShell(), Messages.loadingCred, Messages.credentialsExist);
-			return null;
-		}
-		data.setThumbprint(thumbprint);
-		data.setCurrentSubscription(data.getPublishProfile().getSubscriptions().get(0));
-
-		AccountActionRunnable settings = new CacheAccountWithProgressBar(data, getShell(), null);
-		doLoad(file, settings);
 		return data;
 	}
 

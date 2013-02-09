@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ public final class WindowsAzureConstants {
             + "/@configurationfilename";
     public static final String DEF_FILE_NAME = WINAZURE_PACKAGE
             + "/@definitionfilename";
+    public static final String PORTAL_URL = WINAZURE_PACKAGE + "/@portalurl";
 
     public static final String CONFIG_OSFAMILY = "/ServiceConfiguration/@osFamily";
     public static final String OSFAMILY_WINDOWS_SERVER_2008_R2 = "2";
@@ -54,6 +55,7 @@ public final class WindowsAzureConstants {
     public static final String ENTRYPOINT = RUNTIME + "/EntryPoint";
     public static final String VARIABLE = ENVIRONMENT + "/Variable";
     public static final String JAVA_OPTIONS_ENV_VAR = "_JAVA_OPTIONS";
+    public static final String JAVA_HOME_ENV_VAR = "JAVA_HOME";
     public static final String VAR_WITH_SPECIFIC_NAME = ENVIRONMENT
             + "/Variable[@name='%s']";
     public static final String  ROLE_INSTANCE_NODE = VAR_WITH_SPECIFIC_NAME
@@ -133,7 +135,7 @@ public final class WindowsAzureConstants {
     public static final String CREATOR_VER = PROJ_PROPERTY
             + "/property[@name='creator.version']";
     public static final String V17_VERSION = "1.7.0";
-    public static final String VERSION = "1.8.0";
+    public static final String VERSION = "1.8.1";
     public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.inputendpoint']";
     public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.internalendpoint']";
     public static final String SA_INTERNAL_ENDPOINT_SUFFIX = "_SESSION_AFFINITY" ;
@@ -181,13 +183,14 @@ public final class WindowsAzureConstants {
     public static final String INVALID_ARG = "Invalid argument.";
     public static final String ATTR_NAME = "name";
     public static final String ATTR_VALUE = "value";
-      public static final String ATTR_SIZEINMB = "sizeInMB";
+    public static final String ATTR_SIZEINMB = "sizeInMB";
     public static final String ATTR_CLE_ON_ROLE_RECYCLE = "cleanOnRoleRecycle";
     public static final String ATTR_CMD_LINE = "commandLine";
     public static final String ATTR_EXE_CONTEXT = "executionContext";
     public static final String ATTR_TASK_TYPE = "taskType";
     public static final String ATTR_MINPORT = "min";
     public static final String ATTR_MAXPORT = "max";
+    public static final String ATTR_PORTALURL = "portalurl";
 
     public static final int MAX_LS_SIZE_EXTRASMALL = 20480;
     public static final int MAX_LS_SIZE_SMALL = 230400;
@@ -213,6 +216,9 @@ public final class WindowsAzureConstants {
     public static final String ATTR_DDIR = "deploydir";
     public static final String ATTR_IMPORTAS = "importas";
     public static final String ATTR_TYPE = "type";
+    public static final String ATTR_CURL = "cloudsrc";
+    public static final String ATTR_CKEY = "cloudkey";
+    public static final String ATTR_CMTHD = "cloudmethod";
 
     public static final String COMPONENT_IMPORTAS = COMPONENT + "[@"  + ATTR_IMPORTAS + "='%s']";
     public static final String COMPONENT_IPATH = COMPONENT + "[@"  + ATTR_IPATH + "='%s']";
@@ -279,6 +285,8 @@ public final class WindowsAzureConstants {
     public static final String EXCP_COPY_FILES = "Getting exception when copying SA files";
     public static final String EXCP_SET_PACKAGE_TYPE = "Exception occured while setting project Type";
     public static final String EXCP_GET_PACKAGE_TYPE = "Exception occured while getting project Type";
+    public static final String EXCP_GET_PORTAL_URL = "Exception occured while getting portal URL";
+    public static final String EXCP_SET_PORTAL_URL = "Exception occured while setting portal URL";
     public static final String EXCP_ROLE_FROM_PATH = "Exception occurred while getting role from path.";
     public static final String EXCP_PROJ_NAME_EMPTY = "project Name is empty or null";
     public static final String EXCP_PROJ_LOC_EMPTY = "Project location should not be empty";
@@ -374,6 +382,11 @@ public final class WindowsAzureConstants {
     public static final String ROLE_PROP_VAL = PROJ_PROPERTY + "/property[@name='%s']/@value";
     public static final String IMPORT_NANE = IMPORT
             + "/Import[@moduleName='%s']";
+
+    public static final String JDK_CLOUD_HOME = "project.%s.jdk.home.cloud";
+    public static final String JDK_LOCAL_HOME = "project.%s.jdk.home.local";
+    public static final String SRV_CLOUD_HOME = "project.%s.server.home.cloud";
+    public static final String SRV_LOCAL_HOME = "project.%s.server.home.local";
 
     public static final String MIN_SDK_VERSION="2012-10";
 }

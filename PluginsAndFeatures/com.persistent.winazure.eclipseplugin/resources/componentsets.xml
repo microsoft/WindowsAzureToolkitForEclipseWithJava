@@ -1,5 +1,5 @@
 <!--
-Copyright 2012 Microsoft Open Technologies, Inc.
+Copyright 2013 Microsoft Open Technologies, Inc.
  
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -44,11 +44,11 @@ Note that the order of the components must be preserved as described. The build 
 
 -->
 
-<componentsets version="1.8.0">
+<componentsets version="1.8.1">
 	<componentset name="JDK" type="JDK">
-		<startupenv name="JAVA_HOME" value="%ROLEROOT%\approot\jdk" type="jdk.home"/>
+		<startupenv name="JAVA_HOME" value="%ROLEROOT%\approot\${placeholder}" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
-		<component importas="jdk" importmethod="copy" importsrc="${placeholder}" type="jdk.deploy"/>
+		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy"/>
 	</componentset>
 
 	<componentset name="Jetty 7" type="server" detectpath="lib\jetty-server-7.*">

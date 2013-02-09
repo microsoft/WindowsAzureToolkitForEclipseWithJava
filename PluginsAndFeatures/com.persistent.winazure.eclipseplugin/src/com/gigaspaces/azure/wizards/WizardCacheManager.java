@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -569,10 +569,14 @@ public final class WizardCacheManager {
 	public static void cachePublishData(PublishData publishData, LoadingAccoutListener listener) throws RestAPIException {
 
 		boolean canceled = false;
-
+		List<Subscription> subscriptions = null;
 		int OPERATIONS_TIMEOUT = 60 * 5;
 
-		List<Subscription> subscriptions = publishData.getPublishProfile().getSubscriptions();
+		if (publishData == null) {
+			return;
+		} else {
+			subscriptions = publishData.getPublishProfile().getSubscriptions();
+		}
 
 		if (subscriptions == null) {
 			return;

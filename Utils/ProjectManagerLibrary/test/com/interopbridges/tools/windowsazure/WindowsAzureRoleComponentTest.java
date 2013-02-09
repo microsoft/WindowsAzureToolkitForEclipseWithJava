@@ -309,4 +309,102 @@ public class WindowsAzureRoleComponentTest {
         comp.delete();
     }
 
+    @Test
+    public final void testGetCloudDownloadURL()
+            throws WindowsAzureInvalidProjectOperationException {
+        assertEquals("https://interopdemosteststore.blob.core.windows.net/temp/jdk.zip",
+        		waJdkComp.getCloudDownloadURL());
+    }
+
+    @Test
+    public final void testGetCloudDownloadURLWithNull()
+            throws WindowsAzureInvalidProjectOperationException {
+        assertEquals(null,
+        		waXcopyComp.getCloudDownloadURL());
+    }
+
+
+    @Test
+    public final void testgetCloudKey()
+            throws WindowsAzureInvalidProjectOperationException {
+        assertEquals("/AxKCsqVAiNFkIMBYc1k4BoQhn/6NAHqrAXjhYQYIfjEMbYN3M/PZltzRIEqSCSq/xPH6XefYaxqOJH3HRIBsg==",
+        		waJdkComp.getCloudKey());
+    }
+
+    @Test
+    public final void testGetCloudKeyWithNull()
+            throws WindowsAzureInvalidProjectOperationException {
+        assertEquals(null,
+        		waXcopyComp.getCloudKey());
+    }
+
+    @Test
+    public final void testGetCloudMethod()
+            throws WindowsAzureInvalidProjectOperationException {
+        assertEquals(WindowsAzureRoleComponentCloudMethod.unzip,
+        		waJdkComp.getCloudMethod());
+    }
+
+    @Test
+    public final void testSetCloudDownloadURL()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waJdkComp.setCloudDownloadURL("https://interopdemosteststore.blob.core.windows.net/temp/jdk.zip");
+        assertEquals("https://interopdemosteststore.blob.core.windows.net/temp/jdk.zip",
+        		waJdkComp.getCloudDownloadURL());
+    }
+
+    @Test
+    public final void testSetCloudDownloadURLEmpty()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waXcopyComp.setCloudDownloadURL("https://interopdemosteststore.blob.core.windows.net/temp/jdk.zip");
+        assertEquals("https://interopdemosteststore.blob.core.windows.net/temp/jdk.zip",
+        		waXcopyComp.getCloudDownloadURL());
+    }
+
+    @Test
+    public final void testSetCloudDownloadURLWithNull()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waJdkComp.setCloudDownloadURL(null);
+        assertEquals(null, waJdkComp.getCloudDownloadURL());
+    }
+
+    @Test
+    public final void testSetCloudKey()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waJdkComp.setCloudKey("/AxKCsqVAiNFkIMBYc1k4BoQhn/6NAHqrAXjhYQYIfjEMbYN3M/PZltzRIEqSCSq/xPH6XefYaxqOJH3HRIBsg");
+        assertEquals("/AxKCsqVAiNFkIMBYc1k4BoQhn/6NAHqrAXjhYQYIfjEMbYN3M/PZltzRIEqSCSq/xPH6XefYaxqOJH3HRIBsg",
+        		waJdkComp.getCloudKey());
+    }
+
+    @Test
+    public final void testSetCloudKeyNotExist()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waXcopyComp.setCloudKey("/AxKCsqVAiNFkIMBYc1k4BoQhn/6NAHqrAXjhYQYIfjEMbYN3M/PZltzRIEqSCSq/xPH6XefYaxqOJH3HRIBsg");
+        assertEquals("/AxKCsqVAiNFkIMBYc1k4BoQhn/6NAHqrAXjhYQYIfjEMbYN3M/PZltzRIEqSCSq/xPH6XefYaxqOJH3HRIBsg",
+        		waXcopyComp.getCloudKey());
+    }
+
+    @Test
+    public final void testSetCloudKeyWithNull()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waJdkComp.setCloudKey(null);
+        assertEquals(null, waJdkComp.getCloudKey());
+    }
+
+
+    @Test
+    public final void testsetCloudMethod()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waJdkComp.setCloudMethod(WindowsAzureRoleComponentCloudMethod.copy);
+        assertEquals(WindowsAzureRoleComponentCloudMethod.copy,
+        		waJdkComp.getCloudMethod());
+    }
+
+    @Test
+    public final void testsetCloudMethodWithNull()
+            throws WindowsAzureInvalidProjectOperationException {
+    	waJdkComp.setCloudMethod(null);
+        assertEquals(null, waJdkComp.getCloudMethod());
+    }
+
 }

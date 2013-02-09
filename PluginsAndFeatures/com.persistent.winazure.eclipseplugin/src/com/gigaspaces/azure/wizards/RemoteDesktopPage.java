@@ -1,5 +1,5 @@
 /***************************"****************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -246,12 +246,27 @@ public class RemoteDesktopPage extends WindowsAzurePage {
 		gridData.horizontalSpan = 2;
 		remoteChkBtn.setLayoutData(gridData);
 		remoteChkBtn.setText("Enable all roles to accept Remote Desktop Connections with these login credentials:"); //$NON-NLS-1$
+		remoteChkBtn.setEnabled(isEnabled);
 		remoteChkBtn.setSelection(isEnabled);
 		remoteChkBtn.addSelectionListener(new SelectionListener() {
 
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				setComponentStatus(remoteChkBtn.getSelection());
+				
+				boolean isEnabled = false;
+				try {
+					isEnabled = waProjManager.getRemoteAccessAllRoles();
+				} catch (WindowsAzureInvalidProjectOperationException e2) {
+					errorTitle = "Error"; //$NON-NLS-1$
+					errorMessage = "Error occurred while getting remote access check box status."; //$NON-NLS-1$
+					MessageUtil.displayErrorDialog(getShell(), errorTitle, errorMessage);
+					Activator.getDefault().log("Error occurred while getting remote access check box status.", e2); //$NON-NLS-1$
+				}
+				remoteChkBtn.setEnabled(isEnabled);
+				remoteChkBtn.setSelection(isEnabled);
+				
+				
+				setComponentStatus(isEnabled);
 				if (remoteChkBtn.getSelection()) {
 					getDefaultValues();
 				} else {
@@ -908,12 +923,22 @@ public class RemoteDesktopPage extends WindowsAzurePage {
 	}
 
 	protected void browseCertBtnListener() {
+		/*
+		 * When we use tab to traverse through controls,
+		 * focus goes to last selected control i.e password fields.
+		 * To avoid that explicitly setting focus on cert path text box.
+		 */
+		txtCertPath.setFocus();
 		browseBtnListener(new String[] { "*.cer" }, txtCertPath); //$NON-NLS-1$
-
 	}
 
 	protected void browsePfxBtnListener() {
-
+		/*
+		 * When we use tab to traverse through controls,
+		 * focus goes to last selected control i.e password fields.
+		 * To avoid that explicitly setting focus on cert path text box.
+		 */
+		txtPfxPath.setFocus();
 		browseBtnListener(new String[] { "*.pfx" }, txtPfxPath); //$NON-NLS-1$
 	}
 

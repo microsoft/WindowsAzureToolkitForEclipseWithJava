@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Microsoft Open Technologies Inc.
+ * Copyright 2013 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,17 @@ public final class Messages extends NLS {
 	/* Base64 messages - start */
 	public static String base64InvldStr;
 	/* Base64 messages - end */
+	public static String nameNtErMsg;
+	public static String nameGetErMsg;
+	public static String pubUrlNtErMsg;
+	public static String pubUrlGetErMsg;
+	public static String portUrlGetErMsg;
+	public static String blbUrlNtErMsg;
+	public static String blbUrlGetErMsg;
+	public static String mngUrlNtErMsg;
+	public static String mngUrlGetErMsg;
+	public static String parseErMsg;
+	public static String inValArg;
 	
     static {
         // initialize resource bundle

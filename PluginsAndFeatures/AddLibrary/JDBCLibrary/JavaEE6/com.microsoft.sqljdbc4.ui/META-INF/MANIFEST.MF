@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: JDBCDriverForJavaEE6UI
+Bundle-Name: Microsoft JDBC Driver 4.0 for SQL Server UI
 Bundle-SymbolicName: com.microsoft.sqljdbc4.ui;singleton:=true
 Bundle-Version: 4.0.2206.100
 Bundle-Activator: com.microsoft.sqljdbc4.ui.activator.Activator

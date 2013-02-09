@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -52,6 +52,10 @@ import com.persistent.util.ProjectNatureHelper;
 import com.persistent.util.ProjectNatureHelper.ProjExportType;
 import com.persistent.winazureroles.WAServerConfiguration;
 
+/**
+ * Creates dialog for adding applications from workspace
+ * or through file system. 
+ */
 public class WAApplicationDialog extends TitleAreaDialog {
     private Button fileRadioBtn;
     private Button projRadioBtn;
@@ -63,22 +67,22 @@ public class WAApplicationDialog extends TitleAreaDialog {
     private Label nameLbl;
     private Button okButton;
     private WindowsAzureRole windowsAzureRole;
-    private WADeployPage depPage;
+    private WATabPage depPage;
     private WAServerConfiguration serverConf;
 
     /**
      * Constructor.
      * @param parentShell
-     * @param page : object of WADeployPage
+     * @param waDeployPage : object of WADeployPage
      * @param role : WindowsAzureRole
      * @param conf
      */
     public WAApplicationDialog(Shell parentShell,
-    WADeployPage page,
+    		WATabPage waDeployPage,
     WindowsAzureRole role,
     WAServerConfiguration conf) {
         super(parentShell);
-        this.depPage = page;
+        this.depPage = waDeployPage;
         this.windowsAzureRole = role;
         this.serverConf = conf;
     }
@@ -475,11 +479,11 @@ public class WAApplicationDialog extends TitleAreaDialog {
         okButton.setEnabled(false);
         return ctrl;
     }
-    
+
     /**
      * Method checks type of project
      * and returns corresponding as name with
-     * proper extension. 
+     * proper extension.
      * @param path
      * @return String
      */
@@ -500,7 +504,7 @@ public class WAApplicationDialog extends TitleAreaDialog {
         }
         return name;
     }
-    
+
     /**
      * Method returns project having specified from path.
      * @param path

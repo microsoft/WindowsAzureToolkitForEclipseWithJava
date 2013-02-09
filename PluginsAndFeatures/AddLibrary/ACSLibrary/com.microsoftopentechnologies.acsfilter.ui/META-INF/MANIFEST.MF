@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: WAACSFilterForJavaUI
+Bundle-Name: Windows Azure Access Control Services Filter UI (by MS Open Tech)
 Bundle-SymbolicName: com.microsoftopentechnologies.acsfilter.ui;singleton:=true
 Bundle-Version: 0.2.0.qualifier
 Bundle-Activator: com.microsoftopentechnologies.acsfilter.ui.activator.Activator
@@ -10,7 +10,7 @@ Require-Bundle: org.eclipse.ui;bundle-version="3.6.0",
  org.eclipse.jdt.ui;bundle-version="3.6.0",
  org.eclipse.jdt.core;bundle-version="3.6.0",
  org.eclipse.core.resources;bundle-version="3.6.0",
- com.microsoftopentechnologies.wacommon;bundle-version="1.8.0"
+ com.microsoftopentechnologies.wacommon;bundle-version="1.8.1"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-Localization: plugin

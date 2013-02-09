@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ import waeclipseplugin.Activator;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
+import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 import com.persistent.util.MessageUtil;
 
 public class DeployWizard extends Wizard {
@@ -91,16 +93,38 @@ public class DeployWizard extends Wizard {
 
 	@Override
 	public boolean performFinish() {
-				
-		try {
-			final WindowsAzureProjectManager waProjManager = WindowsAzureProjectManager.load(new File(selectedProject.getLocation().toOSString()));
 
+		try {
+			WindowsAzureProjectManager waProjManager = WindowsAzureProjectManager.load(new File(selectedProject.getLocation().toOSString()));
+			
 			if (rdpPage.getRdpSelection()) {
 				waProjManager.setRemoteAccessAllRoles(true);
+			} else {
+			    waProjManager.setRemoteAccessAllRoles(false);
 			}
-			else {
-				waProjManager.setRemoteAccessAllRoles(false);
+
+			// WORKITEM: China Support customizable portal URL in the plugin
+			try {
+				String prefSetUrl = PreferenceSetUtil.getSelectedPortalURL();
+				/*
+				 * Don't check if URL is empty or null.
+				 * As if it is then we remove "portalurl" attribute
+				 * from package.xml.
+				 */
+				waProjManager.setPortalURL(prefSetUrl);
+			} catch (WACommonException e1) {
+				Display.getDefault().syncExec(new Runnable() {
+					public void run() {
+						MessageDialog.openError(null,
+								Messages.error,
+								Messages.getPrefUrlErMsg);
+					}
+				});
 			}
+			waProjManager.save();
+
+			waProjManager = WindowsAzureProjectManager.
+					load(new File(selectedProject.getLocation().toOSString()));
 			
 			WindowsAzureBuildProjectJob buildProjectJob = new WindowsAzureBuildProjectJob("Building Project");
 			buildProjectJob.setManager(waProjManager);

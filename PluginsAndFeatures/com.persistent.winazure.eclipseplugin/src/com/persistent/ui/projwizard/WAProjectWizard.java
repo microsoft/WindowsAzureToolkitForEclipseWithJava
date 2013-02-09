@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,12 +32,16 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.dialogs.IPageChangedListener;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.dialogs.PageChangedEvent;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.wizard.IWizardContainer;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.INewWizard;
@@ -68,18 +72,18 @@ import com.persistent.util.WAEclipseHelper;
 /**
  * This class creates a wizard for new Windows Azure Cloud Project.
  */
-public class WAProjectWizard extends Wizard implements INewWizard {
+public class WAProjectWizard extends Wizard
+implements INewWizard, IPageChangedListener {
 
-	private WAProjectWizardPage waProjWizPage;
 	private String errorTitle;
 	private String errorMessage;
-	private WADeployPage waDepPage;
+	private WAProjectWizardPage waProjWizPage;
+	private WATabPage tabPg;
 	private WAKeyFeaturesPage waKeyPage;
 	private WindowsAzureProjectManager waProjMgr;
 	private WindowsAzureRole waRole;
 	private final int CACH_DFLTVAL = 30;
 	private final String DEBUG_PORT = "8090";
-
     private static final String LAUNCH_FILE_PATH = File.separator
     		+ Messages.pWizToolBuilder
     		+ File.separator
@@ -102,6 +106,9 @@ public class WAProjectWizard extends Wizard implements INewWizard {
 
         	//Extract the WAStarterKitForJava.zip to temp dir
         	waProjMgr = WindowsAzureProjectManager.create(zipFile);
+        	// By deafult - disabling remote access
+        	// when creating new project
+        	// waProjMgr.setRemoteAccessAllRoles(false);
         	waRole = waProjMgr.getRoles().get(0);
         } catch (WindowsAzureInvalidProjectOperationException e) {
         	errorTitle = Messages.adRolErrTitle;
@@ -123,6 +130,16 @@ public class WAProjectWizard extends Wizard implements INewWizard {
     public void init(IWorkbench arg0,
     		IStructuredSelection arg1) {
 
+    }
+
+    @Override
+    public void setContainer(IWizardContainer wizardContainer) {
+    	super.setContainer(wizardContainer);
+    	if (wizardContainer != null
+    			&& wizardContainer instanceof WizardDialog) {
+			((WizardDialog) getContainer()).
+			addPageChangedListener((IPageChangedListener) this);
+		}
     }
 
     /**
@@ -153,7 +170,8 @@ public class WAProjectWizard extends Wizard implements INewWizard {
         			throws InvocationTargetException {
         		try {
         			doFinish(projName, projLocation, isDefault,
-        					selWorkingSets, workingSetManager,
+        					selWorkingSets,
+        					workingSetManager,
         					depParams, keyFtr, proj);
         		} finally {
         			monitor.done();
@@ -188,7 +206,7 @@ public class WAProjectWizard extends Wizard implements INewWizard {
      * @param isDefault : whether location of project is default
      * @param selWorkingSets
      * @param workingSetManager
-     * @param depMap : stores configurations done on WADeployPage
+     * @param depMap : stores configurations done on WATagPage
      * @param ftrMap : stores configurations done on WAKeyFeaturesPage
      * @param selProj
      */
@@ -205,25 +223,54 @@ public class WAProjectWizard extends Wizard implements INewWizard {
             WindowsAzureRole role = waProjMgr.getRoles().get(0);
             //logic for handling deploy page components and their values.
             if (!depMap.isEmpty()) {
-                if (depMap.get("jdkChecked").equalsIgnoreCase("true")
-                		&& !depMap.get("jdkLoc").isEmpty()) {
-                    role.setJDKSourcePath(depMap.get("jdkLoc"),
-                    		new File(depMap.get("tempFile")));
-                }
+            	// JDK
+            	if (depMap.get("jdkChecked").equalsIgnoreCase("true")
+            			&& !depMap.get("jdkLoc").isEmpty()) {
+            		role.setJDKSourcePath(depMap.get("jdkLoc"),
+            				new File(depMap.get("tempFile")));
+
+            		// JDK download group
+            		// Add only if JDK component added
+            		if (depMap.get("jdkChecked").equalsIgnoreCase("true")) {
+            			role.setJDKCloudURL(depMap.get("jdkUrl"));
+            			role.setJDKCloudKey(depMap.get("jdkKey"));
+            			/*
+            			 * By default package type is local,
+            			 * hence store JAVA_HOME for cloud.
+            			 */
+            			role.setJDKCloudHome(depMap.get("javaHome"));
+            		}
+            	}
+
+                // Server
                 if (depMap.get("serChecked").equalsIgnoreCase("true")
                 		&& !depMap.get("serLoc").isEmpty()
                 		&& !depMap.get("servername").isEmpty()) {
                 	role.setServer(depMap.get("servername"),
                 			depMap.get("serLoc"),
                 			new File(depMap.get("tempFile")));
+
+                	// Server download group
+                	// Add only if Server component added
+                	if (depMap.get("srvDwnldChecked").
+                			equalsIgnoreCase("true")) {
+                		role.setServerCloudURL(depMap.get("srvUrl"));
+                		role.setServerCloudKey(depMap.get("srvKey"));
+                		/*
+                		 * By default package type is local,
+                		 * hence store server home directory for cloud.
+                		 */
+                		role.setServerCloudHome(depMap.get("srvHome"));
+                	}
                 }
+
                 /*
                  * Handling adding server application
-                 * without configuring server/jdk.
+                 * without configuring server/JDK.
                  */
-                if (!waDepPage.getAppsAsNames().isEmpty()) {
-                    for (int i = 0; i < waDepPage.getAppsList().size(); i++) {
-                        AppCmpntParam app = waDepPage.getAppsList().get(i);
+                if (!tabPg.getAppsAsNames().isEmpty()) {
+                    for (int i = 0; i < tabPg.getAppsList().size(); i++) {
+                        AppCmpntParam app = tabPg.getAppsList().get(i);
                         if (!app.getImpAs().
                         		equalsIgnoreCase(Messages.helloWorld)) {
                             role.addServerApplication(app.getImpSrc(),
@@ -237,9 +284,8 @@ public class WAProjectWizard extends Wizard implements INewWizard {
             /**
              * Handling for HelloWorld application in plug-in
              */
-
-            if (waDepPage != null) {
-                if (!waDepPage.getAppsAsNames().contains(Messages.helloWorld)) {
+            if (tabPg != null) {
+                if (!tabPg.getAppsAsNames().contains(Messages.helloWorld)) {
                     List<WindowsAzureRoleComponent> waCompList =
                     		waProjMgr.getRoles().
                     		get(0).getServerApplications();
@@ -345,9 +391,9 @@ public class WAProjectWizard extends Wizard implements INewWizard {
     public void addPages() {
         String sdkPath = null;
         try {
-            sdkPath = WindowsAzureProjectManager.getLatestAzureSdkDir();
-        }
-        catch (IOException e) {
+            sdkPath = WindowsAzureProjectManager.
+            		getLatestAzureSdkDir();
+        } catch (IOException e) {
             sdkPath = null;
             Activator.getDefault().log(errorMessage, e);
         }
@@ -365,23 +411,27 @@ public class WAProjectWizard extends Wizard implements INewWizard {
                 }
                 addPage(null);
             } else {
-                waProjWizPage = new WAProjectWizardPage("WAProjectWizardPage");
-                waDepPage = new WADeployPage("WADeployPage",
-                		waProjMgr, waRole, this, true);
+                waProjWizPage = new WAProjectWizardPage(Messages.projWizPg);
+                tabPg = new WATabPage(Messages.tbPg, waRole, this, true);
+                /*
+                 * If wizard activated through right click on
+                 * Dynamic web project then
+                 * Add that as an WAR application.
+                 */
                 if (Activator.getDefault().isContextMenu()) {
                 	IProject selProj = getSelectProject();
-                    waDepPage.addToAppList(selProj.getLocation().
+                	tabPg.addToAppList(selProj.getLocation().
                     		toOSString(), selProj.getName()
                     		+ ".war", WindowsAzureRoleComponentImportMethod.
                     		auto.name());
                 }
-                waKeyPage = new WAKeyFeaturesPage("WAKeyFeaturesPage");
+
+                waKeyPage = new WAKeyFeaturesPage(Messages.keyPg);
                 addPage(waProjWizPage);
-                addPage(waDepPage);
+                addPage(tabPg);
                 addPage(waKeyPage);
             }
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             // only logging the error in log file not showing anything to
             // end user
             Activator.getDefault().log(errorMessage, ex);
@@ -406,12 +456,13 @@ public class WAProjectWizard extends Wizard implements INewWizard {
     @Override
     public boolean canFinish() {
         boolean validPage = false;
+        // check starting page is valid
         if (waProjWizPage.canFlipToNextPage()) {
             validPage = waProjWizPage.isPageComplete();
         }
         if (validPage) {
             validPage = waProjWizPage.isPageComplete()
-            		&& waDepPage.isPageComplete();
+            		&& tabPg.isPageComplete();
         }
         return validPage;
     }
@@ -439,19 +490,37 @@ public class WAProjectWizard extends Wizard implements INewWizard {
     }
 
     /**
-     * Returns configurations done on WADeployPage.
+     * Returns configurations done on WATagPage.
      * @return Map<String, String>
      */
+    @SuppressWarnings("static-access")
     private Map<String, String> getDeployPageValues() {
-        Map <String, String> values = new HashMap<String, String>();
-        values.put("jdkChecked" , waDepPage.isJDKChecked());
-        values.put("jdkLoc" , waDepPage.getJdkLoc());
-        values.put("serChecked" , waDepPage.isServerChecked());
-        values.put("servername", waDepPage.getServerName());
-        values.put("serLoc", waDepPage.getServerLoc());
-        values.put("tempFile", WAEclipseHelper.getTemplateFile());
-        return values;
+    	Map <String, String> values = new HashMap<String, String>();
+    	// JDK
+    	values.put("jdkChecked" , Boolean.valueOf(
+    			tabPg.isJdkChecked()).toString());
+    	values.put("jdkLoc" , tabPg.getJdkLoc());
+    	// JDK download group
+    	values.put("jdkDwnldChecked" , Boolean.valueOf(
+    			tabPg.isJdkDownloadChecked()).toString());
+    	values.put("jdkUrl" , tabPg.getJdkUrl());
+    	values.put("jdkKey" , tabPg.getJdkKey());
+    	values.put("javaHome", tabPg.getJavaHome());
+    	// Server
+    	values.put("serChecked" , Boolean.valueOf(
+    			tabPg.isSrvChecked()).toString());
+    	values.put("servername", tabPg.getServerName());
+    	values.put("serLoc", tabPg.getServerLoc());
+    	values.put("tempFile", WAEclipseHelper.getTemplateFile());
+    	// Server download group
+    	values.put("srvDwnldChecked" , Boolean.valueOf(
+    			tabPg.isSrvDownloadChecked()).toString());
+    	values.put("srvUrl" , tabPg.getSrvUrl());
+    	values.put("srvKey" , tabPg.getSrvKey());
+    	values.put("srvHome", tabPg.getSrvHomeDir());
+    	return values;
     }
+
     /**
      * Returns configurations done on WAKeyFeaturesPage.
      * @return Map<String, Boolean>
@@ -488,5 +557,18 @@ public class WAProjectWizard extends Wizard implements INewWizard {
             selProject = resource.getProject();
         }
         return selProject;
+    }
+
+    /**
+     * Capture page changed event and if current page
+     * is WATabPage, then by default select JDK tab.
+     */
+    @Override
+    public void pageChanged(PageChangedEvent event) {
+    	IWizardPage page = (IWizardPage) event.getSelectedPage();
+    	if (page.getName().equals(Messages.tbPg)) {
+    		WATabPage.getFolder().
+    		setSelection(WATabPage.getJdkTab());
+    	}
     }
 }

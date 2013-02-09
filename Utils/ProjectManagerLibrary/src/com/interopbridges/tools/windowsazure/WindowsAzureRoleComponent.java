@@ -1,7 +1,7 @@
 package com.interopbridges.tools.windowsazure;
 
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -76,6 +76,24 @@ public class WindowsAzureRoleComponent {
      * JDK or application configuration, based on its @type.
      */
     private String type = "";
+
+    /**
+     * cloudkey variable represents cloudkey attribute
+     * in Component tag in package.xml.
+     */
+    private String cloudkey = null;
+
+    /**
+     * cloudurl variable represents cloudurl attribute
+     * in Component tag in package.xml
+     */
+    private String cloudurl = null;
+
+    /**
+     * cloudmethod variable represents cloudmethod attribute
+     * in Component tag in package.xml
+     */
+    private WindowsAzureRoleComponentCloudMethod cloudmethod = WindowsAzureRoleComponentCloudMethod.none;
 
     /**
      * Constructor to initialize projectManager and Role instances.
@@ -345,7 +363,109 @@ public class WindowsAzureRoleComponent {
 
     }
 
+    /**
+     * Gets the cloudurl attribute of the corresponding <component> tag in package.xml
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public String getCloudDownloadURL() throws WindowsAzureInvalidProjectOperationException {
+    	if (cloudurl == null) {
+    		Element component = getComponentNode();
+    		String curl = component.getAttribute(WindowsAzureConstants.ATTR_CURL);
+    		if(!curl.isEmpty()) {
+    			cloudurl = curl;
+    		}
+    	}
+    	return cloudurl;
+    }
 
+    /**
+     * Sets the cloudurl attribute of the corresponding <component> tag in package.xml
+     * @param url
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public void setCloudDownloadURL(String url) throws WindowsAzureInvalidProjectOperationException {
+    	try {
+    		if (null == url || url.isEmpty()) {
+    			Element component = getComponentNode();
+    			component.removeAttribute(WindowsAzureConstants.ATTR_CURL);
+    		} else {
+    			Element component = getComponentNode();
+    			component.setAttribute(WindowsAzureConstants.ATTR_CURL, url);
+    		}
+    		this.cloudurl = url;
+    	} catch (Exception ex) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				"Exception in setCloudDownloadURL", ex);
+    	}
+    }
+
+    /**
+     * Gets the cloudmethod attribute of the corresponding <component> tag in package.xml
+     */
+    public WindowsAzureRoleComponentCloudMethod getCloudMethod() throws WindowsAzureInvalidProjectOperationException {
+    		Element component = getComponentNode();
+    		String cmeth = component.getAttribute(WindowsAzureConstants.ATTR_CMTHD);
+    		if(!cmeth.isEmpty()) {
+    			cloudmethod = WindowsAzureRoleComponentCloudMethod.valueOf(cmeth);
+    		}
+    	return cloudmethod;
+    }
+    /**
+     * Sets the cloudmethod attribute of the corresponding <component> tag in package.xml
+     * @param waCloudMethod
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public void setCloudMethod(WindowsAzureRoleComponentCloudMethod waCloudMethod) throws WindowsAzureInvalidProjectOperationException {
+
+    	try {
+    		Element component = getComponentNode();
+    		if (waCloudMethod == null || WindowsAzureRoleComponentCloudMethod.none == waCloudMethod) {
+    			component.removeAttribute(WindowsAzureConstants.ATTR_CMTHD);
+    		} else {
+    			component.setAttribute(WindowsAzureConstants.ATTR_CMTHD, waCloudMethod.toString());
+    		}
+    		this.cloudmethod = waCloudMethod;
+    	} catch (Exception ex) {
+            throw new WindowsAzureInvalidProjectOperationException(
+                    "Exception in setCloudMethod", ex);
+        }
+    }
+
+    /*
+     * Gets the cloudkey attribute of the corresponding <component> tag in package.xml.
+     */
+    public String getCloudKey() throws WindowsAzureInvalidProjectOperationException {
+    	if (cloudkey == null || cloudkey.isEmpty()) {
+    		Element component = getComponentNode();
+    		String ckey = component.getAttribute(WindowsAzureConstants.ATTR_CKEY);
+    		if(!ckey.isEmpty()) {
+    			cloudkey = ckey;
+    		}
+    	}
+    	return cloudkey;
+    }
+
+    /**
+     * Sets the cloudkey attribute of the corresponding <component> tag in package.xml.
+     * @param cloudkey
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public void setCloudKey(String cloudkey) throws WindowsAzureInvalidProjectOperationException {
+
+    	try {
+    		Element component = getComponentNode();
+    		if (null == cloudkey || cloudkey.isEmpty()) {
+    			component.removeAttribute(WindowsAzureConstants.ATTR_CKEY);
+    		} else {
+    			component.setAttribute(WindowsAzureConstants.ATTR_CKEY, cloudkey);
+    		}
+    		this.cloudkey = cloudkey;
+    	} catch (Exception ex) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+                    "Exception in setCloudKey", ex);
+        }
+    }
     public void delete() throws WindowsAzureInvalidProjectOperationException {
         Element component;
         try {

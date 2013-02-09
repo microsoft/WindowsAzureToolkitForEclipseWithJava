@@ -2,7 +2,7 @@
 
 
 /*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -60,6 +60,7 @@ public class WindowsAzureRestUtils {
 	private static String uri;
 
 	private static WindowsAzureRestUtils instance;
+	private static final String CHAR_ENCODING = "UTF-8";
 
 	public static synchronized WindowsAzureRestUtils getInstance() {
 
@@ -161,7 +162,8 @@ public class WindowsAzureRestUtils {
 
 		BufferedWriter writer = null;
 		try {
-			writer = new BufferedWriter( new FileWriter( temp.getAbsolutePath()));
+			
+			writer = new BufferedWriter( new OutputStreamWriter(new FileOutputStream(temp),CHAR_ENCODING));
 			writer.write( xml);
 
 		} finally {

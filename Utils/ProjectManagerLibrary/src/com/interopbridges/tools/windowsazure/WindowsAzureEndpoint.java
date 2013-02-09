@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -249,8 +249,8 @@ public class WindowsAzureEndpoint {
                     child != null; child = child.getNextSibling()) {
                 if (child.getNodeName().equalsIgnoreCase("FixedPort")) {
                     Element eleChild = (Element) child;
-
-                    if(endPointPort.contains("-")) {
+                    
+                    if(endPointPort.contains("-")) { 
                     	// create internal input range
                     	Element eleFxdPortRan = winProjMgr.getdefinitionFileDoc().createElement("FixedPortRange");
                     	String[] ports = endPointPort.split("-");
@@ -259,7 +259,7 @@ public class WindowsAzureEndpoint {
                         eleFxdPortRan.setAttribute(WindowsAzureConstants.ATTR_MINPORT, minPort);
                         eleFxdPortRan.setAttribute(WindowsAzureConstants.ATTR_MAXPORT, maxPort);
                         eleChild.getParentNode().appendChild(eleFxdPortRan);
-
+                        
                         // Remove fixed port
                         eleChild.getParentNode().removeChild(eleChild);
                     } else { // Just update port
@@ -267,7 +267,7 @@ public class WindowsAzureEndpoint {
                     }
                 } else if(child.getNodeName().equalsIgnoreCase("FixedPortRange")) {
                 	Element eleChild = (Element) child;
-
+                	
                 	if(endPointPort.contains("-")) {
                 		// updates port range values
                 		String[] ports = endPointPort.split("-");
@@ -275,13 +275,13 @@ public class WindowsAzureEndpoint {
                         String maxPort = ports[1];
                         eleChild.setAttribute(WindowsAzureConstants.ATTR_MINPORT, minPort);
                         eleChild.setAttribute(WindowsAzureConstants.ATTR_MAXPORT, maxPort);
-
-                	} else {
+                        
+                	} else { 
                 		//create internal fixed port
                 		Element eleFxdPort = winProjMgr.getdefinitionFileDoc().createElement("FixedPort");
                 		eleFxdPort.setAttribute("port", endPointPort);
                 		eleChild.getParentNode().appendChild(eleFxdPort);
-
+                		
                 		// Removing internal port range
                 		eleChild.getParentNode().removeChild(eleChild);
                 	}
@@ -398,6 +398,10 @@ public class WindowsAzureEndpoint {
                     Node currNode = getThisEndPointNode();
                     currNode.getParentNode().appendChild(eleInternalNode);
                     currNode.getParentNode().removeChild(currNode);
+                    /*
+                     * When type is changed to Internal,
+                     * set public port to empty.
+                     */
                     this.port = "";
                 }
                if( type == WindowsAzureEndpointType.InstanceInput) {

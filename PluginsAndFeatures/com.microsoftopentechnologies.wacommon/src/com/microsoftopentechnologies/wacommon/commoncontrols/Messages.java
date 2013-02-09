@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Microsoft Open Technologies Inc.
+ * Copyright 2013 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,10 @@ public final class Messages extends NLS {
     public static String newCertDlgAlias;
     public static String newCerDlgCrtCerEr;
     /* New Certificate Dialog messages - end*/
+    public static String impSubDlgTtl;
+    public static String dwnlPubSetFile;
+    public static String pathLbl;
+    public static String mgmtPortalShell;
     
     static {
         // initialize resource bundle

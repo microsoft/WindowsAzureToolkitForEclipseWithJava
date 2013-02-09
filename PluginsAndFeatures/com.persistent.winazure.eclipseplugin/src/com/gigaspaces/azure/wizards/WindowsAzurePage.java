@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+ * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,18 +57,15 @@ public abstract class WindowsAzurePage extends WizardPage {
 	@Override
 	public abstract void createControl(Composite arg0);
 
-	protected Combo createCombo(Composite container) {
-		return createCombo(container, SWT.NONE,0);
-	}
-
-	protected Combo createCombo(Composite container, int style, int verticalIndent) {
+	protected Combo createCombo(Composite container,
+			int style, int verticalIndent, int horiAlign, int width) {
 		Combo combo = new Combo(container, style);
 
 		GridData comboData = new GridData();
-		comboData.widthHint = 200;
+		comboData.widthHint = width;
 		comboData.heightHint = 23;
-		comboData.horizontalAlignment = GridData.BEGINNING;
-		comboData.grabExcessHorizontalSpace = true;	
+		comboData.horizontalAlignment = horiAlign;
+		comboData.grabExcessHorizontalSpace = true;
 		comboData.verticalIndent = verticalIndent;
 		combo.setLayoutData(comboData);
 

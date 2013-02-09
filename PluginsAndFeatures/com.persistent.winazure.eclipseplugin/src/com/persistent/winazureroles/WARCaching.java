@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -337,7 +337,7 @@ public class WARCaching extends PropertyPage {
 		gridData = new GridData();
 		gridData.verticalIndent = 6;
 		gridData.horizontalIndent = 135;
-		cacheScale.setMinimum(15);
+		cacheScale.setMinimum(10);
 		cacheScale.setMaximum(100);
 		cacheScale.setIncrement(1);
 		cacheScale.setPageIncrement(10);
@@ -405,7 +405,7 @@ public class WARCaching extends PropertyPage {
 					 * is numeric and has value > 0
 					 */
 					if (isNumber
-							&& cacheVal >= 15
+							&& cacheVal >= 10
 							&& cacheVal <= 100) {
 						setCachPerMem(cacheVal);
 						cacheScale.setSelection(cacheVal);
@@ -480,13 +480,17 @@ public class WARCaching extends PropertyPage {
 				 * is selected for removal
 				 * as removal of default cache is not allowed.
 				 */
-				Entry<String, WindowsAzureNamedCache> cachEntry =
-						getSelNamedCache();
-				if (cachEntry.getKey().
-						equalsIgnoreCase(Messages.dfltCachName)) {
+				try {
+					Entry<String, WindowsAzureNamedCache> cachEntry =
+							getSelNamedCache();
+					if (cachEntry.getKey().
+							equalsIgnoreCase(Messages.dfltCachName)) {
+						btnRemove.setEnabled(false);
+					} else {
+						btnRemove.setEnabled(true);
+					}
+				} catch (Exception e) {
 					btnRemove.setEnabled(false);
-				} else {
-					btnRemove.setEnabled(true);
 				}
 			}
 
@@ -763,6 +767,7 @@ public class WARCaching extends PropertyPage {
 		gridData.widthHint = 200;
 		gridData.verticalIndent = 3;
 		gridData.horizontalIndent = 30;
+
 		txtAccKey.setLayoutData(gridData);
 		txtAccKey.addFocusListener(new FocusListener() {
 			private String oldTxt = "";

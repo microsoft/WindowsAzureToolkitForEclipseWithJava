@@ -14,11 +14,11 @@ Copyright (c) 2010-2011 Oracle and/or its affiliates. All rights reserved.
 http://jersey.java.net/
 
 2. jersey-json 
-Copyright (c) 2010-2011 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010-2012 Oracle and/or its affiliates. All rights reserved.
 http://jersey.java.net/
 
 3. javax.mail 
-Copyright 1997-2006 Sun Microsystems, Inc. All Rights Reserved.
+Copyright 1997-2011 Oracle and/or its affiliates. All rights reserved.
 http://glassfish.java.net/javaee5/mail/  
 
 4. JavaBeans Activation Framework 
@@ -372,10 +372,10 @@ Copyright 2006 Envoi Solutions LLC
 Includes JSON
 Copyright (c) 2002 JSON.org
 
-4.Jackson-core-asl 1.8.3
-  Jackson-jaxrs 1.8.3
-  Jackson-mapper-as
-  Jackson-xc 1.8.3
+4.Jackson-core-asl 1.9.2
+  Jackson-jaxrs 1.9.2
+  Jackson-mapper-asl-1.9.2
+  Jackson-xc 1.9.2
 Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi 
 
 5. Apache Commons Logging 1.1.1

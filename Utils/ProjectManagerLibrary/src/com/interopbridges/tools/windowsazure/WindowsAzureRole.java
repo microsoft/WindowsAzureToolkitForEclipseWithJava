@@ -2,7 +2,7 @@
 package com.interopbridges.tools.windowsazure;
 
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package com.interopbridges.tools.windowsazure;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -228,7 +229,7 @@ public class WindowsAzureRole {
                         String.format(WindowsAzureConstants.SERVER_PROP_NAME, name));
                 String serExpr = String.format(WindowsAzureConstants.SERVER_PROP_PATH,getName());
                 updateOrCreateElement(projDoc, serExpr, parentNodeExpr, eleName, false, attrs);
-                
+
                 if(getWinProjMgr().getPackageType().equals(WindowsAzurePackageType.LOCAL)
         		&& !getInstances().equals("1")) {
                     //instance property
@@ -238,11 +239,11 @@ public class WindowsAzureRole {
                     String propName = String.format(WindowsAzureConstants.INSTANCE_PROPERTY, getName());
                     serExpr = String.format(WindowsAzureConstants.ROLE_PROP,propName);
                     updateOrCreateElement(projDoc, serExpr, parentNodeExpr, eleName, false, attrs);
-                }                
+                }
             }
 
 
-            
+
             // cache account name
             if(getCacheStorageAccountName() != null && !getCacheStorageAccountName().isEmpty()) {
                 attrs.clear();
@@ -295,13 +296,13 @@ public class WindowsAzureRole {
     		Document doc = null;
     		XPath xPath = XPathFactory.newInstance().newXPath();
     		String count = "";
-    		if(winProjMgr.getPackageType().equals(WindowsAzurePackageType.LOCAL) 
+    		if(winProjMgr.getPackageType().equals(WindowsAzurePackageType.LOCAL)
     				&& getServerName() != null) {
-    			String instPro = String.format(WindowsAzureConstants.INSTANCE_PROPERTY, getName()); 
+    			String instPro = String.format(WindowsAzureConstants.INSTANCE_PROPERTY, getName());
     			expr =  String.format(WindowsAzureConstants.ROLE_PROP_VAL, instPro);
     			doc =  getWinProjMgr().getPackageFileDoc();
     			count = xPath.evaluate(expr, doc);
-    		} 
+    		}
     		if(!count.isEmpty()) {
     			this.instances = count;
     		}
@@ -333,17 +334,17 @@ public class WindowsAzureRole {
         try {
         	String iCount = count;
 			String instPro = String.format(WindowsAzureConstants.INSTANCE_PROPERTY, getName());
-        	if(winProjMgr.getPackageType().equals(WindowsAzurePackageType.LOCAL) 
+        	if(winProjMgr.getPackageType().equals(WindowsAzurePackageType.LOCAL)
         			&& getServerName() != null && !count.equals("1")) {
         		iCount = "1";
         		addPropertyInPackageXML(instPro, count);
         	} else {
-    			String expr =  String.format(WindowsAzureConstants.ROLE_PROP, 
+    			String expr =  String.format(WindowsAzureConstants.ROLE_PROP,
     					instPro);
     			Document doc =  getWinProjMgr().getPackageFileDoc();
     			ParserXMLUtility.deleteElement(doc, expr);
          	}
-        	
+
             XPath xPath = XPathFactory.newInstance().newXPath();
             Document configDoc = getWinProjMgr().getConfigFileDoc();
             String expr = String.format(WindowsAzureConstants.ROLE_INSTANCES,
@@ -357,7 +358,7 @@ public class WindowsAzureRole {
                     WindowsAzureConstants.EXCP_SET_INSTANCES, ex);
         }
     }
-    
+
     /**
      * Gets the VM size.
      *
@@ -451,6 +452,12 @@ public class WindowsAzureRole {
         return winEndPtList;
     }
 
+    /**
+     * Method creates endpoint of type Input.
+     * @param endptEle
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
     private WindowsAzureEndpoint createWinInputEndPt( Element endptEle)
             throws WindowsAzureInvalidProjectOperationException {
         try {
@@ -470,6 +477,12 @@ public class WindowsAzureRole {
         }
     }
 
+    /**
+     * Method creates endpoint of type Instance.
+     * @param endptEle
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
     private WindowsAzureEndpoint createWinInstanceEndPt( Element endptEle)
             throws WindowsAzureInvalidProjectOperationException {
         try {
@@ -495,7 +508,12 @@ public class WindowsAzureRole {
         }
     }
 
-
+    /**
+     * Method creates endpoint of type Internal.
+     * @param endptEle
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
     private WindowsAzureEndpoint createWinIntenalEndPt( Element endptEle)
             throws WindowsAzureInvalidProjectOperationException {
         try {
@@ -520,10 +538,12 @@ public class WindowsAzureRole {
                     "Exception in createWinInputEndPt ", ex);
         }
     }
+    
     protected void setEndpoints(List<WindowsAzureEndpoint> winEndPList) {
 
         this.winEndPtList = winEndPList;
     }
+    
     /** This API returns windows azure endpoint */
     public WindowsAzureEndpoint getEndpoint(String endPointName) throws WindowsAzureInvalidProjectOperationException {
 
@@ -885,12 +905,18 @@ public class WindowsAzureRole {
                             isValid = false;
                             break;
                         }
-
-                        if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), localPort) ||
-                                ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), pubPort) ||
-                                ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), pubPort)) {
-                            isValid = false;
-                            break;
+                        if (ep.getEndPointType().equals(WindowsAzureEndpointType.InstanceInput)) {
+                        	if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), pubPort)) {
+                        		isValid = false;
+                        		break;
+                        	}
+                        } else {
+                        	if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), localPort) ||
+                        			ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), pubPort) ||
+                        			ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), pubPort)) {
+                        		isValid = false;
+                        		break;
+                        	}
                         }
                     }
                     if (isValid) {
@@ -1599,7 +1625,7 @@ public class WindowsAzureRole {
                 }
             }
         } catch (Exception ex) {
-            new WindowsAzureInvalidProjectOperationException(
+            throw new WindowsAzureInvalidProjectOperationException(
                     "Exception while getting RunTinme env variables: ", ex);
         }
         return envVarMap;
@@ -1627,7 +1653,7 @@ public class WindowsAzureRole {
                 }
             }
         } catch (Exception ex) {
-            new WindowsAzureInvalidProjectOperationException(
+            throw new WindowsAzureInvalidProjectOperationException(
                     "Exception while getting RunTinme env variables: ", ex);
         }
         return lsVarList;
@@ -1655,7 +1681,7 @@ public class WindowsAzureRole {
                     getName(), name)  + "/@value";
             value = xPath.evaluate(expr, doc);
         } catch (Exception ex) {
-            new WindowsAzureInvalidProjectOperationException(
+            throw new WindowsAzureInvalidProjectOperationException(
                     "Exception while getting RunTinme env variables: ", ex);
         }
         return value;
@@ -1759,7 +1785,7 @@ public class WindowsAzureRole {
                 }
             }
         } catch (Exception ex) {
-            new WindowsAzureInvalidProjectOperationException(
+            throw new WindowsAzureInvalidProjectOperationException(
                     "Exception while getting RunTinme env variables: ", ex);
         }
         return locStoMap;
@@ -1984,7 +2010,7 @@ public class WindowsAzureRole {
 
 
         // Add comments to startup task element to warn the user not to insert any task before this.
-        createCommentNode(WindowsAzureConstants.STARTUP_TASK_COMMENTS,definitionFiledoc,nodeExpr);
+        createCommentNode(definitionFiledoc, nodeExpr);
 
         // Add SA input end point and SA internal end point
         String inputEndPointLocalPort = inpEndPt.getPrivatePort();
@@ -1996,8 +2022,12 @@ public class WindowsAzureRole {
     }
 
     /** Adds comments as a first node */
-    private void createCommentNode(String startupTaskComments,Document doc,String nodeExpr)
+    private void createCommentNode(Document doc,String nodeExpr)
     throws WindowsAzureInvalidProjectOperationException {
+    	if (doc == null || nodeExpr == null) {
+    		throw new
+    		IllegalArgumentException(WindowsAzureConstants.INVALID_ARG);
+    	}
         try {
             Comment taskComment = doc.createComment(WindowsAzureConstants.STARTUP_TASK_COMMENTS);
             XPath xPath         = XPathFactory.newInstance().newXPath();
@@ -2393,6 +2423,46 @@ public class WindowsAzureRole {
     }
 
     /**
+     * Method swaps component up or down according to direction parameter.
+     * @param index
+     * @param direction
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public void swapCmpnt(int index, String direction)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	if (direction.isEmpty()
+    			|| direction == null
+    			|| index < 0) {
+    		throw new IllegalArgumentException(
+    				WindowsAzureConstants.INVALID_ARG);
+    	}
+    	String cmpntStr = String.format(
+    			WindowsAzureConstants.COMPONENT, getName());
+    	XPath xPath = XPathFactory.newInstance().newXPath();
+    	Document pacDoc = winProjMgr.getPackageFileDoc();
+    	try {
+    		NodeList cmpNodes = (NodeList) xPath.
+    				evaluate(cmpntStr, pacDoc, XPathConstants.NODESET);
+    		// move up
+    		if (direction.equalsIgnoreCase("up")) {
+    			cmpNodes.item(index).getParentNode().
+    			insertBefore(cmpNodes.item(index),
+    					cmpNodes.item(index - 1));
+    			Collections.swap(winCompList, index, index - 1);
+    		} else {
+    			// move down
+    			cmpNodes.item(index).getParentNode().
+    			insertBefore(cmpNodes.item(index),
+    					cmpNodes.item(index + 2));
+    			Collections.swap(winCompList, index, index + 1);
+    		}
+    	} catch (Exception e) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				"Exception while swapping components", e);
+    	}
+    }
+
+    /**
      * Method to determine if a component is part of a server, JDK or application configuration
      * @param envName
      * @return
@@ -2491,6 +2561,98 @@ public class WindowsAzureRole {
         return sourcePath;
     }
 
+    /**
+     * Method creates JAVA_HOME value according to JDK path.
+     * @param path
+     * @param templateFile
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public String constructJdkHome(String path, File templateFile)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	String envVal = null;
+    	try {
+    		//parse template file and find componentset name
+    		XPath xPath = XPathFactory.newInstance().newXPath();
+    		Document compDoc = ParserXMLUtility.
+    				parseXMLFile(templateFile.getAbsolutePath());
+    		String expr = String.format(
+    				WindowsAzureConstants.TEMP_COMPONENTSET, "JDK");
+    		Element compSet = (Element) xPath.
+    				evaluate(expr, compDoc, XPathConstants.NODE);
+    		NodeList nodelist = compSet.getChildNodes();
+    		if (compSet != null) {
+    			for (int i = 0; i < nodelist.getLength(); i++) {
+    				Node compNode = (Node) nodelist.item(i);
+    				if (!compNode.hasAttributes()) {
+    					continue;
+    				}
+    				Element compEle = (Element) compNode;
+    				if (compEle.getNodeName().
+    						equalsIgnoreCase("startupenv")
+    						&& compEle.getAttribute("type").
+    						equalsIgnoreCase("jdk.home")) {
+    					String jdkDirName = new File(path).getName();
+    					envVal = compEle.getAttribute("value");
+    					envVal = envVal.replace("${placeholder}",
+    							jdkDirName);
+    				}
+    			}
+    		}
+    	} catch (Exception e) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				WindowsAzureConstants.EXCP, e);
+    	}
+    	return envVal;
+    }
+
+    /**
+     * Method creates server home value according to
+     * server name and path.
+     * @param name
+     * @param path
+     * @param templateFile
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public String constructServerHome(String name, String path, File templateFile)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	String envVal = null;
+    	try {
+    		//parse template file and find componentset name
+    		XPath xPath = XPathFactory.newInstance().newXPath();
+    		Document compDoc = ParserXMLUtility.
+    				parseXMLFile(templateFile.getAbsolutePath());
+    		String expr = String.format(
+    				WindowsAzureConstants.TEMP_SERVER_COMP,
+    				"server", name);
+    		Element compSet = (Element) xPath.
+    				evaluate(expr, compDoc, XPathConstants.NODE);
+    		NodeList nodelist = compSet.getChildNodes();
+    		if (compSet != null) {
+    			for (int i = 0; i < nodelist.getLength(); i++) {
+    				Node compNode = (Node) nodelist.item(i);
+    				if (!compNode.hasAttributes()) {
+    					continue;
+    				}
+    				Element compEle = (Element) compNode;
+    				if (compEle.getNodeName().
+    						equalsIgnoreCase("startupenv")
+    						&& compEle.getAttribute("type").
+    						equalsIgnoreCase("server.home")) {
+    					String srvDirName = new File(path).getName();
+    					envVal = compEle.getAttribute("value");
+    					envVal = envVal.replace("${placeholder}",
+    							"\\%ROLENAME%\\" + srvDirName);
+    				}
+    			}
+    		}
+    	} catch (Exception e) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				WindowsAzureConstants.EXCP, e);
+    	}
+    	return envVal;
+    }
 
     /**
      *This API sets the JDK source path, adding the JDK configuration from the
@@ -2523,13 +2685,14 @@ public class WindowsAzureRole {
             Element component = (Element) xPath.evaluate(expr, doc,
                     XPathConstants.NODE);
             List<WindowsAzureRoleComponent> comps = getComponents();
+            //parse template file and find componentset name
+            Document compDoc = ParserXMLUtility.parseXMLFile(templateFile.getAbsolutePath());
+            expr = String.format(WindowsAzureConstants.TEMP_COMPONENTSET, "JDK");
+            Element compSet = (Element) xPath.evaluate(expr, compDoc, XPathConstants.NODE);
+            NodeList nodelist = compSet.getChildNodes();
+            // Adding JDK component
             if (component == null) {
-                //parse template file and find componentset name
-                Document compDoc = ParserXMLUtility.parseXMLFile(templateFile.getAbsolutePath());
-                expr = String.format(WindowsAzureConstants.TEMP_COMPONENTSET, "JDK");
-                Element compSet = (Element) xPath.evaluate(expr, compDoc, XPathConstants.NODE);
                 if (compSet != null) {
-                    NodeList nodelist = compSet.getChildNodes();
                     String parentNode = String.format(
                             WindowsAzureConstants.WA_PACK_ROLE, getName());
                     Element role = (Element) xPath.evaluate(parentNode, doc,
@@ -2544,26 +2707,28 @@ public class WindowsAzureRole {
                         }
                         Element compEle = (Element) compNode;
                         if (compEle.getNodeName().equalsIgnoreCase("startupenv")) {
+                        	String jdkDirName = new File(path).getName();
+                            String envVal = compEle.getAttribute("value");
+                            envVal = envVal.replace("${placeholder}", jdkDirName);
                             ele = doc.createElement("startupenv");
                             ele.setAttribute("name", compEle.getAttribute("name"));
-                            ele.setAttribute("value", compEle.getAttribute("value"));
+                            ele.setAttribute("value", envVal);
                             ele.setAttribute("type", compEle.getAttribute("type"));
                             preNode = role.insertBefore(ele, preNode);
-                            getRuntimeEnv().put(compEle.getAttribute("name"), compEle.getAttribute("value"));
+                            getRuntimeEnv().put(compEle.getAttribute("name"), envVal);
                         } else if(compEle.getNodeName().equalsIgnoreCase("component")) {
                             ele = doc.createElement("component");
-                            ele.setAttribute(WindowsAzureConstants.ATTR_IMPORTAS, compEle.getAttribute(WindowsAzureConstants.ATTR_IMPORTAS));
                             ele.setAttribute(WindowsAzureConstants.ATTR_IMETHOD, compEle.getAttribute(WindowsAzureConstants.ATTR_IMETHOD));
                             ele.setAttribute(WindowsAzureConstants.ATTR_IPATH, path);
                             ele.setAttribute(WindowsAzureConstants.ATTR_TYPE, compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE));
                             preNode = role.insertBefore(ele, preNode);
                             WindowsAzureRoleComponent comp = new WindowsAzureRoleComponent(winProjMgr, this);
-                            comp.setDeployname(compEle.getAttribute(WindowsAzureConstants.ATTR_IMPORTAS));
+                            comp.setImportPath(path);
                             comp.setImportMethod(WindowsAzureRoleComponentImportMethod.valueOf(
                                     compEle.getAttribute(WindowsAzureConstants.ATTR_IMETHOD)));
-                            comp.setImportPath(path);
                             comp.setType(compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE));
-                            comps.add(comp);
+                            // add JDK component at 0th position
+                            comps.add(0, comp);
                         }
 
                         preNode = preNode.getNextSibling();
@@ -2575,6 +2740,31 @@ public class WindowsAzureRole {
                         comps.get(i).setImportPath(path);
                     }
                 }
+                // If JDK path is updated then update environment variable as well
+                expr = String.format(WindowsAzureConstants.WA_PACK_SENV_NAME,
+                		getName(), WindowsAzureConstants.JAVA_HOME_ENV_VAR);
+                Element strenv = (Element) xPath.evaluate(expr, doc, XPathConstants.NODE);
+                String jdkDirName = new File(path).getName();
+                String envVal =  "";
+                for (int i = 0; i < nodelist.getLength(); i++) {
+                	Node compNode = (Node) nodelist.item(i);
+                	if (!compNode.hasAttributes()) {
+                		continue;
+                	}
+                	Element compEle = (Element) compNode;
+                	if (compEle.getNodeName().equalsIgnoreCase("startupenv") &&
+                			compEle.getAttribute("type").equalsIgnoreCase("jdk.home")) {
+
+                		envVal = compEle.getAttribute("value");
+                		envVal = envVal.replace("${placeholder}", jdkDirName);
+                	}
+                }
+                strenv.setAttribute(WindowsAzureConstants.ATTR_VALUE, envVal);
+                /*
+                 * Get previously added environment variables.
+                 */
+                envVarMap = getRuntimeEnv();
+                envVarMap.put(WindowsAzureConstants.JAVA_HOME_ENV_VAR, envVal);
             }
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(
@@ -2624,10 +2814,9 @@ public class WindowsAzureRole {
             Element role = (Element) xPath.evaluate(parentNode, pacDoc,
                     XPathConstants.NODE);
 
-            String serApp = String.format(WindowsAzureConstants.COMPONENT_TYPE,
-                    getName(), "server.app");
-            NodeList serApps = (NodeList) xPath.evaluate(serApp, pacDoc, XPathConstants.NODESET);
-
+            String jdkDply = String.format(WindowsAzureConstants.COMPONENT_TYPE,
+                    getName(), "jdk.deploy");
+            Node jdkNode = (Node) xPath.evaluate(jdkDply, pacDoc, XPathConstants.NODE);
             if (compSet != null) {
 
                 //set server name in property
@@ -2659,36 +2848,46 @@ public class WindowsAzureRole {
                         ele.setAttribute("name", compEle.getAttribute("name"));
                         ele.setAttribute("value", envVal);
                         ele.setAttribute("type", compEle.getAttribute("type"));
-                        if((serApps != null) && (serApps.getLength() != 0)) {
-                            role.insertBefore(ele, serApps.item(0));
+                        if (jdkNode != null) {
+                        	role.insertBefore(ele, jdkNode);
                         } else {
-                        role.appendChild(ele);
+                        	 role.appendChild(ele);
                         }
                         getRuntimeEnv().put(compEle.getAttribute("name"), envVal);
                     } else if (compEle.getNodeName().equalsIgnoreCase("component")) {
                         ele = pacDoc.createElement("component");
                         String type = compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE);
-                        if(type.equalsIgnoreCase("server.deploy")) {
+                        if (type.equalsIgnoreCase("server.deploy")) {
                             NamedNodeMap map = compEle.getAttributes();
                             for(int j=0; j<map.getLength();j++) {
                                 ele.setAttribute(map.item(j).getNodeName(), map.item(j).getNodeValue());
                             }
                             ele.setAttribute(WindowsAzureConstants.ATTR_IPATH, path);
-                            if((serApps != null) && (serApps.getLength() != 0)) {
-                                role.insertBefore(ele, serApps.item(0));
+                            Node jdkNxtNode = jdkNode.getNextSibling();
+                            if (jdkNxtNode == null) {
+                            	role.appendChild(ele);
                             } else {
-                            role.appendChild(ele);
+                            	role.insertBefore(ele, jdkNxtNode);
                             }
+                            // Add server.deploy at 1st position
+                            getComponents().add(1, getComponentObjFromEle(ele));
                         } else if (type.equalsIgnoreCase("server.start")) {
+                        	String srvDply = String.format(WindowsAzureConstants.COMPONENT_TYPE,
+                        			getName(), "server.deploy");
+                        	Node srvNode = (Node) xPath.evaluate(srvDply, pacDoc, XPathConstants.NODE);
                             NamedNodeMap map = compEle.getAttributes();
                             for (int j = 0; j < map.getLength();j++) {
                                 ele.setAttribute(map.item(j).getNodeName(), map.item(j).getNodeValue());
                             }
-                            role.appendChild(ele);
-                        } else {
-                            continue;
+                            Node srvNxtNode = srvNode.getNextSibling();
+                            if (srvNxtNode == null) {
+                            	role.appendChild(ele);
+                            } else {
+                            	role.insertBefore(ele, srvNxtNode);
+                            }
+                            // Add server.start at 2nd position
+                            getComponents().add(2, getComponentObjFromEle(ele));
                         }
-                        getComponents().add(getComponentObjFromEle(ele));
                     }
                 }
             }
@@ -2699,32 +2898,55 @@ public class WindowsAzureRole {
         }
     }
 
-   protected WindowsAzureRoleComponent getComponentObjFromEle(Element compEle) throws WindowsAzureInvalidProjectOperationException {
+   protected WindowsAzureRoleComponent getComponentObjFromEle(Element compEle)
+		   throws WindowsAzureInvalidProjectOperationException {
         try {
             WindowsAzureRoleComponent compobj = new WindowsAzureRoleComponent(winProjMgr, this);
-            if(compEle.hasAttribute(WindowsAzureConstants.ATTR_IMPORTAS)
+            if (compEle.hasAttribute(WindowsAzureConstants.ATTR_IMPORTAS)
                 && (!compEle.getAttribute(WindowsAzureConstants.ATTR_IMPORTAS).isEmpty())) {
-                compobj.setDeployname(compEle.getAttribute(WindowsAzureConstants.ATTR_IMPORTAS));
+                compobj.setDeployname(compEle.
+                		getAttribute(WindowsAzureConstants.ATTR_IMPORTAS));
             }
 
             if (compEle.hasAttribute(WindowsAzureConstants.ATTR_IPATH)){
-                compobj.setImportPath(compEle.getAttribute(WindowsAzureConstants.ATTR_IPATH));
+                compobj.setImportPath(compEle.
+                		getAttribute(WindowsAzureConstants.ATTR_IPATH));
             }
 
-            if(compEle.hasAttribute(WindowsAzureConstants.ATTR_TYPE)) {
-                compobj.setType(compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE));
+            if (compEle.hasAttribute(WindowsAzureConstants.ATTR_TYPE)) {
+                compobj.setType(compEle.
+                		getAttribute(WindowsAzureConstants.ATTR_TYPE));
             }
 
-            if(compEle.hasAttribute(WindowsAzureConstants.ATTR_IMETHOD)) {
-                compobj.setImportMethod(WindowsAzureRoleComponentImportMethod.valueOf(compEle.getAttribute(WindowsAzureConstants.ATTR_IMETHOD)));
+            if (compEle.hasAttribute(WindowsAzureConstants.ATTR_IMETHOD)) {
+                compobj.setImportMethod(WindowsAzureRoleComponentImportMethod.
+                		valueOf(compEle.
+                				getAttribute(WindowsAzureConstants.ATTR_IMETHOD)));
             }
 
-            if(compEle.hasAttribute(WindowsAzureConstants.ATTR_DDIR)) {
-                compobj.setDeployDir(compEle.getAttribute(WindowsAzureConstants.ATTR_DDIR));
+            if (compEle.hasAttribute(WindowsAzureConstants.ATTR_DDIR)) {
+                compobj.setDeployDir(compEle.
+                		getAttribute(WindowsAzureConstants.ATTR_DDIR));
             }
 
-            if(compEle.hasAttribute(WindowsAzureConstants.ATTR_DMETHOD)) {
-                compobj.setDeployMethod(WindowsAzureRoleComponentDeployMethod.valueOf(compEle.getAttribute(WindowsAzureConstants.ATTR_DMETHOD)));
+            if (compEle.hasAttribute(WindowsAzureConstants.ATTR_DMETHOD)) {
+                compobj.setDeployMethod(WindowsAzureRoleComponentDeployMethod.
+                		valueOf(compEle.
+                				getAttribute(WindowsAzureConstants.ATTR_DMETHOD)));
+            }
+            if (compEle.hasAttribute(WindowsAzureConstants.ATTR_CURL)) {
+            	compobj.setCloudDownloadURL(compEle.
+            			getAttribute(WindowsAzureConstants.ATTR_CURL));
+            }
+
+            if (compEle.hasAttribute(WindowsAzureConstants.ATTR_CKEY)) {
+            	compobj.setCloudKey(compEle.
+            			getAttribute(WindowsAzureConstants.ATTR_CKEY));
+            }
+
+            if (compEle.hasAttribute(WindowsAzureConstants.ATTR_CMTHD)) {
+            	compobj.setCloudMethod(WindowsAzureRoleComponentCloudMethod.valueOf(
+            			compEle.getAttribute(WindowsAzureConstants.ATTR_CMTHD)));
             }
             return compobj;
         } catch (Exception e) {
@@ -2765,11 +2987,18 @@ public class WindowsAzureRole {
                     if(!"server.app".equalsIgnoreCase(componenttype)) {
                         WindowsAzureRoleComponent waComp = null;
                         for (int j = 0; j < getComponents().size(); j++) {
-                            waComp = getComponents().get(j);
-                            if (waComp.getDeployName().equalsIgnoreCase(
-                                ele.getAttribute(WindowsAzureConstants.ATTR_IMPORTAS)) ) {
-                                break;
-                            }
+                        	waComp = getComponents().get(j);
+                        	if (waComp.getDeployName().equalsIgnoreCase(
+                        			ele.getAttribute(WindowsAzureConstants.ATTR_IMPORTAS)) ) {
+                        		if (waComp.getDeployName().isEmpty()) {
+                        			if (waComp.getImportPath().equalsIgnoreCase(
+                        					ele.getAttribute(WindowsAzureConstants.ATTR_IPATH))) {
+                        				break;
+                        			}
+                        		} else {
+                        			break;
+                        		}
+                        	}
                         }
                         if (waComp != null) {
                             getComponents().remove(waComp);
@@ -3080,7 +3309,7 @@ public class WindowsAzureRole {
   /**
    * API to find the type of the environment variable set in the role.
    * @return
- * @throws WindowsAzureInvalidProjectOperationException .
+   * @throws WindowsAzureInvalidProjectOperationException .
    */
   public String getRuntimeEnvType(String varName)
           throws WindowsAzureInvalidProjectOperationException {
@@ -3102,6 +3331,35 @@ public class WindowsAzureRole {
           throw new WindowsAzureInvalidProjectOperationException(
                   WindowsAzureConstants.EXCP, ex);
     }
+  }
+
+  /**
+   * API to find the name of the environment variable set in the role
+   * according to its type.
+   * @param type
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getRuntimeEnvName(String type)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  if (type == null || type.isEmpty()) {
+		  throw new IllegalArgumentException(WindowsAzureConstants.INVALID_ARG);
+	  }
+	  try {
+		  XPath xPath = XPathFactory.newInstance().newXPath();
+		  Document doc = getWinProjMgr().getPackageFileDoc();
+		  String expr = String.format(WindowsAzureConstants
+				  .WA_PACK_SENV_TYPE,
+				  getName(), type)  + "/@name";
+		  String name = xPath.evaluate(expr, doc);
+		  if (name.isEmpty()) {
+			  name = null;
+		  }
+		  return name;
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException(
+				  WindowsAzureConstants.EXCP, ex);
+	  }
   }
 
   /**
@@ -3264,7 +3522,14 @@ public class WindowsAzureRole {
                   getName(), "Caching");
           String parentNodeExpr = String.format(
                   WindowsAzureConstants.IMPORT, getName());
+          String eleImports = ParserXMLUtility.getExpressionValue(doc, parentNodeExpr);
+
           HashMap<String, String> map = new HashMap<String, String>();
+          if (eleImports == null || eleImports.isEmpty()) {
+        	  String parentNode = String.format(WindowsAzureConstants.WR_NAME, getName());
+        	  updateOrCreateElement(doc, parentNodeExpr, parentNode, "Imports", false, map);
+          }
+          map = new HashMap<String, String>();
           map.put("moduleName", "Caching");
           updateOrCreateElement(doc, expr, parentNodeExpr, "Import", false, map);
 
@@ -3273,12 +3538,19 @@ public class WindowsAzureRole {
                   false, WindowsAzureConstants.CACHE_LS_PATH);
 
           //add setting tags
-
           doc = winProjMgr.getConfigFileDoc();
           expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE, getName(),
                   WindowsAzureConstants.SET_CACHESIZEPER);
           parentNodeExpr = String.format(
                   WindowsAzureConstants.CONFIG_ROLE_SET, getName());
+
+          String configSet = ParserXMLUtility.getExpressionValue(doc, parentNodeExpr);
+          if(configSet == null || configSet.isEmpty()) {
+        	  map.clear();
+        	  String parentNode = String.format(WindowsAzureConstants.ROLE_NAME, getName());
+        	  updateOrCreateElement(doc, parentNodeExpr, parentNode, "ConfigurationSettings", false, map);
+          }
+
           map.clear();
           map.put("name", WindowsAzureConstants.SET_CACHESIZEPER);
           map.put("value", "");
@@ -3430,6 +3702,147 @@ public class WindowsAzureRole {
           throw new WindowsAzureInvalidProjectOperationException(
                   WindowsAzureConstants.EXCP, ex);
       }
+  }
+
+  /**
+   * Utility method to set role property in package.xml.
+   * @param property
+   * @param value
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setProperty(String property, String value)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  try {
+		  String propName = String.format(property,
+				  getName());
+		  if (value == null || value.isEmpty()) {
+			  //remove property from package.xml
+			  ParserXMLUtility.deleteElement(winProjMgr.getPackageFileDoc(),
+					  String.format(WindowsAzureConstants.ROLE_PROP,
+							  propName));
+		  } else {
+			  //add entry in package.xml
+			  addPropertyInPackageXML(propName, value);
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException(
+				  WindowsAzureConstants.EXCP, ex);
+	  }
+  }
+
+  /**
+   * Utility method to get role property from package.xml. 
+   * @param property
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getProperty(String property)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  String jdkHome = null;
+	  try {
+		  Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
+		  if (packageFileDoc != null) {
+			  String propName = String.format(
+					  property,
+					  getName());
+			  String nodeExpr =  String.format(
+					  WindowsAzureConstants.ROLE_PROP_VAL, propName);
+			  XPath xPath = XPathFactory.newInstance().newXPath();
+			  jdkHome = xPath.evaluate(nodeExpr, packageFileDoc);
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException(
+				  WindowsAzureConstants.EXCP, ex);
+	  }
+	  return jdkHome;
+  }
+
+  /**
+   * Sets the JDK Cloud Home in the plugin property.
+   * @param value
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setJDKCloudHome(String value)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  setProperty(WindowsAzureConstants.JDK_CLOUD_HOME, value);
+  }
+
+  /**
+   * Returns the JDK Cloud Home from the plugin property.
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getJDKCloudHome()
+		  throws WindowsAzureInvalidProjectOperationException {
+	  String jdkCloudHome = getProperty(
+			  WindowsAzureConstants.JDK_CLOUD_HOME);
+	  return jdkCloudHome;
+  }
+
+  /**
+   * Sets the JDK Local Home in the plugin property.
+   * @param value
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setJDKLocalHome(String value)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  setProperty(WindowsAzureConstants.JDK_LOCAL_HOME, value);
+  }
+
+  /**
+   * Returns the JDK local Home from the plugin property.
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getJDKLocalHome()
+		  throws WindowsAzureInvalidProjectOperationException {
+	  String jdkLocalHome = getProperty(
+			  WindowsAzureConstants.JDK_LOCAL_HOME);
+	  return jdkLocalHome;
+  }
+
+  /**
+   * Sets the Server Cloud Home in the plugin property.
+   * @param value
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setServerCloudHome(String value)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  setProperty(WindowsAzureConstants.SRV_CLOUD_HOME, value);
+  }
+
+  /**
+   * Returns the Server Cloud Home from the plugin property.
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getServerCloudHome()
+		  throws WindowsAzureInvalidProjectOperationException {
+	  String srvCloudHome = getProperty(
+			  WindowsAzureConstants.SRV_CLOUD_HOME);
+	  return srvCloudHome;
+  }
+
+  /**
+   * Sets the Server Local Home in the plugin property.
+   * @param value
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setServerLocalHome(String value)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  setProperty(WindowsAzureConstants.SRV_LOCAL_HOME, value);
+  }
+
+  /**
+   * Returns the Server local Home from the plugin property.
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getServerLocalHome()
+		  throws WindowsAzureInvalidProjectOperationException {
+	  String srvLocalHome = getProperty(
+			  WindowsAzureConstants.SRV_LOCAL_HOME);
+	  return srvLocalHome;
   }
 
   /**
@@ -3655,5 +4068,247 @@ public class WindowsAzureRole {
           throw new WindowsAzureInvalidProjectOperationException(
                   WindowsAzureConstants.EXCP, ex);
       }
+  }
+
+  /**
+   * This API will return url attribute of server deploy component
+   * if server is not set will throw exception
+   * if the attribute is not set returns empty string
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getServerCloudURL() throws WindowsAzureInvalidProjectOperationException  {
+	  try {
+		  if(getServerSourcePath()==null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "Server is not configured");
+		  } else {
+			  String url = null;
+			  XPath xPath = XPathFactory.newInstance().newXPath();
+			  Document doc = winProjMgr.getPackageFileDoc();
+			  String expr =  String.format(WindowsAzureConstants.SERVER_TYPE, getName(), "server.deploy");
+			  Element node = (Element) xPath.evaluate(expr, doc,XPathConstants.NODE);
+			  if (node != null) {
+				  url = node.getAttribute(WindowsAzureConstants.ATTR_CURL);
+			  }
+			  return url;
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
+   * This API will set url attribute of server deploy component
+   * if server is not set will throw exception
+   * if the url is null or empty, api will remove the attribute from xml
+   * @param url
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setServerCloudURL(String url)
+		  throws WindowsAzureInvalidProjectOperationException  {
+	  try {
+		  if(getServerSourcePath() == null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "Server is not configured");
+		  } else {
+			  List<WindowsAzureRoleComponent> compList = getComponents();
+			  for (int i = 0; i < compList.size(); i++) {
+				  WindowsAzureRoleComponent comp = compList.get(i);
+				  if (comp.getType().equalsIgnoreCase("server.deploy")) {
+					  if(url == null || url.isEmpty()) {
+						  comp.setCloudDownloadURL("");
+						  comp.setCloudMethod(null);
+					  } else {
+						  comp.setCloudDownloadURL(url);
+						  comp.setCloudMethod(WindowsAzureRoleComponentCloudMethod.unzip);
+					  }
+				  }
+			  }
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
+   * This API will return key attribute of server deploy component
+   * if server is not set will throw exception
+   * if the attribute is not set returns empty string
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getServerCloudKey()
+		  throws WindowsAzureInvalidProjectOperationException  {
+	  try {
+		  if(getServerSourcePath()==null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "Server is not configured");
+		  } else {
+			  String key = null;
+			  XPath xPath = XPathFactory.newInstance().newXPath();
+			  Document doc = winProjMgr.getPackageFileDoc();
+			  String expr =  String.format(WindowsAzureConstants.SERVER_TYPE, getName(), "server.deploy");
+			  Element node = (Element) xPath.evaluate(expr, doc,XPathConstants.NODE);
+			  if (node != null) {
+				  key = node.getAttribute(WindowsAzureConstants.ATTR_CKEY);
+			  }
+			  return key;
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
+   * This API will set key attribute of server deploy component
+   * if server is not set will throw exception
+   * if the key is null or empty, api will remove the attribute from xml
+   * @param url
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setServerCloudKey(String key)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  try {
+		  if(getServerSourcePath() == null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "Server is not configured");
+		  } else {
+			  List<WindowsAzureRoleComponent> compList = getComponents();
+			  for (int i = 0; i < compList.size(); i++) {
+				  WindowsAzureRoleComponent comp = compList.get(i);
+				  if (comp.getType().equalsIgnoreCase("server.deploy")) {
+					  if(key == null || key.isEmpty()) {
+						  comp.setCloudKey("");
+					  } else {
+						  comp.setCloudKey(key);
+					  }
+				  }
+			  }
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
+   * This API will return url attribute of jdk deploy component
+   * if jdk is not set will throw exception
+   * if the attribute is not set returns empty string
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getJDKCloudURL() throws WindowsAzureInvalidProjectOperationException  {
+	  try {
+		  if(getJDKSourcePath() == null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "JDK is not configured");
+		  } else {
+			  String url = null;
+			  XPath xPath = XPathFactory.newInstance().newXPath();
+			  Document doc = winProjMgr.getPackageFileDoc();
+			  String expr =  String.format(WindowsAzureConstants.SERVER_TYPE, getName(), "jdk.deploy");
+			  Element node = (Element) xPath.evaluate(expr, doc,XPathConstants.NODE);
+			  if (node != null) {
+				  url = node.getAttribute(WindowsAzureConstants.ATTR_CURL);
+			  }
+			  return url;
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
+   * This API will set url attribute of jdk deploy component
+   * if jdk is not set will throw exception
+   * if the url is null or empty, api will remove the attribute from xml
+   * @param url
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setJDKCloudURL(String url)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  try {
+		  if(getJDKSourcePath() == null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "JDK is not configured");
+		  } else {
+			  List<WindowsAzureRoleComponent> compList = getComponents();
+			  for (int i = 0; i < compList.size(); i++) {
+				  WindowsAzureRoleComponent comp = compList.get(i);
+				  if (comp.getType().equalsIgnoreCase("jdk.deploy")) {
+					  if(url == null || url.isEmpty()) {
+						  comp.setCloudDownloadURL("");
+						  comp.setCloudMethod(null);
+					  } else {
+						  comp.setCloudDownloadURL(url);
+						  comp.setCloudMethod(WindowsAzureRoleComponentCloudMethod.unzip);
+					  }
+				  }
+			  }
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
+   * This API will return key attribute of jdk deploy component
+   * if jdk is not set will throw exception
+   * if the attribute is not set returns empty string
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getJDKCloudKey()
+		  throws WindowsAzureInvalidProjectOperationException  {
+	  try {
+		  if(getJDKSourcePath()==null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "Server is not configured");
+		  } else {
+			  String key = null;
+			  XPath xPath = XPathFactory.newInstance().newXPath();
+			  Document doc = winProjMgr.getPackageFileDoc();
+			  String expr =  String.format(WindowsAzureConstants.SERVER_TYPE, getName(), "jdk.deploy");
+			  Element node = (Element) xPath.evaluate(expr, doc,XPathConstants.NODE);
+			  if (node != null) {
+				  key = node.getAttribute(WindowsAzureConstants.ATTR_CKEY);
+			  }
+			  return key;
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
+   * This API will set key attribute of jdk deploy component
+   * if jdk is not set will throw exception
+   * if the key is null or empty, api will remove the attribute from xml
+   * @param url
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setJDKCloudKey(String key)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  try {
+		  if(getJDKSourcePath() == null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "Server is not configured");
+		  } else {
+			  List<WindowsAzureRoleComponent> compList = getComponents();
+			  for (int i = 0; i < compList.size(); i++) {
+				  WindowsAzureRoleComponent comp = compList.get(i);
+				  if (comp.getType().equalsIgnoreCase("jdk.deploy")) {
+					  if(key == null || key.isEmpty()) {
+						  comp.setCloudKey("");
+					  } else {
+						  comp.setCloudKey(key);
+					  }
+				  }
+			  }
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
   }
 }

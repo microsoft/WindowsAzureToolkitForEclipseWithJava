@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -464,8 +464,9 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
          gridData.horizontalSpan = 2;
          gridData.horizontalAlignment = SWT.END;
          gridData.grabExcessHorizontalSpace = true;
-         lblNote.setText(String.format("%s%s%s",
-        		 Messages.rangeNote1, maxSize, Messages.rangeNote2));
+         lblNote.setText(String.format("%s%s%s%s",
+        		 Messages.rangeNote1, " ",
+        		 maxSize, Messages.rangeNote2));
          lblNote.setLayoutData(gridData);
 
      }

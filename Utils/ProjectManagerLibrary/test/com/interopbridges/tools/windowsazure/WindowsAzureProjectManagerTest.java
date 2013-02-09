@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -287,6 +287,29 @@ public class WindowsAzureProjectManagerTest {
         wProj.setPackageType(WindowsAzurePackageType.CLOUD);
         assertEquals(WindowsAzurePackageType.CLOUD,
                 wProj.getPackageType());
+    }
+
+    @Test
+    public void testGetPortalUrl()
+    throws WindowsAzureInvalidProjectOperationException {
+        assertEquals("http://windows.azure.com",
+        		wProj.getPortalURL());
+    }
+
+    @Test
+    public void testSetPortalUrl()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	wProj.setPortalURL("http://windows.azure.com/testurl");
+    	assertEquals("http://windows.azure.com/testurl",
+    			wProj.getPortalURL());
+    }
+
+    @Test
+    public void testSetPortalUrlNull()
+    		throws WindowsAzureInvalidProjectOperationException {
+    	wProj.setPortalURL(null);
+    	assertEquals("",
+    			wProj.getPortalURL());
     }
 
     @Test
@@ -810,28 +833,61 @@ public class WindowsAzureProjectManagerTest {
 
     @Test
     public void testSaveWithEditRole()
-    throws WindowsAzureInvalidProjectOperationException {
-        wProj.getRoles();
-        WindowsAzureRole role = wProj.getRoles().get(4);
-        role.setName("EditRole");
-        wProj.save();
-        String path = Messages.getString("WinAzureTestConstants.WindowsAzureProj")
-                        + File.separator + "EditRole";
-        File file = new File(path);
-        assertTrue(file.exists());
+    		throws WindowsAzureInvalidProjectOperationException {
+    	wProj.getRoles();
+    	WindowsAzureRole role = null;
+    	boolean roleAdded = false;
+    	/*
+    	 * To take care of scenario,
+    	 * when this single test case is ran.
+    	 */
+    	if (!(wProj.getRoles().size() == 5)) {
+    		wProj.getRoles();
+    		role = wProj.addRole("NewRole", Messages.getString("WinAzureTestConstants.StarterKit"));
+    		role.setInstances("1");
+    		role.setVMSize("Small");
+    		wProj.save();
+    		roleAdded = true;
+    	}
+    	role = wProj.getRoles().get(4);
+    	role.setName("EditRole");
+    	wProj.save();
+    	String path = Messages.getString("WinAzureTestConstants.WindowsAzureProj")
+    			+ File.separator + "EditRole";
+    	File file = new File(path);
+    	boolean val1 = file.exists();
+    	if (roleAdded) {
+    		wProj.getRoles().get(4).delete();
+    		wProj.save();
+    	}
+    	assertTrue(val1);
     }
 
     @Test
     public void testSaveWithDeleteRole()
-    throws WindowsAzureInvalidProjectOperationException {
-        wProj.getRoles();
-        WindowsAzureRole role = wProj.getRoles().get(4);
-        role.delete();
-        wProj.save();
-        String path = Messages.getString("WinAzureTestConstants.WindowsAzureProj")
-                        + File.separator + "EditRole";
-        File file = new File(path);
-        assertFalse(file.exists());
+    		throws WindowsAzureInvalidProjectOperationException {
+    	wProj.getRoles();
+    	WindowsAzureRole role = null;
+    	/*
+    	 * To take care of scenario,
+    	 * when this single test case is ran.
+    	 */
+    	if (!(wProj.getRoles().size() == 5)) {
+    		wProj.getRoles();
+    		role = wProj.addRole("EditRole",
+    				Messages.getString("WinAzureTestConstants.StarterKit"));
+    		role.setInstances("1");
+    		role.setVMSize("Small");
+    		wProj.save();
+    	}
+    	role = wProj.getRoles().get(4);
+    	role.delete();
+    	wProj.save();
+    	String path = Messages.getString(
+    			"WinAzureTestConstants.WindowsAzureProj")
+    			+ File.separator + "EditRole";
+    	File file = new File(path);
+    	assertFalse(file.exists());
     }
 
     @Test(expected=IllegalArgumentException.class)

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Persistent Systems Ltd.
+ * Copyright 2013 Persistent Systems Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -217,11 +217,8 @@ public final class Messages extends NLS {
 	public static String dlgImpInvDplMsg;
 	public static String imgImpDlg;
 	public static String dplDlgSerTxt;
-	public static String dplDlgSelLbl;
 	public static String dplDlgBtnTxt;
 	public static String dplDlgJDKGrp;
-	public static String dplDlgJdkLbl;
-	public static String dplDlgSerBtn;
 	public static String cmpntSrcRmvTtl;
 	public static String cmpntSrcRmvMsg;
 	public static String jdkDsblErrTtl;
@@ -231,9 +228,6 @@ public final class Messages extends NLS {
 	public static String jdkPathErrMsg;
 	public static String dplSerBtnTtl;
 	public static String dplSerBtnMsg;
-	public static String dplPageJdkChkBtn;
-	public static String dplPageSerChkBtn;
-	public static String dplPageNameLbl;
 	public static String dplWrngSerMsg;
 	public static String dplEmtSerMsg;
 	public static String srvErrTtl;
@@ -357,6 +351,35 @@ public final class Messages extends NLS {
 	public static String cacheConfTitle;
 	public static String txtExtraSmallVM;
 	public static String cacheConfErrMsg;
+	public static String typeJdkDply;
+	public static String dlgDownloadGrp;
+	public static String dlgDlChkTxt;
+	public static String dlgDlUrlLbl;
+	public static String dlgDlAccessKey;
+	public static String dlgDlNoteLbl;
+	public static String dlKeyErrTtl;
+	public static String dlgDlKeyErrMsg;
+	public static String dlgDlUrlErrTtl;
+	public static String dlgDlUrlErrMsg;
+	public static String urlKeySetErrMsg;
+	public static String urlKeySetErMsgSrv;
+	public static String dlNtLblDir;
+	public static String dlgDlNtLblUrl;
+	public static String urlKeyGetErMsg;
+	public static String moveUpBtn;
+	public static String moveDnBtn;
+	public static String typeSrvStrt;
+	public static String cmpntSwapErMsg;
+	public static String editNtAlwErTtl;
+	public static String editNtAlwErMsg;
+	public static String cmpntEdtErrMsg;
+	public static String jvHome;
+	public static String jvHomeErr;
+	public static String jvHomeErMsg;
+	public static String typeSrvHm;
+	public static String srvHomeErr;
+	public static String srvHomeErMsg;
+
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);
