@@ -236,8 +236,6 @@ public final class Messages extends NLS {
 	public static String appRmvMsg;
 	public static String impExpErrTtl;
 	public static String impExpErrMsg;
-	public static String dplSerUnChkTtl;
-	public static String dplSerUnChkMsg;
 	public static String getSrvNmErrMsg;
 	public static String setSrvNmErrMsg;
 	public static String getJdkErrMsg;
@@ -272,7 +270,6 @@ public final class Messages extends NLS {
 	public static String hostLbl;
 	public static String strGrp;
 	public static String crdntlLbl;
-	public static String keyLbl;
 	public static String nameLbl;
 	public static String cacheTtl;
 	public static String cachDlgImg;
@@ -345,8 +342,6 @@ public final class Messages extends NLS {
 	public static String enPtAlphNuMsg;
 	public static String highAvailMsg;
 	public static String highAvailTtl;
-	public static String win2012ErrTitle;
-	public static String win2012ErrMsgBox;
 	public static String cacheConfMsg;
 	public static String cacheConfTitle;
 	public static String txtExtraSmallVM;
@@ -355,10 +350,7 @@ public final class Messages extends NLS {
 	public static String dlgDownloadGrp;
 	public static String dlgDlChkTxt;
 	public static String dlgDlUrlLbl;
-	public static String dlgDlAccessKey;
-	public static String dlgDlNoteLbl;
-	public static String dlKeyErrTtl;
-	public static String dlgDlKeyErrMsg;
+	public static String dlgDlStrgAcc;
 	public static String dlgDlUrlErrTtl;
 	public static String dlgDlUrlErrMsg;
 	public static String urlKeySetErrMsg;
@@ -379,6 +371,9 @@ public final class Messages extends NLS {
 	public static String typeSrvHm;
 	public static String srvHomeErr;
 	public static String srvHomeErMsg;
+	public static String linkLblAcc;
+	public static String dlgAutoDlJDKUrlErrMsg;
+	public static String dlgAutoDlSrvUrlErrMsg;
 
 	static {
 		// initialize resource bundle

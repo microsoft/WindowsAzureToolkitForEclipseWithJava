@@ -90,7 +90,7 @@ public class FileUtil {
 	 * Copies jar file from zip 
 	 * @throws IOException 
 	 */
-	public static boolean copyJarFromZip(File zipResource, String jarFileNAme, File destFile) 
+	public static boolean copyFileFromZip(File zipResource, String jarFileNAme, File destFile) 
 	throws IOException {
 		
 		boolean jarCopied = false;

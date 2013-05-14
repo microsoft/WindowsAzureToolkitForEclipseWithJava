@@ -17,15 +17,17 @@ package com.persistent.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Scanner;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -36,6 +38,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.preference.IPreferencePage;
 import org.eclipse.jface.preference.PreferenceDialog;
 import org.eclipse.jface.preference.PreferenceManager;
 import org.eclipse.jface.preference.PreferenceNode;
@@ -43,11 +46,14 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+
+import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.propertypage.SubscriptionPropertyPage;
 import com.interopbridges.tools.windowsazure.WindowsAzureConstants;
@@ -68,8 +74,6 @@ import com.persistent.winazureroles.WARGeneral;
 import com.persistent.winazureroles.WARLoadBalance;
 import com.persistent.winazureroles.WARLocalStorage;
 import com.persistent.winazureroles.WAServerConfiguration;
-
-import waeclipseplugin.Activator;
 
 /**
  * This class contains common utility methods.
@@ -135,102 +139,151 @@ public class WAEclipseHelper {
 	}
 
 	/**
-	 * Returns the server name whose
-	 * detection patterns is matched under path.
+	 * Looks for a pattern in a text file
+	 * @param file
+	 * @param pattern
+	 * @return True if a pattern is found, else false
+	 * @throws FileNotFoundException 
+	 */
+	private static boolean isPatternInFile(File file, String patternText) {
+		Scanner fileScanner = null;
+		
+		if (file.isDirectory()) {
+			return false;
+		}
+		try {
+			fileScanner = new Scanner(file);
+			Pattern pattern =  Pattern.compile(patternText, Pattern.CASE_INSENSITIVE);  
+			Matcher matcher = null;
+			while (fileScanner.hasNextLine()) {
+				String line = fileScanner.nextLine(); 
+				matcher = pattern.matcher(line);
+				if (matcher.find()) {
+					return true;
+				}
+			}
+			return false;
+		} catch (Exception e) {
+			return false;
+		} finally {
+			if(fileScanner != null) {
+				fileScanner.close();
+			}
+		}
+	}
+	
+	
+	/**
+	 * Returns the server name whose detection patterns is matched under path.
 	 * @param serverDetectors
 	 * @param path
 	 * @return
 	 */
 	public static String detectServer(File path) {
-		Map<String, String> serverDetectors;
+		final Map<String, String> serverDetectors;
+		final Map<String, String> serverPatterns;
 
 		// Get the templates files
-		String templateFilePath = WAEclipseHelper.getTemplateFile();
-		if (templateFilePath == null || path == null
-				|| !path.isDirectory() || !path.exists()) {
+		final String templateFilePath = WAEclipseHelper.getTemplateFile();
+		if (templateFilePath == null || path == null || !path.isDirectory() || !path.exists()) {
 			return null;
 		}
 
 		// Get the server detectors from the templates
+		final File templateFile = new File(templateFilePath);
 		try {
-			if (null == (serverDetectors =
-					WindowsAzureProjectManager.
-					getServerTemplateDetectors(
-							new File(templateFilePath)))) {
+			if (null == (serverDetectors = WindowsAzureProjectManager.getServerTemplateDetectors(templateFile))) {
+				return null;
+			} else if (null == (serverPatterns = WindowsAzureProjectManager.getServerTemplatePatterns(templateFile))) {
 				return null;
 			}
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			return null;
 		}
 
-		// Check each pattern
+		// Check each path
+		boolean foundSoFar = false;
+		String serverName = null;
+		File basePathFile= null;
 		for (Map.Entry<String, String> entry : serverDetectors.entrySet()) {
-			String serverName = entry.getKey();
-			String patternText = entry.getValue();
-			if (patternText == null
-					|| patternText.isEmpty()) {
+			serverName = entry.getKey();
+			String pathPatternText = entry.getValue();
+			String textPatternText = serverPatterns.get(serverName);
+			if (pathPatternText == null || pathPatternText.isEmpty()) {
 				continue;
 			}
 
-			/*
-			 * Fast path: Check the pattern directly
-			 * (like, if it has no wild cards)
-			 */
-			File basePathFile = new File(path, patternText);
+			// Fast path: Check the pattern directly (like, if it has no wild cards)
+			basePathFile = new File(path, pathPatternText);
 			if (basePathFile.exists()) {
-				return serverName;
+				// Check for the required pattern inside (if any)
+				if (basePathFile.isDirectory() || textPatternText == null || isPatternInFile(basePathFile, textPatternText)) {
+					return serverName;
+				} else {
+					continue;
+				}
 			}
 
-			/*
-			 * Split pattern path into parts
-			 * and check for existence of each part
-			 */
+			//Split pattern path into parts and check for existence of each part
 			basePathFile = path;
-			String[] pathParts = patternText.split("\\\\");
-			boolean foundSoFar = false;
+			String[] pathParts = pathPatternText.split("\\\\");
+			foundSoFar = false;
 			for (int i = 0; i < pathParts.length; i++) {
 				String pathPart = pathParts[i];
+				
 				// Try direct match first
-				File pathPartFile =
-						new File(basePathFile, pathPart);
+				File pathPartFile = new File(basePathFile, pathPart);
 				if (pathPartFile.exists()) {
 					foundSoFar = true;
+					
 				// Check for wildcards
-				} else if (!pathPart.contains("*")
-						&& !pathPart.contains("?")) {
+				} else if (!pathPart.contains("*") && !pathPart.contains("?")) {
 					foundSoFar = false;
+					
 				// Wildcards present, so check pattern
 				} else {
-					String[] fileNames =
-							basePathFile.list();
-					String patternRegex =
-							windowsPathToRegex(pathPart) + "$";
-					Pattern pattern =
-							Pattern.compile(patternRegex);
-					Matcher matcher = pattern.matcher("");
+					String[] fileNames = basePathFile.list();
+					String pathPatternRegex = windowsPathToRegex(pathPart) + "$";
+					Pattern pathPattern = Pattern.compile(pathPatternRegex);
+					Matcher matcher = pathPattern.matcher("");
 					foundSoFar = false;
 					for (String fileName : fileNames) {
 						matcher.reset(fileName);
 						if (matcher.find()) {
+							File file;
 							foundSoFar = true;
-							break;
+
+							if (textPatternText == null) {
+								// No text pattern to look for inside, so allow for the match to proceed
+								break;
+							} else if(i != pathParts.length-1) {
+								// Path part not terminal, so allow the match to proceed
+								break;
+							} else if(!(file = new File(basePathFile, fileName)).isFile()) {
+								// Terminal path not a file so don't proceed with this file
+								continue;
+							} else if(isPatternInFile(file, textPatternText)) {
+								// Internal text pattern matched, so success
+								return serverName;
+							}
 						}
 					}
 				}
 
+				// If this path part worked so far, expand the base path and dig deeper
 				if (foundSoFar) {
-					basePathFile = new File(
-							basePathFile, pathPart);
+					basePathFile = new File(basePathFile, pathPart);
 				} else {
 					break;
 				}
 			}
 
+			// If matched a full path, then success
 			if (foundSoFar) {
 				return serverName;
 			}
 		}
-		// No matches found
+		
 		return null;
 	}
 
@@ -359,10 +412,14 @@ public class WAEclipseHelper {
 				 *	else they are not identical.
 				 */
 				if (!destFileScanner.hasNext()) {
+					destFileScanner.close();
+					sourceFileScanner.close();
 					return false;
 				}
 				if (!sourceFileScanner.next().
 						equals(destFileScanner.next())) {
+					sourceFileScanner.close();
+					destFileScanner.close();
 					return false;
 				}
 			}
@@ -371,8 +428,12 @@ public class WAEclipseHelper {
 			 * and destination file is having text
 			 */
 			if (destFileScanner.hasNext()) {
+				destFileScanner.close();
+				sourceFileScanner.close();
 				return false;
 			} else {
+				destFileScanner.close();
+				sourceFileScanner.close();
 				return true;
 			}
 		} catch (Exception e) {
@@ -415,6 +476,19 @@ public class WAEclipseHelper {
 		Pattern alphaNumUndscor = Pattern.
 				compile("^[\\p{L}_]+[\\p{L}\\p{Nd}_]*$");
 		Matcher m = alphaNumUndscor.matcher(text);
+		return m.matches();
+	}
+
+	/**
+	 * Method checks if text contains
+	 * alphanumeric lower case characters and integers only.
+	 * @param text
+	 * @return
+	 */
+	public static Boolean isLowerCaseAndInteger(String text) {
+		Pattern lowerCaseInteger = Pattern.
+				compile("^[a-z0-9]+$");
+		Matcher m = lowerCaseInteger.matcher(text);
 		return m.matches();
 	}
 
@@ -500,7 +574,7 @@ public class WAEclipseHelper {
 			/*
 			 * Tree structure creation.
 			 * Don't change order while adding nodes.
-			 * Its the default alphabetical order given by eclipse.  
+			 * Its the default alphabetical order given by eclipse.
 			 */
 			nodeGeneral.add(nodeCache);
 			nodeGeneral.add(nodeCmpnts);
@@ -610,29 +684,48 @@ public class WAEclipseHelper {
 		return retVal;
 	}
 
-	public static int openSubscriptionPropertyDialog() {
+	/**
+	 * Method opens property dialog
+	 * with only desired property page.
+	 * @param nodeId : Node ID of property page
+	 * @param nodeLbl : Property page name
+	 * @param classObj : Class object of property page
+	 * @return
+	 */
+	public static int openPropertyPageDialog(String nodeId,
+			String nodeLbl, Object classObj) {
 		int retVal = Window.CANCEL; //value corresponding to cancel
 		// Node creation
 		try {
-			PreferenceNode nodeSubscriptions = new PreferenceNode(
-					Messages.cmhIdCrdntls,
-					Messages.cmhLblSubscrpt,
-					null, SubscriptionPropertyPage.class.toString());
-			nodeSubscriptions.setPage(new SubscriptionPropertyPage());
-			nodeSubscriptions.getPage().setTitle(Messages.cmhLblSubscrpt);
+			PreferenceNode nodePropPg = new PreferenceNode(
+					nodeId,
+					nodeLbl,
+					null, classObj.getClass().toString());
+			nodePropPg.setPage((IPreferencePage) classObj);
+			nodePropPg.getPage().setTitle(nodeLbl);
 
 			PreferenceManager mgr = new PreferenceManager();
-			mgr.addToRoot(nodeSubscriptions);
+			mgr.addToRoot(nodePropPg);
 			// Dialog creation
 			PreferenceDialog dialog = new
 					PreferenceDialog(PlatformUI.getWorkbench()
 							.getDisplay().getActiveShell(),
 							mgr);
 			// make desired property page active.
-			dialog.setSelectedNode(Messages.cmhIdCrdntls);
+			dialog.setSelectedNode(nodeLbl);
 			dialog.create();
-			String dlgTitle = String.format(Messages.cmhPropFor,
-					getSelectedProject().getName());
+			/*
+			 * If showing storage accounts preference page,
+			 * don't show properties for title
+			 * as its common repository.
+			 */
+			String dlgTitle = "";
+			if (nodeLbl.equals(Messages.cmhLblStrgAcc)) {
+				dlgTitle = nodeLbl;
+			} else {
+				dlgTitle = String.format(Messages.cmhPropFor,
+						getSelectedProject().getName());
+			}
 			dialog.getShell().setText(dlgTitle);
 			dialog.open();
 			// return whether user has pressed OK or Cancel button
@@ -704,8 +797,12 @@ public class WAEclipseHelper {
     	URL 	resolve = FileLocator.resolve(FileLocator.toFileURL(url));
         File 	zipFile = new File(resolve.getFile());
     	
-    	boolean result = FileUtil.copyJarFromZip(zipFile, "%proj%/"+Messages.skJarName, 
+    	boolean result = FileUtil.copyFileFromZip(zipFile, "%proj%/"+Messages.skJarName, 
     			new File(iProject.getLocation().toFile(), Messages.skJarName));
+    	
+    	if (result) {
+    		upgradeWAPFiles(iProject, zipFile, projMngr);
+    	}
 
     	// If not able to copy just log the error and close the project.
     	if (!result) {
@@ -716,5 +813,112 @@ public class WAEclipseHelper {
     		projMngr.save();
     	}
 		
+	}
+	
+	private static void upgradeWAPFiles(IProject iProject, File starterKitZip, WindowsAzureProjectManager projMngr) 
+			throws IOException, WindowsAzureInvalidProjectOperationException {
+    	List<WindowsAzureRole> rolesList = projMngr.getRoles();
+    	
+    	for (WindowsAzureRole role: rolesList) {
+    		// Copy session affinity files if SA is enabled
+    		if (role.getSessionAffinityInputEndpoint() != null) {
+    			projMngr.copySAResources(role.getName());
+    		}
+    		
+    		//Copy or rewrite .wash script
+    		FileUtil.copyFileFromZip(starterKitZip, "%proj%/WorkerRole1/approot/util/"+Messages.washFileName,
+        			new File(iProject.getLocation().toFile(), role.getName()+"/approot/util/"+Messages.washFileName));
+    	}
+	}
+	
+	/**
+	 * Method validates remote access password.
+	 * @param isPwdChanged : flag to monitor whether password is changed or not
+	 * @param txtPassword : Object of password text box
+	 * @param waProjManager : WindowsAzureProjectManager object
+	 * @param isRAPropPage : flag to monitor who has called this method
+	 * 						 Encryption link or normal property page call.
+	 * @param txtConfirmPassword : Object of confirm password text box
+	 */
+	public static void checkRdpPwd(
+			boolean isPwdChanged,
+			Text txtPassword,
+			WindowsAzureProjectManager waProjManager,
+			boolean isRAPropPage,
+			Text txtConfirmPassword) {
+		Pattern pattern = Pattern.compile("(?=^.{6,}$)(?=.*\\d)(?=.*[A-Z])(?!.*\\s)(?=.*[a-z]).*$|"
+				+ "(?=^.{6,}$)(?=.*\\d)(?!.*\\s)(?=.*[a-z])(?=.*\\p{Punct}).*$|"
+				+ "(?=^.{6,}$)(?=.*\\d)(?!.*\\s)(?=.*[A-Z])(?=.*\\p{Punct}).*$|"
+				+ "(?=^.{6,}$)(?=.*[A-Z])(?=.*[a-z])(?!.*\\s)(?=.*\\p{Punct}).*$");
+		Matcher match = pattern.matcher(txtPassword.getText());
+		try {
+			/*
+			 * checking if user has changed the password
+			 * and that field is not blank
+			 * then check for strong password else set the old password.
+			 */
+			if (isPwdChanged) {
+				if (!txtPassword.getText().isEmpty()
+						&& !match.find()) {
+					PluginUtil.displayErrorDialog(new Shell(),
+							Messages.remAccErPwdNtStrg,
+							Messages.remAccPwdNotStrg);
+					txtConfirmPassword.setText("");
+					txtPassword.setFocus();
+				}
+			} else {
+				String pwd = waProjManager.
+						getRemoteAccessEncryptedPassword();
+				/*
+				 * Remote access property page
+				 * accessed via context menu
+				 */
+				if (isRAPropPage) {
+					txtPassword.setText(pwd);
+				} else {
+					/*
+					 * Remote access property page accessed
+					 * via encryption link
+					 */
+					if (!pwd.equals(Messages.remAccDummyPwd)) {
+						txtPassword.setText(pwd);
+					}
+				}
+			}
+		} catch (WindowsAzureInvalidProjectOperationException e1) {
+			PluginUtil.displayErrorDialogAndLog(new Shell(),
+					Messages.remAccErrTitle,
+					Messages.remAccErPwd, e1);
+		}
+	}
+
+	/**
+	 * Method checks whether URL is blob URL or not.
+	 * It should satisfy pattern
+	 * http[s]://<storage-account-name>
+	 * 	-->(only lower case letters and numbers allowed)
+	 * . -->(exactly one dot is required)
+	 * <blob-service-endpoint>
+	 * 	-->(only lower case letters, numbers and period allowed)
+	 * / -->(exactly one forward slash is required)
+	 * <container-name>
+	 * --> (only lower case letters, numbers and '-' allowed)
+	 * 		must start with letter or number,
+	 * 		no consecutive dashes allowed
+	 * 		must be of 3 through 63 characters long
+	 * / -->(exactly one forward slash is required)
+	 * <blob-name>
+	 * 	-->(may contain upper lower case characters,
+	 * 		numbers and punctuation marks)
+	 * 		must be of 1 through 1024 characters long
+	 *
+	 * @param text
+	 * @return
+	 */
+	public static Boolean isBlobStorageUrl(String text) {
+		Pattern blob = Pattern.compile(
+				"^https?://[a-z0-9]+\\.{1}[a-z0-9.]+/{1}([a-z]|\\d){1}([a-z]|-|\\d){1,61}([a-z]|\\d){1}/{1}[\\w\\p{Punct}]+$");
+		Matcher m = blob.matcher(text);
+		return m.matches();
 	}
 }

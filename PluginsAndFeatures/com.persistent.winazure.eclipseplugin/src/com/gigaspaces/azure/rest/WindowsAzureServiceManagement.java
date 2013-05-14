@@ -209,7 +209,8 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 				StorageService storageService = getStorageKeys(subscriptionId,
 						ss.getServiceName());
 				storageService.setServiceName(ss.getServiceName());
-
+				storageService.setStorageServiceProperties(ss.
+						getStorageServiceProperties());
 				storageServices.add(storageService);
 			}
 		}

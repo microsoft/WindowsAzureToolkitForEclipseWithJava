@@ -45,6 +45,12 @@ public class WindowsAzureRoleComponent {
      * in Component tag in package.xml.
      */
     private WindowsAzureRoleComponentImportMethod importMethod = null;
+    
+    /**
+     * cloudUploadMode variable represents cloudUpload attribute
+     * in Component tag in package.xml.
+     */
+    private WARoleComponentCloudUploadMode cloudUploadMode = null;
 
     /**
      * importPath variable represents importPath attribute
@@ -186,9 +192,41 @@ public class WindowsAzureRoleComponent {
                     "Exception in setImportMethod", ex);
         }
     }
+    
+    /**
+     * This API is to returns the value of the cloudUpload attribute
+     * @return
+     */
+    public WARoleComponentCloudUploadMode getCloudUploadMode() {
+        return cloudUploadMode;
+    }
 
     /**
-     * This API is to returns the value of the importfrom attribute
+     * This API sets the cloudUpload attribute in Component tag
+     * in package.xml.
+     * @param cloudUploadMode sets the attribute in package.xml if null then removes the attribute
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public void setCloudUploadMode(WARoleComponentCloudUploadMode cloudUploadMode)
+            throws WindowsAzureInvalidProjectOperationException {
+      
+        this.cloudUploadMode = cloudUploadMode;
+        
+        try {
+            Element component = getComponentNode();
+            if (null == cloudUploadMode) {
+            	component.removeAttribute(WindowsAzureConstants.ATTR_CLOUD_UPLOAD);
+            } else {
+            	component.setAttribute(WindowsAzureConstants.ATTR_CLOUD_UPLOAD, cloudUploadMode.toString());
+            }
+        } catch (Exception ex) {
+            throw new WindowsAzureInvalidProjectOperationException(
+                    "Exception in setCloudUploadMode", ex);
+        }
+    }
+
+    /**
+     * This API is to returns the value of the import from attribute
      * @return
      */
     public String getImportPath() {

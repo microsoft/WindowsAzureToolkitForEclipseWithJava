@@ -6,5 +6,8 @@
          <contexts file="contexts.xml">
          </contexts>
    </extension>
+   <extension point="org.eclipse.ui.startup">
+     <startup class="com.microsoftopentechnologies.wacommon.startup.WACPStartUp"/>
+   </extension>
 
 </plugin>

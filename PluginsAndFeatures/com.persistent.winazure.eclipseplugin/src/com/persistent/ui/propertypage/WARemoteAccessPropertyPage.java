@@ -23,8 +23,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -96,7 +94,11 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
     private static final String DATE_SEP = "/";
     private boolean isPwdChanged;
     private boolean isPageDisplayed = false;
-
+    /**
+     * Variable to track, if came to remote access page from
+     * Publish wizard's Encryption link.
+     */
+    private boolean isFrmEncLink = false;
 
     /**
      * This method creates the control or contents for the remote access page.
@@ -187,12 +189,46 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         // group for the path and other variables
         createGroupCertPath(parent);
 
-        setComponentStatus(remoteChkBtn.getSelection());
-        if (remoteChkBtn.getSelection()) {
-            getDefaultValues();
+        /*
+         * Check if we are coming from Publish wizard link,
+         */
+        if (Activator.getDefault().getIsFromEncLink()) {
+        	String uname = Activator.getDefault().getPubUname();
+        	if (uname.isEmpty()) {
+        		// disable remote access
+        		remoteChkBtn.setSelection(false);
+        		makeAllTextBlank();
+        	} else {
+        		String pwd = Activator.getDefault().getPubPwd();
+        		String cnfPwd = Activator.getDefault().getPubCnfPwd();
+        		/*
+        		 * enable remote access and
+        		 * show values given on publish wizard
+        		 */
+        		remoteChkBtn.setSelection(true);
+        		txtUserName.setText(uname);
+        		txtPassword.setText(pwd);
+        		txtConfirmPwd.setText(cnfPwd);
+        		try {
+        			if (!waProjManager.
+        					getRemoteAccessEncryptedPassword().
+        					equals(pwd)) {
+        				isPwdChanged = true;
+        			}
+        		} catch (WindowsAzureInvalidProjectOperationException e) {
+        			Activator.getDefault().log(Messages.remAccErPwd, e);
+        		}
+        		isFrmEncLink =  true;
+        	}
+        	Activator.getDefault().setIsFromEncLink(false);
         } else {
-            makeAllTextBlank();
+        	if (remoteChkBtn.getSelection()) {
+        		getDefaultValues();
+        	} else {
+        		makeAllTextBlank();
+        	}
         }
+        setComponentStatus(remoteChkBtn.getSelection());
 
         /*
          * Here we are checking the isInconsistent value
@@ -792,7 +828,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                 File file = new File(tempPath);
                 //if path is not correct.display error message for that.
                 if (file.exists() && tempPath.endsWith(".cer")) {
-                    waProjManager.setRemoteAccessCertificatePath(newPath);
+                	waProjManager.setRemoteAccessCertificatePath(newPath);
                 } else {
                     PluginUtil.displayErrorDialog(this.getShell(),
                     		Messages.remAccErTxtTitle,
@@ -863,6 +899,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
         }
         WAEclipseHelper.refreshWorkspace(
         		Messages.remAccWarning, Messages.remAccWarnMsg);
+        isFrmEncLink = false;
         return super.performOk();
     }
 
@@ -1001,34 +1038,13 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
 
         @Override
         public void focusLost(FocusEvent event) {
-            Pattern pattern = Pattern.compile("(?=^.{6,}$)(?=.*\\d)(?=.*[A-Z])(?!.*\\s)(?=.*[a-z]).*$|"
-                + "(?=^.{6,}$)(?=.*\\d)(?!.*\\s)(?=.*[a-z])(?=.*\\p{Punct}).*$|"
-                + "(?=^.{6,}$)(?=.*\\d)(?!.*\\s)(?=.*[A-Z])(?=.*\\p{Punct}).*$|"
-                + "(?=^.{6,}$)(?=.*[A-Z])(?=.*[a-z])(?!.*\\s)(?=.*\\p{Punct}).*$");
-            Matcher match = pattern.matcher(txtPassword.getText());
-            try {
-            	/*
-            	 * checking if user has changed the password
-            	 * and that field is not blank
-            	 * then check for strong password else set the old password.
-            	 */
-                if (isPwdChanged) {
-                    if (!txtPassword.getText().isEmpty()
-                    		&& !match.find()) {
-                        PluginUtil.displayErrorDialog(new Shell(),
-                        		Messages.remAccErPwdNtStrg,
-                        		Messages.remAccPwdNotStrg);
-                        txtPassword.setFocus();
-                    }
-                } else {
-                    txtPassword.setText(waProjManager.
-                            getRemoteAccessEncryptedPassword());
-                }
-            } catch (WindowsAzureInvalidProjectOperationException e1) {
-                PluginUtil.displayErrorDialogAndLog(getShell(),
-                		Messages.remAccErrTitle,
-                		Messages.remAccErPwd, e1);
-            }
+        	if (isFrmEncLink) {
+        		WAEclipseHelper.checkRdpPwd(isPwdChanged, txtPassword,
+        				waProjManager, false, txtConfirmPwd);
+        	} else {
+        		WAEclipseHelper.checkRdpPwd(isPwdChanged, txtPassword,
+        				waProjManager, true, txtConfirmPwd);
+        	}
         }
 
         @Override

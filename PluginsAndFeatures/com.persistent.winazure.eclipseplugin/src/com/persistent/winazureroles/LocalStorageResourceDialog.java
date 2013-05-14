@@ -144,8 +144,7 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
         createPathComponent(container);
         if (isResEdit) {
             populateData();
-        }
-        else {
+        } else {
             StringBuffer strBfr = new StringBuffer(Messages.lclStgResStr);
             int lclStgSuffix = 1;
             boolean isValidName = true;
@@ -361,8 +360,7 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
                 		  Messages.lclStgPathErrTtl,
                 		  Messages.lclStgEnvVarMsg);
               }
-             }
-             catch (Exception e) {
+             } catch (Exception e) {
                  PluginUtil.displayErrorDialogAndLog(
                 		 getShell(),
                 		 Messages.lclStgSetErrTtl,

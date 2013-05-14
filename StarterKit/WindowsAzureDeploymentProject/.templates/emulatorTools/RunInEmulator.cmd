@@ -4,7 +4,7 @@
 if "%_ELEVATED%"=="" (goto:Elevate) else (goto:Deploy)
 :Elevate
 SET _ELEVATED=1
-start /min cscript /NoLogo "%~dp0.elevate.vbs" %~f0
+start /min cscript /NoLogo "%~dp0.elevate.vbs" "%~f0"
 SET _ELEVATED=
 exit
 

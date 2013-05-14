@@ -51,7 +51,6 @@ import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 public class WAResourceChangeListener implements IResourceChangeListener {
 
-	private String  errorTitle;
 	private String  errorMessage;
 	private boolean installSDK;
 	/**

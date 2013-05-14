@@ -538,12 +538,12 @@ public class WindowsAzureRole {
                     "Exception in createWinInputEndPt ", ex);
         }
     }
-    
+
     protected void setEndpoints(List<WindowsAzureEndpoint> winEndPList) {
 
         this.winEndPtList = winEndPList;
     }
-    
+
     /** This API returns windows azure endpoint */
     public WindowsAzureEndpoint getEndpoint(String endPointName) throws WindowsAzureInvalidProjectOperationException {
 
@@ -2019,6 +2019,14 @@ public class WindowsAzureRole {
         winEndPtList.get(index).setPrivatePort(String.valueOf(iisArrPort));
         addEndpoint(intEndPt, WindowsAzureEndpointType.Internal, inputEndPointLocalPort, "");
 
+        // Add webdeploy import option
+        String importsNode = String.format(WindowsAzureConstants.IMPORT, this.getName());
+        updateOrCreateElement(definitionFiledoc,importsNode,parentNodeExpr,WindowsAzureConstants.DEF_FILE_IMPORTS_ELEMENT_NAME,false,null);
+
+        nodeExpr = String.format(WindowsAzureConstants.IMPORT_WEB_DEPLOY, this.getName());
+        nodeAttributes.clear();
+        nodeAttributes.put("moduleName", "WebDeploy");
+        updateOrCreateElement(definitionFiledoc,nodeExpr,importsNode,WindowsAzureConstants.DEF_FILE_IMPORT_ELEMENT_NAME,true,nodeAttributes);
     }
 
     /** Adds comments as a first node */
@@ -2085,6 +2093,10 @@ public class WindowsAzureRole {
             Document definitionFiledoc = getWinProjMgr().getdefinitionFileDoc();
             String expr = String.format(WindowsAzureConstants.STARTUP_TASK_STARTS_WITH,this.getName(),
                           WindowsAzureConstants.TASK_CMD_ONLY);
+            ParserXMLUtility.deleteElement(definitionFiledoc, expr);
+
+            // remove web deploy import statement from definition file
+            expr = String.format(WindowsAzureConstants.IMPORT_WEB_DEPLOY, this.getName());
             ParserXMLUtility.deleteElement(definitionFiledoc, expr);
 
             // Delete Comments child node
@@ -2570,7 +2582,7 @@ public class WindowsAzureRole {
      */
     public String constructJdkHome(String path, File templateFile)
     		throws WindowsAzureInvalidProjectOperationException {
-    	String envVal = null;
+    	String envVal = "";
     	try {
     		//parse template file and find componentset name
     		XPath xPath = XPathFactory.newInstance().newXPath();
@@ -2617,7 +2629,7 @@ public class WindowsAzureRole {
      */
     public String constructServerHome(String name, String path, File templateFile)
     		throws WindowsAzureInvalidProjectOperationException {
-    	String envVal = null;
+    	String envVal = "";
     	try {
     		//parse template file and find componentset name
     		XPath xPath = XPathFactory.newInstance().newXPath();
@@ -2628,8 +2640,8 @@ public class WindowsAzureRole {
     				"server", name);
     		Element compSet = (Element) xPath.
     				evaluate(expr, compDoc, XPathConstants.NODE);
-    		NodeList nodelist = compSet.getChildNodes();
     		if (compSet != null) {
+    			NodeList nodelist = compSet.getChildNodes();
     			for (int i = 0; i < nodelist.getLength(); i++) {
     				Node compNode = (Node) nodelist.item(i);
     				if (!compNode.hasAttributes()) {
@@ -2872,19 +2884,12 @@ public class WindowsAzureRole {
                             // Add server.deploy at 1st position
                             getComponents().add(1, getComponentObjFromEle(ele));
                         } else if (type.equalsIgnoreCase("server.start")) {
-                        	String srvDply = String.format(WindowsAzureConstants.COMPONENT_TYPE,
-                        			getName(), "server.deploy");
-                        	Node srvNode = (Node) xPath.evaluate(srvDply, pacDoc, XPathConstants.NODE);
                             NamedNodeMap map = compEle.getAttributes();
                             for (int j = 0; j < map.getLength();j++) {
                                 ele.setAttribute(map.item(j).getNodeName(), map.item(j).getNodeValue());
                             }
-                            Node srvNxtNode = srvNode.getNextSibling();
-                            if (srvNxtNode == null) {
-                            	role.appendChild(ele);
-                            } else {
-                            	role.insertBefore(ele, srvNxtNode);
-                            }
+                            //Always add server.start node at the end of role
+                            role.appendChild(ele);
                             // Add server.start at 2nd position
                             getComponents().add(2, getComponentObjFromEle(ele));
                         }
@@ -2922,6 +2927,12 @@ public class WindowsAzureRole {
                 compobj.setImportMethod(WindowsAzureRoleComponentImportMethod.
                 		valueOf(compEle.
                 				getAttribute(WindowsAzureConstants.ATTR_IMETHOD)));
+            }
+
+            if (compEle.hasAttribute(WindowsAzureConstants.ATTR_CLOUD_UPLOAD)) {
+                compobj.setCloudUploadMode(WARoleComponentCloudUploadMode.
+                		valueOf(compEle.
+                				getAttribute(WindowsAzureConstants.ATTR_CLOUD_UPLOAD)));
             }
 
             if (compEle.hasAttribute(WindowsAzureConstants.ATTR_DDIR)) {
@@ -3731,7 +3742,7 @@ public class WindowsAzureRole {
   }
 
   /**
-   * Utility method to get role property from package.xml. 
+   * Utility method to get role property from package.xml.
    * @param property
    * @return
    * @throws WindowsAzureInvalidProjectOperationException
@@ -4192,6 +4203,66 @@ public class WindowsAzureRole {
   }
 
   /**
+   * This API returns cloudUpload attribute of server deploy component
+   * if server is not set will throw exception
+   * if the attribute is not set returns null
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public WARoleComponentCloudUploadMode getServerCloudUploadMode()
+		  throws WindowsAzureInvalidProjectOperationException  {
+	  try {
+		  if(getServerSourcePath()==null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "Server is not configured");
+		  } else {
+			  XPath xPath = XPathFactory.newInstance().newXPath();
+			  Document doc = winProjMgr.getPackageFileDoc();
+			  String expr =  String.format(WindowsAzureConstants.SERVER_TYPE, getName(), "server.deploy");
+			  Element node = (Element) xPath.evaluate(expr, doc,XPathConstants.NODE);
+			  if (node != null) {
+				  String attrValue = node.getAttribute(WindowsAzureConstants.ATTR_CLOUD_UPLOAD);
+				  if (attrValue != null && attrValue.length() > 0 )
+					  return WARoleComponentCloudUploadMode.valueOf(node.getAttribute(WindowsAzureConstants.ATTR_CLOUD_UPLOAD));
+			  }
+			  return null;		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
+   * This API will set cloudUpload attribute of server deploy component
+   * if server is not set will throw exception
+   * if cloudUpload is null or empty, api will remove the attribute from xml
+   * @param cloudUpload
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setServerCloudUploadMode(WARoleComponentCloudUploadMode cloudUpload)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  try {
+		  if(getServerSourcePath() == null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "Server is not configured");
+		  } else {
+			  List<WindowsAzureRoleComponent> compList = getComponents();
+			  for (int i = 0; i < compList.size(); i++) {
+				  WindowsAzureRoleComponent comp = compList.get(i);
+				  if (comp.getType().equalsIgnoreCase("server.deploy")) {
+					  if(cloudUpload == null ) {
+						  comp.setCloudUploadMode(null);
+					  } else {
+						  comp.setCloudUploadMode(cloudUpload);
+					  }
+				  }
+			  }
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
    * This API will return url attribute of jdk deploy component
    * if jdk is not set will throw exception
    * if the attribute is not set returns empty string
@@ -4311,4 +4382,66 @@ public class WindowsAzureRole {
 		  throw new WindowsAzureInvalidProjectOperationException("", ex);
 	  }
   }
+
+  /**
+   * This API will return cloudUpload attribute of jdk deploy component
+   * if jdk is not set will throw exception
+   * if the attribute is not set returns null
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public WARoleComponentCloudUploadMode getJDKCloudUploadMode()
+		  throws WindowsAzureInvalidProjectOperationException  {
+	  try {
+		  if(getJDKSourcePath()==null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "JDK is not configured");
+		  } else {
+			  XPath xPath = XPathFactory.newInstance().newXPath();
+			  Document doc = winProjMgr.getPackageFileDoc();
+			  String expr =  String.format(WindowsAzureConstants.SERVER_TYPE, getName(), "jdk.deploy");
+			  Element node = (Element) xPath.evaluate(expr, doc,XPathConstants.NODE);
+			  if (node != null) {
+				  String attrValue = node.getAttribute(WindowsAzureConstants.ATTR_CLOUD_UPLOAD);
+				  if (attrValue != null && attrValue.length() > 0)
+					  return WARoleComponentCloudUploadMode.valueOf(node.getAttribute(WindowsAzureConstants.ATTR_CLOUD_UPLOAD));
+			  }
+			  return null;
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
+  /**
+   * This API will set cloudUpload attribute of jdk deploy component
+   * if jdk is not set will throw exception
+   * if cloudUpload is null or empty, api will remove the attribute from xml
+   * @param cloudUpload
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setJDKCloudUploadMode(WARoleComponentCloudUploadMode cloudUpload)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  try {
+		  if(getJDKSourcePath() == null) {
+			  throw new WindowsAzureInvalidProjectOperationException(
+					  "JDK is not configured");
+		  } else {
+			  List<WindowsAzureRoleComponent> compList = getComponents();
+			  for (int i = 0; i < compList.size(); i++) {
+				  WindowsAzureRoleComponent comp = compList.get(i);
+				  if (comp.getType().equalsIgnoreCase("jdk.deploy")) {
+					  if(cloudUpload == null ) {
+						  comp.setCloudUploadMode(null);
+					  } else {
+						  comp.setCloudUploadMode(cloudUpload);
+					  }
+				  }
+			  }
+		  }
+	  } catch (Exception ex) {
+		  throw new WindowsAzureInvalidProjectOperationException("", ex);
+	  }
+  }
+
 }

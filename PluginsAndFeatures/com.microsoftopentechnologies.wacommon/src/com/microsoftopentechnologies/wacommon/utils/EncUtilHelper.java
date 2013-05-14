@@ -42,7 +42,7 @@ public class EncUtilHelper {
     	// we dont include cmd.exe /C in the command since we are not invoking .bat or .cmd files. when invoking .exe files the cmd.exe is not needed 
     	// and causes problems with file paths.
     	
-        String[] commandArgs = {encPath + File.separator + "encutil", "-encrypt" , "-text" , password , "-cert" , certPath };
+        String[] commandArgs = {"\""+encPath + File.separator + "encutil.exe\"", "-encrypt" , "-text" , password , "-cert" , certPath };
         String encpwd = encInvocation(commandArgs);
         return encpwd;   	
      }
@@ -100,13 +100,12 @@ public class EncUtilHelper {
     Exception, IOException {
         String result = "";
         String error = "";
-        Runtime runtime = Runtime.getRuntime();
         InputStream inputStream = null;
         InputStream errorStream = null;
         BufferedReader br = null;
         BufferedReader ebr = null;
         try {
-            Process process = runtime.exec(command);
+            Process process = new ProcessBuilder(command).start();;
             inputStream = process.getInputStream();
             errorStream = process.getErrorStream();
             br = new BufferedReader(new InputStreamReader(inputStream));

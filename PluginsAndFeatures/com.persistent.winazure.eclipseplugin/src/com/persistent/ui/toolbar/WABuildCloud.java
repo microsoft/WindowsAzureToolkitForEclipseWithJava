@@ -100,16 +100,17 @@ public class WABuildCloud extends AbstractHandler {
 						}
 
 						dplyFolderPath = String.format("%s%s", projPath, dplyFldrName);
-						String cmd = String.format("%s%s", "explorer.exe ", dplyFolderPath);
+//						String cmd = String.format("%s%s", "explorer.exe", dplyFolderPath);
 						File deployFile = new File(dplyFolderPath);
 						
 						if (deployFile.exists() && deployFile.isDirectory() 
 								&& deployFile.listFiles().length > 0) {
-							Runtime.getRuntime().exec(cmd);
+							String[] cmd = {"explorer.exe", "\""+dplyFolderPath+"\""};
+							new ProcessBuilder(cmd).start();
 						}
 						waProjMngr.save();
 					} catch (IOException e) {
-						errorMessage = String.format("%s%s",
+						errorMessage = String.format("%s %s",
 								Messages.dplyFldErrMsg,
 								dplyFolderPath);
 						Activator.getDefault().log(errorMessage, e);
@@ -133,8 +134,7 @@ public class WABuildCloud extends AbstractHandler {
             job.schedule();
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			errorTitle = Messages.bldCldErrTtl;
-			errorMessage = String.format("%s%s%s", Messages.bldCldErrMsg,
-					" ", selProject.getName());
+			errorMessage = String.format("%s %s", Messages.bldCldErrMsg, selProject.getName());
 			Activator.getDefault().log(errorMessage, e);
 			Display.getDefault().syncExec(new Runnable() {
 				public void run() {

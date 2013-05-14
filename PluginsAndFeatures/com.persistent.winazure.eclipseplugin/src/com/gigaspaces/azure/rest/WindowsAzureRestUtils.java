@@ -33,6 +33,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -95,15 +96,23 @@ public class WindowsAzureRestUtils {
 	public String runRest(HttpVerb method, String url,
 			HashMap<String, String> headers, Object body, String thumbprint, boolean fileBody)
 					throws InterruptedException, CommandLineException {
-		StringBuilder command = new StringBuilder();
+		List<String> commandArgs = new ArrayList<String>();
+		commandArgs.add(uri);
+		commandArgs.add("--request");
+		commandArgs.add("/verb:" + method);
+		commandArgs.add("/url:" + url);
+		commandArgs.add("/thumbprint:" + thumbprint);
 
-		command.append("" + uri + " ");
-		command.append("--request ");
-		command.append("/verb:" + method + " ");
-		command.append("/url:\"" + url + "\" ");
-
-		command.append("/thumbprint:\"" + thumbprint + "\" ");
-		appendHeades(headers, command);
+//		StringBuilder command = new StringBuilder();
+//		command.append("" + uri + " ");
+//		command.append("--request ");
+//		command.append("/verb:" + method + " ");
+//		command.append("/url:\"" + url + "\" ");
+//
+//		command.append("/thumbprint:\"" + thumbprint + "\" ");
+		List<String> headersList = appendHeades(headers);
+		commandArgs.addAll(headersList);
+		
 		if (fileBody) {
 
 			String base64Body = objectToBase64EncodedString(body);
@@ -115,13 +124,17 @@ public class WindowsAzureRestUtils {
 				throw new CommandLineException(e);
 			}
 
-			command.append("/filebody:\"" + bodyFile + "\" "); // appending the filepath of the file containing the body to the command. this is the fix for bug 454, shortning the command greatly.
-
+//			command.append("/filebody:\"" + bodyFile + "\" "); // appending the filepath of the file containing the body to the command. this is the fix for bug 454, shortning the command greatly.
+			commandArgs.add("/filebody:" + bodyFile);
 		} else {
-			appendBody(body, command);
+			String bodyContent = appendBody(body);
+			
+			if (bodyContent != null) {
+				commandArgs.add(bodyContent);
+			}
 		}
 
-		return execute(command);
+		return execute(commandArgs);
 	}
 
 	private String objectToBase64EncodedString(Object object) throws CommandLineException {
@@ -174,7 +187,7 @@ public class WindowsAzureRestUtils {
 		return temp;
 	}
 
-	private void appendBody(Object body, StringBuilder command) throws CommandLineException {
+	private String appendBody(Object body) throws CommandLineException {
 		if (body != null) {
 
 			JAXBContext context = ModelFactory.createInstance();
@@ -194,7 +207,7 @@ public class WindowsAzureRestUtils {
 				xmlString = Base64
 						.encode(xmlString.getBytes("UTF-8"));
 
-				command.append(" /body:\"" + xmlString + "\" ");
+				return "/body:" + xmlString;
 			} catch (JAXBException e) {
 				Activator.getDefault().log(Messages.error, e);
 				throw new CommandLineException(e);
@@ -204,6 +217,7 @@ public class WindowsAzureRestUtils {
 			}
 
 		}
+		return null;
 	}
 
 	private static String getRestEXE() {
@@ -252,10 +266,9 @@ public class WindowsAzureRestUtils {
 		return '"' + pluginFolder + File.separator + "restutil.exe" + '"';
 	}
 
-	private void appendHeades(HashMap<String, String> headers,
-			StringBuilder command) {
+	private List<String> appendHeades(HashMap<String, String> headers) {
+		List<String> commandArgs = new ArrayList<String>();
 		if (headers != null && headers.size() > 0) {
-
 			Iterator<Entry<String, String>> iterator = headers.entrySet()
 					.iterator();
 
@@ -269,21 +282,22 @@ public class WindowsAzureRestUtils {
 				}
 			}
 
-			command.append(" /header:\"" + head.toString() + "\" ");
+			commandArgs.add("/header:" + head.toString());
 		}
+		return commandArgs;
 	}
 
-	private String execute(String command) throws CommandLineException,
-	IOException, InterruptedException {
+	private String execute(List<String> command) throws CommandLineException,
+	InterruptedException {
 		StringBuilder result = new StringBuilder();
 		String error = "";
-		Runtime runtime = Runtime.getRuntime();
 		InputStream inputStream = null;
 		InputStream errorStream = null;
 		BufferedReader br = null;
 		BufferedReader ebr = null;
-		Process process = runtime.exec(command);
+		Process process = null;
 		try {
+			process = new ProcessBuilder(command).start();
 
 			inputStream = process.getInputStream();
 			errorStream = process.getErrorStream();
@@ -302,19 +316,29 @@ public class WindowsAzureRestUtils {
 				Activator.getDefault().log(error + command, null);
 				throw new CommandLineException(error);
 			}
+		} catch (CommandLineException e) {
+			Activator.getDefault().log(Messages.error, e);
+			throw new CommandLineException(e.getMessage(), e);
+		} catch (IOException e) {
+			Activator.getDefault().log(Messages.error, e);
+			throw new CommandLineException(e.getMessage(), e);
 		} finally {
-			process.destroy();
-			if (inputStream != null) {
-				inputStream.close();
-			}
-			if (errorStream != null) {
-				errorStream.close();
-			}
-			if (br != null) {
-				br.close();
-			}
-			if (ebr != null) {
-				ebr.close();
+			try {
+				if (inputStream != null) {
+					inputStream.close();
+				}
+				if (errorStream != null) {
+					errorStream.close();
+				}
+				if (br != null) {
+					br.close();
+				}
+				if (ebr != null) {
+					ebr.close();
+				}
+			} catch (IOException e) { //TBD: Need to revisit this for better handling
+				Activator.getDefault().log(Messages.error, e);
+				throw new CommandLineException(e.getMessage(), e);
 			}
 		}
 		return result.toString();
@@ -322,44 +346,58 @@ public class WindowsAzureRestUtils {
 
 	public String installPublishSettings(File file, String password)
 			throws InterruptedException, CommandLineException {
-		StringBuilder command = new StringBuilder();
-		command.append("" + uri + " ");
-		command.append("--install ");
-		command.append("/path:\"" + file.getPath() + "\" ");
+		List<String> commandArgs = new ArrayList<String>();
+		commandArgs.add(uri);
+		commandArgs.add("--install");
+		commandArgs.add("/path:" + file.getPath());
+//		StringBuilder command = new StringBuilder();
+//		command.append("" + uri + " ");
+//		command.append("--install ");
+//		command.append("/path:\"" + file.getPath() + "\" ");
 
 		if (password != null && !password.isEmpty()) {
-			command.append("/password:\"" + password + "\"");
+//			command.append("/password:\"" + password + "\"");
+			commandArgs.add("/password:" + password);
 		}
-		return execute(command);
+		return execute(commandArgs);
 	}
 
-	private String execute(StringBuilder command) throws InterruptedException,
-	CommandLineException {
-		String result = null;
-		try {
-			result = execute(command.toString());
-		} catch (CommandLineException e) {
-			Activator.getDefault().log(Messages.error, e);
-			throw new CommandLineException(e.getMessage(), e);
-		} catch (IOException e) {
-			Activator.getDefault().log(Messages.error, e);
-			throw new CommandLineException(e.getMessage(), e);
-		}
-		return result;
-	}
+//	private String execute(StringBuilder command) throws InterruptedException,
+//	CommandLineException {
+//		String result = null;
+//		try {
+//			result = execute(command.toString());
+//		} catch (CommandLineException e) {
+//			Activator.getDefault().log(Messages.error, e);
+//			throw new CommandLineException(e.getMessage(), e);
+//		} catch (IOException e) {
+//			Activator.getDefault().log(Messages.error, e);
+//			throw new CommandLineException(e.getMessage(), e);
+//		}
+//		return result;
+//	}
 
 	public String runStorage(HttpVerb method, String url, String storageKey,
 			HashMap<String, String> headers, Object body)
 					throws InterruptedException, CommandLineException {
-		StringBuilder command = new StringBuilder();
+		List<String> commandArgs = new ArrayList<String>();
+		commandArgs.add(uri);
+		commandArgs.add("--request");
+		commandArgs.add("/verb:" + method);
+		commandArgs.add("/url:" + url);
+		commandArgs.add("/key:" + storageKey);
+		
+//		StringBuilder command = new StringBuilder();
+//		command.append("" + uri + " ");
+//		command.append("--request ");
+//		command.append("/verb:" + method + " ");
+//		command.append("/url:\"" + url + "\" ");
+//		command.append("/key:\"" + storageKey + "\" ");
 
-		command.append("" + uri + " ");
-		command.append("--request ");
-		command.append("/verb:" + method + " ");
-		command.append("/url:\"" + url + "\" ");
-		command.append("/key:\"" + storageKey + "\" ");
-
-		appendHeades(headers, command);
+		List<String> headersList = appendHeades(headers);
+		if (headersList.size() > 0) {
+			commandArgs.addAll(headersList);
+		}
 
 		if (body != null) {
 
@@ -381,7 +419,8 @@ public class WindowsAzureRestUtils {
 					} finally {
 						output.close();
 					}
-					command.append("/filebody:\"" + temp + "\" ");
+//					command.append("/filebody:\"" + temp + "\" ");
+					commandArgs.add("/filebody:" + temp);
 
 				} catch (IOException e) {
 					Activator.getDefault().log(Messages.error, e);
@@ -389,10 +428,13 @@ public class WindowsAzureRestUtils {
 				}
 
 			} else {
-				appendBody(body, command);
+				String bodyContent = appendBody(body);
+				if (bodyContent != null) {
+					commandArgs.add(bodyContent);
+				}
 			}
 		}
-		return execute(command);
+		return execute(commandArgs);
 	}
 
 	public void launchRDP(Deployment deployment, String userName) {
@@ -429,8 +471,8 @@ public class WindowsAzureRestUtils {
 				output.write(command.toString().getBytes("UTF-8"));
 
 				output.close();
-
-				Runtime.getRuntime().exec("cmd.exe /C \"" + fileName + "\"");
+				String commandArgs[] = {"cmd.exe","/C",fileName};
+				new ProcessBuilder(commandArgs).start();
 			}
 
 		} catch (IOException e) {

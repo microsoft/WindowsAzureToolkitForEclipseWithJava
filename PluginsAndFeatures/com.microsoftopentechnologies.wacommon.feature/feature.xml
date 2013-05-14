@@ -2,7 +2,7 @@
 <feature
       id="com.microsoftopentechnologies.wacommon.feature"
       label="Windows Azure Common Plugin (by MS Open Tech)"
-      version="1.8.1.qualifier"
+      version="2.0.0.qualifier"
       provider-name="Microsoft Open Technologies Inc."
       os="win32">
 
@@ -22,7 +22,7 @@
 This package includes the following components, each of which has its own license terms:
 
 • WINDOWS AZURE PLUGIN FOR ECLIPSE WITH JAVA (BY MICROSOFT OPEN TECHNOLOGIES, INC.)
-• MICROSOFT WEB PLATFORM INSTALLER 3.0
+• MICROSOFT WEB PLATFORM INSTALLER 4.5
 • MICROSOFT APPLICATON REQUEST ROUTING VERSION 2.5 FOR WINDOWS OPERATING SYSTEMS
 • MICROSOFT WEB FARM FRAMEWORK VERSION 1.1 FOR WINDOWS OPERATING SYSTEMS
 • MICROSOFT EXTERNAL CACHE 1.0
@@ -128,7 +128,7 @@ EFFET JURIDIQUE. Le présent contrat décrit certains droits juridiques. Vous po
 
 -------------------------------------------------------------------------------------
 MICROSOFT SOFTWARE LICENSE TERMS
-MICROSOFT WEB PLATFORM INSTALLER 3.0
+MICROSOFT WEB PLATFORM INSTALLER 4.5
 -------------------------------------------------------------------------------------
 
 These license terms are an agreement between Microsoft Corporation (or based on where you live, one of its affiliates) and you. Please read them. They apply to the software named above, which includes the media on which you received it, if any. The terms also apply to any Microsoft

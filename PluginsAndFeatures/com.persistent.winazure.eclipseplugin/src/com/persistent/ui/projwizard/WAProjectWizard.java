@@ -55,6 +55,7 @@ import org.eclipse.ui.dialogs.WorkingSetGroup;
 
 import waeclipseplugin.Activator;
 
+import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
@@ -106,9 +107,9 @@ implements INewWizard, IPageChangedListener {
 
         	//Extract the WAStarterKitForJava.zip to temp dir
         	waProjMgr = WindowsAzureProjectManager.create(zipFile);
-        	// By deafult - disabling remote access
-        	// when creating new project
-        	// waProjMgr.setRemoteAccessAllRoles(false);
+        	//	By deafult - disabling remote access
+        	//  when creating new project
+        	waProjMgr.setRemoteAccessAllRoles(false);
         	waRole = waProjMgr.getRoles().get(0);
         } catch (WindowsAzureInvalidProjectOperationException e) {
         	errorTitle = Messages.adRolErrTitle;
@@ -164,7 +165,6 @@ implements INewWizard, IPageChangedListener {
         		getKeyFtrPageValues();
         final IProject proj = getSelectProject();
         boolean retVal = true;
-
         IRunnableWithProgress runnable = new IRunnableWithProgress() {
         	public void run(IProgressMonitor monitor)
         			throws InvocationTargetException {
@@ -231,7 +231,8 @@ implements INewWizard, IPageChangedListener {
 
             		// JDK download group
             		// Add only if JDK component added
-            		if (depMap.get("jdkChecked").equalsIgnoreCase("true")) {
+            		if (depMap.get("jdkDwnldChecked").equalsIgnoreCase("true") || 
+            				depMap.get("jdkAutoDwnldChecked").equalsIgnoreCase("true")) {
             			role.setJDKCloudURL(depMap.get("jdkUrl"));
             			role.setJDKCloudKey(depMap.get("jdkKey"));
             			/*
@@ -239,6 +240,9 @@ implements INewWizard, IPageChangedListener {
             			 * hence store JAVA_HOME for cloud.
             			 */
             			role.setJDKCloudHome(depMap.get("javaHome"));
+            			if (depMap.get("jdkAutoDwnldChecked").equalsIgnoreCase("true")) {
+            				role.setJDKCloudUploadMode(WARoleComponentCloudUploadMode.AUTO);
+            			}
             		}
             	}
 
@@ -252,8 +256,8 @@ implements INewWizard, IPageChangedListener {
 
                 	// Server download group
                 	// Add only if Server component added
-                	if (depMap.get("srvDwnldChecked").
-                			equalsIgnoreCase("true")) {
+                	if (depMap.get("srvDwnldChecked").equalsIgnoreCase("true")
+                		|| depMap.get("srvAutoDwnldChecked").equalsIgnoreCase("true")) {
                 		role.setServerCloudURL(depMap.get("srvUrl"));
                 		role.setServerCloudKey(depMap.get("srvKey"));
                 		/*
@@ -261,6 +265,9 @@ implements INewWizard, IPageChangedListener {
                 		 * hence store server home directory for cloud.
                 		 */
                 		role.setServerCloudHome(depMap.get("srvHome"));
+                		if (depMap.get("srvAutoDwnldChecked").equalsIgnoreCase("true")) {
+                			role.setServerCloudUploadMode(WARoleComponentCloudUploadMode.AUTO);                			
+                		}
                 	}
                 }
 
@@ -503,6 +510,8 @@ implements INewWizard, IPageChangedListener {
     	// JDK download group
     	values.put("jdkDwnldChecked" , Boolean.valueOf(
     			tabPg.isJdkDownloadChecked()).toString());
+    	values.put("jdkAutoDwnldChecked" , Boolean.valueOf(
+    			tabPg.isJdkAutoUploadChecked()).toString());
     	values.put("jdkUrl" , tabPg.getJdkUrl());
     	values.put("jdkKey" , tabPg.getJdkKey());
     	values.put("javaHome", tabPg.getJavaHome());
@@ -515,6 +524,8 @@ implements INewWizard, IPageChangedListener {
     	// Server download group
     	values.put("srvDwnldChecked" , Boolean.valueOf(
     			tabPg.isSrvDownloadChecked()).toString());
+    	values.put("srvAutoDwnldChecked" , Boolean.valueOf(
+    			tabPg.isSrvAutoUploadChecked()).toString());
     	values.put("srvUrl" , tabPg.getSrvUrl());
     	values.put("srvKey" , tabPg.getSrvKey());
     	values.put("srvHome", tabPg.getSrvHomeDir());

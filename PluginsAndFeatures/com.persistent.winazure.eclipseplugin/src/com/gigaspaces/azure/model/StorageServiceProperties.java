@@ -10,6 +10,7 @@ public class StorageServiceProperties {
 	private String location;
 	private String affinityGroup;
 	private String label;
+	private Endpoints endpoints;
 
 	@XmlElement(name = "Description")
 	public String getDescription() {
@@ -47,4 +48,12 @@ public class StorageServiceProperties {
 		this.label = label;
 	}
 
+	@XmlElement(name = "Endpoints")
+	public Endpoints getEndpoints() {
+		return endpoints;
+	}
+
+	public void setEndpoints(Endpoints endpoints) {
+		this.endpoints = endpoints;
+	}
 }

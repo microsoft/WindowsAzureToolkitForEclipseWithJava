@@ -34,17 +34,20 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
+import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.Shell;
@@ -63,7 +66,10 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureNamedCache;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.WAEclipseHelper;
 
 /**
@@ -86,11 +92,9 @@ public class WARCaching extends PropertyPage {
 	private Label explNtLbl;
 	private Label hostNameLbl;
 	private Group strGrp;
-	private Label accKeyLbl;
-	private Label accNameLbl;
+	private Combo comboStrgAcc;
+	private Link accLink;
 	private Label crdntlLbl;
-	private Text txtAccKey;
-	private Text txtAccName;
 	private TableViewer tableViewer;
 	private Map<String, WindowsAzureNamedCache> mapCache;
 	/**
@@ -153,7 +157,7 @@ public class WARCaching extends PropertyPage {
 					Messages.getCachMemErMsg, e);
 		}
 		if (cachePercent > 0) {
-			enableCachingPage();
+			setEnableCaching(true);
 			cacheCheck.setSelection(true);
 			txtCache.setText(String.format("%s%s",
 					cachePercent, "%"));
@@ -162,16 +166,10 @@ public class WARCaching extends PropertyPage {
 					Messages.dlgDbgLclHost, "_",
 					wARole.getName().toLowerCase()));
 			try {
-				String accName = wARole.
-						getCacheStorageAccountName();
 				String accKey = wARole.
 						getCacheStorageAccountKey();
-				if (accName != null) {
-					txtAccName.setText(accName);
-				}
-				if (accKey != null) {
-					txtAccKey.setText(accKey);
-				}
+				comboStrgAcc = JdkSrvConfig.
+						populateStrgNameAsPerKey(accKey, comboStrgAcc);
 			} catch (WindowsAzureInvalidProjectOperationException e) {
 				PluginUtil.displayErrorDialogAndLog(
 						getShell(),
@@ -181,7 +179,7 @@ public class WARCaching extends PropertyPage {
 
 		} else {
 			cacheCheck.setSelection(false);
-			disableCachingPage();
+			setEnableCaching(false);
 		}
 		if (tableViewer != null) {
 			tableViewer.refresh();
@@ -190,7 +188,7 @@ public class WARCaching extends PropertyPage {
 		 * As soon as we come to Caching page
 		 * set value to false, as user may traverse to other page
 		 * and come back to caching page again
-		 * and then click on OK 
+		 * and then click on OK
 		 */
 		warnDisplayed = false;
 		return super.getTitle();
@@ -277,8 +275,7 @@ public class WARCaching extends PropertyPage {
 						cacheCheck.setSelection(false);
 						return;
 					}
-					
-					enableCachingPage();
+					setEnableCaching(true);
 					/* Set cache memory percent
 					 * to default value 30
 					 */
@@ -290,7 +287,7 @@ public class WARCaching extends PropertyPage {
 							Messages.dlgDbgLclHost, "_",
 							wARole.getName().toLowerCase()));
 				} else {
-					disableCachingPage();
+					setEnableCaching(false);
 					/* Set cache memory percent to 0
 					 *  to disable cache.
 					 *  Also set storage account name
@@ -716,132 +713,109 @@ public class WARCaching extends PropertyPage {
 		crdntlLbl.setText(Messages.crdntlLbl);
 		crdntlLbl.setLayoutData(gridData);
 
-		accNameLbl = new Label(strGrp, SWT.LEFT);
+		comboStrgAcc = new Combo(strGrp, SWT.READ_ONLY);
 		gridData = new GridData();
-		gridData.horizontalAlignment = SWT.FILL;
-		accNameLbl.setText(Messages.nameLbl);
-		accNameLbl.setLayoutData(gridData);
+		gridData.widthHint = 350;
+		comboStrgAcc.setLayoutData(gridData);
+		comboStrgAcc.addSelectionListener(new SelectionListener() {
 
-		txtAccName = new Text(strGrp, SWT.LEFT | SWT.BORDER);
-		gridData = new GridData();
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.FILL;
-		gridData.widthHint = 200;
-		gridData.horizontalIndent = 30;
-		txtAccName.setLayoutData(gridData);
-		txtAccName.addFocusListener(new FocusListener() {
-			private String oldTxt = "";
 			@Override
-			public void focusLost(FocusEvent arg0) {
-				if (!txtAccName.getText().equals(oldTxt)) {
-					try {
-						wARole.
-						setCacheStorageAccountName(
-								txtAccName.getText().trim());
-					} catch (WindowsAzureInvalidProjectOperationException e) {
-						PluginUtil.displayErrorDialogAndLog(
-								getShell(),
-								Messages.cachErrTtl,
-								Messages.setAccNmErrMsg, e);
-					}
+			public void widgetSelected(SelectionEvent arg0) {
+				String key = JdkSrvConfig.getAccessKey(comboStrgAcc);
+				if (key.isEmpty()) {
+					// none is selected
+					setName("");
+				} else {
+					String name = StorageAccountRegistry.
+							getStrgList().get(StorageRegistryUtilMethods.
+									getStrgAccIndexAsPerKey(key)).getStrgName();
+					setName(name);
 				}
+				setKey(key);
 			}
 
 			@Override
-			public void focusGained(FocusEvent arg0) {
-				oldTxt = txtAccName.getText();
+			public void widgetDefaultSelected(SelectionEvent arg0) {
 			}
 		});
 
-		accKeyLbl = new Label(strGrp, SWT.LEFT);
-		gridData = new GridData();
-		gridData.horizontalAlignment = SWT.FILL;
-		gridData.verticalIndent = 3;
-		accKeyLbl.setText(Messages.keyLbl);
-		accKeyLbl.setLayoutData(gridData);
-
-		txtAccKey = new Text(strGrp, SWT.LEFT | SWT.BORDER);
-		gridData = new GridData();
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.FILL;
-		gridData.widthHint = 200;
-		gridData.verticalIndent = 3;
-		gridData.horizontalIndent = 30;
-
-		txtAccKey.setLayoutData(gridData);
-		txtAccKey.addFocusListener(new FocusListener() {
-			private String oldTxt = "";
+		accLink = JdkSrvConfig.createLink(strGrp,
+				Messages.linkLblAcc, false);
+		accLink.addSelectionListener(new SelectionAdapter() {
 			@Override
-			public void focusLost(FocusEvent arg0) {
-				if (!txtAccKey.getText().
-						equals(oldTxt)) {
-					try {
-						wARole.
-						setCacheStorageAccountKey(
-								txtAccKey.getText().trim());
-					} catch (WindowsAzureInvalidProjectOperationException e) {
-						PluginUtil.displayErrorDialogAndLog(
-								getShell(),
-								Messages.cachErrTtl,
-								Messages.setAccKyErrMsg, e);
-					}
-				}
-			}
-
-			@Override
-			public void focusGained(FocusEvent arg0) {
-				oldTxt = txtAccKey.getText();
+			public void widgetSelected(SelectionEvent event) {
+				comboStrgAcc = JdkSrvConfig.
+						openAccLink(cacheCheck,
+								comboStrgAcc);
 			}
 		});
 	}
 
 	/**
-	 * Disable components on caching page.
+	 * Method sets windows azure role's
+	 * cache storage account key.
+	 * @param key
 	 */
-	private void disableCachingPage() {
-		enblCacheNote.setEnabled(false);
-		scaleLbl.setEnabled(false);
-		cacheScale.setEnabled(false);
-		cacheScale.setSelection(cacheScale.getMinimum());
-		txtCache.setText("");
-		txtCache.setEnabled(false);
-		txtHostName.setText("");
-		txtHostName.setEnabled(false);
-		tblCache.setEnabled(false);
-		btnRemove.setEnabled(false);
-		btnAdd.setEnabled(false);
-		btnEdit.setEnabled(false);
-		explNtLbl.setEnabled(false);
-		hostNameLbl.setEnabled(false);
-		strGrp.setEnabled(false);
-		accKeyLbl.setEnabled(false);
-		accNameLbl.setEnabled(false);
-		crdntlLbl.setEnabled(false);
-		txtAccKey.setText("");
-		txtAccKey.setEnabled(false);
-		txtAccName.setText("");
-		txtAccName.setEnabled(false);
+	private void setKey(String key) {
+		try {
+			wARole.
+			setCacheStorageAccountKey(key);
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			PluginUtil.displayErrorDialogAndLog(
+					getShell(),
+					Messages.cachErrTtl,
+					Messages.setAccKyErrMsg, e);
+		}
 	}
 
 	/**
-	 * Enable components on caching page.
+	 * Method sets windows azure role's
+	 * cache storage account name.
+	 * @param name
 	 */
-	private void enableCachingPage() {
-		enblCacheNote.setEnabled(true);
-		scaleLbl.setEnabled(true);
-		cacheScale.setEnabled(true);
-		txtCache.setEnabled(true);
-		tblCache.setEnabled(true);
-		btnAdd.setEnabled(true);
-		explNtLbl.setEnabled(true);
-		txtHostName.setEnabled(true);
-		hostNameLbl.setEnabled(true);
-		strGrp.setEnabled(true);
-		accKeyLbl.setEnabled(true);
-		accNameLbl.setEnabled(true);
-		crdntlLbl.setEnabled(true);
-		txtAccKey.setEnabled(true);
-		txtAccName.setEnabled(true);
+	private void setName(String name) {
+		try {
+			wARole.
+			setCacheStorageAccountName(name);
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			PluginUtil.displayErrorDialogAndLog(
+					getShell(),
+					Messages.cachErrTtl,
+					Messages.setAccNmErrMsg, e);
+		}
+	}
+
+	/**
+	 * Method enables or disables
+	 * UI components on caching page.
+	 * @param status
+	 */
+	private void setEnableCaching(boolean status) {
+		enblCacheNote.setEnabled(status);
+		scaleLbl.setEnabled(status);
+		cacheScale.setEnabled(status);
+		txtCache.setEnabled(status);
+		tblCache.setEnabled(status);
+		btnAdd.setEnabled(status);
+		explNtLbl.setEnabled(status);
+		txtHostName.setEnabled(status);
+		hostNameLbl.setEnabled(status);
+		strGrp.setEnabled(status);
+		comboStrgAcc.setEnabled(status);
+		crdntlLbl.setEnabled(status);
+		if (status) {
+			comboStrgAcc = JdkSrvConfig.
+					populateStrgAccComboBox("",
+							comboStrgAcc);
+		} else {
+			cacheScale.
+			setSelection(cacheScale.getMinimum());
+			txtCache.setText("");
+			comboStrgAcc.removeAll();
+			txtHostName.setText("");
+			btnRemove.setEnabled(status);
+			btnEdit.setEnabled(status);
+		}
 	}
 
 	/**
@@ -1204,7 +1178,7 @@ public class WARCaching extends PropertyPage {
 		 * Handles the modification of named cache name.
 		 * @param cache : the cache being modified
 		 * @param modifiedVal : new value for cache name
-		 * @throws WindowsAzureInvalidProjectOperationException 
+		 * @throws WindowsAzureInvalidProjectOperationException
 		 */
 		private void modifyCacheName(WindowsAzureNamedCache cache,
 				Object modifiedVal)
@@ -1354,8 +1328,7 @@ public class WARCaching extends PropertyPage {
 				/* Check account name or key is empty,
 				 * if then display confirmation dialog.
 				 */
-				if (txtAccName.getText().isEmpty()
-						|| txtAccKey.getText().isEmpty()) {
+				if (comboStrgAcc.getSelectionIndex() == 0) {
 					boolean choice = MessageDialog.openConfirm(
 							new Shell(), Messages.cachWarnTtl,
 							Messages.cachWarnMsg);
@@ -1410,8 +1383,8 @@ public class WARCaching extends PropertyPage {
 				 * i.e when current selected
 				 * property page is not Caching
 				 */
-				if (!warnDisplayed && (txtAccName.getText().isEmpty()
-						|| txtAccKey.getText().isEmpty())) {
+				if (!warnDisplayed
+						&& comboStrgAcc.getSelectionIndex() == 0) {
 					boolean choice = MessageDialog.openConfirm(
 							new Shell(), Messages.cachWarnTtl,
 							Messages.cachWarnMsg);
@@ -1462,7 +1435,7 @@ public class WARCaching extends PropertyPage {
 		} catch (Exception e) {
 			/*
 			 * User has given input
-			 * cachVal < 0 or cachVal > 100 
+			 * cachVal < 0 or cachVal > 100
 			 */
 			isCachPerValid = false;
 		}

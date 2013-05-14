@@ -1,4 +1,4 @@
-﻿# wash v0.1.0
+﻿# wash v0.2.0
 # Copyright 2013 by Microsoft Open Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+$global:context = @{
+	subscriptionID = $null;
+	subscriptionName = $null;
+	subscriptionCertificate = $null;
+	subscriptionManagementURL = $null;
+	publishDataXML = $null;
+	storeName = $null;
+	storeKey = $null;
+	storeConnection = $null;
+	containerName = $null;
+	blobName = $null;
+	queueName = $null;
+	serviceName = $null;
+	serviceURL = $null;
+	serviceLocation = $null;
+	deploymentName = $null;
+}
+
 [xml]$global:publishDataXML
-$global:sub = @{Name = $null; Id = $null; Certificate = $null; ManagementURL = $null}
-$global:store = @{Name = $null; Key = $null; SelectedContainer = $null; Connection = $null; SelectedBlob = $null}
-$global:service = @{Name = $null; URL = $null; Location = $null; SelectedDeployment = $null}
 
 $entities = @{
     "subs" = @{
@@ -26,53 +41,77 @@ $entities = @{
     "sub" = @{
         "use" = @("<subscription-id> | <subscription-name>", "<mgmt-url>");
         "cert" = @("<cert-file>");
-        "stores" = @("<>")
-        "services" = @("<>");
     }
 
+    "stores" = @("[store-name-filter]", "[--object]");
+    
     "store" = @{
         "use" = @("<name> [<key>]");
         "create" = @("<name>", "<location>");
         "delete" = @("[<name>]");
         "locations" = @("<>");
         "key" = @("[<name>]", "[--notepad]");
-        "containers" = @("<>");
         "reset" = @("<>");
     }
+    
+    "queues" = @("[queue-name-filter]", "[--object]");
+    
+    "queue" = @{
+        "" = @("<queue-name>", "[<account-name>]", "[<account-key>]");
+        "use" =    @("<queue-name>", "[<account-name>]", "[<account-key>]");
+        "create" = @("<queue-name>", "[<account-name>]", "[<account-key>]");
+        "delete" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]");
+        "post" = @("<message>", "[<queue-name>]", "[<account-name>]", "[<account-key>]");
+        "peek" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]");
+        "get" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]");
+        "count" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]");
+        "record" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]");
+        "watch" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]");
+        "reset" = @("<>");
+    }
+    
+    "containers" = @("[container-name-filter]", "[--object]");
     
     "container" = @{
         "use" =    @("<container-name>", "[<account-name>]", "[<account-key>]");
         "create" = @("<container-name>", "[<account-name>]", "[<account-key>]");
         "delete" = @("[<container-name>]", "[<account-name>]", "[<account-key>]");
-        "blobs" = @("<>");
         "reset" = @("<>");
         "access" = @("container | blob | off", "[<container-name>]", "[<account-name>]", "[<account-key>]");
     }
     
+    "blobs" = @("[blob-name-filter]", "[--object]");
+    
     "blob" = @{
+        "" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]", "[--lastchanged]");
         "use" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]");
         "delete" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]");
-        "upload" = @("<local-path>", "[<blob-name>]", "[<container-name>]", "[<account-name>]", "[""<account-key>""]");
         "download" = @("<local-path>", "[<blob-name>]", "[<container-name>]", "[<accountName>]", "[<accountKey>]");
-        "uri" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]", "[--notepad]blob ");
+        "url" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]", "[--notepad]");
         "reset" = @("<>");
+        "upload" = @("<local-path>", "[<blob-name>]", "[<container-name>]", "[<account-name>]", "[""<account-key>""]");
     }
-    
+
+    "services" = @("[service-name-filter]", "[--object]");
+        
     "service" = @{
         "use" = @("<service-name>");
         "delete" = @("[<service-name>]");
         "location" = @("[<service-name>]");
         "status" = @("[<service-name>]");
-        "deployments" = @("<service-name>");
         "reset" = @("<>");
     }
     
+    "deployments" = @("[deployment-name-filter]", "[--object]");
+
     "deployment" = @{
         "use" = @("<name>", "[<service-name>]");
         "url" = @("[<name>]", "[<service-name>]", "[--notepad]");
         "reset" = @("<>");
     }
         
+    "files" = @{};
+    
     "file" = @{
         "download" = @("<URL>", "<local-path>");
         "zip" = @("<src-path>", "<zip-path>");
@@ -81,14 +120,21 @@ $entities = @{
     }
     
     "dir" = @{
-        "files" = @();
         "use" = @("<directory-path>");
+        "watch" = @("<directory-path>");
     }
     
+    "prompt" = @{
+        "[on | off]" = @();
+        "out" = @("<text>");
+        "short" = @();
+    }
+
     "cd" = @{
         "[<path>]" = @()
     }
 }
+
 
 ###############################
 ### Command implementations ###
@@ -102,10 +148,10 @@ function cmd_subs_load([string[]]$cmdTokens) {
         return
     } elseif((Test-Path $filepath) -eq $False) {
         if($filepath.Contains(".")) {
-            show_error "File not found"
+            Write-ErrorBrief "File not found"
             return
         } elseif((Test-Path ($filename + ".publishsettings")) -eq $False) {
-            show_error "File not found"
+            Write-ErrorBrief "File not found"
             return
         } else {
             $filepath += ".publishsettings"
@@ -113,15 +159,15 @@ function cmd_subs_load([string[]]$cmdTokens) {
     }
     
     $global:publishDataXML = [xml](Get-Content $filepath)
-    $global:sub.ManagementURL = $global:publishDataXML.PublishData.PublishProfile.Url.TrimEnd("/")
+    $global:context["subscriptionManagementURL"] = $global:publishDataXML.PublishData.PublishProfile.Url.TrimEnd("/")
     $certBase64 = $global:publishDataXML.PublishData.PublishProfile.ManagementCertificate
-    $global:sub.Certificate = read_cert $certBase64
+    $global:context["subscriptionCertificate"] = Import-Cert $certBase64
 }
 
 
 function cmd_subs([string[]]$cmdTokens) {
     if($global:publishDataXML -eq $null) {
-        show_error "Publish settings file not loaded"
+        Write-ErrorBrief "Publish settings file not loaded"
     } else {
         $global:publishDataXML.PublishData.PublishProfile.Subscription | foreach {$_}
     }
@@ -132,7 +178,7 @@ function cmd_subs([string[]]$cmdTokens) {
 
 function cmd_sub_use([string[]]$cmdTokens) {
     $subID = $cmdTokens[2]
-    $mgmtURL = context_managementURL $cmdTokens[3]
+    $mgmtURL = context 'subscriptionManagementURL' $cmdTokens[3]
     
     if(($mgmtURL -eq $null) -or ($subID -eq $null)) {
         show_usage $cmdTokens
@@ -143,49 +189,27 @@ function cmd_sub_use([string[]]$cmdTokens) {
     if($global:publishDataXML -ne $null) {
         $subs = ($global:publishDataXML.PublishData.PublishProfile.Subscription | Where-Object {($_.Name -like $subID) -or ($_.Id -like $subID)})
         if($subs.Length -ge 2) {
-            show_error "Failed to select a subscription because multiple subscriptions exists with this name. Use the id instead"
+            Write-ErrorBrief "Failed to select a subscription because multiple subscriptions exists with this name. Use the id instead"
             return
         } else {
             $subId = $subs.Id
         }
     }
     
-    $global:sub.ManagementURL = $mgmtURL.TrimEnd("/")
-    $xml = get_subscriptionXML $global:sub.ManagementURL $subID $global:sub.Certificate
-    $global:sub.Name = $xml.Subscription.SubscriptionName
-    $global:sub.Id = $xml.Subscription.SubscriptionID
+    $global:context["subscriptionManagementURL"] = $mgmtURL.TrimEnd("/")
+    $xml = get_subscriptionXML $global:context["subscriptionManagementURL"] $subID $global:context["subscriptionCertificate"]
+	$global:context["subscriptionName"] = $xml.Subscription.SubscriptionName
+    $global:context["subscriptionID"] = $xml.Subscription.SubscriptionID
 }
 
 
 function cmd_sub([string[]]$cmdTokens) {
-    if($null -eq $global:sub.Id) {
+    if($null -eq $global:context["subscriptionID"]) {
         show_usage $cmdTokens
     } elseif($cmdTokens.length -gt 1) {
         show_usage $cmdTokens
     } else {
-        Out-Host -inputObject $global:sub | Format-Table -AutoSize -Wrap
-    } 
-}
-
-
-function cmd_sub_stores([string[]]$cmdTokens) {
-    if(-not (check_sub)) {
-        return
-    } elseif($null -eq ($storeNames = (list_storeNames $global:sub.ManagementURL $global:sub.Id $global:sub.Certificate))) {
-        show_error "Failed to get the list of storage accounts"
-    } else {
-        $storeNames
-    }
-}
-
-
-function cmd_sub_services([string[]]$cmdTokens) {
-    if(-not (check_sub)) {
-        return
-    } elseif($null -eq ($serviceNames = (list_services $global:sub.ManagementURL $global:sub.Id $global:sub.Certificate))) {
-        show_error "Failed to get the cloud services list"
-    } else {
-        $serviceNames
+        Out-Host -inputObject $global:context["subscriptionName"]
     }
 }
 
@@ -193,34 +217,55 @@ function cmd_sub_services([string[]]$cmdTokens) {
 function cmd_sub_cert([string[]]$cmdTokens) {
     if($null -ne ($certfile = $cmdTokens[2])) {
         $certBase64 = Get-Content $certfile
-        $global:sub.Certificate = read_cert $certBase64
+        $global:context["subscriptionCertificate"] = Import-Cert $certBase64
     } 
             
-    if($global:sub.Certificate -eq $null) {
+    if($global:context["subscriptionCertificate"] -eq $null) {
         show_usage $cmdTokens
     } else {
-        Out-Host -inputObject $global:sub.Certificate
+        Out-Host -inputObject $global:context["subscriptionCertificate"]
     }
 }
 
 
 ### Entity: store ###
 
+function cmd_stores([string[]]$cmdTokens, [string[]]$cmdOptions) {
+	$mgmtURL = $global:context["subscriptionManagementURL"]
+	$subID = $global:context["subscriptionID"]
+	$cert = $global:context["subscriptionCertificate"]
+	if($null -eq ($filter = $cmdTokens[1])) {
+        $filter = "*"
+    }
+
+	if(-not (check_sub)) {
+        return
+	}
+	
+	$stores = list_stores $mgmtURL $subID $cert | Where-Object {$_.ServiceName -like $filter}
+	if($cmdOptions -contains "--object") {
+        list_stores $mgmtURL $subID $cert | Where-Object {$_.ServiceName -like $filter}
+    } else {
+        list_stores $mgmtURL $subID $cert | Where-Object {$_.ServiceName -like $filter} | % { $_.ServiceName}
+    }
+}
+
+
 function cmd_store([string[]]$cmdTokens)
 {
-    if(($null -eq $global:store.Name) -or ($null -eq $global:store.Key)) {
+    if(($null -eq $global:context["storeName"]) -or ($null -eq $global:context["storeKey"])) {
         show_usage $cmdTokens
     } elseif($cmdTokens.length -gt 1) {
         show_usage $cmdTokens
     } else  {
-        Out-Host -inputObject $global:store | Format-Table -AutoSize -Wrap
+        Out-Host -inputObject $global:context["storeName"]
     }
 }
 
 
 function cmd_store_use([string[]]$cmdTokens)
 {
-    $name = context_storeName $cmdTokens[2]
+    $name = context 'storeName' $cmdTokens[2]
     $key  = $cmdTokens[3]
     
     if($name -eq $null) {
@@ -230,9 +275,9 @@ function cmd_store_use([string[]]$cmdTokens)
     } elseif(!(check_sub)) {
         return
     } elseif($null -eq ($name = resolve_storeName $name)) {
-        show_error "Failed to find this storage account"
+        Write-ErrorBrief "Failed to find this storage account"
     } else {
-        $key = get_storageKey $global:sub.ManagementURL $global:sub.Id $global:sub.Certificate $name
+        $key = get_storageKey $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $global:context["subscriptionCertificate"] $name
         select_store $name $key
     }
 }
@@ -251,26 +296,26 @@ function cmd_store_create([string[]]$cmdTokens) {
         show_usage $cmdTokens
     } elseif(!(check_sub)) {
         return
-    } elseif($True -eq (create_storage $accountName $location $global:sub.ManagementURL $global:sub.Id $global:sub.Certificate)) {
+    } elseif($True -eq (create_storage $accountName $location $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $global:context["subscriptionCertificate"])) {
         select_store $accountName
     } else {
-        show_error("Failed to create storage account")   
+        Write-ErrorBrief "Failed to create storage account"  
     }
 }
 
 
 function cmd_store_delete([string[]]$cmdTokens) {
-    $accountName = context_storeName $cmdTokens[2]
+    $accountName = context 'storeName' $cmdTokens[2]
             
     if($accountName -eq $null) {
         show_usage $cmdTokens
     } elseif(check_sub) {
         $operation = "services/storageServices/" + $accountName
         try {
-            call_REST $global:sub.ManagementURL $global:sub.Id $operation "DELETE" $global:sub.Certificate
+            Call-Subscription $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $operation "DELETE" $global:context["subscriptionCertificate"]
             select_store $null $null
         } catch {
-            show_error "Failed to delete storage account"
+            Write-ErrorBrief "Failed to delete storage account"
         }
     }
 }
@@ -280,90 +325,326 @@ function cmd_store_locations([string[]]$cmdTokens)
 {
     if(-not (check_sub)) {
         return
-    } elseif($null -eq ($locationsXML = (list_locationsXML $global:sub.ManagementURL $global:sub.Id $global:sub.Certificate))) {
-        show_error "Failed to get the storage locations list"
+    } elseif($null -eq ($locationsXML = (list_locationsXML $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $global:context["subscriptionCertificate"]))) {
+        Write-ErrorBrief "Failed to get the storage locations list"
     } else {
         $locationsXML.Locations.Location | foreach { $_.Name }
     }
 }
 
 
-function cmd_store_key([string[]]$cmdTokens, [string[]]$cmdOptions)
-{
-    $name = context_storeName $cmdTokens[2]
+function cmd_store_key([string[]]$cmdTokens, [string[]]$cmdOptions) {
+    $name = context 'storeName' $cmdTokens[2]
             
     if($name -eq $null) {
         show_usage $cmdTokens
     } elseif($null -eq ($name = resolve_storeName $name)) {
-        show_error "Failed to find this storage account"
+        Write-ErrorBrief "Failed to find this storage account"
     } elseif (-not(check_sub)) {
         return
-    } elseif($null -eq ($key = get_storageKey $global:sub.ManagementURL $global:sub.Id $global:sub.Certificate $name)) {
-        show_error "Failed to get the key for this storage account"
+    } elseif($null -eq ($key = get_storageKey $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $global:context["subscriptionCertificate"] $name)) {
+        Write-ErrorBrief "Failed to get the key for this storage account"
     } else {
-        if($name -eq $global:store.Name) {
-            $global:store.Key = $key
+        if($name -eq $global:context["storeName"]) {
+            $global:context["storeKey"] = $key
         }
 
+        # Option: --notepad
         if($cmdOptions -contains "--notepad") {
-            out-notepad $key
-        } else {
-            $key
+            $key | Out-Notepad
+        } 
+        
+        # Option: --copy
+        if($cmdOptions -contains "--copy") {
+            $key | Out-Clipboard
         }
+        
+        $key
     }
 }
 
 
-function cmd_store_containers([string[]]$cmdTokens)
-{
-    $accountName = $global:store.Name
-    $accountKey = $global:store.Key
+### Entity: queue ###
+
+function cmd_queues([string[]]$cmdTokens, [string[]]$cmdOptions) {
+	list_storage_entities $cmdTokens $cmdOptions 'queue'
+}
+
+
+function cmd_queue([string[]]$cmdTokens) {
+    $queueName = context 'queueName' $cmdTokens[1]
+    $accountName = $cmdTokens[2]
+    $accountKey = $cmdTokens[3]
     $connection = context_connection $accountName $accountKey
     
-    if($null -eq ($containers = list_containers $connection)) {
-        show_usage $cmdTokens
+    if($null -eq $queueName) {
+        return $null
+    } elseif($connection -eq $null) {
+        return $null
+    } elseif($null -eq  ($queue = get_queue $queueName $connection)) {
+        Write-ErrorBrief "Failed to access the queue"
     } else {
-        $containers
+        return $queue
     }
 }
 
 
-### Entity: container ###
+function cmd_queue_create([string[]]$cmdTokens) {
+    $queueName = $cmdTokens[2]
+    
+    $cmdArgs = $cmdTokens[1..$cmdTokens.Length]
+    if($null -eq ($queue = cmd_queue $cmdArgs)) {
+        Write-ErrorBrief "Failed to create the queue"
+    } else {
+        try {
+            [void]$queue.CreateIfNotExist()
+        } catch {
+            Write-ErrorBrief "Failed to create the queue"
+        }
+    }
+}
 
-function cmd_container_use([string[]]$cmdTokens)
-{
-    $name = $cmdTokens[2]
+
+function cmd_queue_delete([string[]]$cmdTokens) {
+    $cmdArgs = $cmdTokens[1..$cmdTokens.Length]
+    if($null -eq ($queue = cmd_queue $cmdArgs)) {
+        Write-ErrorBrief "Failed to create the queue"
+    } else {
+        try {
+            $queueName = $queue.Name
+            $queue.Delete()
+            if($queueName -eq $global:context["queueName"]) {
+                $global:context["queueName"] = $null
+            }
+        } catch {
+            Write-ErrorBrief "Failed to delete the queue"
+        }
+    }
+}
+
+
+function cmd_queue_use([string[]]$cmdTokens) {
+    $name = $cmdTokens[2] 
     $accountName = $cmdTokens[3]
     $accountKey = $cmdTokens[4]
     $connection = context_connection $accountName $accountKey
             
     if(($null -eq $name) -or ($connection -eq $null)) {
         show_usage $cmdTokens
-    } elseif($null -eq ($name = resolve_containerName $name $connection)) {
-        show_error "Failed to find this container"        
+    } elseif($null -eq ($name = resolve_queueName $name $connection)) {
+        Write-ErrorBrief "Failed to access the queue"        
     } else {
-        if($global:store.SelectedContainer -ne $name) {
-            $global:store.SelectedBlob = $null
+        if($global:context["queueName"] -ne $name) {
+            $global:context["queueName"] = $null
         }
         
-        $global:store.SelectedContainer = $name
+        $global:context["queueName"] = $name
         
         if($accountName -ne $null) {
-            $global:store.Name = $accountName
+            $global:context["storeName"] = $accountName
         }
         
         if($accountKey -ne $null) {
-            $global:store.Key = $accountKey
+            $global:context["storeKey"] = $accountKey
         }
         
-        $global:store.Connection = $connection
+        $global:context["storeConnection"] = $connection
+    } 
+}
+
+
+function cmd_queue_reset([string[]]$cmdTokens) {
+    $global:context["queueName"] = $null
+}
+
+
+function cmd_queue_post([string[]]$cmdTokens) {
+    $message = $cmdTokens[2]
+    $filter = $cmdTokens[3]
+    $cmdArgs = $cmdTokens[1..$cmdTokens.Length]
+    $cmdOptions = @("--object")
+    $cmdArgs2 = $cmdTokens[2..$cmdTokens.Length]
+    
+    $queues = @()
+    if($null -eq $message) {
+        show_usage $cmdTokens
+        return
+    } 
+    
+    if($filter -ne $null) {
+        $queues = @(cmd_store_queues $cmdArgs $cmdOptions)
+    }
+    
+    if($queues.Length -gt 0) {
+        # Skip
+    } elseif($null -eq ($queue = cmd_queue $cmdArgs2)) {
+        Write-ErrorBrief "Failed to access the selected queues"
+        return
+    } else {
+        $queues += $queue
+    }
+    
+    try {
+        foreach($queue in $queues) {
+            $queue.EncodeMessage = $true
+            $msgObject = New-Object Microsoft.WindowsAzure.StorageClient.CloudQueueMessage($message)
+            $queue.AddMessage($msgObject)
+        }    
+    } catch {
+        Write-ErrorBrief "Failed to add a message to the queue"
+    }
+}
+
+
+function cmd_queue_peek([string[]]$cmdTokens) {
+    $cmdArgs = $cmdTokens[1..$cmdTokens.Length]
+    if($null -eq ($queue = cmd_queue $cmdArgs)) {
+        Write-ErrorBrief "Failed to access the queue"
+    } else {
+        try {
+            Write-Output $queue.PeekMessage().AsString
+        } catch {
+            Write-ErrorBrief "Failed to peek a message on the queue"
+        }
+    }
+}
+
+
+function cmd_queue_count([string[]]$cmdTokens) {
+    $cmdArgs = $cmdTokens[1..$cmdTokens.Length]
+    if($null -eq ($queue = cmd_queue $cmdArgs)) {
+        Write-ErrorBrief "Failed to access the queue"
+    } else {
+        try {
+            Write-Output $queue.RetrieveApproximateMessageCount()
+        } catch {
+            Write-ErrorBrief "Failed to get an approximate message count"
+        }
+    }
+}
+
+
+function cmd_queue_get([string[]]$cmdTokens, [string[]]$cmdOptions) {
+    $cmdArgs = $cmdTokens[1..$cmdTokens.Length]
+    if($null -eq ($queue = cmd_queue $cmdArgs)) {
+        Write-ErrorBrief "Failed to access the queue"
+    } else {
+        try {
+            $timeSpan = New-Object System.TimeSpan(1)            
+            $msgObject = $queue.GetMessage($timeSpan)
+            if($msgObject -eq $null) {
+                return
+            } elseif($cmdOptions -contains "--object") {
+                Write-Output $msgObject
+            } else {
+                Write-Output $msgObject.AsString
+            }
+            $queue.DeleteMessage($msgObject)            
+        } catch {
+            Write-ErrorBrief "Failed to get a message"
+        }
+    }
+}
+
+
+function cmd_queue_watch([string[]]$cmdTokens) {
+    $maxBackoff = 10.0
+    $startBackoff = 1.0
+    $backoffRate = 1.5
+    $backoff = $startBackoff
+    while($true) {
+        $message = cmd_queue_get $cmdTokens
+        if($message -eq $null) {
+            Start-Sleep -s $backoff
+            $backoff *= $backoffRate
+            if($backoff -gt $maxBackoff) {
+                $backoff = $maxBackoff
+            }
+        } else {
+            Write-Output $message
+            $backoff = $startBackoff
+        }
+    }
+}
+
+
+function cmd_queue_record([string[]]$cmdTokens) {
+    $cmdArgs = $cmdTokens[1..$cmdTokens.Length]
+    if($null -eq ($queue = cmd_queue $cmdArgs)) {
+        Write-ErrorBrief "Failed to access the queue"
+    } else {
+        while($null -ne ($message = read_commandLine)) {
+            try {
+                $queue.EncodeMessage = $true
+                $msgObject = New-Object Microsoft.WindowsAzure.StorageClient.CloudQueueMessage($message)
+                $queue.AddMessage($msgObject)
+            } catch {
+                Write-ErrorBrief "Failed to add a message to the queue"
+            }
+        }
+    }
+}
+
+
+### Entity: container ###
+
+function cmd_containers([string[]]$cmdTokens, [string[]]$cmdOptions) {
+    list_storage_entities $cmdTokens $cmdOptions 'container'
+}
+
+
+function cmd_container([string[]]$cmdTokens) {
+    $accountName = $cmdTokens[2]
+    $accountKey = $cmdTokens[3]
+    $connection = context_connection $accountName $accountKey
+    $containerName = context_containerName $cmdTokens[1] $connection
+    $container = $null
+    
+    if($null -eq $containerName) {
+        Write-ErrorBrief "Failed to find this container"
+    } elseif($connection -eq $null) {
+        Write-ErrorBrief "Failed to open a connection with the storage service"
+    } else {
+        $container = get_container $containerName $connection
+    }
+    
+    return $container
+}
+
+
+function cmd_container_use([string[]]$cmdTokens) {
+    $name = $cmdTokens[2]
+    $accountName = $cmdTokens[3]
+    $accountKey = $cmdTokens[4]
+    $connection = context_connection $accountName $accountKey
+    
+    if(($null -eq $name) -or ($connection -eq $null)) {
+        show_usage $cmdTokens
+    } elseif($null -eq ($name = resolve_containerName $name $connection)) {
+        Write-ErrorBrief "Failed to find this container"        
+    } else {
+        if($global:context["containerName"] -ne $name) {
+            $global:context["blobName"] = $null
+        }
+        
+        $global:context["containerName"] = $name
+        
+        if($accountName -ne $null) {
+            $global:context["storeName"] = $accountName
+        }
+        
+        if($accountKey -ne $null) {
+            $global:context["storeKey"] = $accountKey
+        }
+        
+        $global:context["storeConnection"] = $connection
     } 
 }
 
 
 function cmd_container_reset([string[]]$cmdTokens) {
-    $global:store.SelectedBlob = $null
-    $global:store.SelectedContainer = $null
+    $global:context["blobName"] = $null
+    $global:context["containerName"] = $null
 }
 
 
@@ -372,49 +653,38 @@ function cmd_container_create([string[]]$cmdTokens) {
     $accountName = $cmdTokens[3]
     $accountKey = $cmdTokens[4]
     $connection = context_connection $accountName $accountKey
-            
-    if($null -eq $containerName) {
-        show_usage $cmdTokens
-    } elseif($connection -eq $null) {
-        show_usage $cmdTokens
+    
+    if(($containerName -eq $null) -or ($connection -eq $null)) {
+        show_usage "Storage account missing"
     } elseif($null -eq ($container = get_container $containerName $connection)) {
-        show_error "Container could not be created"
+        Write-ErrorBrief "Failed to create the container"
     } else {
         try {
             [void]$container.CreateIfNotExist()
         } catch {
-            show_error "Container could not be created"
+            Write-ErrorBrief "Failed to create the container"
         }
     }
 }
 
 
 function cmd_container_access([string[]]$cmdTokens) {
-    $access = $cmdTokens[2]
-    $containerName = context_containerName $cmdTokens[3]
-    $accountName = $cmdTokens[4]
-    $accountKey = $cmdTokens[5]
-    $connection = context_connection $accountName $accountKey
-
-    if(($null -eq $containerName) -or ($null -eq $connection)) {
+    [string]$access = $cmdTokens[2]
+    $cmdArgs = $cmdTokens[2..$cmdTokens.Length]
+    if((-not ([String]::IsNullOrEmpty($access))) -and (@("container", "off", "blob") -notcontains $access)) {
         show_usage $cmdTokens
-    } elseif((-not ([String]::IsNullOrEmpty($access))) -and (@("container", "off", "blob") -notcontains $access)) {
-        show_usage $cmdTokens
-    } elseif($null -eq ($containerName = resolve_containerName $containerName $connection)) {
-        show_error "Failed to find this container"        
-    } elseif($null -eq  ($container = get_container $containerName $connection)) {
-        show_error "Container could not be accessed"
+    } elseif($null -eq ($container = cmd_container $cmdArgs)) {
+        Write-ErrorBrief "Failed to access the container"
     } elseif(-not([String]::IsNullOrEmpty($access))) {
         $perms = New-Object Microsoft.WindowsAzure.StorageClient.BlobContainerPermissions
-        
         try {
-            $perms.PublicAccess = $access
+            $perms.PublicAccess = $access.ToLower()
             $container.SetPermissions($perms)
         } catch {
-            show_error "Failed to set container access permissions"
+            Write-ErrorBrief "Failed to set container access permissions"
         }
     } elseif($null -eq ($perms = $container.GetPermissions())) {
-        show_error "Failed to read container access permissions"
+        Write-ErrorBrief "Failed to read container access permissions"
     } else {
         ([string]($perms.PublicAccess)).ToLower()
     }
@@ -423,55 +693,51 @@ function cmd_container_access([string[]]$cmdTokens) {
 
 function cmd_container_delete([string[]]$cmdTokens)
 {
-    $containerName = context_containerName $cmdTokens[2]
-    $accountName = $cmdTokens[3]
-    $accountKey = $cmdTokens[4]
-    $connection = context_connection $accountName $accountKey
-
-    if($null -eq $containerName) {
-        show_usage $cmdTokens
-    } elseif($connection -eq $null) {
-        show_usage $cmdTokens
-    } elseif($null -eq  ($container = get_container $containerName $connection)) {
-        show_error "Container could not be accessed"
+    $cmdArgs = $cmdTokens[1..$cmdTokens.Length]
+    if($null -eq ($container = cmd_container $cmdArgs)) {
+        Write-ErrorBrief "Failed to access the container"
     } else {
         try {
+            $containerName = $container.Name
             $container.Delete()
-            if($containerName -eq $global:store.SelectedContainer) {
-                $global:store.SelectedContainer = $null
-                $global:store.SelectedBlob = $null
+            if($containerName -eq $global:context["containerName"]) {
+                $global:context["containerName"] = $null
+                $global:context["blobName"] = $null
             }
         } catch {
-            show_error "Container could not be deleted"
+            Write-ErrorBrief "Failed to delete the container"
         }
     }
 }
 
 
-function cmd_container_blobs([string[]]$cmdTokens)
+### Entity: blob ###
+
+function cmd_blobs([string[]]$cmdTokens, [string[]]$cmdOptions)
 {
-    $containerName = $global:store.SelectedContainer
-    $accountName = $global:store.Name
-    $accountKey = $global:store.Key
-    $connection = context_connection $accountName $accountKey
-    
-            
-    list_blobs $connection $containerName
+    list_storage_entities $cmdTokens $cmdOptions 'blob'
 }
 
 
-### Entity: blob ###
-
-function cmd_blob([string[]]$cmdTokens)
+function cmd_blob([string[]]$cmdTokens, [string[]]$cmdOptions)
 {
-    $blobName = $global:store.SelectedBlob
-    $containerName = $global:store.SelectedContainer
-    $connection = $global:store.Connection
-            
-    if($null -eq ($container = get_container $containerName $connection)) {
-        show_usage $cmdTokens
-    } elseif($null -eq ($blob = get_blob $blobName $container)) {
-        show_usage $cmdTokens
+    $blobName = context 'blobName' $cmdTokens[1]
+    $containerName = context_containerName($cmdTokens[2])
+    $accountName = $cmdTokens[3]
+    $accountKey = $cmdTokens[4]
+    $connection = context_connection $accountName $accountKey
+    
+    if(($null -eq $blobName) -or ($null -eq $containerName)) {
+        return $null
+    } elseif($connection -eq $null) {
+        return $null
+    } elseif($null -eq ($container = get_container $containerName $connection)) {
+        Write-ErrorBrief "Container not selected"
+    } elseif($null -eq  ($blob = $container.GetBlobReference($blobName))) {
+        Write-ErrorBrief "Failed to access the blob"
+    } elseif($cmdOptions -contains "--lastchanged") {
+        $blob.FetchAttributes()
+        return $blob.Properties.LastModifiedUtc
     } else {
         return $blob
     }
@@ -481,57 +747,30 @@ function cmd_blob([string[]]$cmdTokens)
 function cmd_blob_use([string[]]$cmdTokens)
 {
     $blobName = $cmdTokens[2]
-    $containerName = context_containerName $cmdTokens[3]
     $accountName = $cmdTokens[4]
     $accountKey = $cmdTokens[5]
     $connection = context_connection $accountName $accountKey
+    $containerName = context_containerName $cmdTokens[3] $connection
             
     if(($blobName -eq $null) -or ($containerName -eq $null)) {
         show_usage $cmdTokens
     } elseif($connection -eq $null) {
-        show_error "Storage account not selected"
+        Write-ErrorBrief "Storage account not selected"
     } elseif($null -eq ($containerName = resolve_containerName $containerName $connection)) {
-        show_error "Failed to find this container"        
+        Write-ErrorBrief "Failed to find this container"        
     } elseif($null -eq ($blobName = (resolve_blobName $blobName $containerName $connection))) {
-        show_error "Failed to find this blob"        
+        Write-ErrorBrief "Failed to find this blob"        
     } else {
-        $global:store.SelectedBlob = $blobName
-        $global:store.SelectedContainer = $containerName
-        $global:store.Connection = $connection
+        $global:context["blobName"] = $blobName
+        $global:context["containerName"] = $containerName
+        $global:context["storeConnection"] = $connection
 
         if($accountName -ne $null) {
-            $global:store.Name = $accountName
+            $global:context["storeName"] = $accountName
         }
         
         if($accountKey -ne $null) {
-            $global:store.Key = $accountKey
-        }
-    }
-}
-
-
-function cmd_blob_reset([string[]]$cmdTokens)
-{
-    $global:store.SelectedBlob = $null
-}
-
-
-function cmd_blob_delete([string[]]$cmdTokens)
-{
-    $blobName = context_blobName $cmdTokens[2]
-    $containerName = context_containerName $cmdTokens[3]
-    $accountName = $cmdTokens[4]
-    $accountKey = $cmdTokens[5]
-    $connection = context_connection $accountName $accountKey
-            
-    if($null -eq ($container = get_container $containerName $connection)) {
-        show_usage $cmdTokens
-    } elseif($null -eq ($blob = get_blob $blobName $container)) {
-        show_usage $cmdTokens
-    } else {
-        $blob.Delete()
-        if($blobName -eq $global:store.SelectedBlob) {
-            $global:store.SelectedBlob = $null
+            $global:context["storeKey"] = $accountKey
         }
     }
 }
@@ -540,32 +779,66 @@ function cmd_blob_delete([string[]]$cmdTokens)
 function cmd_blob_upload([string[]]$cmdTokens)
 {
     [string]$filepath = $cmdTokens[2]
-    $blobName = $cmdTokens[3]
-    if(($filepath -ne $null) -and ($blobName -eq $null) -and ($filepath -ne "")) {
-        $blobName = Split-Path $filepath -Leaf
-    }
-
-    $containerName = context_containerName $cmdTokens[4]
+    [string]$blobName = $cmdTokens[3]
     $accountName = $cmdTokens[5]
     $accountKey = $cmdTokens[6]
     $connection = context_connection $accountName $accountKey
-
+	$containerName = context 'containerName' $cmdTokens[4]
+    
     if(($filepath -eq $null)) {
         show_usage $cmdTokens
+        return
     } elseif((Test-Path $filepath) -eq $False) {
-        show_error "File not found"
-    } elseif($null -eq ($containerName = resolve_containerName $containerName $connection)) {
-        show_error "Failed to find this container"        
+        Write-ErrorBrief "File not found"
+        return
     } elseif($null -eq ($container = get_container $containerName $connection)) {
         show_usage $cmdTokens
-    } elseif($null -eq ($blob = get_blob $blobName $container)) {
+        return
+    } 
+
+	$paths = @(Resolve-Path $filepath)
+    if($null -ne $blobName) {
+        $paths= $paths[0..0]
+    }
+
+    foreach($filepath in $paths) {
+        $blobName = Split-Path $filepath -Leaf
+        if($null -eq ($blob = $container.GetBlobReference($blobName))) {
+            Write-ErrorBrief "Failed to upload '$filepath'"
+        } else {
+            try {
+                [void]$blob.UploadFile($filepath)
+            } catch {
+				Write-Error $_
+                Write-ErrorBrief "Failed to upload '$filepath'"
+            }
+        }
+    }
+}
+
+
+function cmd_blob_reset([string[]]$cmdTokens)
+{
+    $global:context["blobName"] = $null
+}
+
+
+function cmd_blob_delete([string[]]$cmdTokens)
+{
+    $blobName = context 'blobName' $cmdTokens[2]
+    $accountName = $cmdTokens[4]
+    $accountKey = $cmdTokens[5]
+    $connection = context_connection $accountName $accountKey
+    $containerName = context_containerName $cmdTokens[3] $connection
+            
+    if($null -eq ($container = get_container $containerName $connection)) {
+        show_usage $cmdTokens
+    } elseif($null -eq ($blob = $container.GetBlobReference($blobName))) {
         show_usage $cmdTokens
     } else {
-        $filepath = Resolve-Path $filepath
-        try {
-            [void]$blob.UploadFile($filepath)
-        } catch {
-            show_error "Upload failed"
+        $blob.Delete()
+        if($blobName -eq $global:context["blobName"]) {
+            $global:context["blobName"] = $null
         }
     }
 }
@@ -574,11 +847,11 @@ function cmd_blob_upload([string[]]$cmdTokens)
 function cmd_blob_download([string[]]$cmdTokens)
 {
     $filepath = $cmdTokens[2]
-    $blobName = context_blobName $cmdTokens[3]
-    $containerName = context_containerName $cmdTokens[4]
+    $blobName = context 'blobName' $cmdTokens[3]
     $accountName = $cmdTokens[5]
     $accountKey = $cmdTokens[6]
     $connection = context_connection $accountName $accountKey
+    $containerName = context_containerName $cmdTokens[4] $connection
             
     if($null -eq $filepath) {
         $filepath = $blobName
@@ -589,10 +862,10 @@ function cmd_blob_download([string[]]$cmdTokens)
     if($null -eq $filepath) {
         show_usage $cmdTokens
     } elseif($null -eq ($containerName = resolve_containerName $containerName $connection)) {
-        show_error "Failed to find this container"        
+        Write-ErrorBrief "Failed to find this container"        
     } elseif($null -eq ($container = get_container $containerName $connection)) {     
         show_usage $cmdTokens
-    } elseif($null -eq ($blob = get_blob $blobName $container)) {
+    } elseif($null -eq ($blob = $container.GetBlobReference($blobName))) {
         show_usage $cmdTokens
     } else {
         if(Test-Path $filepath) {
@@ -602,43 +875,70 @@ function cmd_blob_download([string[]]$cmdTokens)
         try {
             $blob.DownloadToFile($filepath)
         } catch {
-            show_error "Blob download failed"
+            Write-ErrorBrief "Blob download failed"
         }
     }
 }
 
 
-function cmd_blob_uri([string[]]$cmdTokens)
+function cmd_blob_url([string[]]$cmdTokens)
 {
-    $blobName = context_blobName $cmdTokens[2]
-    $containerName = context_containerName $cmdTokens[3]
+    $blobName = context 'blobName' $cmdTokens[2]
     $accountName = $cmdTokens[4]
     $accountKey = $cmdTokens[5]
     $connection = context_connection $accountName $accountKey
+    $containerName = context_containerName $cmdTokens[3] $connection
 
     if($null -eq ($container = get_container $containerName $connection)) {
         show_usage $cmdTokens
     } elseif($null -eq ($blobName = (resolve_blobName $blobName $containerName $connection))) {
-        show_error "Failed to find this blob"
-    } elseif($null -eq ($blob = get_blob $blobName $container)) {
+        Write-ErrorBrief "Failed to find this blob"
+    } elseif($null -eq ($blob = $container.GetBlobReference($blobName))) {
         show_usage $cmdTokens
     } else {
         $uri = $blob.Uri.AbsoluteUri
+        
+        # Option: --notepad
         if($cmdOptions -contains "--notepad") {
-            out-notepad $uri
-        } else {
-            $uri
+            $uri | Out-Notepad
+        } 
+        
+        # Option: --copy
+        if($cmdOptions -contains "--copy") {
+            $uri | Out-Clipboard
         }
+        
+        $uri
     }
 }
 
 
 ### Entity: service ###
 
+function cmd_services([string[]]$cmdTokens, [string[]]$cmdOptions) {
+    $mgmtURL = $global:context["subscriptionManagementURL"]
+	$subID= $global:context["subscriptionID"]
+	$cert = $global:context["subscriptionCertificate"]
+	if($null -eq ($filter = $cmdTokens[1])) {
+        $filter = "*"
+    }
+
+	if(-not (check_sub)) {
+        return
+	}
+	
+    if($cmdOptions -contains "--object") {
+        list_services $mgmtURL $subID $cert | Where-Object {$_.ServiceName -like $filter}
+    } else {
+        list_services $mgmtURL $subID $cert | Where-Object {$_.ServiceName -like $filter} | foreach { $_.ServiceName }
+    }
+}
+
+
 function cmd_service([string[]]$cmdTokens)
 {
     if(check_service) {
-        Out-Host -inputObject $global:service | Format-Table -AutoSize -Wrap
+        Out-Host -inputObject $global:context["serviceName"]
     } else {
         show_usage $cmdTokens
     }
@@ -647,67 +947,67 @@ function cmd_service([string[]]$cmdTokens)
 
 function cmd_service_use([string[]]$cmdTokens) {
     $name = $cmdTokens[2]
-    $mgmtURL = $global:sub.ManagementURL 
-    $subID = $global:sub.Id 
-    $cert = $global:sub.Certificate
+    $mgmtURL = $global:context["subscriptionManagementURL"] 
+    $subID = $global:context["subscriptionID"] 
+    $cert = $global:context["subscriptionCertificate"]
     
     if(!(check_sub)) {
         return
     } elseif($null -eq $name) {
         show_usage $cmdTokens
     } elseif($null -eq ($name = resolve_serviceName $name $mgmtURL $subID $cert)) {
-        show_error "Failed to find this service"
+        Write-ErrorBrief "Failed to find this service"
     } elseif ($null -eq ($xml = get_serviceXML $name $mgmtURL $subID $cert)) {
-        show_error "Cannot select this service"
+        Write-ErrorBrief "Cannot select this service"
     } else {        
-        $global:service.Name = $name
-        $global:service.URL = $xml.HostedService.Url
-        $global:service.Location = $xml.HostedService.HostedServiceProperties.Location
+        $global:context["serviceName"] = $name
+        $global:context["serviceURL"] = $xml.HostedService.Url
+        $global:context["serviceLocation"] = $xml.HostedService.HostedServiceProperties.Location
     }
 }
 
 
 function cmd_service_reset([string[]]$cmdTokens) {
-    $global:service.Name = $null
-    $global:service.URL = $null
-    $global:service.Location = $null
-    $global:service.SelectedDeployment = $null
+    $global:context["serviceName"] = $null
+    $global:context["serviceURL"] = $null
+    $global:context["serviceLocation"] = $null
+    $global:context["deploymentName"] = $null
 }
 
 
 function cmd_service_delete([string[]]$cmdTokens) {
-    $name = context_serviceName $cmdTokens[2]
+    $name = context "serviceName" $cmdTokens[2]
     if($name -eq $null) {
         show_usage $cmdTokens
     } elseif(check_sub) {
         $operation = "services/hostedservices/" + $name
         try {
-            call_REST $global:sub.ManagementURL $global:sub.Id $operation "DELETE" $global:sub.Certificate
-            if($name -eq $global:service.Name) {
-                $global:service.Name = $null
-                $global:service.URL = $null
-                $global:service.Location = $null
+            Call-Subscription $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $operation "DELETE" $global:context["subscriptionCertificate"]
+            if($name -eq $global:context["serviceName"]) {
+                $global:context["serviceName"] = $null
+                $global:context["serviceURL"] = $null
+                $global:context["serviceLocation"] = $null
             }
         } catch {
-            show_error "Failed to delete service"
+            Write-ErrorBrief "Failed to delete service"
         }
     }
 }
 
 
 function cmd_service_location([string[]]$cmdTokens) {
-    $mgmtURL = $global:sub.ManagementURL
-    $subID = $global:sub.Id
-    $cert = $global:sub.Certificate
+    $mgmtURL = $global:context["subscriptionManagementURL"]
+    $subID = $global:context["subscriptionID"]
+    $cert = $global:context["subscriptionCertificate"]
     
-    if($null -eq ($name = context_serviceName $cmdTokens[2])) {
+    if($null -eq ($name = context "serviceName" $cmdTokens[2])) {
         show_usage $cmdTokens
     } elseif(!(check_sub)) {
         return
     } elseif($null -eq ($name = resolve_serviceName $name $mgmtURL $subID $cert)) {
-        show_error "Failed to find this service"
-    } elseif(($global:service.Location -ne $null) -and ($name -eq $global:service.Name)) {
-        $global:service.Location
+        Write-ErrorBrief "Failed to find this service"
+    } elseif(($global:context["serviceLocation"] -ne $null) -and ($name -eq $global:context["serviceName"])) {
+        $global:context["serviceLocation"]
     } elseif($null -ne ($xml = get_serviceXML $name $mgmtURL $subID $cert)) {
         $xml.HostedService.HostedServiceProperties.Location
     }
@@ -715,41 +1015,49 @@ function cmd_service_location([string[]]$cmdTokens) {
 
 
 function cmd_service_status([string[]]$cmdTokens) {
-    $mgmtURL = $global:sub.ManagementURL
-    $subID = $global:sub.Id
-    $cert = $global:sub.Certificate
+    $mgmtURL = $global:context["subscriptionManagementURL"]
+    $subID = $global:context["subscriptionID"]
+    $cert = $global:context["subscriptionCertificate"]
     
-    if($null -eq ($name = context_serviceName $cmdTokens[2])) {
+    if($null -eq ($name = context "serviceName" $cmdTokens[2])) {
         show_usage $cmdTokens
     } elseif(!(check_sub)) {
         return
     } elseif($null -eq ($name = resolve_serviceName $name $mgmtURL $subID $cert)) {
-        show_error "Failed to find this service"
+        Write-ErrorBrief "Failed to find this service"
     } elseif($null -ne ($xml = get_serviceXML $name $mgmtURL $subID $cert)) {
         $xml.HostedService.HostedServiceProperties.Status
     }
 }
 
 
-function cmd_service_deployments([string[]]$cmdTokens) {
-    if($null -eq ($name = context_serviceName $cmdTokens[2])) {
-        show_usage $cmdTokens
-    } elseif(!(check_sub)) {
-        return
-    } else {
-        list_deployments $name $global:sub.ManagementURL $global:sub.Id $global:sub.Certificate 
+### Entity: deployment ###
+
+function cmd_deployments([string[]]$cmdTokens, [string[]]$cmdOptions) {
+	$mgmtURL = $global:context["subscriptionManagementURL"]
+	$subID= $global:context["subscriptionID"]
+	$cert = $global:context["subscriptionCertificate"]
+	$name = $global:context["serviceName"]
+	if($null -eq ($filter = $cmdTokens[1])) {
+        $filter = "*"
     }
+
+	if(!(check_sub)) {
+        return
+    } elseif($cmdOptions -contains "--object") {
+        list_deployments $name $mgmtURL $subID $cert | Where-Object {$_.Name -like $filter}
+    } else {
+		list_deployments $name $mgmtURL $subID $cert | Where-Object {$_.Name -like $filter} | % { $_.Name}
+	}
 }
 
 
-### Entity: deployment ###
-
 function cmd_deployment_use([string[]]$cmdTokens) {
     $name = $cmdTokens[2]
-    $serviceName = context_serviceName $cmdTokens[3]
-    $mgmtURL = $global:sub.ManagementURL 
-    $subID = $global:sub.Id 
-    $cert = $global:sub.Certificate
+    $serviceName = context "serviceName" $cmdTokens[3]
+    $mgmtURL = $global:context["subscriptionManagementURL"] 
+    $subID = $global:context["subscriptionID"] 
+    $cert = $global:context["subscriptionCertificate"]
     
     if(!(check_sub)) {
         return
@@ -757,29 +1065,29 @@ function cmd_deployment_use([string[]]$cmdTokens) {
         show_usage $cmdTokens
         return
     } elseif($null -eq ($serviceName = resolve_serviceName $serviceName $mgmtURL $subID $cert)) {
-        show_error "Failed to find this service"
+        Write-ErrorBrief "Failed to find this service"
     } elseif($null -eq ($name = resolve_deploymentName $name $serviceName $mgmtURL $subID $cert)) {
-        show_error "Failed to find this deployment"
+        Write-ErrorBrief "Failed to find this deployment"
     } elseif($null -eq ($xml = get_deploymentXML $name $serviceName $mgmtURL $subID $cert)) {
-        show_error "Failed to select the deployment"
+        Write-ErrorBrief "Failed to select the deployment"
     } else {
-        $global:service.Name = $serviceName
-        $global:service.SelectedDeployment = $name
+        $global:context["serviceName"] = $serviceName
+        $global:context["deploymentName"] = $name
     }
 }
 
 
 function cmd_deployment_reset([string[]]$cmdTokens) {
-    $global:service.SelectedDeployment = $null    
+    $global:context["deploymentName"] = $null    
 }
 
 
-function cmd_deployment_url([string[]]$cmdTokens) {
-    $name = context_deploymentName $cmdTokens[2]
-    $serviceName = context_serviceName $cmdTokens[3]
-    $mgmtURL = $global:sub.ManagementURL 
-    $subID = $global:sub.Id 
-    $cert = $global:sub.Certificate
+function cmd_deployment_url([string[]]$cmdTokens, [string[]]$cmdOptions) {
+    $name = context "deploymentName" $cmdTokens[2]
+    $serviceName = context "serviceName" $cmdTokens[3]
+    $mgmtURL = $global:context["subscriptionManagementURL"] 
+    $subID = $global:context["subscriptionID"] 
+    $cert = $global:context["subscriptionCertificate"]
     
     if(!(check_sub)) {
         return
@@ -787,18 +1095,30 @@ function cmd_deployment_url([string[]]$cmdTokens) {
         show_usage $cmdTokens
         return
     } elseif($null -eq ($serviceName = resolve_serviceName $serviceName $mgmtURL $subID $cert)) {
-        show_error "Failed to find this service"
+        Write-ErrorBrief "Failed to find this service"
     } elseif($null -eq ($name = resolve_deploymentName $name $serviceName $mgmtURL $subID $cert)) {
-        show_error "Failed to find this deployment"
+        Write-ErrorBrief "Failed to find this deployment"
     } elseif($null -eq ($xml = get_deploymentXML $name $serviceName $mgmtURL  $subID $cert)) {
-        show_error "Failed to get the URL"
+        Write-ErrorBrief "Failed to get the URL"
     } else {
         $url = $xml.Deployment.Url
+        
+        # Option: --notepad
         if($cmdOptions -contains "--notepad") {
-            out-notepad $url
-        } else {
-            $url
+            $url | Out-Notepad
         }
+        
+        # Option: --browser
+        if($cmdOptions -contains "--browser") {
+            Start-Process $url
+        } 
+        
+        # Option: --copy
+        if($cmdOptions -contains "--copy") {
+            $url | Out-Clipboard
+        }
+        
+        $url        
     }
 }
 
@@ -806,43 +1126,12 @@ function cmd_deployment_url([string[]]$cmdTokens) {
 ### Entity: file ###
 
 function cmd_file_download([string[]]$cmdTokens) {
-    $srcURL = $cmdTokens[2]
-    [string]$destFilePath = $cmdTokens[3]
-    
-    if(($srcURL -eq $null) -or ($destFilePath -eq $null)) {
-        show_usage $cmdTokens
-        return
-    }
-    
-    if(Test-Path $destFilePath) {
-        Remove-Item $destFilePath
-    }
-    
-    $webclient = New-Object System.Net.WebClient
-    $webclient.DownloadFile($srcURL,$destFilePath)    
+	Download-File $cmdTokens[2] $cmdTokens[3]
 }
 
 
 function cmd_file_exists([string[]]$cmdTokens) {
-    $srcURL = $cmdTokens[2]
-    if($srcURL -eq $null) {
-        show_usage $cmdTokens
-        return
-    }
-
-    try 
-    { 
-        $request = [System.Net.HttpWebRequest]::Create($srcURL)
-        $response = $request.GetResponse()
-        if($response.StatusCode -eq "OK") {
-            return $true
-        } else {
-            return $false
-        }
-    } 
-    catch {
-        return $false
-    }
+	Test-URL $cmdTokens[2]
 }
 
 
@@ -860,10 +1149,10 @@ function cmd_file_zip([string[]]$cmdTokens) {
     
     if(Test-Path $srcPath -PathType Leaf) {
         # zip one file
-        ls $srcPath | out_zip $zipPath
+        ls $srcPath | Out-ZIP $zipPath
     } else {
         # zip directory
-        Get-Item ($srcPath + '\\.') | out_zip $zipPath
+        Get-Item ($srcPath + '\\.') | Out-ZIP $zipPath
     }
 }
 
@@ -873,38 +1162,36 @@ function cmd_file_unzip([string[]]$cmdTokens) {
     $destPath = $cmdTokens[3]
     
     if(($zipPath -eq $null) -or ($destPath -eq $null)) {
-        show_usage
+        show_usage $cmdTokens
         return
     } elseif(-not (Test-Path $zipPath)) {
-        show_error "Failed to find the ZIP file"
+        Write-ErrorBrief "Failed to find the ZIP file"
         return
     }
     
     $app = New-Object -com Shell.Application
     [string]$zipPath = Resolve-Path $zipPath
     $zipFile = $app.NameSpace($zipPath)
-    
     [string]$destPath = Resolve-Path $destPath
     $destFile = $app.NameSpace($destPath)
 
     if($destFile -eq $null) {
-        show_error "Failed to open destination folder"
+        Write-ErrorBrief "Failed to open destination folder"
     } elseif($zipFile -eq $null) {
-        show_error "Failed to open the ZIP file"
-    } 
+        Write-ErrorBrief "Failed to open the ZIP file"
+    } else {
+        $destFile.CopyHere($zipFile.Items(), 20) 2> err.txt #####
+    }
     
-    $destFile.CopyHere($zipFile.Items(), 20)
+    $destFile = $null
+    $zipFile = $null
+    $app = $null
 }
 
 
-### Entity: dir
+### Entity: dir ###
 
 function cmd_dir([string[]]$cmdTokens) {
-    dir
-}
-
-
-function cmd_dir_files([string[]]$cmdTokens) {
     dir
 }
 
@@ -918,10 +1205,126 @@ function cmd_cd([string[]]$cmdTokens) {
     select_directory $cmdTokens[1]
 }
 
+
+function cmd_dir_watch([string[]]$cmdTokens) {
+    [string]$path = context_dirName $cmdTokens[2]
+    [string]$filter = $cmdTokens[3]
+    [string]$watcherID = ([string](Get-Random) + ".")
     
+    $path = [System.Environment]::ExpandEnvironmentVariables($path)
+    if(-not(Test-Path $path)) {
+        Write-ErrorBrief "Failed to find path $path"
+        return
+    }
+        
+    [string]$pathID = ($watcherID + (Get-Random))
+    $path = Resolve-Path $path
+        
+    $watcher = New-Object System.IO.FileSystemWatcher
+    $watcher.Path = $path
+    $watcher.IncludeSubdirectories = $true
+    if($filter -ne $null) {
+        $watcher.Filter = $filter
+    }
+    $watcher.EnableRaisingEvents = $true
+
+    @("Changed", "Created", "Deleted", "Renamed") | % { Register-ObjectEvent $watcher $_ -SourceIdentifier "$pathID.$_" }        
+    $dirWatchers += $watcher
+    
+    # Wait for event
+    while($true) {
+        $event = Wait-Event -SourceIdentifier "$pathID.*"
+        [string]$eventType = $event.SourceIdentifier.Split(".")[-1]        
+        Write-Output ($eventType + ", " + $event.SourceEventArgs.FullPath)
+        Remove-Event -SourceIdentifier $event.SourceIdentifier
+    }
+}
+
+
+function cmd_files([string[]]$cmdTokens) {
+    dir
+}
+
+
+### Entity: prompt ###
+
+function cmd_prompt([string[]]$cmdTokens) {
+    [string]$state = $cmdTokens[1]
+    if([String]::IsNullOrEmpty($state)) {
+        $global:showPrompt
+    } elseif(@("on", "off", "short") -notcontains $state) {
+        show_usage $cmdTokens
+    } else {
+        $global:showPrompt = $state.ToLower()
+    }
+}
+
+
+function cmd_prompt_out([string[]]$cmdTokens) {
+    $text = $cmdTokens[2]
+    if($text -eq $null) {
+        Write-Output (get_prompt)
+    } else {
+        Write-Output $text
+    }
+}
+
+
 #########################
 ### Utility functions ###
 #########################
+
+function list_storage_entities([string[]]$cmdTokens, [string[]]$cmdOptions, [string]$entityType) {
+    $accountName = $global:context["storeName"]
+    $accountKey = $global:context["storeKey"]
+    $connection = context_connection $accountName $accountKey
+	$containerName = $global:context["containerName"]
+	
+	if($null -eq ($filter = $cmdTokens[1])) {
+        $filter = "*"
+    }
+
+	$entityListFunctionMap = @{
+		'container' = 'list_containers';
+		'queue' = 'list_queues'
+		'blob' = 'list_blobs'
+	}
+	
+	if($null -eq ($listFunction = $entityListFunctionMap[$entityType])) {
+		# Error?
+	} elseif(!(Get-Command $functionName -ea SilentlyContinue)) {
+		# Error?
+	} elseif($cmdOptions -contains "--object") {
+		& $listFunction $connection $containerName | Where-Object {$_ -ne $null} | Where-Object {$_.Name -like $filter}
+    } else {
+        & $listFunction $connection $containerName | Where-Object {$_ -ne $null} | Where-Object {$_.Name -like $filter} | foreach { $_.Name }
+    }	
+}
+
+
+function list_containers($connection) {
+    if($null -ne ($blobClient = get_blob_client $connection)) {
+		$blobClient.ListContainers()
+	}
+}
+
+
+function list_queues($connection) {
+    if($null -ne ($queueClient = get_queue_client $connection)) {
+        $queueClient.ListQueues()
+    }
+}
+
+
+function list_blobs($connection, $containerName) {
+	if($null -ne ($container = get_container $containerName $connection)) {
+        load_storage_client
+        $options = New-Object Microsoft.WindowsAzure.StorageClient.BlobRequestOptions
+        $options.UseFlatBlobListing = $true;
+        $container.ListBlobs($options) | Where-Object { $_ -ne $null }
+    }
+}
+
 
 function select_directory($path) {
     if($null -eq $path) {
@@ -929,142 +1332,49 @@ function select_directory($path) {
     } elseif(Test-Path $path) {
         cd -path $path
     } else {
-        show_error "Failed to select the requested path"
+        Write-ErrorBrief "Failed to select the requested path"
     } 
 }
 
-function resolve_serviceName($serviceName, $mgmtURL, $subID, $cert) {
-    (list_services $mgmtURL $subID $cert) | Where-Object { $_ -like $serviceName } | Select-Object -first 1
-}
 
-function resolve_deploymentName($deploymentName, $serviceName, $mgmtURL, $subID, $cert) {
-    (list_deployments $serviceName $mgmtURL $subID $cert) | Where-Object { $_ -like $deploymentName } | Select-Object -first 1
-}
-
-function resolve_storeName($storeName) {
-    (list_storeNames $global:sub.ManagementURL $global:sub.Id $global:sub.Certificate) | Where-Object { $_ -like $storeName } | Select-Object -first 1
-}
-
-
-function resolve_containerName($containerName, $connection) {
-    (list_containers $connection) | Where-Object { $_ -like $containerName } | Select-Object -first 1
-}
-
-
-function resolve_blobName($blobName, $containerName, $connection) {
-    (list_blobs $connection $containerName) | Where-Object { $_ -like $blobName } | Select-Object -first 1
-}
-
-
-function out-notepad($text) {
-    $wshShell = New-Object -ComObject wscript.shell
-    [void]$wshShell.Run("notepad")
-    [void]$wshshell.AppActivate("Notepad")
-    Start-Sleep -milliseconds 200
-    $wshShell.SendKeys($text)
-}
-
-
-function list_blobs($connection, $containerName) {
-    if(($null -eq $connection) -or ($null -eq $containerName)) {
-        return $null
-    } elseif($null -eq ($container = get_container $containerName $connection)) {
-        return $null
+function select_store($name, $key) {
+    if(($name -eq $null) -or ($key -eq $null)) {
+        $global:context["storeConnection"] = $null
+        $global:context["storeName"] = $null
+        $global:context["storeKey"] = $null
     } else {
-        load_storage_client
-        $options = New-Object Microsoft.WindowsAzure.StorageClient.BlobRequestOptions
-        $options.UseFlatBlobListing = $true;
-        $container.ListBlobs($options) | Where-Object { [String]::IsNullOrEmpty($_.Name) -eq $False } | foreach { $_.Name }
+        $global:context["storeName"] = $name
+        $global:context["storeKey"] = $key
+        $global:context["storeConnection"] = connection_string $name $key
     }
+    $global:context["containerName"] = $null
+    $global:context["blobName"] = $null
 }
 
 
-function list_services($mgmtURL, $subID, $cert) {
-    if($null -eq ($servicesXML = (list_servicesXML $mgmtURL $subID $cert))) {
-        return $null
+function context($key, $default) {
+	if($default -eq $null) {
+		$default = $global:context[$key]
+	}
+	$default
+}
+
+
+function context_connection($accountName, $accountKey) {
+    if(($accountName -eq $null) -or ($accountKey -eq $null)) {
+        $global:context["storeConnection"]
     } else {
-        $servicesXML.HostedServices.HostedService | Where-Object { [String]::IsNullOrEmpty($_.ServiceName) -eq $False } | foreach {$_.ServiceName }
+        connection_string $accountName $accountKey
     }
 }
 
 
-function list_deployments($serviceName, $mgmtURL, $subID, $cert) {
-    if($null -ne ($xml = get_serviceXML $serviceName $mgmtURL $subID $cert)) {
-        $xml.HostedService.Deployments.Deployment | Where-Object {[String]::IsNullOrEmpty($_.Name) -eq $False} | foreach { $_.Name }
-    } else {
-        return $null
+function context_containerName($containerName, $connection) {
+    if($containerName -eq $null) {
+        $global:context["containerName"]
+    } elseif($null -ne $connection) {
+        resolve_containerName $containerName $connection
     }
-}
-
-
-function list_containers($connectio) {
-    if($connection -eq $null) {
-        return $null
-    } elseif($null -eq ($blobClient = get_blob_client $connection)) {
-        return $null
-    } else {
-        $blobClient.ListContainers() | foreach { 
-            if([String]::IsNullOrEmpty($_.Name) -eq $False) { $_.Name}
-        }       
-    }
-}
-
-
-function get_deploymentXML($name, $serviceName, $cloudURL, $subID, $cert) {
-    $operation = "services/hostedservices/" + $serviceName + "/deployments/" + $name
-    call_REST $cloudURL $subID $operation "GET" $cert $null
-}
-
-
-function read_cert($certBase64) {
-    $certBytes = [System.Convert]::FromBase64String($certBase64)
-    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-    $cert.Import($certBytes)
-    return $cert
-}
-
-
-function check_sub() {
-    if(($global:sub.Name -ne $null) -and ($global:sub.Id -ne $null) -and ($global:sub.Certificate -ne $null) -and ($global:sub.ManagementURL -ne $null)) {
-        return $true
-    } else {
-        show_error "Subscription not selected"
-        return $false
-    }
-}
-
-
-function get_subscriptionXML($cloudURL, $subscriptionID, $cert) {
-    call_REST $cloudURL $subscriptionID $null "GET" $cert
-}
-
-
-function get_storageXML($cloudURL, $subscriptionID, $cert) {
-    call_REST $cloudURL $subscriptionID "services/storageservices" "GET" $cert
-}
-
-
-function context_deploymentName($name) {
-    if($name -eq $null) {
-        $name = $global:service.SelectedDeployment
-    }
-    $name
-}
-
-
-function context_managementURL($mgmtURL) {
-    if($mgmtURL -eq $null) {
-        $mgmtURL = $global:sub.ManagementURL
-    }
-    $mgmtURL
-}
-
-
-function context_storeName($storeName) {
-    if($storeName -eq $null) {
-        $storeName = $global:store.Name
-    }
-    $storeName
 }
 
 
@@ -1076,18 +1386,71 @@ function context_dirName($dirName) {
 }
 
 
-function select_store($name, $key) {
-    if(($name -eq $null) -or ($key -eq $null)) {
-        $global:store.Connection = $null
-        $global:store.Name = $null
-        $global:store.Key = $null
-    } else {
-        $global:store.Name = $name
-        $global:store.Key = $key
-        $global:store.Connection = connection_string $name $key
+function resolve_serviceName($serviceName, $mgmtURL, $subID, $cert) {
+    (list_services $mgmtURL $subID $cert) | Where-Object { $_.ServiceName -like $serviceName } | Select-Object -ExpandProperty ServiceName -first 1
+}
+
+function resolve_deploymentName($deploymentName, $serviceName, $mgmtURL, $subID, $cert) {
+    (list_deployments $serviceName $mgmtURL $subID $cert) | Where-Object { $_.Name -like $deploymentName } | Select-Object -ExpandProperty Name -first 1
+}
+
+function resolve_storeName($storeName) {
+    (list_storeNames $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $global:context["subscriptionCertificate"]) | Where-Object { $_ -like $storeName } | Select-Object -first 1
+}
+
+
+function resolve_queueName($queueName, $connection) {
+    (list_queues $connection) | Where-Object { $_.Name -like $queueName } | Select-Object -ExpandProperty Name -first 1
+}
+
+
+function resolve_containerName($containerName, $connection) {
+    (list_containers $connection) | Where-Object { $_.Name -like $containerName } | Select-Object -ExpandProperty Name -first 1
+}
+
+
+function resolve_blobName($blobName, $containerName, $connection) {
+    (list_blobs $connection $containerName) | Where-Object { $_.Name -like $blobName } | Select-Object -ExpandProperty Name -first 1
+}
+
+
+function list_services($mgmtURL, $subID, $cert) {
+    if($null -ne ($servicesXML = (list_servicesXML $mgmtURL $subID $cert))) {
+        $servicesXML.HostedServices.HostedService | Where-Object {$_ -ne $null}
     }
-    $global:store.SelectedContainer = $null
-    $global:store.SelectedBlob = $null
+}
+
+
+function list_deployments($serviceName, $mgmtURL, $subID, $cert) {
+    if($null -ne ($xml = get_serviceXML $serviceName $mgmtURL $subID $cert)) {
+        $xml.HostedService.Deployments.Deployment | Where-Object {$_ -ne $null}
+    }
+}
+
+
+function get_deploymentXML($name, $serviceName, $cloudURL, $subID, $cert) {
+    $operation = "services/hostedservices/" + $serviceName + "/deployments/" + $name
+    Call-Subscription $cloudURL $subID $operation "GET" $cert $null
+}
+
+
+function check_sub() {
+    if(($global:context["subscriptionName"] -ne $null) -and ($global:context["subscriptionID"] -ne $null) -and ($global:context["subscriptionCertificate"] -ne $null) -and ($global:context["subscriptionManagementURL"] -ne $null)) {
+        return $true
+    } else {
+        Write-ErrorBrief "Subscription not selected"
+        return $false
+    }
+}
+
+
+function get_subscriptionXML($cloudURL, $subscriptionID, $cert) {
+    Call-Subscription $cloudURL $subscriptionID $null "GET" $cert
+}
+
+
+function get_storageXML($cloudURL, $subscriptionID, $cert) {
+    Call-Subscription $cloudURL $subscriptionID "services/storageservices" "GET" $cert
 }
 
 
@@ -1101,16 +1464,15 @@ function create_storage([string]$name, [string]$location, $cloudURL, $subscripti
                 </CreateStorageServiceInput>"
     $body.CreateStorageServiceInput.ServiceName = $name
     $body.CreateStorageServiceInput.Location = $location
-    $body.CreateStorageServiceInput.Label = toBase64 $name 
+    $body.CreateStorageServiceInput.Label = ConvertTo-Base64 $name 
     $body.CreateStorageServiceInput.GeoReplicationEnabled = "false"
-    try {
-        if($null -eq ($error = call_REST_wait $cloudURL $subscriptionID $operation "POST" $cert $body)) {
-            return $True
-        } else {
-            return $False
-        }
-    } catch {
-        return $False
+	Call-SubscriptionAndWait $cloudURL $subscriptionID $operation "POST" $cert $body
+}
+
+
+function list_stores($cloudURL, $subID, $cert) {
+    if($null -ne ($storageXML = (get_storageXML $cloudURL $subID $cert))) {
+        $storageXML.StorageServices.StorageService | Where-Object { $_ -ne $null }       
     }
 }
 
@@ -1123,13 +1485,9 @@ function list_storeNames($cloudURL, $subID, $cert) {
     }
 }
 
-function toBase64([string]$text) {
-    $bytes  = [System.Text.Encoding]::UTF8.GetBytes($text);
-    [System.Convert]::ToBase64String($bytes);
-}
 
 function list_locationsXML($cloudURL, $subscriptionID, $cert) {
-    call_REST $cloudURL $subscriptionID "locations" "GET" $cert
+    Call-Subscription $cloudURL $subscriptionID "locations" "GET" $cert
 }
 
 
@@ -1145,29 +1503,12 @@ function get_storageKey($cloudURL, $subscriptionID, $cert, $storageName) {
 
 function get_storageKeysXML($name, $cloudURL, $subscriptionID, $cert) {
     $operation = "services/storageServices/" + $name + "/keys"
-    call_REST $cloudURL $subscriptionID $operation "GET" $cert    
-}
-
-
-function context_connection($accountName, $accountKey) {
-    if(($accountName -eq $null) -or ($accountKey -eq $null)) {
-        $global:store.Connection
-    } else {
-        connection_string $accountName $accountKey
-    }
+    Call-Subscription $cloudURL $subscriptionID $operation "GET" $cert    
 }
 
 
 function connection_string($accountName, $accountKey) {
     'DefaultEndpointsProtocol=https;AccountName=' + $accountName + ';AccountKey=' + $accountKey
-}
-
-
-function context_containerName($containerName) {
-    if($containerName -eq $null) {
-        $containerName = $global:store.SelectedContainer
-    }
-    $containerName
 }
 
 
@@ -1181,30 +1522,52 @@ function get_container($name, $connection) {
     }
 }
 
+function get_queue($name, $connection) {
+    if(($connection -eq $null) -or ($name -eq $null)) {
+        return $null
+    } elseif ($null -eq ($queueClient = get_queue_client $connection)) {
+        return $null
+    } else {
+        $queueClient.GetQueueReference($name)
+    }
+}
+
 
 function get_blob_client($connection) {
+    if($null -ne ($storageAccount = get_storageAccount $connection)) {
+    	New-Object Microsoft.WindowsAzure.StorageClient.CloudBlobClient($storageAccount.BlobEndpoint, $storageAccount.Credentials)
+	}
+}
+
+
+function get_queue_client($connection) {
+    if($null -ne ($storageAccount = get_storageAccount $connection)) {
+    	New-Object Microsoft.WindowsAzure.StorageClient.CloudQueueClient($storageAccount.QueueEndpoint, $storageAccount.Credentials)
+	}
+}
+
+
+function get_storageAccount($connection) {
     load_storage_client
-    $storageAccount = [Microsoft.WindowsAzure.CloudStorageAccount]::Parse($connection)
-    New-Object Microsoft.WindowsAzure.StorageClient.CloudBlobClient($storageAccount.BlobEndpoint, $storageAccount.Credentials)
+    [Microsoft.WindowsAzure.CloudStorageAccount]::Parse($connection)        
 }
 
 
 function load_storage_client() {
     $fileName = 'Microsoft.WindowsAzure.StorageClient.dll'
-
     $path = Join-Path $myDir $fileName    
     if(-not (Test-Path $path)) {
-        # If StorageClient.dll not found in current directory then look for SDK
+        # If not found in current directory then look for SDK
         $azureSDKPath = findLatestAzureSDKDir
         $path = Join-Path $azureSDKPath $fileName
     }
     
     if(-not (Test-Path $path)) {
-        show_error 'The required StorageClient.dll cannot be found'
+        Write-ErrorBrief 'The required StorageClient.dll cannot be found'
         return $null
     }
 
-    Add-Type -Path ($path)
+    Add-Type -Path ($path)   
 }
 
 
@@ -1225,106 +1588,376 @@ function findLatestAzureSDKDir() {
 }
 
 
-function get_blob($name, $blobContainer) {
-    if(($name -eq $null) -or ($blobContainer -eq $null)) {
-        return $null
-    } else {
-        $blobContainer.GetBlobReference($name)
-    }
-}
-
-
-function context_blobName($blobName) {
-    if($blobName -eq $null) {
-        $blobName = $global:store.SelectedBlob
-    }
-    $blobName
-}
-
-
 function list_servicesXML($cloudURL, $subscriptionID, $cert) {
-    call_REST $cloudURL $subscriptionID "services/hostedservices" "GET" $cert
+    Call-Subscription $cloudURL $subscriptionID "services/hostedservices" "GET" $cert
 }
 
 
 function get_serviceXML($name, $cloudURL, $subscriptionID, $cert) {
     $operation = "services/hostedservices/" + $name + "?embed-detail=true"
-    call_REST $cloudURL $subscriptionID $operation "GET" $cert
-}
-
-
-function context_serviceName($serviceName) {
-    if($serviceName -eq $null) {
-        $serviceName = $global:service.Name
-    }
-    $serviceName
+    Call-Subscription $cloudURL $subscriptionID $operation "GET" $cert
 }
 
 
 function check_service() {
-    if(($global:service.Name -ne $null) -and ($global:service.URL -ne $null) -and ($global:service.Location -ne $null)) {
+    if(($global:context["serviceName"] -ne $null) -and ($global:context["serviceURL"] -ne $null) -and ($global:context["serviceLocation"] -ne $null)) {
         return $true
     } else {
-        show_error "Service not selected"
+        Write-ErrorBrief "Service not selected"
         return $false
     }
 }
 
 
-function call_REST_wait($cloudURL, $subscriptionID, $operation, $method, $cert, [xml]$body) {
-    $request = create_web_request $cloudURL $subscriptionID $operation $cert $method $body
-    get_response_wait $request
+function show_usage([string[]]$cmdTokens) {
+    $format = @{Expression={$_.Name};Label="Entity"}, @{Expression={$_.Value};Label="Actions"}
+    if(($cmdTokens -eq $null) -or ($cmdTokens.length -eq 0)) {
+        $entity = $null
+        $action = $null
+    } else {
+        $entity = $cmdTokens[0]
+        if($cmdTokens.length -gt 1) {
+            $action = $cmdTokens[1]
+        } else {
+            $action = $null
+        }
+    }
+    
+    if(($entity -eq $null) -or ($null -eq ($entityDef = $entities.Get_Item($entity)))) {
+        # Show entities
+        "USAGE: <entity> <action> [<argument>*]"
+        $entities.GetEnumerator() | Sort-Object Name | Format-Table -AutoSize -Wrap $format | Out-String
+    } elseif(($action -eq $null) -or ($null -eq ($actionDef = $entityDef.Get_Item($action)))) {
+        # Show entity actions
+        $help = $entities.GetEnumerator() | Where-Object {$_.Name -eq $entity} | Format-Table -AutoSize -Wrap $format | Out-String
+        Write-ErrorBrief $help
+    } else {
+        # Show entity action parameters
+        $format = @{Expression={$entity};Label="Entity"}, @{Expression={$_.Name};Label="Action"}, @{Expression={$_.Value};Label="Arguments"}
+        $help = $entityDef.GetEnumerator() | Where-Object {$_.Name -eq $action} | Format-Table -AutoSize -Wrap $format | Out-String
+        Write-ErrorBrief $help
+    }
 }
 
 
-function get_response_wait($request) {
-    try {
-        $response = $request.GetResponse()
-    } catch [System.Exception] {
-        show_error $_.Exception.Message
+#########################
+### General Util ########
+#########################
+
+
+function Write-ErrorBrief {
+	param([string]$message)
+	$host.ui.WriteErrorLine($message)
+}
+
+
+function Out-Notepad() {
+	param(
+		[string]$text
+	)
+	
+	if($text) {
+		$input = $text
+	}
+	
+    $wshShell = New-Object -ComObject wscript.shell
+    [void]$wshShell.Run("notepad")
+    [void]$wshshell.AppActivate("Notepad")
+    Start-Sleep -milliseconds 200
+
+	$input | % {
+		$text = $_.Replace('{', '{{@_notepd_@').Replace('}', '{}@_notepd_@').Replace('@_notepd_@', '}')
+		@('(', ')', '[', ']', '+', '^', ,'%', '~') | % { $text = $text.Replace($_, "{$_}") }
+	    $wshShell.SendKeys($text + '~')
+	}
+}
+
+
+function ConvertTo-Base64 {
+	param(
+		[string]$content
+	)
+	
+	if($content) {
+		$input = $content
+	}
+	
+	$input | % {
+    	$bytes  = [System.Text.Encoding]::UTF8.GetBytes($_);
+    	[System.Convert]::ToBase64String($bytes);
+	}
+}
+
+
+function Import-Cert {
+	param(
+		[string]$certBase64
+	)
+	
+	if($certBase64) {
+		$input = $certBase64
+	}
+	
+	$input | % {
+		$certBytes = [System.Convert]::FromBase64String($_)
+    	$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+    	$cert.Import($certBytes)
+    	$cert
+	}
+}
+
+
+function Test-URL {
+	param(
+		[string]$url
+	)
+	
+	if($url) {
+		$input = $url
+	}
+	
+	$input | % {
+    	try 
+    	{ 
+        	$request = [System.Net.HttpWebRequest]::Create($_)
+        	$response = $request.GetResponse()
+        	if($response.StatusCode -eq "OK") {
+            	Write-Output $true
+        	} else {
+            	Write-Output $false
+        	}
+    	} 
+    	catch {
+        	Write-Output $false
+    	}
+	}
+}
+
+
+function Download-File {
+	param(
+		[string] $srcURL,
+		[string] $destFilePath
+	)
+    
+	if(-not($destFilePath)) {
+		$uri = [System.Uri]$srcURL
+		$destFilePath =  $uri.Segments[-1];
+	}
+	
+    if(Test-Path $destFilePath) {
+        Remove-Item $destFilePath
+    }
+    
+    $webclient = New-Object System.Net.WebClient
+    $webclient.DownloadFile($srcURL,$destFilePath)  
+}
+
+
+function Out-ZIP { 
+	param(
+		[string]$zipFilePath
+	)
+
+	if(-not($zipFilePath)) {
+		Write-Error "Zip file path missing"
+		return
+	} elseif (-not $zipFilePath.EndsWith('.zip')) {
+        $zipFilePath += '.zip'
+    } 
+    
+    if (-not (Test-Path $zipFilePath)) { 
+        Set-Content $zipFilePath ("PK" + [char]5 + [char]6 + ("$([char]0)" * 18)) 
+    } 
+  
+    $app = New-Object -com Shell.Application
+    $zipFilePath = Resolve-Path $zipFilePath
+    $zipFile = $app.NameSpace($zipFilePath)
+   
+    if($zipFile -eq $null) {
+        Write-Error "ZIP file path is not valid"
+    } else {
+        $input | foreach { $zipFile.CopyHere($_.FullName, 4 + 1024) }
+    
+        # Wait for ZIP file creation to end
+        while($zipFile.Items().Count -eq 0) {
+            Start-Sleep -s 1
+        }
+    }
+} 
+
+
+function Call-SubscriptionAndWait {
+    Param(
+        [string]$cloudURL, 
+        [string]$subscriptionID, 
+        [string]$operation, 
+        [string]$method, 
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$cert, 
+        [xml]$body
+    )
+    
+	$request = New-SubscriptionWebRequest $cloudURL $subscriptionID $operation $cert $method $body
+	$response = Call-Web $request
+	$longRunningID = Get-WebResponseHeaderValues "x-ms-request-id" -Response $response
+	
+	Wait-SubscriptionOperation $cloudURL $subscriptionID $cert $longRunningID
+}
+
+
+function Wait-SubscriptionOperation {
+	param(
+		$cloudURL,
+		$subscriptionID,
+		$cert,
+		$operationID
+	)
+
+	if($operationID) {
+		$input = $operationID
+	}
+
+	$input | % {
+		Write-Host "# Waiting for confirmation.." -nonewline
+		try {
+			do {
+				if($null -eq ($request = New-SubscriptionWebRequest $cloudURL $subscriptionID ("operations/" + $_) $cert "GET" $null)) {
+					$errorText = "Failed to create new subscription request"
+				} elseif($null -eq ($response = Call-Web $request)) {
+					$errorText = "Failed to get response"
+				} elseif($null -eq ([xml]$xml = Read-WebResponseBody $response)) {
+					$errorText = "Failed to get XML from response"
+				} else {
+					switch($xml.Operation.Status) {
+						"InProgress" { 
+							Write-Host "." -nonewline
+						}
+						"Failed" { 
+							return $false
+						}
+						"Succeeded" {
+							return $true
+						}
+					}
+					Start-Sleep -s 4
+				}
+			} while($True)
+
+		} catch {
+			return $false
+		} finally {
+			Write-Host
+			if($errorText) {
+				Write-Error $errorText
+			}
+		}
+	
+		return $false
+	}
+}
+
+
+function Call-Subscription {
+    Param(
+        [string]$cloudURL,
+        [string]$subscriptionID,
+        [string]$operation,
+        [string]$method,
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$cert,
+        [xml]$body
+    )
+    
+    $request = New-SubscriptionWebRequest $cloudURL $subscriptionID $operation $cert $method $body
+    $response = Call-Web $request
+	if($null -ne $response) {
+		[xml](Read-WebResponseBody $response)
+	}
+}
+
+
+function Read-WebResponseBody {
+	param([System.Net.WebResponse]$response)
+
+	if($response) {
+		$input= $response
+	} 
+	
+	$input | % {
+		try {
+			$stream = $response.GetResponseStream()
+			$reader = New-Object System.IO.StreamReader($stream)
+			$responseContent = $reader.ReadToEnd()
+			if(-not([System.String]::IsNullOrEmpty($responseContent))) {
+				Write-Output $responseContent
+			}
+		} catch {
+		} finally {
+			if($reader) {
+				$reader.Close()
+			}
+			if($stream) {
+				$stream.Close()
+			}
+		}
+	}
+}
+
+
+function Get-WebResponseHeaderValues {
+	param(
+		[string[]] $headers,
+		[System.Net.WebResponse] $response
+	)
+
+	if($headers -eq $null) {
+		return
+	} elseif($response) {
+		$input = $response
+	} 
+
+	$input | % {
+		foreach($headerKey in $headers) {
+			Write-Output ($_.Headers.GetValues($headerKey)[0])
+		}
+	}
+}
+
+
+function Call-Web {
+    Param(
+		[Parameter(Mandatory=$true)] [System.Net.WebRequest]$request
+    )
+
+    if($request -eq $null) {
+        $requests = $input
+    } else {
+        $requests = @($request)
     }
 
-    if($response -eq $null) {
-        return ""
-    } elseif($null -eq ($longRunningID = $response.Headers.GetValues("x-ms-request-id")[0])) {
-        return ""
-    } 
-
-    Write-Host "# Waiting for confirmation.." -nonewline
-    do {
-        if($null -eq ([xml]$xml = call_REST $cloudURL $subscriptionID ("operations/" + $longRunningID) "GET" $cert $null)) {
-            return ""
-        } 
-        
-        switch($xml.Operation.Status) {
-            "InProgress" { 
-                Write-Host "." -nonewline 
-            }
-            "Failed" { 
-                Write-Host 
-                return $xml
-            }
-            "Succeeded" {
-                Write-Host
-                return $null
-            }
+    $requests | % {    
+        try {
+            $response = $_.GetResponse()
+        } catch [System.Exception] {
+            Write-Error $_.Exception.Message
+        } finally {
+            Write-Output $response
         }
-           
-        Start-Sleep -s 4
-    } while($True)    
-    #$xml.Save([Console]::Out)
+    }
 }
 
 
-function call_REST($cloudURL, $subscriptionID, $operation, $method, $cert, [xml]$body) {
-    $request = create_web_request $cloudURL $subscriptionID $operation $cert $method $body
-    get_response_xml $request
-}
-
-
-function create_web_request($cloudURL, $subscriptionID, $operation, $cert, $method, [xml]$body) {
+function New-SubscriptionWebRequest {
+    Param(
+        [string]$cloudURL,
+        [string]$subscriptionID,
+        [string]$operation,
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$cert,
+        [string]$method,
+        [xml]$body
+    )
+    
     $uri = $cloudURL + "/" + $subscriptionID 
-    if($operation -ne $null) {
+    if(-not([String]::IsNullOrEmpty($operation))) {
         $uri += "/" + $operation
     }
     
@@ -1342,106 +1975,18 @@ function create_web_request($cloudURL, $subscriptionID, $operation, $cert, $meth
 }
 
 
-function get_response_xml($request) {
-    try {
-        $response = $request.GetResponse()
-    } catch [System.Exception] {
-        show_error $_.Exception.Message
-    }
-
-    if($response -eq $null) {
-        return $null
-    } elseif($null -eq ($stream = $response.GetResponseStream())) {
-        return $null
-    } elseif($null -eq ($reader = New-Object System.IO.StreamReader($stream))) {
-        return $null
-    } else {
-        $responseContent = $reader.ReadToEnd()
-        $response.Close()
-        $stream.Close()
-        $reader.Close()
-        if($responseContent -ne "") {
-            return [xml]$responseContent
-        } else {
-            return $null
-        }
-    }
+function Out-XML([xml]$xml) {
+    $xml.Save([Console]::Out)
+    Write-Output ""
 }
-
-
-function show_usage([string[]]$cmdTokens) {
-    $format = @{Expression={("# " + $_.Name)};Label="# Entity"}, @{Expression={$_.Value};Label="Actions"}
-    if(($cmdTokens -eq $null) -or ($cmdTokens.length -eq 0)) {
-        $entity = $null
-        $action = $null
-    } else {
-        $entity = $cmdTokens[0]
-        if($cmdTokens.length -gt 1) {
-            $action = $cmdTokens[1]
-        } else {
-            $action = $null
-        }
-    }
-    
-    if(($entity -eq $null) -or ($null -eq ($entityDef = $entities.Get_Item($entity)))) {
-        # Show entities
-        "USAGE: <entity> <action> [<argument>*]"
-        $entities.GetEnumerator() | Sort-Object Name | Format-Table -AutoSize -Wrap $format | out-string
-    } elseif(($action -eq $null) -or ($null -eq ($actionDef = $entityDef.Get_Item($action)))) {
-        # Show entity actions
-        $help = $entities.GetEnumerator() | Where-Object {$_.Name -eq $entity} | Format-Table -AutoSize -Wrap $format | Out-String
-        show_error $help
-    } else {
-        # Show entity action parameters
-        $format = @{Expression={("# " + $entity)};Label="# Entity"}, @{Expression={$_.Name};Label="Action"}, @{Expression={$_.Value};Label="Arguments"}
-        $help = $entityDef.GetEnumerator() | Where-Object {$_.Name -eq $action} | Format-Table -AutoSize -Wrap $format | Out-String
-        show_error $help
-    }
-}
- 
-
-function show_error($text) {
-    if($text -ne $null) {
-        $previousColor = [Console]::ForegroundColor
-        [Console]::ForegroundColor = [System.ConsoleColor]::Red
-        [Console]::Error.WriteLine("# " + $text)
-        [Console]::ForegroundColor = $previousColor
-        return
-    }        
-}
-
-
-function out_zip([string]$path) { 
-    if (-not $path.EndsWith('.zip')) {
-        $path += '.zip'
-    } 
-    
-    if (-not (Test-Path $path)) { 
-        Set-Content $path ("PK" + [char]5 + [char]6 + ("$([char]0)" * 18)) 
-    } 
-  
-    $app = New-Object -com Shell.Application
-    $path = Resolve-Path $path
-    $zipFile = $app.NameSpace($path)
-   
-    if($zipFile -eq $null) {
-        show_error "ZIP file path is not valid"
-    } else {
-        $input | foreach { $zipFile.CopyHere($_.fullname, 4 + 1024) }
-    
-        # Wait for ZIP file creation to end
-        while($zipFile.Items().Count -eq 0) {
-            Start-Sleep -s 1
-        }
-    }
-} 
-
 
 
 #########################
 ### Command processor ###
 #########################
-
+ 
+[string]$global:showPrompt = "on"
+new-alias  Out-Clipboard $env:SystemRoot\system32\clip.exe
 
 function process_entity([string[]]$cmdTokens)
 {
@@ -1492,16 +2037,69 @@ function process_entity([string[]]$cmdTokens)
     }
 }
 
+
 function process_NYI($functionName) {
-    show_error ("Not supported:" + $functionName)
+    Write-ErrorBrief "Not supported:  $functionName"
+}
+
+
+function get_prompt()
+{
+    $promptBase = "wash"
+    $prompt = $promptBase
+    
+    if($global:showPrompt -eq "off") {
+        return $null
+    } elseif($global:showPrompt -eq "on") {
+        # Put subscription name in quotes if it contains spaces
+        $subname = $global:context["subscriptionName"]
+        if(($null -ne $subname) -and ($subname.Contains(" "))) {
+            $subname = '"' + $subname + '"'
+        }            
+        
+        if($global:context["subscriptionID"] -ne $null) {
+            $prompt += " " + $subname
+        }
+    
+        if(($global:context["storeName"] -ne $null) -or ($global:context["serviceName"] -ne $null)) {
+            $prompt += "/"
+        }
+
+        # Show current store context
+        if($global:context["storeName"] -ne $null) {
+            $prompt += "[store:" + $global:context["storeName"]
+            if($global:context["containerName"] -ne $null) {
+                $prompt += "/" + $global:context["containerName"]
+                if($global:context["blobName"] -ne $null) {
+                    $prompt += "/" + $global:context["blobName"]
+                }
+            }
+            $prompt += "]"
+        }
+        
+        # Show current service context
+        if($global:context["serviceName"] -ne $null) {
+            $prompt += "[service:" + $global:context["serviceName"]
+            if($global:context["deploymentName"] -ne $null) {
+                $prompt += "/" + $global:context["deploymentName"]
+            }
+            $prompt += "]"
+        }
+    }
+    
+    $prompt += ">"
+    return $prompt
 }
 
 
 function process_commands()
 {
     $promptBase = "wash"
-    [System.Console]::Out.Write($promptBase + ">")
-    [string]$commandLine = $null
+    
+    if($showPrompt) {
+        $prompt = get_prompt
+        Write-Host -NoNewLine $prompt
+    }
     
     while($null -ne ($commandLine = read_commandLine)) {
         $commandLine = ($commandLine.Trim())
@@ -1512,47 +2110,11 @@ function process_commands()
         $cmdTokens = cmdtokens_quoted $cmdTokens
         
         process_entity $cmdTokens
-        $prompt = $promptBase
-        
-        # Put subscription name in quotes if it contains spaces
-        $subname = $global:sub.Name
-        if(($null -ne $subname) -and ($subname.Contains(" "))) {
-            $subname = '"' + $subname + '"'
-        }            
-        
-        if($global:sub.Id -ne $null) {
-            $prompt += " " + $subname
+        if($null -ne ($prompt = get_prompt)) {
+            Write-Host -NoNewLine $prompt
         }
-        
-        if(($global:store.Name -ne $null) -or ($global:service.Name -ne $null)) {
-            $prompt += "/"
-        }
-        
-        # Show current store context
-        if($global:store.Name -ne $null) {
-            $prompt += "[store:" + $global:store.Name
-            if($global:store.SelectedContainer -ne $null) {
-                $prompt += "/" + $global:store.SelectedContainer
-                if($global:store.SelectedBlob -ne $null) {
-                    $prompt += "/" + $global:store.SelectedBlob
-                }
-            }
-            $prompt += "]"
-        }
-        
-        # Show current service context
-        if($global:service.Name -ne $null) {
-            $prompt += "[service:" + $global:service.Name
-            if($global:service.SelectedDeployment -ne $null) {
-                $prompt += "/" + $global:service.SelectedDeployment
-            }
-            $prompt += "]"
-        }        
-        
-        $prompt += ">"
-        [Console]::Out.Write($prompt)
     }
-    [Console]::Out.WriteLine()
+    Write-Host
 }
 
 
@@ -1592,15 +2154,15 @@ function cmdtokens_quoted([string[]]$cmdTokens) {
     return $cmdTokens2
 }
 
-
 [string[]]$cmdTokens = @()
 foreach($arg in $args) {
     $cmdTokens += $arg
 }
 
 $myDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+#. "$myDir\.washutil.ps1"
 
-(Get-Host).UI.RawUI.WindowTitle = "WASH v0.1.0"
+(Get-Host).UI.RawUI.WindowTitle = "WASH v0.2.0"
 (Get-Host).UI.RawUI.ForegroundColor = "cyan"
 
 if($cmdTokens.Length -gt 0) {

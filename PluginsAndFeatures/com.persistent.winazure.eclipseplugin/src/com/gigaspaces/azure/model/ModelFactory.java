@@ -59,6 +59,7 @@ public class ModelFactory {
 		CLASSES.add(StorageService.class);
 		CLASSES.add(StorageServiceKeys.class);
 		CLASSES.add(StorageServiceProperties.class);
+		CLASSES.add(Endpoints.class);
 		CLASSES.add(StorageServices.class);
 		CLASSES.add(Subscription.class);
 		CLASSES.add(Response.class);

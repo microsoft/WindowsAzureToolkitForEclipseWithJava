@@ -24,15 +24,9 @@ If (args.Length = 2) Then
     zipFileName = args(0)
     folderName = args(1)
     pathFilter = ""
-ELSE 
-    If (args.Length = 3) Then
-        zipFileName = args(0)
-        folderName = args(1)
-        pathFilter = args(2)
-    Else
-        WScript.Echo "Invalid arguments. Usage: UnzipUtility.vbs <zipFileName> <folderName> [pathFilter]"
-        WScript.Quit(1)
-    End If
+Else 
+	WScript.Echo "Invalid arguments. Usage: unzip.vbs <zipFileName> <folderName> [pathFilter]"
+	WScript.Quit(1)
 End If
 
 ' Create FileSystemObject for file related operations
@@ -61,38 +55,12 @@ Set zip = oShell.NameSpace(zipFileAbsolutePathName)
 Dim ex
 Set ex = oShell.NameSpace(folderAbsolutePathName)
 
-If Len(pathFilter) > 0 Then
-    ' Only specified folder has to be extracted
-    Dim pathParts, pathPart, folderToExtract
+' Unzip all files, without showing any UI/popup
+ex.CopyHere zip.items, 20
 
-    ' Search for specified folder in the zip file
-    Set folderToExtract = zip
-    pathParts = Split(pathFilter, "\")
-    For Each pathPart in pathParts
-        Dim itemFound
-        itemFound = False
-
-	Dim fileItem
-        For Each fileItem in folderToExtract.items
-            If fileItem.Name = pathPart Then
-                itemFound = True
-                Set folderToExtract = fileItem.GetFolder
-
-		' Item found, break the for loop
-                Exit For
-            End If
-        Next
-        If (itemFound = False) Then
-           WScript.Echo "UnzipUtility.vbs: Path not found in zip"
-           WScript.Quit(1)
-        End If
-    Next
-
-    ' Unzip only specified folder, without showing any UI/popup
-    ex.CopyHere folderToExtract.items, 20
-Else
-    ' Unzip all files, without showing any UI/popup
-    ex.CopyHere zip.items, 20
-End If
+Set ex = Nothing
+Set fso = Nothing
+Set zip = Nothing
+Set oShell = Nothing
 
 WScript.Echo "Successfully extracted the zip file."

@@ -28,7 +28,7 @@
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
     <property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-    <property name="creator.version" value="1.8.1"/>
+    <property name="creator.version" value="2.0.0"/>
   </target>
 
   <!-- Force emulator reset to ensure no locks on deploy directory -->
@@ -119,7 +119,8 @@
       	packagefilename="WindowsAzurePackage.cspkg" 
       	packagetype="local" 
       	projectdir="${basedir}"
-      	portalurl="http://windows.azure.com">
+      	portalurl="http://windows.azure.com"
+      	rolepropertiesfilename=".rolePropertiesOS3">
 
         <!-- Create a sample role -->
         <workerrole approotdir="${basedir}\WorkerRole1\approot" name="WorkerRole1">
@@ -166,6 +167,16 @@
 							copy:	Copies the downloaded file into the directory specified by deploydir
 							unzip: 	Unzips the downloaded file into the directory specified by deploydir
 							exec:	Executes the downloaded file in the working directory specified by deploydir (commandline parameters are not supported)
+							
+					[cloudupload = {never | auto | always}]
+							(This setting is applicable only if cloudsrc and cloudkey are specified and the package is built for the cloud, not  the emulator)
+							never:	(default) The component specified by importsrc will be included in the package based on the selected importmethod
+							auto:	The component specified by importsrc will not be included in the package but will be uploaded by the build process into 
+									the Windows Azure Blob storage location specified by cloudsrc and cloudkey, if a component by the same name (plus the .ZIP 
+									extension) does not already exist at that location.
+							always:	The component specified by importsrc will not be included in the package, but will always be uploaded by the build process
+									into the Windows Azure Blob storage location specified by cloudsrc and cloudkey, regardless of whether it already exists at
+									that location or not.
 			-->
           <component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importas="HelloWorld.war" type="server.app" />
         </workerrole>

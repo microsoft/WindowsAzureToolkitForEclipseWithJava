@@ -62,8 +62,6 @@ public final class Messages extends NLS {
     public static String dplEmtSerPtMsg;
     public static String dplSerBtnTtl;
     public static String dplSerBtnMsg;
-    public static String dplSerUnChkTtl;
-    public static String dplSerUnChkMsg;
     public static String appDlgTxt;
     public static String appDlgMsg;
     public static String appDlgFileBtnTxt;
@@ -106,7 +104,6 @@ public final class Messages extends NLS {
     public static String helloWorld;
     public static String rsrcPage;
     public static String javaPage;
-    public static String dlgDlKeyErrMsg;
     public static String dlgDlUrlErrMsg;
     public static String dlNtLblDir;
     public static String dlgDlNtLblUrl;
@@ -115,6 +112,11 @@ public final class Messages extends NLS {
     public static String projWizPg;
     public static String jvHomeErMsg;
     public static String srvHomeErMsg;
+    public static String dlNtLblDirSrv;
+    public static String dlNtLblUrlSrv;
+    public static String dlgAutoDlJDKUrlErrMsg;
+    public static String dlgAutoDlSrvUrlErrMsg;
+    public static String jdkPathErrMsg;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

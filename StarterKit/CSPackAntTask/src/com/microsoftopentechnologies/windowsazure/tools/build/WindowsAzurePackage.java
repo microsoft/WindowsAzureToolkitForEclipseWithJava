@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -103,7 +102,7 @@ public class WindowsAzurePackage extends Task {
 	private String rolePropertiesFileName = null;
 	private boolean useCtpPackageFormat = false;
 	private boolean verifyDownloads = true;
-	private Thread downloadVerifierThread = null;
+	private Thread downloadManagerThread = null;
 	
 	/**
 	 * WindowsAzurePackage constructor
@@ -199,6 +198,9 @@ public class WindowsAzurePackage extends Task {
 	public void setPackageDir(String packageDir) {
 		this.packageDir = packageDir;
 	}
+	public File getPackageDir() {
+		return new File(this.packageDir);
+	}
 
 	/**
 	 * Sets packagefilename attribute
@@ -251,7 +253,7 @@ public class WindowsAzurePackage extends Task {
 		this.initialize();
 
 		// Get cspack.exe cmd-line
-		String csPackCmdLine = this.createCSPackCommandLine();
+		List<String> csPackCmdLine = this.createCSPackCommandLine();
 
 		// Ensure that all approot directories are correctly setup
 		try {
@@ -261,7 +263,7 @@ public class WindowsAzurePackage extends Task {
 		}
 
 		// Start verifying downloads if needed, on a separate thread
-		startDownloadVerification();
+		startDownloadManagement();
 		
 		// Include storage library into all roles
 		includeStorageClientLibrary();
@@ -297,7 +299,7 @@ public class WindowsAzurePackage extends Task {
 		}
 
 		// Wait for the download verifier thread
-		finishDownloadVerification();
+		finishDownloadManagement();
 }
 
 	/**
@@ -407,16 +409,23 @@ public class WindowsAzurePackage extends Task {
 	 * Creates command-line used for executing cspack.exe
 	 * @return cspack.exe command-line string
 	 */
-	private String createCSPackCommandLine() {
-		String packageFilePath = String.format("\"%s%s%s\"", this.packageDir, File.separatorChar, this.packageFileName);
-
+	private List<String> createCSPackCommandLine() {
+		List<String> commandArgs = new ArrayList<String>();
+		String packageFilePath = String.format("%s%s%s", this.packageDir, File.separatorChar, this.packageFileName);
+		
 		// The initial cmd-line will include the path to cspack.exe and the csdef file
-		StringBuilder csPackCmdLine = new StringBuilder(String.format("\"%s%scspack.exe\" \"%s%s%s\"", this.sdkDir, File.separatorChar, this.projectDir, File.separatorChar, this.definitionFileName));
+//		StringBuilder csPackCmdLine = new StringBuilder(String.format("\"%s%scspack.exe\" \"%s%s%s\"", this.sdkDir, File.separatorChar, this.projectDir, File.separatorChar, this.definitionFileName));
+		String csPackExePath = String.format("%s%scspack.exe", this.sdkDir, File.separatorChar);
+		String csdefPath = String.format("%s%s%s", this.projectDir, File.separatorChar, this.definitionFileName);
+		commandArgs.add(csPackExePath);
+		commandArgs.add(csdefPath);
 
 		if (this.packageType == PackageType.local) {
-			csPackCmdLine.append(" /copyOnly");
+//			csPackCmdLine.append(" /copyOnly");
+			commandArgs.add("/copyOnly");
 		} else if(this.useCtpPackageFormat) {
-			csPackCmdLine.append(" /useCtpPackageFormat");
+//			csPackCmdLine.append(" /useCtpPackageFormat");
+			commandArgs.add("/useCtpPackageFormat");
 		}
 		
 		// Create cmd-line for roles
@@ -433,17 +442,20 @@ public class WindowsAzurePackage extends Task {
 				throw new BuildException("The required workerrole approotdir setting is missing");
 			}
 
-			csPackCmdLine.append(String.format(" /role:%s;\"%s\"", roleName, roleAppRootDir.toString()));
+//			csPackCmdLine.append(String.format(" /role:%s;\"%s\"", roleName, roleAppRootDir.toString()));
+			commandArgs.add(String.format("/role:%s;%s", roleName, roleAppRootDir.toString()));
 			
 			if(rolePropertiesFileName != null) {
-				csPackCmdLine.append(String.format(" /rolePropertiesFile:%s;\"%s%s%s\"", roleName, this.projectDir, File.separatorChar, this.rolePropertiesFileName));
+//				csPackCmdLine.append(String.format(" /rolePropertiesFile:%s;\"%s%s%s\"", roleName, this.projectDir, File.separatorChar, this.rolePropertiesFileName));
+				commandArgs.add(String.format("/rolePropertiesFile:%s;%s%s%s", roleName, this.projectDir, File.separatorChar, this.rolePropertiesFileName));
 			}
 		}
 
 		// Add package name
-		csPackCmdLine.append(String.format(" /out:%s", packageFilePath));
+//		csPackCmdLine.append(String.format(" /out:%s", packageFilePath));
+		commandArgs.add(String.format("/out:%s", packageFilePath));
 
-		return csPackCmdLine.toString();
+		return commandArgs;
 	}
 
 	/**
@@ -479,10 +491,10 @@ public class WindowsAzurePackage extends Task {
 	 * @throws InterruptedException
 	 * @throws IOException
 	 */
-	private void runCommandLine(String commandLine) throws InterruptedException, IOException {
+	private void runCommandLine(List<String> commandLine) throws InterruptedException, IOException {
 		this.log(String.format("Executing '%s'...", commandLine));
 
-		Process process = Runtime.getRuntime().exec(commandLine);
+		Process process = new ProcessBuilder(commandLine).start();
 		this.log("Process started");
 
 		// Capture std-out
@@ -823,7 +835,7 @@ public class WindowsAzurePackage extends Task {
 	/** Checks whether network is available
 	 * @return
 	 */
-	private static boolean isNetworkAvailable() {
+	public static boolean isNetworkAvailable() {
 		Enumeration<NetworkInterface> networkInterfaces;
 		InetAddress inetAddress;
 		
@@ -851,97 +863,53 @@ public class WindowsAzurePackage extends Task {
 		return false;
 	}
 	
-	/** Waits for content on either of the provided streams
-	 * @param stream1
-	 * @param stream2
-	 * @return Returns the stream with the response, or null if error
-	 */
-	public static InputStream waitForStream(InputStream stream1, InputStream stream2) {
-		if(stream1 == null || stream2 == null) {
-			return null;
-		}
-		
-		try {
-			while(true) { 	//TODO: Support time out someday
-				if(stream1.available() > 0) {
-					return stream1;
-				} else if(stream2.available() > 0) {
-					return stream2;
-				}
-				
-				try {
-					Thread.sleep(200);
-				} catch (InterruptedException e) {
-					;
-				}
-			}
-			
-		} catch (IOException e) {
-			return null;
-		}
-	}
-	
-	/**
-	 * Returns the text content from the expected stream if the content is received on that stream, else null
-	 * @param expectedStream
-	 * @param stream1
-	 * @param stream2
-	 * @return
-	 */
-	public static String expectStreamResponse(InputStream expectedStream, InputStream stream1, InputStream stream2) {
-		byte[] responseBytes = new byte[2048];
-		InputStream respondingStream = WindowsAzurePackage.waitForStream(stream1, stream2);
-		if(expectedStream != respondingStream) {
-			return null;
-		} else if(respondingStream == null) {
-			return null;
-		} else {
-			try {
-				respondingStream.read(responseBytes);
-				return new String(responseBytes);
-			} catch (IOException e) {
-				return null;
-			}
-		}		
-	}
-	
+
 	/** Starts the download verifier thread
 	 */
-	private void startDownloadVerification() {
-		if(getVerifyDownloads() && getPackageType() == PackageType.cloud) {
-			DownloadVerifier downloadVerifier = new DownloadVerifier(this);
-			downloadVerifierThread = new Thread(downloadVerifier);
-			downloadVerifierThread.start();
+	private void startDownloadManagement() {
+		if(getPackageType() == PackageType.cloud) {
+			DownloadManager downloadManager = new DownloadManager(this);
+			downloadManagerThread = new Thread(downloadManager);
+			downloadManagerThread.start();
 		}
 	}
 
 	/** Waits for the download verification to finish
 	 */
-	private void finishDownloadVerification() {
-		if(downloadVerifierThread != null) {
+	private void finishDownloadManagement() {
+		if(downloadManagerThread != null) {
 			try {
-				downloadVerifierThread.join();
+				downloadManagerThread.join();
 			} catch (InterruptedException e) {
 				;
 			}
 		}		
 	}
 	
+	
 	/**
-	 * Class to implementing the component downloadability check as a separate thread
+	 * Class to implement the component download management as a separate thread
 	 */
-	private class DownloadVerifier implements Runnable {
+	private class DownloadManager implements Runnable {
 		private WindowsAzurePackage windowsAzurePackage = null;
-		
-		public DownloadVerifier(WindowsAzurePackage windowsAzurePackage) {
+		private WindowsAzureManager windowsAzureManager = null;
+		public DownloadManager(WindowsAzurePackage windowsAzurePackage) {
 			this.windowsAzurePackage = windowsAzurePackage;
+			windowsAzureManager = new WindowsAzureManager();
+			final File washUtilPath = new File(new File(roles.firstElement().getAppRootDir(), WindowsAzurePackage.DEFAULT_UTIL_SUBDIR), WindowsAzurePackage.UTIL_WASH_FILENAME);
+			windowsAzureManager.start(washUtilPath);
 		}
 		
 	    public void run() {
+	    	// Ensure download availability
 	    	for(WorkerRole role : windowsAzurePackage.roles) {
 	    		for(Component component : role.getComponents()) {
-	    			component.verifyDownload();
+	    			component.ensureDownload(windowsAzureManager);
 	    		}
+	    	}
+	    	
+	    	if(windowsAzureManager != null) {
+	    		windowsAzureManager.stop();
 	    	}
 	    }
 	}

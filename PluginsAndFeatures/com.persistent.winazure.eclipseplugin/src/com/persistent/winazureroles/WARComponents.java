@@ -17,7 +17,6 @@ package com.persistent.winazureroles;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;

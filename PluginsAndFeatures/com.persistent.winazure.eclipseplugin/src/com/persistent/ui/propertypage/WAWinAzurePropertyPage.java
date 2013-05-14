@@ -19,8 +19,6 @@ import java.io.File;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
@@ -110,22 +108,6 @@ public class WAWinAzurePropertyPage extends PropertyPage {
         gridData.grabExcessHorizontalSpace = true;
         targetOSComboType.setLayoutData(gridData);
         targetOSComboType.setItems(targetOSType);
-        targetOSComboType.addModifyListener(new ModifyListener() {
-            public void modifyText(ModifyEvent e) {
-            	if("Windows Server 2012".equals(targetOSComboType.getText())) {
-            		if(waProjManager.getSessionAffinityStatus()) {
-            			PluginUtil.displayErrorDialog(
-                    			getShell(),
-                    			Messages.win2012ErrTitle,
-                    			Messages.win2012ErrMsgBox);
-            			targetOSComboType.setText("Windows Server 2008 R2");
-            		}
-            	}
-                
-              }
-            });
-
-
 
         WindowsAzurePackageType type;
         try {

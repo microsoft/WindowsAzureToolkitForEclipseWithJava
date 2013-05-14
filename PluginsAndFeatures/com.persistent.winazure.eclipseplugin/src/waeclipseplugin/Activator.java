@@ -54,6 +54,16 @@ public class Activator extends AbstractUIPlugin {
     private boolean isEdit;
     private boolean isSaved;
     private boolean isContextMenu = false;
+    /**
+     * Variables to track, if have came to remote access page from
+     * Publish wizard's Encryption link.
+     * Then store values entered by user on wizard to
+     * populate on remote access page.
+     */
+    public static boolean isFrmEncLink = false;
+    public static String pubPwd;
+    public static String pubUname;
+    public static String pubCnfPwd;
     
     public static final String SETTINGS_FILE_NAME = Messages.settingsFileName;
 	
@@ -217,6 +227,52 @@ public class Activator extends AbstractUIPlugin {
 		}
 	}
 
+	/**
+	 * Variable to track, if came to remote access page from
+	 * Publish wizard's Encryption link.
+	 * @param value
+	 */
+	public void setIsFromEncLink(boolean value) {
+		isFrmEncLink = value;
+	}
 
+	public boolean getIsFromEncLink() {
+		return isFrmEncLink;
+	}
 
+	/**
+	 * Method sets password value entered on publish wizard.
+	 * @param pwd
+	 */
+	public void setPubPwd(String pwd) {
+		pubPwd = pwd;
+	}
+
+	public String getPubPwd() {
+		return pubPwd;
+	}
+
+	/**
+	 * Method sets confirm password value entered on publish wizard.
+	 * @param cnfPwd
+	 */
+	public void setPubCnfPwd(String cnfPwd) {
+		pubCnfPwd = cnfPwd;
+	}
+
+	public String getPubCnfPwd() {
+		return pubCnfPwd;
+	}
+
+	/**
+	 * Method sets user name entered on publish wizard.
+	 * @param uname
+	 */
+	public void setPubUname(String uname) {
+		pubUname = uname;
+	}
+
+	public String getPubUname() {
+		return pubUname;
+	}
 }

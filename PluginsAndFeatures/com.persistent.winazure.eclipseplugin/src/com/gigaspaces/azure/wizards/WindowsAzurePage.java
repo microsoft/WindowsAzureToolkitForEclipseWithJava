@@ -19,7 +19,6 @@ package com.gigaspaces.azure.wizards;
 import javax.swing.event.EventListenerList;
 
 import org.eclipse.jface.wizard.WizardPage;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;

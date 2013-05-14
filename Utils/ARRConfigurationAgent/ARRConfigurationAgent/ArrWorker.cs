@@ -194,6 +194,8 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
                 farmElement.GetChildElement("applicationRequestRouting").
                     GetChildElement("affinity").SetAttributeValue("useCookie", true);
                 farmElement.GetChildElement("applicationRequestRouting").
+                    GetChildElement("affinity").SetAttributeValue("cookieName", "ARRWAP4EJ");
+                farmElement.GetChildElement("applicationRequestRouting").
                     GetChildElement("loadBalancing").SetAttributeValue("algorithm", "WeightedRoundRobin");
                 farmElement.GetChildElement("applicationRequestRouting").
                     GetChildElement("protocol").SetAttributeValue("timeout", TimeSpan.Parse(ARR_TIME_OUT));

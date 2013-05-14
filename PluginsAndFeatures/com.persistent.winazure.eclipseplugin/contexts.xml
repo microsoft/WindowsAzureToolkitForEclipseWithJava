@@ -39,7 +39,12 @@ This dialog allows you to create a new self-signed X.509 certificate that you ca
 Two files will be generated: a certificate file with the public key only (*.CER), and a file containing both the private and the public key (*.PFX).
   		</description>
    </context>
-
+   
+     <context id="storage_account_dialog" >
+        <description>
+This dialog allows you to register an existing Windows Azure storage account in the list of storage accounts known to Eclipse.
+  		</description>
+   </context>
 
  <context id="windows_azure_debug_config" >
   <description>
@@ -139,74 +144,31 @@ This dialog allows you to add a Java application to your server deployment.
   
   <context id="publish_project_command" title="Publish to Windows Azure from Eclipse">
      <description>This dialog allows you to publish your deployment to the Windows Azure cloud.
-
-<b>1. Select the Windows Azure subscription to publish to</b>
-
-<b>Download</b> - If you do not have a .publishsettings file from Window Azure containing your subscription information, this allows you to download one, which you should then <b>Import</b>.
-
-<b>New</b> - Allows you to create a new self-signed certificate saved in a *.PFX file (with the private key) and a *.CER file (with the public key) which you can then <b>Import</b> instead of a .publishsettings file.
-  
-<b>Import</b> - You have the following options: 
-
-- If you have a .publishsettings file from Windows Azure, select that file to load your subscription information. 
-
-- If you have a PFX file and a corresponding password that you'd want to use instead, choose that file and enter the subscription id in the following dialog. <b>Note</b> - you must first manually upload the matching CER certificate file to your Windows Azure subscription using the online portal.
-
-<b>2. Select the storage account to save your deployment in</b>
-
-If none are available, create a new one. After selecting the storage account, select the access key to use with that account.
-
-<b>3. Select the hosted service to deploy into</b>
-
-If none are available, create a new one. After selecting the service, select the <b>Target environment</b> to publish to (Staging or Production).
   </description>
   <topic label="Creating a Hello World Application..." href="http://go.microsoft.com/fwlink/?LinkID=234493"/>  
   </context>
   
   
   <context id="new_hosted_service" title="Create a New Cloud Service">
-    <description>This dialog allows you to create a new Cloud Service for your deployment.
-
-1. Specify a unique <b>Name</b> for the cloud service. Note that this name will also be used as the DNS prefix.
-
-2. Choose a <b>Location</b> for the cloud service.
-
-3. Provide a <b>Description</b>.
+    <description>This dialog allows you to create a new cloud service for your deployment.
 	</description>
   </context>
   
   
   <context id="new_storage_account" title="Create a New Storage Account">
-    <description>This dialog allows you to create a new Storage Account for your deployment.
-
-1. Specify a unique <b>Name</b> for the storage account. Note that this name will also be used as the DNS prefix.
-
-2. Choose a <b>Location</b> for the Storage Account.
-
-3. Provide a <b>Description</b>.
+    <description>This dialog allows you to create a new storage account needed for uploading your deployment to the Windows Azure cloud.
 	</description>
   </context>
   
   
   <context id="unpublish_project_command" title="Unpublish a Deployment from Windows Azure Cloud">
     <description>This dialog allows you to remove a previously published deployment from the Windows Azure cloud.
-
-1. Choose the subscription
-2. Choose the cloud service your deployment is hosted on.
-3. Choose your deployment
 	</description>
   </context>
   
   
   <context id="credentials_property_page" title="Credentials Configurations">
     <description>This dialog allows you to customize the credentials for all your Winows Azure subscriptions.
-
-1. Add - This options allows you to add a subscription by providing a certificate thumbprint from the Windows Azure portal.
-
-2. Edit - This option allows you change the thumbprint that the selected subscription uses for authentication.
-
-3. Remove - This option removes the selected subscription from your local configuration. (It is not removed from the Windows Azure cloud). 
-Note that after this, you will not be able to use this subscription until you add it again.
 	</description>
   </context>
   

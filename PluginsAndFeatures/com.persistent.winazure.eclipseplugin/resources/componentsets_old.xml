@@ -44,7 +44,7 @@ Note that the order of the components must be preserved as described. The build 
 
 -->
 
-<componentsets version="1.8.0">
+<componentsets version="1.8.1">
 	<componentset name="JDK" type="JDK">
 		<startupenv name="JAVA_HOME" value="%ROLEROOT%\approot\${placeholder}" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>

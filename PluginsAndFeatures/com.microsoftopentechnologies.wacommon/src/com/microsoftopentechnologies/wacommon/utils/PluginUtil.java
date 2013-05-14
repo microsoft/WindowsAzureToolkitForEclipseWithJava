@@ -17,6 +17,8 @@ package com.microsoftopentechnologies.wacommon.utils;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -27,6 +29,8 @@ import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+import org.osgi.framework.Version;
+import org.osgi.service.prefs.Preferences;
 
 import com.microsoftopentechnologies.wacommon.Activator;
 
@@ -74,5 +78,37 @@ public class PluginUtil {
     public static void displayErrorDialogAndLog(Shell shell, String title, String message, Exception e) { 
     	Activator.getDefault().log(message, e); 
     	displayErrorDialog(shell, title, message);	
+    }
+
+    /**
+     * Gets preferences object according to node name.
+     * @return
+     */
+    @SuppressWarnings("deprecation")
+    public static Preferences getPrefs() {
+    	Preferences prefs = null;
+    	if (isHelios()) {
+    		prefs = new InstanceScope().getNode(Messages.prefFileName);
+    	} else {
+    		prefs = InstanceScope.INSTANCE.getNode(Messages.prefFileName);
+    	}
+    	return prefs;
+    }
+
+    /**
+     * Method checks version of the eclipse.
+     * If its helios then returns true.
+     * @return
+     */
+    private static boolean isHelios() {
+    	Version version = Platform.getBundle(Messages.bundleName).getVersion();
+    	int majorVersion = version.getMajor();
+    	if (majorVersion == 3) { // indigo and helios
+    		int minorVersion = version.getMinor();
+    		if (minorVersion < 7) { // helios 3.6 and lower versions
+    			return true;
+    		}
+    	}
+    	return false;
     }
 }

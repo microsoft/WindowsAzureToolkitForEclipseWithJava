@@ -69,7 +69,7 @@ public class WARunEmulator extends AbstractHandler {
 					} catch (WindowsAzureInvalidProjectOperationException e) {
 						errorTitle = String.format("%s%s%s", Messages.waEmulator,
 								" ", Messages.runEmltrErrTtl);
-						errorMessage = String.format("%s%s%s%s", Messages.runEmltrErrMsg,
+						errorMessage = String.format("%s %s%s%s", Messages.runEmltrErrMsg,
 								selProj.getName(), " in ", Messages.waEmulator);
 						Activator.getDefault().log(errorMessage, e);
 						Display.getDefault().syncExec(new Runnable() {
@@ -99,7 +99,7 @@ public class WARunEmulator extends AbstractHandler {
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			errorTitle = String.format("%s%s%s", Messages.waEmulator,
 					" ", Messages.runEmltrErrTtl);
-			errorMessage = String.format("%s%s%s%s", Messages.runEmltrErrMsg,
+			errorMessage = String.format("%s %s%s%s", Messages.runEmltrErrMsg,
 					selProject.getName(), " in ", Messages.waEmulator);
 			Activator.getDefault().log(errorMessage, e);
 			Display.getDefault().syncExec(new Runnable() {

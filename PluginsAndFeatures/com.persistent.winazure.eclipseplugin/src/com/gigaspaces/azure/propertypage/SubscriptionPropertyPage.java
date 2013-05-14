@@ -16,7 +16,6 @@
 
 package com.gigaspaces.azure.propertypage;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -53,8 +52,8 @@ import org.eclipse.ui.dialogs.PropertyDialogAction;
 import org.eclipse.ui.dialogs.PropertyPage;
 
 import com.gigaspaces.azure.model.Subscription;
-import com.gigaspaces.azure.runnable.CacheAccountWithProgressWindow;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressWindow;
+import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
@@ -107,7 +106,7 @@ public class SubscriptionPropertyPage extends PropertyPage {
 				dlg.open();
 				String fileName = ImportSubscriptionDialog.
 						getPubSetFilePath();
-				handleFile(fileName);
+				MethodUtils.handleFile(fileName, tableViewer);
 			}
 
 			@Override
@@ -115,51 +114,6 @@ public class SubscriptionPropertyPage extends PropertyPage {
 
 			}
 		});
-	}
-
-	/**
-	 * Method checks file selected by user is valid
-	 * and call method which extracts data from it.
-	 * @param fileName
-	 */
-	public void handleFile(String fileName) {
-		if (fileName != null && !fileName.isEmpty()) {
-			File file = new File(fileName);
-			PublishData publishDataToCache = null;
-			if (file.getName().
-					endsWith(Messages.publishSettExt)) {
-				publishDataToCache =
-						handlePublishSettings(file);
-			}
-
-			if (publishDataToCache == null) {
-				return;
-			}
-			WizardCacheManager.
-			setCurrentPublishData(publishDataToCache);
-			tableViewer.refresh();
-		}
-	}
-
-	/**
-	 * Method extracts data from publish settings file.
-	 * @param file
-	 * @return
-	 */
-	private PublishData handlePublishSettings(File file) {
-		PublishData data = UIUtils.createPublishDataObj(file);
-		/*
-		 * If data is equal to null,
-		 * then publish settings file already exists.
-		 * So don't load information again.
-		 */
-		if (data != null) {
-			Display.getDefault().syncExec(new
-					CacheAccountWithProgressWindow(data, getShell(),
-							Messages.loadingCred));
-			PreferenceUtil.save();
-		}
-		return data;
 	}
 
 	private void createSubscriptionTable(Composite composite) {
@@ -493,11 +447,8 @@ public class SubscriptionPropertyPage extends PropertyPage {
 
 	@Override
 	public void setVisible(boolean visible) {
-		if (PreferenceUtil.isLoaded()  == false) {
-			Display.getDefault().syncExec(new LoadAccountWithProgressWindow(null, getShell()));			
-		}
-		PreferenceUtil.setLoaded(true);
-		tableViewer.refresh();
+		// reload information if its new eclipse session.
+		MethodUtils.loadSubInfoFirstTime(tableViewer);
 		super.setVisible(visible);
 	}
 }

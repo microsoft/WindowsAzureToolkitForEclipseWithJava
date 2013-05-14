@@ -18,8 +18,6 @@ package com.microsoftopentechnologies.windowsazure.tools.build;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -42,6 +40,7 @@ public class Component {
 	private String deployDir;
 	private String cloudSrc;
 	private String cloudKey;
+	private CloudUpload cloudUpload = CloudUpload.NEVER;
 	private WorkerRole role;
 	
 	/**
@@ -57,6 +56,29 @@ public class Component {
 	 */
 	public WorkerRole getRole() {
 		return role;
+	}
+	
+	/**
+	 * Sets/gets the cloud upload setting
+	 * @param cloudUpload
+	 */
+	public void setCloudUpload(String cloudUpload) {
+		if(cloudUpload == null) {
+			throw new BuildException("Missing cloud deploy setting");
+		}
+		
+		if(cloudUpload.equalsIgnoreCase(CloudUpload.NEVER.toString())) {
+			this.cloudUpload = CloudUpload.NEVER;
+		} else if(cloudUpload.equalsIgnoreCase(CloudUpload.ALWAYS.toString())) {
+			this.cloudUpload = CloudUpload.ALWAYS;
+		} else if(cloudUpload.equalsIgnoreCase(CloudUpload.AUTO.toString())) {
+			this.cloudUpload = CloudUpload.AUTO;
+		} else {
+			throw new BuildException("Unsupported cloud upload setting: " + cloudUpload);
+		}
+	}
+	public CloudUpload getCloudUpload() {
+		return this.cloudUpload;
 	}
 	
 	/**
@@ -161,7 +183,7 @@ public class Component {
 	 */
 	public String getCloudDownloadAs() {
 		
-		URI uri;
+		final URI uri;
 		try {
 			if(null == (uri = this.getCloudSrc().toURI())) {
 				return null;
@@ -170,8 +192,8 @@ public class Component {
 			return null;
 		}
 
-		String path = uri.getPath().substring(1);
-		String[] pathParts = path.split("/");
+		final String path = uri.getPath().substring(1);
+		final String[] pathParts = path.split("/");
 		return pathParts[pathParts.length-1];
 	}
 	
@@ -293,10 +315,10 @@ public class Component {
 	 * @return
 	 */
 	private String getCloudContainer() {
-		URL url;
-		URI uri;
-		String path;
-		String[] pathParts;
+		final URL url;
+		final URI uri;
+		final String path;
+		final String[] pathParts;
 		
 		try {
 			if(null == (url = this.getCloudSrc()) || this.getCloudKey() == null) {
@@ -322,9 +344,9 @@ public class Component {
 	 * @return
 	 */
 	private String getCloudBlob() {
-		URL url;
-		URI uri;
-		String path, containerName;
+		final URL url;
+		final URI uri;
+		final String path, containerName;
 		
 		try {
 			if(null == (url = this.getCloudSrc()) || this.getCloudKey() == null) {
@@ -343,13 +365,13 @@ public class Component {
 		}
 	}
 	
-	/** Returns the name of the storage account based on the URL, if this is a privatre Windows Azure Blob
+	/** Returns the name of the storage account based on the URL, if this is a private Windows Azure Blob
 	 * @return
 	 */
 	private String getCloudStorage() {
-		URL url;
-		String hostName;
-		String[] hostNameParts;
+		final URL url;
+		final String hostName;
+		final String[] hostNameParts;
 		
 		if(null == (url = this.getCloudSrc()) || this.getCloudKey() == null) {
 			return null;
@@ -368,105 +390,105 @@ public class Component {
 	 * Verifies whether the download indicated by cloudsrc exists
 	 * @return
 	 */
-	private boolean verifyDownloadPublic() {
+	private void verifyDownloadPublic() {
+		final WindowsAzurePackage waPackage = role.getPackage();
+		final URL cloudSrc = getCloudSrc();
+		if(!waPackage.getVerifyDownloads()) {
+			return;
+		}
+		
+		waPackage.log("Verifying download availability (" + cloudSrc.toExternalForm() + ")...");
+		
 		try {
-			HttpURLConnection connection = (HttpURLConnection) this.getCloudSrc().openConnection();
+			final HttpURLConnection connection = (HttpURLConnection) this.getCloudSrc().openConnection();
 			connection.setRequestMethod("HEAD");
-			if(200 == connection.getResponseCode()) {
-				return true;
-			} else {
-	    		return false;
+			if(200 != connection.getResponseCode()) {
+				waPackage.log("warning: Failed to confirm download availability! Make sure the URL is correct (" + cloudSrc.toExternalForm() + ").", 1);
 			}
 			
 		} catch (IOException e) {
-			return false;
+			waPackage.log("warning: Failed to confirm download availability! Make sure the URL is correct (" + cloudSrc.toExternalForm() + ").", 1);							
 		}
 	}
 	
 	/** Verifies whether the blob pointed to by cloudSrc actually exists
 	 * @return
 	 */
-	private boolean verifyDownloadPrivate() {
-		
-		// Extract blob info
+	private void ensurePrivateDownload(WindowsAzureManager waManager) {
+		final WindowsAzurePackage waPackage = role.getPackage();
+		final URL cloudSrc = getCloudSrc();
 		String containerName, blobName, storageName;
+		final boolean isNetworkAvailable;
 		
-		if(null == (containerName = getCloudContainer())) {
-			return false;
-		} else if(null == (blobName = getCloudBlob())) {
-			return false;			
-		} else if(null == (storageName = getCloudStorage())) {
-			return false;
+		if(!waPackage.getVerifyDownloads() && getCloudUpload() == CloudUpload.NEVER) {
+			return; // Nothing to do because download verification and upload are off
+		} else if(!(isNetworkAvailable = WindowsAzurePackage.isNetworkAvailable()) && getCloudUpload() == CloudUpload.NEVER) {
+			return; // Nothing to do because network not available and no upload requested
+		} else if(!isNetworkAvailable) {
+			waPackage.log("warning: Failed to ensure blob availability (" + cloudSrc.toExternalForm() + ") because there is no network connectivity", 1);
+			return;
 		}
+		
+		waPackage.log("Verifying blob availability (" + cloudSrc.toExternalForm() + ")...");
 
-		// Create WASH process
-		Runtime runtime = Runtime.getRuntime();
-		String washCommandline = String.format("%s%s%s%s%s", role.getAppRootDir(), File.separator, WindowsAzurePackage.DEFAULT_UTIL_SUBDIR, File.separator, WindowsAzurePackage.UTIL_WASH_FILENAME);
-		Process washProc;
-		try {
-			washProc = runtime.exec(washCommandline);
-		} catch (IOException e) {
-			return false;
-		}
-		
-		OutputStream outStream = washProc.getOutputStream();
-		InputStream inStream = washProc.getInputStream();
-		InputStream errStream = washProc.getErrorStream();
-		
-		// Process the initial prompt
-		if(null == WindowsAzurePackage.expectStreamResponse(inStream, errStream, inStream)) {
-			processStreamDestroy(inStream, outStream, errStream, washProc);
-			return false;
-		}
-		
-		// Write command
-		String command = String.format("blob use \"%s\" \"%s\" \"%s\" \"%s\"\n",
-				blobName,
-				containerName,
-				storageName,
-				this.getCloudKey());
-		
-		try {
-			outStream.write(command.getBytes());
-			outStream.flush();
-		} catch (IOException e) {
-			processStreamDestroy(inStream, outStream, errStream, washProc);
-			return false;
-		}
-		
-		// Get response
-		if(null == WindowsAzurePackage.expectStreamResponse(errStream, errStream, inStream)) {
-			processStreamDestroy(inStream, outStream, errStream, washProc);
-			return true;
-		} else {
-			processStreamDestroy(inStream, outStream, errStream, washProc);
-			return false;
-		}
+		if(null == waManager) {
+			waPackage.log("warning: Failed to verify blob availability (" + cloudSrc.toExternalForm() + ") due to an internal error", 1);
+		} else if(null == (containerName = getCloudContainer()) || null == (blobName = getCloudBlob()) || null == (storageName = getCloudStorage())) {
+			waPackage.log("warning: Failed to verify blob availability (" + cloudSrc.toExternalForm() + ") because the URL does not appear to point to a Windows Azure blob", 1);
+		} else if(null == waManager.execute(new WindowsAzureManager.Commands.Container.Create(containerName, storageName, this.getCloudKey()))) {
+			waPackage.log("warning: Failed to ensure the blob's availability because the specified container could not be created (" + containerName + ")", 1);
+		} else if(getCloudUpload() == CloudUpload.ALWAYS) {
+			uploadBlob(waManager, blobName, containerName, storageName, this.getCloudKey());
+		} else if(null != waManager.execute(new WindowsAzureManager.Commands.Blob.Use(blobName, containerName, storageName, this.getCloudKey()))) {
+			; // Blob existence confirmed, nothing else to do
+		} else if(getCloudUpload() == CloudUpload.NEVER) {
+			waPackage.log("warning: Failed to verify blob availability! Make sure the URL and/or the access key is correct (" + cloudSrc.toExternalForm() + ")", 1);
+		} else if(getCloudUpload() == CloudUpload.AUTO) {
+			uploadBlob(waManager, blobName, containerName, storageName, this.getCloudKey());
+		} 
 	}
 	
-	/** Destroys the process and cleans up the pipeline streams
-	 * @param inStream
-	 * @param outStream
-	 * @param errStream
-	 * @param process
-	 */
-	private void processStreamDestroy(InputStream inStream, OutputStream outStream, InputStream errStream, Process process) {
-		try {
-			if(inStream != null) {
-				inStream.close();
-			}
-			if(outStream !=null) {
-				outStream.close();
-			}
-			if(errStream !=null) {
-				errStream.close();
-			}
-		} catch(IOException e) {
-			;
+
+	private void uploadBlob(WindowsAzureManager waManager, String blobName, String containerName, String storageName, String accessKey) {
+		final WindowsAzurePackage waPackage = role.getPackage();
+		final File approotDir = role.getAppRootDir();
+		File srcFile;
+		
+		// Figure out where to get the source component, the source location or approot
+		if(getImportSrc() != null) {
+			srcFile = new File(getImportSrc());
+		} else if(getImportAs() != null) {
+			srcFile = new File(getImportAs());
+		} else {
+			waPackage.log("warning: Skipping a component that cannot be uploaded to blob storage automatically", 1);
+			return;
 		}
 		
-		if(process != null) {
-			process.destroy();
+		if (!srcFile.isAbsolute()) {
+			srcFile = new File(approotDir, srcFile.getPath());
+		}
+
+		// If directory then zip it
+		final File uploadedFile;
+		if (!srcFile.exists()) {
+			throw new BuildException(String.format("Failed to find component \"%s\"", srcFile.getPath()));
+		} else if(srcFile.isDirectory()) {
+			// Put the zipped file to upload in deploy directory
+			uploadedFile = new File(waPackage.getPackageDir(), getCloudDownloadAs());
+			waPackage.zipFile(srcFile, uploadedFile);
+		} else {
+			// File to upload is the existing source file
+			uploadedFile = srcFile;
+		}
+			
+		// Upload
+		waPackage.log("Please wait for blob upload to complete (" + this.getCloudSrc() + ")...");
+		if(waManager == null) {
+			return;
+		} else if(null == (waManager.execute(new WindowsAzureManager.Commands.Blob.Upload(uploadedFile.getAbsolutePath(), blobName, containerName, storageName, this.getCloudKey())))) {
+			waPackage.log("warning: Failed to upload blob " + this.getCloudSrc() + ". The deployment might not work correctly in the cloud", 1);
+		} else {
+			waPackage.log("Uploaded blob " + this.getCloudSrc());			
 		}
 	}
 	
@@ -478,11 +500,11 @@ public class Component {
 	 * @return
 	 */
 	public String createComponentDeployCommandLine() {
-		String importedPath;
+		final String importedPath;
 		String cmdLineTemplate; 
-		String deployPath = getDeployDir();
-		DeployMethod method;
-		WindowsAzurePackage wapackage = role.getPackage();
+		final String deployPath = getDeployDir();
+		final DeployMethod method;
+		final WindowsAzurePackage wapackage = role.getPackage();
 		
 		// If building for the cloud, let cloudmethod override deploymethod if specified
 		if(wapackage.getPackageType() == PackageType.local) {
@@ -497,25 +519,34 @@ public class Component {
 			}
 		} 
 		
-		File destFile = new File(importedPath);
+		final File destFile = new File(importedPath);
 
 		switch(method)
 		{
 			case COPY:
 				// Support for deploy method: copy - ensuring non-existent target directories get created as needed
-				cmdLineTemplate = "if exist \"$destName\"\\* (echo d | xcopy /y /e \"$destName\" \"$deployPath\\$destName\") else (echo f | xcopy /y \"$destName\" \"$deployPath\\$destName\")";
+				cmdLineTemplate = "if not \"%SERVER_APPS_LOCATION%\" == \"\\%ROLENAME%\" if exist \"$destName\"\\* (echo d | xcopy /y /e \"$destName\" \"$deployPath\\$destName\") else (echo f | xcopy /y \"$destName\" \"$deployPath\\$destName\")";
 				return cmdLineTemplate
 						.replace("$destName", destFile.getName())
 						.replace("$deployPath", deployPath);
 			case UNZIP:
 				// Support for deploy method: unzip return
 				cmdLineTemplate = "cscript /NoLogo $utilSubdir\\$unzipFilename \"$destName\" $deployPath";
-				return cmdLineTemplate
+				//cmdLineTemplate = "cmd /c $utilSubdir\\$unzipFilename file unzip \"$destName\" $deployPath"; // TODO
+				cmdLineTemplate = cmdLineTemplate
 						.replace("$utilSubdir", WindowsAzurePackage.DEFAULT_UTIL_SUBDIR)
 						.replace("$unzipFilename", WindowsAzurePackage.UTIL_UNZIP_FILENAME)
+						//.replace("$unzipFilename", WindowsAzurePackage.UTIL_WASH_FILENAME) //TODO
 						.replace("$destName", destFile.getName())
 						.replace("$deployPath", deployPath);
-
+				
+				// Delete the ZIP to make room, but only if downloaded
+				if(null != getCloudSrc()) {
+					cmdLineTemplate += System.getProperty("line.separator") + "del /Q /F \"" + destFile.getName() + "\"";
+				}
+				
+				return cmdLineTemplate;
+				
 			case EXEC:
 				// Support for deploy method: exec
 				StringBuilder s = new StringBuilder("start \"Windows Azure\" ");
@@ -545,7 +576,7 @@ public class Component {
 			return null;
 		} 
 
-		String cmd = String.format("cmd /c %s%s%s file download \"%s\" \"%s\"", 
+		final String cmd = String.format("cmd /c %s%s%s file download \"%s\" \"%s\"", 
 				WindowsAzurePackage.DEFAULT_UTIL_SUBDIR, 
 				File.separator, 
 				WindowsAzurePackage.UTIL_WASH_FILENAME, 
@@ -565,13 +596,13 @@ public class Component {
 		
 		try {
 			// Extract storage account, container, blob and file names
-			String storeName = getCloudSrc().getHost().split("\\.")[0];
-			URI uri = getCloudSrc().toURI();
-			String path = uri.getPath().substring(1);
-			String[] pathParts = path.split("/");
-			String containerName = pathParts[0];
-			String blobName = path.substring(containerName.length()+1);
-			String fileName = this.getCloudDownloadAs();
+			final String storeName = getCloudSrc().getHost().split("\\.")[0];
+			final URI uri = getCloudSrc().toURI();
+			final String path = uri.getPath().substring(1);
+			final String[] pathParts = path.split("/");
+			final String containerName = pathParts[0];
+			final String blobName = path.substring(containerName.length()+1);
+			final String fileName = this.getCloudDownloadAs();
 			if(pathParts.length < 2 || containerName.isEmpty() || blobName.isEmpty() || storeName.isEmpty() || fileName.isEmpty()) {
 				throw new BuildException("\tNot a valid blob URL: " + getCloudSrc().toExternalForm());
 			} 
@@ -611,28 +642,23 @@ public class Component {
 	}
 
 	/**
-	 * Verifies availability of the download
+	 * Ensure availability of the download
 	 * @return
 	 */
-	public void verifyDownload() {
-		WindowsAzurePackage waPackage = role.getPackage();
-		URL cloudSrc = getCloudSrc();
-		if(!waPackage.getVerifyDownloads() || cloudSrc == null) {
+	public void ensureDownload(WindowsAzureManager waManager) {
+		final URL cloudSrc = getCloudSrc();
+		
+		if(cloudSrc == null) {
 			return;
 		} else if(this.getCloudKey() == null) {
 			// Verify public download
-			waPackage.log("Verifying download availability (" + cloudSrc.toExternalForm() + ")...");
-			if(!verifyDownloadPublic()) {
-				waPackage.log("warning: Failed to confirm download availability! Make sure the URL is correct (" + cloudSrc.toExternalForm() + ").", 1);							
-			}			
+			verifyDownloadPublic();
 		} else {
-			// Verify private download
-			waPackage.log("Verifying blob availability (" + cloudSrc.toExternalForm() + ")...");			
-			if(!verifyDownloadPrivate()) {
-				waPackage.log("warning: Failed to confirm blob availability! Make sure the URL and/or the access key is correct (" + cloudSrc.toExternalForm() + ").", 1);
-			}
+			// Ensure private download
+			ensurePrivateDownload(waManager);
 		}
 	}
+
 	
 	/**
 	 * Validates component import settings
@@ -659,18 +685,18 @@ public class Component {
 			throw new BuildException("Missing component or approot due to an unknown internal error");
 		}
 
-		WindowsAzurePackage wapackage = role.getPackage();
+		final WindowsAzurePackage wapackage = role.getPackage();
 		
 		// Determine deploy method depending on cloud vs emulator
-		DeployMethod deployMethod;
+		final DeployMethod deployMethod;
 		if(wapackage.getPackageType() == PackageType.local) {
 			deployMethod = getDeployMethod();
 		} else { 
 			deployMethod = getCloudMethod();
 		}
 		
-		ImportMethod importMethod = getImportMethod();
-		File deployFile = new File(role.getAppRootDir(), getImportAs());
+		final ImportMethod importMethod = getImportMethod();
+		final File deployFile = new File(role.getAppRootDir(), getImportAs());
 
 		// Ensure default value for deploy method
 		if (importMethod == ImportMethod.ZIP && deployMethod == DeployMethod.EXEC) {
@@ -697,7 +723,7 @@ public class Component {
 	 * @param approot
 	 */
 	public void verifyImportSucceeded() {
-		WindowsAzurePackage wapackage = role.getPackage();
+		final WindowsAzurePackage wapackage = role.getPackage();
 		if (role.getAppRootDir() == null) {
 			throw new BuildException("Internal failure for unknown reason");
 		} else if (getImportAs() == null) {
@@ -714,7 +740,7 @@ public class Component {
 				fileName = fileName.split(" ")[0]; 
 			}
 			
-			File destFile = new File(role.getAppRootDir(), fileName);
+			final File destFile = new File(role.getAppRootDir(), fileName);
 			if (destFile.exists()) {
 				wapackage.log(String.format("\tImported as '%s' from \"%s\"", fileName, getImportSrc()));
 			} else {
@@ -729,11 +755,11 @@ public class Component {
 	 * @param approotDir
 	 */
 	public void doImport() {
-		File approotDir = role.getAppRootDir();
-		WindowsAzurePackage wapackage = role.getPackage();
+		final File approotDir = role.getAppRootDir();
+		final WindowsAzurePackage wapackage = role.getPackage();
 		
 		// Ignore no import method
-		ImportMethod importMethod = getImportMethod();
+		final ImportMethod importMethod = getImportMethod();
 		if(importMethod == ImportMethod.NONE) {
 			return;
 		}
@@ -744,7 +770,8 @@ public class Component {
 		if(getDeployMethod() == DeployMethod.EXEC && fileName != null) {
 			fileName = fileName.split(" ")[0];
 		}
-        File destFile = new File(approotDir, fileName);
+        
+		final File destFile = new File(approotDir, fileName);
         
 		// When building for the cloud if cloud source is specified, delete the component if it exists and import method isn't none; and don't import
 		if(getCloudSrc() != null && wapackage.getPackageType() == PackageType.cloud && getImportMethod() != ImportMethod.NONE) {

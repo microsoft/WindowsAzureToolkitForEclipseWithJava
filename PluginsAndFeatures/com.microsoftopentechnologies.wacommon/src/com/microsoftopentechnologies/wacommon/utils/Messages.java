@@ -47,6 +47,9 @@ public final class Messages extends NLS {
 	public static String mngUrlGetErMsg;
 	public static String parseErMsg;
 	public static String inValArg;
+	public static String err;
+	public static String prefFileName;
+	public static String bundleName;
 	
     static {
         // initialize resource bundle

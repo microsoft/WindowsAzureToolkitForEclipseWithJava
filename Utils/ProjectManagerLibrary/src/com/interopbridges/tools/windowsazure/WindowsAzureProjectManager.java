@@ -381,7 +381,7 @@ public class WindowsAzureProjectManager {
     }
 
     //Copy SA related files to project directory
-    protected void copySAResources(String roleName) throws IOException,WindowsAzureInvalidProjectOperationException {
+    public void copySAResources(String roleName) throws IOException,WindowsAzureInvalidProjectOperationException {
         String destPath = String.format("%s%s%s%s%s%s%s%s", projDirPath,File.separator,roleName,File.separator,
                           WindowsAzureConstants.APPROOT_NAME,File.separator,WindowsAzureConstants.SA_FOLDER_NAME,File.separator);
 
@@ -396,12 +396,13 @@ public class WindowsAzureProjectManager {
 
         copyResourceFile("/sessionaffinity/ConfigureARR.cmd", destPath + "ConfigureARR.cmd");
         copyResourceFile("/sessionaffinity/SessionAffinityAgent.exe", destPath + "SessionAffinityAgent.exe");
+        copyResourceFile("/sessionaffinity/SessionAffinityAgent.exe.config", destPath + "SessionAffinityAgent.exe.config");
 
         /* Uncomment this code if we need to distribute webpicmd instead of downloading
         copyResourceFile("/sessionaffinity/Microsoft.Web.PlatformInstaller.UI.dll", destPath + "Microsoft.Web.PlatformInstaller.UI.dll");
         copyResourceFile("/sessionaffinity/WebpiCmdLine.exe", destPath + "WebpiCmdLine.exe"); */
     }
-
+    
     /**
      * Serializes and saves WindowsAzureProjectManager to disk.
      *
@@ -454,9 +455,11 @@ public class WindowsAzureProjectManager {
                     		}
                     	}
                     }
+                    zipFile.close();
                 }
                 mapActivity.remove("add");
             }
+            
             if (mapActivity.containsKey("rename")) {
                 Vector<String> value = mapActivity.get("rename");
                 boolean success = new File(value.elementAt(0)).renameTo(new File(
@@ -468,6 +471,7 @@ public class WindowsAzureProjectManager {
                 }
                 mapActivity.remove("rename");
             }
+            
             if (mapActivity.containsKey("delete")) {
                 Vector<String> value = mapActivity.get("delete");
                 File file = new File(projDirPath + File.separator + value.get(0));
@@ -584,17 +588,8 @@ public class WindowsAzureProjectManager {
     public void setOSFamily(OSFamilyType osFamilyType) throws WindowsAzureInvalidProjectOperationException {
     	try {
     		String osFamily = osFamilyType.getValue()+"" ;
-    		ParserXMLUtility.setExpressionValue(getConfigFileDoc(), WindowsAzureConstants.CONFIG_OSFAMILY,osFamily);
+    		ParserXMLUtility.setExpressionValue(getConfigFileDoc(), WindowsAzureConstants.CONFIG_OSFAMILY,osFamily);   		
     		
-    		XPath xPath = XPathFactory.newInstance().newXPath();
-    		Element eleWinPkg = (Element) xPath.evaluate(WindowsAzureConstants.WINAZURE_PACKAGE, getPackageFileDoc(), XPathConstants.NODE);
-    		if(WindowsAzureConstants.OSFAMILY_WINDOWS_SERVER_2012.equals(osFamily)) {
-    			if(eleWinPkg != null)
-    				eleWinPkg.setAttribute("rolepropertiesfilename", ".rolepropertiesOS3");    			
-    		}else {
-    			if(eleWinPkg != null)
-    				eleWinPkg.removeAttribute("rolepropertiesfilename");
-    		}
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_SET_TARGET_OS_NAME, ex);
         }
@@ -1983,48 +1978,6 @@ public class WindowsAzureProjectManager {
                 nMap.getNamedItem("name").setNodeValue(projName);
             }
             ParserXMLUtility.saveXMLFile(projXML, projDoc);
-
-            String samplePath = String.format("%s%s%s%s", dest,
-                    File.separator, "samples", File.separator);
-            File file = new File(samplePath);
-            if (!file.exists()) {
-                boolean success = new File(samplePath).mkdir();
-                if (!success) {
-                    throw  new WindowsAzureInvalidProjectOperationException(
-                            WindowsAzureConstants.EXCP_SAMPLE_CREAT);
-                }
-            }
-
-            //Mark Sample files read only
-            String stTomcat6 = String.format("%s%s", samplePath,
-                    WindowsAzureConstants.ST_TOMCAT6);
-            new File(stTomcat6).setReadOnly();
-
-            String stTomcat7 = String.format("%s%s", samplePath,
-                    WindowsAzureConstants.ST_TOMCAT7);
-            new File(stTomcat7).setReadOnly();
-
-            String stFish = String.format("%s%s", samplePath,
-                    WindowsAzureConstants.ST_GLASSFISH);
-            new File(stFish).setReadOnly();
-
-            String stJBoss6 = String.format("%s%s", samplePath,
-                    WindowsAzureConstants.ST_JBOSS6);
-            new File(stJBoss6).setReadOnly();
-
-            String stJboss7 = String.format("%s%s", samplePath,
-                    WindowsAzureConstants.ST_JBOSS7);
-            new File(stJboss7).setReadOnly();
-
-            String stJetty7 = String.format("%s%s", samplePath,
-                    WindowsAzureConstants.ST_JETTY7);
-            new File(stJetty7).setReadOnly();
-
-            String stJetty8 = String.format("%s%s", samplePath,
-                    WindowsAzureConstants.ST_JETTY8);
-            new File(stJetty8).setReadOnly();
-
-
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(
                     WindowsAzureConstants.EXCP_MOVE_PROJ_FROM_TEMP, ex);
@@ -2160,7 +2113,9 @@ public class WindowsAzureProjectManager {
                 @Override
                 public void run() {
                     try {
-                        Runtime.getRuntime().exec("cmd /c start " + filePt.getAbsolutePath());
+                    	String args[] = {"cmd","/c","start",filePt.getAbsolutePath()};
+//                    	new ProcessBuilder("cmd /c start " + filePt.getAbsolutePath()).start();
+                    	new ProcessBuilder(args).start();
                     } catch (IOException ex) {
                         //catching exception silently.
                     }
@@ -2191,16 +2146,20 @@ public class WindowsAzureProjectManager {
             if (emmulatorPath.isEmpty()) {
                 emmulatorPath = projDirPath + "\\emulatorTools";
             }
-            final String scriptPath =  emmulatorPath + "\\RunInEmulator.cmd";
+            String scriptPath =  emmulatorPath + "\\RunInEmulator.cmd";
             File script = new File(scriptPath);
             if (!script.exists()) {
                 throw new Exception(scriptPath + " not found");
             }
+            
+            final String escScriptPath = scriptPath;
             Thread cmdth = new Thread() {
                 @Override
                 public void run() {
                     try {
-                        Runtime.getRuntime().exec("cmd /c start " + scriptPath);
+                    	String args[] = {"cmd","/c",escScriptPath};
+//                    	new ProcessBuilder("cmd /c start " + scriptPath).start();
+                    	new ProcessBuilder(args).start();
                     } catch (Exception ex) {
                     	//catching exception silently.
                     }
@@ -2350,30 +2309,46 @@ public class WindowsAzureProjectManager {
      */
     public static Map<String, String> getServerTemplateDetectors(File templateFile)
             throws WindowsAzureInvalidProjectOperationException {
+    	return getServerTemplateDetectors(templateFile, "detectpath");
+    }
+        
+    /**
+     * API to return map of server detection text patterns of the available server templates.
+     * @param templateFile
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public static Map<String, String> getServerTemplatePatterns(File templateFile)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	return getServerTemplateDetectors(templateFile, "detecttext");
+    }
 
-    	HashMap<String, String> serverDetectionPaths = new HashMap<String, String>();
+    private static Map<String, String> getServerTemplateDetectors(File templateFile, String attrName)
+            throws WindowsAzureInvalidProjectOperationException {
+
+    	final HashMap<String, String> serverDetectors = new HashMap<String, String>();
 
     	try {
-    		NodeList compSet = getComponentSets(templateFile, "server");
+    		final NodeList compSet = getComponentSets(templateFile, "server");
 
     		for (int i = 0; i < compSet.getLength(); i++) {
     			if (compSet.item(i).getAttributes().getLength() > 1) {
     				Element ele = (Element) compSet.item(i);
     				String serverName = ele.getAttribute("name");
-    				String serverDetectPath = ele.getAttribute("detectpath");
-    				if(!serverName.isEmpty() && !serverDetectPath.isEmpty()) {
-    					serverDetectionPaths.put(serverName, serverDetectPath);
+    				String serverDetector = ele.getAttribute(attrName);
+    				if (!serverName.isEmpty() && !serverDetector.isEmpty()) {
+    					serverDetectors.put(serverName, serverDetector);
     				}
     			}
     		}
 
-    		return serverDetectionPaths;
+    		return serverDetectors;
     	} catch (Exception e) {
             throw new WindowsAzureInvalidProjectOperationException(
                     "Exception reading server templates", e);
         }
     }
-
+    
 
     protected static boolean deleteDir(File dir) {
         boolean status = true;

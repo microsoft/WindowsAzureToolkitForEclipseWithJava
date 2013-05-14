@@ -72,6 +72,8 @@ public final class WindowsAzureConstants {
     public static final String STARTUP_TASK_COMMENTS = "Do not delete this startup task or insert tasks before it. "+
      "It was created by Windows Azure Plugin for Eclipse with Java to enable session affinity. ";
     public static final String DEF_FILE_STARTUP_ELEMENT_NAME = "Startup" ;
+    public static final String DEF_FILE_IMPORTS_ELEMENT_NAME = "Imports" ;
+    public static final String DEF_FILE_IMPORT_ELEMENT_NAME = "Import" ;
 
     public static final String SAMPLE_TASK_COMMENT = " Sample startup task calling startup.cmd from the role's approot folder ";
     public static final String SAMPLE_ENTRY_PT_COMMENT = " Sample entry point calling run.cmd from the role's approot folder ";
@@ -130,12 +132,13 @@ public final class WindowsAzureConstants {
     public static final String IMPORT = WR_NAME + "/Imports";
     public static final String IMPORT_MNANE = IMPORT
             + "/Import[@moduleName='RemoteAccess']";
+    public static final String IMPORT_WEB_DEPLOY = IMPORT + "/Import[@moduleName='WebDeploy']";
 
     public static final String DATE_FORMAT = "yyyy-MM-dd'T23:59:59.0000000-08:00'";
     public static final String CREATOR_VER = PROJ_PROPERTY
             + "/property[@name='creator.version']";
     public static final String V17_VERSION = "1.7.0";
-    public static final String VERSION = "1.8.1";
+    public static final String VERSION = "2.0.0";
     public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.inputendpoint']";
     public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.internalendpoint']";
     public static final String SA_INTERNAL_ENDPOINT_SUFFIX = "_SESSION_AFFINITY" ;
@@ -198,19 +201,10 @@ public final class WindowsAzureConstants {
     public static final int MAX_LS_SIZE_LARGE = 1024000;
     public static final int MAX_LS_SIZE_EXTRALARGE = 2088960;
 
-    public static final String ST_CUSTOM = "startup_Custom.txt";
-    public static final String ST_TOMCAT7 = "startupApacheTomcat7.txt";
-    public static final String ST_TOMCAT6 = "startupApacheTomcat6.txt";
-    public static final String ST_GLASSFISH = "startupGlassFishOSE3.txt";
-    public static final String ST_JBOSS6 = "startupJBossAS6.txt";
-    public static final String ST_JBOSS7 = "startupJBossAS7.txt";
-    public static final String ST_JETTY7 = "startupJetty7.txt";
-    public static final String ST_JETTY8 = "startupJetty8.txt";
-
-
     public static final String COMPONENT = WA_PACK_NAME + "/component";
 
     public static final String ATTR_IMETHOD = "importmethod";
+    public static final String ATTR_CLOUD_UPLOAD = "cloudupload";
     public static final String ATTR_IPATH = "importsrc";
     public static final String ATTR_DMETHOD = "deploymethod";
     public static final String ATTR_DDIR = "deploydir";
@@ -388,5 +382,5 @@ public final class WindowsAzureConstants {
     public static final String SRV_CLOUD_HOME = "project.%s.server.home.cloud";
     public static final String SRV_LOCAL_HOME = "project.%s.server.home.local";
 
-    public static final String MIN_SDK_VERSION="2012-10";
+    public static final String MIN_SDK_VERSION="v2.0";
 }

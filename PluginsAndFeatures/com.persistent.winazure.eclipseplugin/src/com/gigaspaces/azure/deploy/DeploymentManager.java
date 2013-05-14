@@ -83,6 +83,9 @@ import com.gigaspaces.azure.wizards.WizardCacheManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.utils.Base64;
 import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
@@ -161,8 +164,14 @@ public final class DeploymentManager {
 			if (deploymentDesc.getRemoteDesktopDescriptor().isEnabled()) {
 
 				notifyProgress(deploymentDesc.getDeploymentId(), 0,RequestStatus.InProgress, Messages.deplUploadCert);
-
-				uploadCertificateIfNeeded(service, deploymentDesc);
+				/*
+				 * If remote access enabled, still pfxPath and password empty
+				 * then we want to use already uploaded files.
+				 */
+				if (!deploymentDesc.getRemoteDesktopDescriptor().getPrivateKey().isEmpty()
+						&& !deploymentDesc.getRemoteDesktopDescriptor().getPfxPassword().isEmpty()) {
+					uploadCertificateIfNeeded(service, deploymentDesc);
+				}
 
 				notifyProgress(deploymentDesc.getDeploymentId(), conditionalProgress,RequestStatus.InProgress, Messages.deplConfigRdp);
 
@@ -224,13 +233,23 @@ public final class DeploymentManager {
 
 	private void createStorageAccount(final String storageServiceName, final String label, final String location, final String description) 
 	throws WACommonException, RestAPIException, InterruptedException, CommandLineException  {
-		
+
 		final CreateStorageServiceInput body = new CreateStorageServiceInput(
 				storageServiceName, storageServiceName, location);
 
 		body.setDescription(description);
-		WizardCacheManager.createStorageAccount(body);
-		
+		StorageService storageService = WizardCacheManager.createStorageAccount(body);
+		/*
+		 * Add newly created storage account
+		 * in centralized storage account registry.
+		 */
+		StorageAccount storageAccount = new StorageAccount(storageService.getServiceName(),
+				storageService.getStorageServiceKeys().getPrimary(),
+				storageService.
+				getStorageServiceProperties().getEndpoints().
+				getEndpoints().get(0));
+		StorageAccountRegistry.addAccount(storageAccount);
+		PreferenceUtilStrg.save();
 	}
 
 	private void createHostedService(final String hostedServiceName, final String label, final String location, final String description) 

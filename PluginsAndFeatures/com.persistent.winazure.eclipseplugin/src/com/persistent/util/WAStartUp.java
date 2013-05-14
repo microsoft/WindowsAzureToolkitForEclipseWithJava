@@ -26,6 +26,7 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -41,7 +42,15 @@ import org.eclipse.wst.xml.core.internal.catalog.provisional.ICatalogEntry;
 import org.eclipse.wst.xml.core.internal.catalog.provisional.INextCatalog;
 
 import waeclipseplugin.Activator;
+
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
+import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
 
 
 
@@ -65,6 +74,7 @@ public class WAStartUp implements IStartup {
                     IResourceChangeEvent.POST_CHANGE);
 
             IWorkspaceRoot root = workspace.getRoot();
+            PreferenceUtilStrg.load();
             //Get all the projects in workspace
             IProject[] projects = root.getProjects();
             for (IProject iProject : projects) {
@@ -88,17 +98,110 @@ public class WAStartUp implements IStartup {
                         	WAEclipseHelper.
                         	correctProjectName(iProject, projMngr);
                         }
-
+                        projMngr = initializeStorageAccountRegistry(projMngr);
+                        // save object so that access key will get saved in PML.
+                        projMngr.save();
                     }
                 }
             }
+            // save preference file.
+            PreferenceUtilStrg.save();
             //this code is for copying componentset.xml in plugins folder
             copyPluginComponents();
+            // refresh workspace as package.xml may have got changed.
+            WAEclipseHelper.refreshWorkspace(Messages.resCLJobName,
+            		Messages.resCLExWkspRfrsh);
         } catch (Exception e) {
             /* This is not a user initiated task
                So user should not get any exception prompt.*/
             Activator.getDefault().log("Exception in early startup", e);
         }
+    }
+
+    /**
+     * Storage account registry project open logic.
+     * Plugin needs to detect and aggregate the information
+     * about the different storage accounts used by the components.
+     * If account is not there, then add the storage account, with the key to the registry.
+     * If it's there, but the access key is different, then update component's cloud key
+     * with the key from the registry.
+     * @param projMngr
+     * @return
+     */
+    private WindowsAzureProjectManager initializeStorageAccountRegistry(
+    		WindowsAzureProjectManager projMngr) {
+    	try {
+    		List<StorageAccount> strgAccList = StorageAccountRegistry.getStrgList();
+    		// get number of roles in one project
+    		List<WindowsAzureRole> roleList = projMngr.getRoles();
+    		for (int i = 0; i < roleList.size(); i++) {
+    			WindowsAzureRole role = roleList.get(i);
+    			// check for caching storage account name and key given
+    			String key = role.getCacheStorageAccountKey();
+    			String name = role.getCacheStorageAccountName();
+    			if (key != null
+    					&& name != null
+    					&& !key.isEmpty()
+    					&& !name.isEmpty()) {
+    				StorageAccount account = new StorageAccount(name,
+    						key,
+    						PreferenceSetUtil.getSelectedBlobServiceURL(name));
+    				if (strgAccList.contains(account)) {
+    					int index = strgAccList.indexOf(account);
+    					String keyInReg = strgAccList.get(index).getStrgKey();
+    					if (!key.equals(keyInReg)) {
+    						// update key of component
+    						role.setCacheStorageAccountKey(keyInReg);
+    					}
+    				} else {
+    					// add account in registry.
+    					strgAccList.add(account);
+    				}
+    			}
+
+    			// get list of components in one role.
+    			List<WindowsAzureRoleComponent> cmpnntsList =
+    					role.getComponents();
+    			for (int j = 0; j < cmpnntsList.size(); j++) {
+    				WindowsAzureRoleComponent component =
+    						cmpnntsList.get(j);
+    				// check cloud URL is set or not
+    				String url = component.getCloudDownloadURL();
+    				if (url != null
+    						&& !url.isEmpty()) {
+    					String accessKey = component.getCloudKey();
+    					/*
+    					 * check cloud key is set or not
+    					 * if not then URL is publicly accessible
+    					 * hence do not add that account in registry.
+    					 */
+    					if (accessKey != null
+    							&& !accessKey.isEmpty()) {
+    						StorageAccount account = new StorageAccount(
+    								StorageRegistryUtilMethods.
+    								getAccNameFromUrl(url),
+    								accessKey,
+    								StorageRegistryUtilMethods.
+    								getServiceEndpointUrl(url));
+    						if (strgAccList.contains(account)) {
+    							int index = strgAccList.indexOf(account);
+    							String keyInReg = strgAccList.get(index).getStrgKey();
+    							if (!accessKey.equals(keyInReg)) {
+    								// update key of component
+    								component.setCloudKey(keyInReg);
+    							}
+    						} else {
+    							// add account in registry.
+    							strgAccList.add(account);
+    						}
+    					}
+    				}
+    			}
+    		}
+    	} catch (Exception e) {
+    		Activator.getDefault().log("Exception in early startup", e);
+    	}
+    	return projMngr;
     }
 
     /**
@@ -200,8 +303,6 @@ public class WAStartUp implements IStartup {
             }
             String cmpntFile = String.format("%s%s%s", pluginInstLoc,
             		File.separator, Messages.cmpntFileName);
-            String enctFile = String.format("%s%s%s", pluginInstLoc,
-            		File.separator, Messages.encFileName);
             String starterKit = String.format("%s%s%s", pluginInstLoc,
             		File.separator, Messages.starterKitFileName);
             String restFile = String.format("%s%s%s", pluginInstLoc,
@@ -246,12 +347,6 @@ public class WAStartUp implements IStartup {
             } else {
             	copyResourceFile(Messages.cmpntFileEntry, cmpntFile);
             }
-
-            // Check for encutil.exe
-            if (new File(enctFile).exists()) {
-            	new File(enctFile).delete();
-            }
-            copyResourceFile(Messages.encFileEntry, enctFile);
 
             // Check for WAStarterKitForJava.zip
             if (new File(starterKit).exists()) {

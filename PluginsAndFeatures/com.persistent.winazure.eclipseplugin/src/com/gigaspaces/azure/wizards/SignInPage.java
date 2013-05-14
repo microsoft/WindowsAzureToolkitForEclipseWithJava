@@ -17,13 +17,19 @@ package com.gigaspaces.azure.wizards;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -36,10 +42,14 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
+
+import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.model.HostedService;
 import com.gigaspaces.azure.model.HostedServices;
@@ -47,51 +57,73 @@ import com.gigaspaces.azure.model.KeyName;
 import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.model.StorageServices;
 import com.gigaspaces.azure.model.Subscription;
+import com.gigaspaces.azure.propertypage.SubscriptionPropertyPage;
 import com.gigaspaces.azure.rest.WindowsAzureRestUtils;
 import com.gigaspaces.azure.runnable.AccountActionRunnable;
 import com.gigaspaces.azure.runnable.CacheAccountWithProgressBar;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressBar;
 import com.gigaspaces.azure.util.CommandLineException;
+import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
+import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
+import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
+import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.persistent.ui.propertypage.WARemoteAccessPropertyPage;
 import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
-
+/**
+ * Class creates UI components and their respective
+ * listeners of publish wizard page.
+ */
 public class SignInPage extends WindowsAzurePage {
 
 	private Combo storageAccountCmb;
 	private Combo hostedServiceCombo;
 	private Combo deployStateCmb;
-
 	private String deployState;
 	private String deployFileName;
 	private String deployConfigFileName;
 	private HostedService currentHostedService;
-
 	private PublishData publishData;
 	private StorageService currentStorageAccount;
-
 	private WindowsAzurePackageType deployMode = WindowsAzurePackageType.CLOUD;
-
 	private Combo subscriptionCombo;
-
 	private Link subLink;
 	private Button newHostedServiceBtn;
 	private Button newStorageAccountBtn;
-
 	private String defaultLocation;
-
 	private IProject selectedProject;
 	private Button btnImpFrmPubSetFile;
+	// Remote Access group
+	private Group rdGrp;
+	private Label userNameLabel;
+	private Label passwordLabel;
+	private Label confirmPasswordLbl;
+	private Text txtUserName;
+	private Text txtPassword;
+	private Text txtConfirmPassword;
+	private Link encLink;
+	private WindowsAzureProjectManager waProjManager;
+	private boolean isPwdChanged;
+	private Button conToDplyChkBtn;
+	public ArrayList<String> newServices = new ArrayList<String>();
 
+	/**
+	 * Constructor.
+	 */
 	protected SignInPage() {
 		super(Messages.deplWizTitle);
 		setTitle(Messages.deplWizTitle);
 	}
-
+	/**
+	 * Returns currently selected project.
+	 * @param project
+	 */
 	public void setSelectedProject(IProject project) {
 		this.selectedProject = project;
 	}
@@ -100,6 +132,7 @@ public class SignInPage extends WindowsAzurePage {
 	public void createControl(Composite parent) {
 		PlatformUI.getWorkbench().getHelpSystem().
 		setHelp(parent, Messages.pluginPrefix + Messages.publishCommandHelp);
+		loadProject();
 
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 3;
@@ -119,28 +152,111 @@ public class SignInPage extends WindowsAzurePage {
 		createStorageAccountWidget(container);
 		createHostedServiceWidget(container);
 		createDeploymentStateWidget(container);
+		createRemoteDesktopWidget(container);
 
 		setControl(container);
-		setComponentState((subscriptionCombo.getData(subscriptionCombo.getText()) != null));
-
+		setComponentState((subscriptionCombo.
+				getData(subscriptionCombo.getText()) != null));
+		loadDefaultRDPValues();
 		setPageComplete(validatePageComplete());
+	}
+
+	/**
+	 * Initialize {@link WindowsAzureProjectManager} object
+	 * according to selected project.
+	 */
+	private void loadProject() {
+		try {
+			String projectPath = selectedProject.getLocation().toPortableString();
+			File projectDir = new File(projectPath);
+			waProjManager = WindowsAzureProjectManager.load(projectDir);
+		} catch (Exception e) {
+			Activator
+			.getDefault()
+			.log(Messages.projLoadEr, e);
+		}
 	}
 
 	private void doLoadPreferences() {
 		try {
-			getContainer().run(true, true, new LoadAccountWithProgressBar(null,this.getShell()));
+			getContainer().run(true, true,
+					new LoadAccountWithProgressBar(null,this.getShell()));
 		} catch (InvocationTargetException e) {
-			MessageUtil.displayErrorDialog(getShell(), Messages.importDlgTitle,e.getMessage());
+			MessageUtil.displayErrorDialog(getShell(),
+					Messages.importDlgTitle,e.getMessage());
 		} catch (InterruptedException e) {
 		}
 	}
 
+	/**
+	 * Method loads configured remote access values
+	 * on wizard page.
+	 */
+	private void loadDefaultRDPValues() {
+		try {
+			// to update project manager object
+			loadProject();
+			String uname = waProjManager.getRemoteAccessUsername();
+			if (uname != null && !uname.isEmpty()) {
+				txtUserName.setText(uname);
+				try {
+					String pwd = waProjManager.
+							getRemoteAccessEncryptedPassword();
+					/*
+					 * If its dummy password,
+					 * then do not show it on UI
+					 */
+					if (pwd.equals(Messages.remAccDummyPwd)
+							|| pwd.isEmpty()) {
+						txtPassword.setText("");
+						txtConfirmPassword.setText("");
+					} else {
+						txtPassword.setText(pwd);
+						txtConfirmPassword.setText(pwd);
+					}
+					setEnableRemAccess(true);
+				} catch (Exception e) {
+					txtPassword.setText("");
+					txtConfirmPassword.setText("");
+				}
+			} else {
+				txtUserName.setText("");
+				setEnableRemAccess(false);
+			}
+		} catch (Exception e) {
+			txtUserName.setText("");
+			setEnableRemAccess(false);
+		}
+	}
+
+	/**
+	 * Enable or disable password fields.
+	 * @param status
+	 */
+	private void setEnableRemAccess(boolean status) {
+		txtPassword.setEnabled(status);
+		txtConfirmPassword.setEnabled(status);
+		passwordLabel.setEnabled(status);
+		confirmPasswordLbl.setEnabled(status);
+		conToDplyChkBtn.setEnabled(status);
+		if (!status) {
+			txtPassword.setText("");
+			txtConfirmPassword.setText("");
+			conToDplyChkBtn.setSelection(false);
+		}
+	}
+
+	/**
+	 * Enable or disable components related to
+	 * publish settings.
+	 * @param enabled
+	 */
 	private void setComponentState(boolean enabled) {
 		subscriptionCombo.setEnabled(enabled);
 		storageAccountCmb.setEnabled(enabled);
 		newStorageAccountBtn.setEnabled(enabled);
 		hostedServiceCombo.setEnabled(enabled);
-		if (enabled == false) {
+		if (!enabled) {
 			hostedServiceCombo.removeAll();
 			storageAccountCmb.removeAll();
 		}
@@ -148,7 +264,8 @@ public class SignInPage extends WindowsAzurePage {
 		newHostedServiceBtn.setEnabled(enabled);
 	}
 
-	private void setEnabledState(Composite composite, boolean enabledState) {
+	private void setEnabledState(Composite composite,
+			boolean enabledState) {
 		composite.setEnabled(enabledState);
 
 		for (Control child : composite.getChildren()) {
@@ -162,15 +279,14 @@ public class SignInPage extends WindowsAzurePage {
 
 	@Override
 	public void setVisible(boolean visible) {
-
 		Display.getDefault().asyncExec(new Runnable() {
-
 			@Override
 			public void run() {
-				if (PreferenceUtil.isLoaded() == false) {
-
+				if (!PreferenceUtil.isLoaded()) {
 					doLoadPreferences();
-
+					// reload information if its new eclipse session.
+					PreferenceUtilStrg.load();
+					MethodUtils.prepareListFromPublishData();
 					PreferenceUtil.setLoaded(true);
 					populateSubscriptionCombo();
 				}
@@ -187,8 +303,9 @@ public class SignInPage extends WindowsAzurePage {
 	protected boolean validatePageComplete() {
 
 		setErrorMessage(null);
-		if (deployMode == WindowsAzurePackageType.LOCAL)
+		if (deployMode.equals(WindowsAzurePackageType.LOCAL)) {
 			return true;
+		}
 
 		if (publishData == null) {
 			setErrorMessage(Messages.deplFillSubsciptionId);
@@ -208,32 +325,360 @@ public class SignInPage extends WindowsAzurePage {
 			setErrorMessage(Messages.deplFillHostedServiceMsg);
 			return false;
 		}
-
+		/*
+		 * Validation for remote access settings.
+		 */
+		if (!txtUserName.getText().isEmpty()) {
+			String pwd = txtPassword.getText();
+			if (pwd == null || pwd.isEmpty()) {
+				// password is empty
+				setErrorMessage(Messages.rdpPasswordEmpty);
+				return false;
+			} else {
+				String confirm = txtConfirmPassword.getText();
+				if (confirm == null || confirm.isEmpty()) {
+					// confirm password is empty
+					setErrorMessage(Messages.rdpConfirmPasswordEmpty);
+					return false;
+				} else {
+					if (!pwd.equals(confirm)) {
+						// password and confirm password do not match.
+						setErrorMessage(Messages.rdpPasswordsDontMatch);
+						return false;
+					}
+				}
+			}
+		}
 
 		setErrorMessage(null);
- 
-		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.DEPLOY_MODE, deployMode));
 
-		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.SUPSCRIPTION, publishData));
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.DEPLOY_MODE, deployMode));
 
-		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.STORAGE_ACCOUNT, currentStorageAccount));
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.SUPSCRIPTION, publishData));
+
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.STORAGE_ACCOUNT,
+				currentStorageAccount));
 		// Always set key to primary
-		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.STORAGE_ACCESS_KEY,
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.STORAGE_ACCESS_KEY,
 				KeyName.Primary.toString()));
 
-		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.DEPLOY_STATE, deployState));
-		
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.DEPLOY_STATE,
+				deployState));
+
 		deployFileName = constructCspckFilePath();
-		
+
 		deployConfigFileName = constructCscfgFilePath();
 
-		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.DEPLOY_FILE, deployFileName));
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.DEPLOY_FILE,
+				deployFileName));
 
-		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.DEPLOY_CONFIG_FILE, deployConfigFileName));
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.DEPLOY_CONFIG_FILE,
+				deployConfigFileName));
 
-		fireConfigurationEvent(new ConfigurationEventArgs(this,ConfigurationEventArgs.HOSTED_SERVICE, currentHostedService));
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.HOSTED_SERVICE,
+				currentHostedService));
 
 		return true;
+	}
+
+	/**
+	 * Method returns user name
+	 * entered by user.
+	 * @return
+	 */
+	public String getRdpUname() {
+		return txtUserName.getText().trim();
+	}
+
+	/**
+	 * Method returns password entered by user.
+	 * @return
+	 */
+	public String getRdpPwd() {
+		return txtPassword.getText().trim();
+	}
+
+	/**
+	 * Method returns state of connect check box.
+	 * @return
+	 */
+	public boolean getConToDplyChkStatus() {
+		return conToDplyChkBtn.getSelection();
+	}
+
+	/**
+	 * Method returns currently selected hosted service.
+	 * @return
+	 */
+	public String getCurrentService() {
+		return hostedServiceCombo.getText();
+	}
+
+	/**
+	 * Method returns new services names, if created by user.
+	 * @return
+	 */
+	public ArrayList<String> getNewServices() {
+		return newServices;
+	}
+
+	/**
+	 * Method creates UI components
+	 * of remote access group.
+	 * @param parent
+	 */
+	private void createRemoteDesktopWidget(Composite parent) {
+		rdGrp = new Group(parent, SWT.SHADOW_ETCHED_IN);
+		GridLayout gridLayout = new GridLayout();
+		gridLayout.numColumns = 3;
+		GridData gridData = new GridData();
+		gridData.horizontalSpan = 3;
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalIndent = 3;
+		gridData.verticalIndent = 5;
+		gridData.horizontalAlignment = SWT.FILL;
+		rdGrp.setText(Messages.rmtAccLbl);
+		rdGrp.setLayout(gridLayout);
+		rdGrp.setLayoutData(gridData);
+		createUsernameComponent(rdGrp);
+		createPasswordComponent(rdGrp);
+		createConfPwdComponent(rdGrp);
+		createConnectToDeployBtn(rdGrp);
+	}
+
+	/**
+	 * Method creates check box
+	 * of Connect to deployment when ready.
+	 * @param container
+	 */
+	private void createConnectToDeployBtn(Composite container) {
+		conToDplyChkBtn = new Button(container, SWT.CHECK);
+		GridData gridData = new GridData();
+		gridData.verticalIndent = 10;
+		gridData.horizontalSpan = 3;
+		conToDplyChkBtn.setText(Messages.conDplyLbl);
+		conToDplyChkBtn.setLayoutData(gridData);
+		conToDplyChkBtn.setSelection(false);
+	}
+
+	/**
+	 * Method creates UI components
+	 * and listener for user name.
+	 * @param container
+	 */
+	private void createUsernameComponent(Composite container) {
+		userNameLabel = new Label(container, SWT.LEFT);
+		userNameLabel.setText(Messages.remAccUserName);
+		txtUserName = new Text(container,
+				SWT.LEFT | SWT.BORDER);
+		GridData gridData = new GridData();
+		gridData.widthHint = 300;
+		gridData.horizontalIndent = 33;
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
+		txtUserName.setLayoutData(gridData);
+
+		txtUserName.addModifyListener(new ModifyListener() {
+
+			@Override
+			public void modifyText(ModifyEvent arg0) {
+				if (txtUserName.getText().isEmpty()) {
+					setEnableRemAccess(false);
+				} else {
+					setEnableRemAccess(true);
+				}
+				setPageComplete(validatePageComplete());
+			}
+		});
+
+		new Link(container, SWT.NO);
+	}
+
+	/**
+	 * Method creates UI components
+	 * and listener for password and encryption link.
+	 * @param container
+	 */
+	private void createPasswordComponent(Composite container) {
+		passwordLabel = new Label(container, SWT.LEFT);
+		passwordLabel.setText(Messages.certDlgPwdLbl);
+		GridData gridData = new GridData();
+		gridData.verticalIndent = 10;
+		passwordLabel.setLayoutData(gridData);
+
+		txtPassword = new Text(container,
+				SWT.LEFT | SWT.PASSWORD | SWT.BORDER);
+		gridData = new GridData();
+		gridData.widthHint = 300;
+		gridData.verticalIndent = 10;
+		gridData.horizontalIndent = 33;
+		gridData.horizontalAlignment = SWT.FILL;
+		gridData.grabExcessHorizontalSpace = true;
+		txtPassword.setLayoutData(gridData);
+
+		/*
+		 * Listener for key event when user click on password text box
+		 * it will set flag for entering the new values.
+		 */
+		txtPassword.addKeyListener(new KeyListener() {
+			@Override
+			public void keyReleased(KeyEvent event) {
+			}
+
+			@Override
+			public void keyPressed(KeyEvent event) {
+				isPwdChanged = true;
+			}
+		});
+
+		/*
+		 * Listener for handling focus event on password text box on focus gain
+		 * text box will blank.on focus lost we will be checking for strong
+		 * password. If password has not changed then we will display old
+		 * password only.
+		 */
+		txtPassword.addFocusListener(new PasswordFocusListener());
+
+		txtPassword.addModifyListener(new ModifyListener() {
+
+			@Override
+			public void modifyText(ModifyEvent arg0) {
+				setPageComplete(validatePageComplete());
+			}
+		});
+
+		encLink = new Link(container, SWT.RIGHT);
+		gridData = new GridData();
+		gridData.widthHint = 60;
+		gridData.verticalIndent = 10;
+		gridData.horizontalIndent = 10;
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
+		encLink.setText(Messages.linkLblEnc);
+		encLink.setLayoutData(gridData);
+		encLink.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				encLinkListener();
+			}
+		});
+	}
+
+	/**
+	 * Focus listener for password text box.
+	 */
+	private class PasswordFocusListener implements FocusListener {
+
+		@Override
+		//making text box blank on focus gained.
+		public void focusGained(FocusEvent arg0) {
+			txtPassword.setText("");
+		}
+
+		@Override
+		public void focusLost(FocusEvent arg0) {
+			WAEclipseHelper.checkRdpPwd(isPwdChanged,
+					txtPassword, waProjManager,
+					false, txtConfirmPassword);
+		}
+	}
+
+	/**
+	 * Listener for Encryption link.
+	 * Stores values entered by user before opening
+	 * remote access property page and shows saved values.
+	 */
+	private void encLinkListener() {
+		// Make remote access settings
+		Activator.getDefault().setIsFromEncLink(true);
+		Activator.getDefault().setPubUname(
+				txtUserName.getText().trim());
+		Activator.getDefault().setPubPwd(
+				txtPassword.getText().trim());
+		Activator.getDefault().setPubCnfPwd(
+				txtConfirmPassword.getText().trim());
+		// open remote access dialog
+		Object remoteAccess =
+				new WARemoteAccessPropertyPage();
+		int btnId = WAEclipseHelper.
+				openPropertyPageDialog(
+						com.persistent.util.Messages.cmhIdRmtAces,
+						com.persistent.util.Messages.cmhLblRmtAces,
+						remoteAccess);
+		if (btnId == Window.OK) {
+			loadDefaultRDPValues();
+			/*
+			 * To handle the case, if you typed
+			 * password on Publish wizard --> Encryption link
+			 * Remote access --> OK --> Toggle password text boxes
+			 */
+			isPwdChanged = false;
+		}
+	}
+	/**
+	 * Method creates UI components
+	 * and listener for confirm password.
+	 * @param container
+	 */
+	private void createConfPwdComponent(Composite container) {
+		confirmPasswordLbl = new Label(container, SWT.LEFT);
+		confirmPasswordLbl.setText(Messages.certDlgConfPwdLbl); //$NON-NLS-1$
+		GridData gridData = new GridData();
+		gridData.verticalIndent = 10;
+		confirmPasswordLbl.setLayoutData(gridData);
+
+		txtConfirmPassword = new Text(container,
+				SWT.LEFT | SWT.PASSWORD | SWT.BORDER);
+		gridData = new GridData();
+		gridData.widthHint = 300;
+		gridData.verticalIndent = 10;
+		gridData.horizontalIndent = 33;
+		gridData.horizontalAlignment = SWT.FILL;
+		gridData.grabExcessHorizontalSpace = true;
+		txtConfirmPassword.setLayoutData(gridData);
+
+		txtConfirmPassword.addFocusListener(new FocusListener() {
+	            @Override
+	            public void focusLost(FocusEvent event) {
+	                try {
+	                    if (!isPwdChanged) {
+	                        if (txtPassword.getText().isEmpty()) {
+	                        	txtConfirmPassword.setText("");
+	                        } else {
+	                        	txtConfirmPassword.setText(waProjManager.
+	                                    getRemoteAccessEncryptedPassword());
+	                        }
+	                    }
+	                } catch (WindowsAzureInvalidProjectOperationException e1) {
+	                    PluginUtil.displayErrorDialogAndLog(getShell(),
+	                    		Messages.remAccErrTitle,
+	                    		Messages.remAccErPwd, e1);
+	                }
+	            }
+
+	            @Override
+	            public void focusGained(FocusEvent event) {
+	            	txtConfirmPassword.setText("");
+	            }
+	        });
+
+		txtConfirmPassword.addModifyListener(new ModifyListener() {
+
+			@Override
+			public void modifyText(ModifyEvent arg0) {
+				setPageComplete(validatePageComplete());
+			}
+		});
+
+		new Link(container, SWT.NO);
 	}
 
 	/**
@@ -262,6 +707,11 @@ public class SignInPage extends WindowsAzurePage {
 		});
 	}
 
+	/**
+	 * Method creates UI components
+	 * and listener for storage account.
+	 * @param container
+	 */
 	private void createStorageAccountWidget(Composite container) {
 		Label label = new Label(container, SWT.NONE);
 		GridData gridData = new GridData();
@@ -271,7 +721,7 @@ public class SignInPage extends WindowsAzurePage {
 		label.setText(Messages.deplStorageAccLbl);
 
 		storageAccountCmb = createCombo(
-				container, SWT.READ_ONLY, 10, SWT.FILL, 300);
+				container, SWT.READ_ONLY, 10, SWT.FILL, 150);
 
 		gridData = new GridData();
 		gridData.widthHint = 80;
@@ -342,7 +792,12 @@ public class SignInPage extends WindowsAzurePage {
 		if (storageAccountCmb.getItemCount() > 0)
 			storageAccountCmb.select(0);
 	}
-
+	
+	/**
+	 * Method creates UI components
+	 * and listener for subscriptions. 
+	 * @param container
+	 */
 	private void createSubscriptionIdWidget(Composite container) {
 		Label label = new Label(container, SWT.NONE);
 		GridData gridData = new GridData();
@@ -352,7 +807,7 @@ public class SignInPage extends WindowsAzurePage {
 		label.setText(Messages.deplSubscriptionLbl);
 
 		subscriptionCombo = createCombo(
-				container, SWT.READ_ONLY, 10, SWT.FILL, 300);
+				container, SWT.READ_ONLY, 10, SWT.FILL, 150);
 		populateSubscriptionCombo();
 
 		subscriptionCombo.addModifyListener(new ModifyListener() {
@@ -398,8 +853,12 @@ public class SignInPage extends WindowsAzurePage {
 		subLink.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
+				Object subscription = new SubscriptionPropertyPage();
 				WAEclipseHelper.
-				openSubscriptionPropertyDialog();
+				openPropertyPageDialog(
+						com.persistent.util.Messages.cmhIdCrdntls,
+						com.persistent.util.Messages.cmhLblSubscrpt,
+						subscription);
 				/*
 				 * Update data in every case.
 				 * No need to check which button (OK/Cancel)
@@ -419,7 +878,12 @@ public class SignInPage extends WindowsAzurePage {
 			}
 		});
 	}
-
+	
+	/**
+	 * Method creates UI components
+	 * and listener for services. 
+	 * @param container
+	 */
 	private void createHostedServiceWidget(Composite container) {
 		Label label = new Label(container, SWT.NONE);
 		GridData gridData = new GridData();
@@ -429,7 +893,7 @@ public class SignInPage extends WindowsAzurePage {
 		label.setText(Messages.deplHostedServiceLbl);
 
 		hostedServiceCombo = createCombo(
-				container, SWT.READ_ONLY, 10, SWT.FILL, 300);
+				container, SWT.READ_ONLY, 10, SWT.FILL, 150);
 
 		populateHostedServices();
 
@@ -482,8 +946,8 @@ public class SignInPage extends WindowsAzurePage {
 						int result = hostedService.open();
 
 						if (result == 0) {
-
 							populateHostedServices();
+							newServices.add(hostedService.getHostedServiceName());
 							selectByText(hostedServiceCombo, hostedService.getHostedServiceName());
 							defaultLocation = WizardCacheManager.getHostedServiceFromCurrentPublishData(hostedService.getHostedServiceName()).getHostedServiceProperties().getLocation();
 						}
@@ -532,7 +996,12 @@ public class SignInPage extends WindowsAzurePage {
 			}
 		}		
 	}
-
+	
+	/**
+	 * Method creates UI components
+	 * and listener for deployment state. 
+	 * @param container
+	 */
 	private void createDeploymentStateWidget(Composite container) {
 		String[] items = { Messages.deplStaging, Messages.deplProd };
 		Label label = new Label(container, SWT.NONE);
@@ -558,8 +1027,9 @@ public class SignInPage extends WindowsAzurePage {
 
 		if (items != null) {
 			deployStateCmb.setItems(items);
-			if (items.length > 0)
+			if (items.length > 0) {
 				deployStateCmb.select(0);
+			}
 		}
 
 		new Link(container, SWT.NO);
@@ -568,15 +1038,14 @@ public class SignInPage extends WindowsAzurePage {
 	private String getFirstItem(String[] items) {
 		return items != null && items.length > 0 ? items[0] : null;
 	}
-	
+
 	private String constructCspckFilePath() {
 		if (selectedProject == null) {
 			return null;
 		}
-		
+
 		String projectLocation = selectedProject.getLocation().toOSString().replace("/", File.separator);
 		return projectLocation + File.separator + Messages.deployDir + File.separator + Messages.cspckDefaultFileName;
-		
 	}
 	
 	private String constructCscfgFilePath() {
@@ -655,6 +1124,8 @@ public class SignInPage extends WindowsAzurePage {
 			WizardCacheManager.setCurrentPublishData(publishDataToCache);
 
 			setComponentState((subscriptionCombo.getData(subscriptionCombo.getText()) != null));
+			// Make centralized storage registry.
+			MethodUtils.prepareListFromPublishData();
 		}
 	}
 
@@ -736,21 +1207,21 @@ public class SignInPage extends WindowsAzurePage {
 	}
 
 	private void doLoad(File file, AccountActionRunnable settings) {
-		try {	
+		try {
 			getContainer().run(true, true, settings);
 			PreferenceUtil.save();
-		}
-		catch (InvocationTargetException e) {
+		} catch (InvocationTargetException e) {
 			String message = null;
 			if (e.getMessage() == null) {
 				message = Messages.genericErrorWhileLoadingCred;
-			}
-			else {
+			} else {
 				message = e.getMessage();
 			}
-			MessageUtil.displayErrorDialog(getShell(), Messages.importDlgTitle,String.format(Messages.importDlgMsg, file.getName(), message));
-		} 
-		catch (InterruptedException e) {
+			MessageUtil.displayErrorDialog(getShell(),
+					Messages.importDlgTitle,
+					String.format(Messages.importDlgMsg,
+							file.getName(), message));
+		} catch (InterruptedException e) {
 		}
 	}
 }

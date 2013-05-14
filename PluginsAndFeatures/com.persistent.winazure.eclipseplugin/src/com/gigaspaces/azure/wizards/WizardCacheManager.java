@@ -359,7 +359,7 @@ public final class WizardCacheManager {
 
 			StorageService storageAccount = service.getStorageAccount(subscription.getId(), body.getServiceName());
 			
-			// remove previos mock if existed
+			// remove previous mock if existed
 			currentPublishData.getStoragesPerSubscription().get(subscription.getId()).remove(body.getServiceName());
 			currentPublishData.getStoragesPerSubscription().get(subscription.getId()).add(storageAccount);
 			

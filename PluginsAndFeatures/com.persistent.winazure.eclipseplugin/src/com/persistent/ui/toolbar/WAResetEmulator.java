@@ -57,23 +57,19 @@ public class WAResetEmulator extends AbstractHandler {
 				ZipEntry entry = (ZipEntry) entries.nextElement();
 				if (entry.getName().toLowerCase().
 						indexOf(Messages.rstEmCmd) != -1) {
-					InputStream in =
-							zipFile.getInputStream(entry);
-					Reader reader =
-							new InputStreamReader(in);
+					InputStream in =zipFile.getInputStream(entry);
+					Reader reader =new InputStreamReader(in);
 					char[] buf = new char[BUFF_SIZE];
-					int length = reader.
-							read(buf, 0, buf.length);
+					int length = reader.read(buf, 0, buf.length);
 					while (length > 0) {
 						output.append(buf, 0, length);
-						length = reader.
-								read(buf, 0, buf.length);
+						length = reader.read(buf, 0, buf.length);
 					}
 					break;
 				}
 			}
-			WindowsAzureProjectManager.
-			resetEmulator(output.toString());
+			zipFile.close();
+			WindowsAzureProjectManager.resetEmulator(output.toString());
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			PluginUtil.displayErrorDialogAndLog(
 					new Shell(),

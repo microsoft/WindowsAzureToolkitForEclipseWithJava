@@ -56,8 +56,6 @@ public final class Messages extends NLS {
     public static String propWebProj;
     public static String cmpntFileName;
     public static String cmpntFileEntry;
-    public static String encFileName;
-    public static String encFileEntry;
     public static String pluginFolder;
     public static String pluginId;
     public static String pWizStarterKitLoc;
@@ -121,13 +119,10 @@ public final class Messages extends NLS {
 	public static String dlgDownloadGrp;
 	public static String dlgDlChkTxt;
 	public static String dlgDlUrlLbl;
-	public static String dlgDlAccessKey;
+	public static String dlgDlStrgAcc;
 	public static String dlgDlUrlErrMsg;
 	public static String dlgDlUrlErrTtl;
-	public static String dlgDlKeyErrMsg;
-	public static String dlKeyErrTtl;
 	public static String dlgDlNtLblUrl;
-	public static String dlgDlNoteLbl;
 	public static String dplPageJdkChkBtn;
 	public static String dplDlgJdkLbl;
 	public static String dbgBrowseBtn;
@@ -138,8 +133,26 @@ public final class Messages extends NLS {
 	public static String rolsAddBtn;
 	public static String rolsRemoveBtn;
 	public static String skJarName;
+	public static String washFileName;
 	public static String lblJavaHome;
 	public static String lblHmDir;
+	public static String dlNtLblUrlSrv;
+	public static String remAccErPwdNtStrg;
+	public static String remAccErrTitle;
+	public static String remAccErPwd;
+	public static String remAccPwdNotStrg;
+	public static String remAccDummyPwd;
+	public static String cspackErMsg;
+	public static String cmhIdStrgAcc;
+	public static String cmhLblStrgAcc;
+	public static String jdkLocRdBtnLbl;
+	public static String jdkCldRdBtnLbl;
+	public static String autoDlJdkCldRdBtnLbl;
+	public static String srvLocRdBtnLbl;
+	public static String srvCldRdBtnLbl;
+	public static String autoDlSrvCldRdBtnLbl;
+	public static String linkLblAcc;
+	public static String eclipseDeployContainer;
 
     static {
         // initialize resource bundle

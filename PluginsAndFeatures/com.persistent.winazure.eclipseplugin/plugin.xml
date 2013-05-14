@@ -927,5 +927,22 @@
        </enabledWhen>
     </page>
  </extension>
-	
+ 
+ <!-- Windows Azure preference page -->
+ <extension
+      point = "org.eclipse.ui.preferencePages">
+      <page
+       	id="com.persistent.ui.preferencepage.windowsazure"
+       	class="com.persistent.ui.preference.WindowsAzurePreferencePage"
+       	name="Windows Azure">
+       </page>
+       <!-- Storage Accounts preference page -->
+        <page
+       	id="com.persistent.ui.preferencepage.storageaccounts"
+       	class="com.persistent.ui.preference.StorageAccountsPreferencePage"
+       	name="Storage Accounts"
+       	category="com.persistent.ui.preferencepage.windowsazure">
+       </page>
+ </extension>
+
 </plugin>

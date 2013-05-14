@@ -10,6 +10,6 @@ ${UserStartup}
 
 @ECHO OFF
 set ERRLEV=%ERRORLEVEL%
-if %ERRLEV%==0 (set _MSG="Startup completed successfully.") else (_MSG="*** Windows Azure startup failed - exiting...")
+if %ERRLEV%==0 (set _MSG="Startup completed successfully.") else (set _MSG="*** Windows Azure startup failed [%ERRLEV%]- exiting...")
 choice /d y /t 5 /c Y /N /M %_MSG%
 exit %ERRLEV%

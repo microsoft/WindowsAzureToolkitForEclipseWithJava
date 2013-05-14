@@ -38,7 +38,6 @@ import org.eclipse.ui.dialogs.PropertyPage;
 
 import waeclipseplugin.Activator;
 
-import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
@@ -181,23 +180,6 @@ public class WARLoadBalance extends PropertyPage {
                     Button checkBox = (Button) event.getSource();
 
                     if (checkBox.getSelection()) {
-                    	try {
-							if(OSFamilyType.WINDOWS_SERVER_2012.equals(waProjManager.getOSFamily())) {
-								PluginUtil.displayErrorDialog(
-	                        			getShell(),
-	                        			Messages.win2012ErrTitle,
-	                        			Messages.win2012ErrMsgBox);
-								btnSsnAffinity.setSelection(false);
-								return;
-								
-							}
-						} catch (WindowsAzureInvalidProjectOperationException e) {
-							PluginUtil.displayErrorDialogAndLog(
-                        			getShell(),
-                        			Messages.adRolErrTitle,
-                        			Messages.adRolErrMsgBox1
-                        			+ Messages.adRolErrMsgBox2, e);
-						}
                         lblEndptToUse.setEnabled(checkBox.getSelection());
                         comboEndpt.setEnabled(checkBox.getSelection());
                         enableSessionAff();

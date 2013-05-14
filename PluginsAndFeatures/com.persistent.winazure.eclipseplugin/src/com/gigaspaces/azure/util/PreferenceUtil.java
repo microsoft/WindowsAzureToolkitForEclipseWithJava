@@ -25,16 +25,15 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.Collection;
 
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.preferences.InstanceScope;
-import org.osgi.framework.Version;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
 import waeclipseplugin.Activator;
+
 import com.gigaspaces.azure.rest.RestAPIException;
 import com.gigaspaces.azure.tasks.LoadingAccoutListener;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 public class PreferenceUtil {
 
@@ -49,7 +48,7 @@ public class PreferenceUtil {
 	private void savePreferences() {
 		
 		try {
-			Preferences prefs = getPrefs();
+			Preferences prefs = PluginUtil.getPrefs();
 
 			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
@@ -95,7 +94,7 @@ public class PreferenceUtil {
 	}
 
 	private void loadPreferences(LoadingAccoutListener listener) {
-		Preferences prefs = getPrefs();
+		Preferences prefs = PluginUtil.getPrefs();
 
 		try {
 			byte[] data = prefs.getByteArray(PREF_KEY, null);
@@ -126,31 +125,4 @@ public class PreferenceUtil {
 			Activator.getDefault().log(Messages.error,e);
 		}
 	}
-	
-	@SuppressWarnings("deprecation")
-	private Preferences getPrefs() {
-		
-		Preferences prefs = null;
-		if (isHelios()) {
-			prefs = new InstanceScope().getNode(waeclipseplugin.Activator.PLUGIN_ID);
-		} else {
-			prefs = InstanceScope.INSTANCE.getNode(waeclipseplugin.Activator.PLUGIN_ID);
-		}
-		return prefs;
-		
-	}
-	
-	private boolean isHelios() {
-		
-		Version version = Platform.getBundle("org.eclipse.core.runtime").getVersion();
-		int majorVersion = version.getMajor();
-		if (majorVersion == 3) { // indigo and helios
-			int minorVersion = version.getMinor();
-			if (minorVersion < 7) { // helios 3.6 and lower versions
-				return true;
-			}
-		}
-		return false;
-	}
-
 }

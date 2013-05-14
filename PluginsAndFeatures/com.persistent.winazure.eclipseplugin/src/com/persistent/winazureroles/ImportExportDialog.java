@@ -33,6 +33,7 @@ import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
@@ -46,6 +47,7 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
@@ -61,6 +63,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentCloudMethod;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentDeployMethod;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.ProjectNatureHelper;
@@ -73,7 +76,7 @@ import com.persistent.util.WAEclipseHelper;
 public class ImportExportDialog extends TitleAreaDialog {
 	private Text txtFromPath;
 	private Text txtUrl;
-	private Text txtKey;
+	private Combo comboStrgAcc;
 	private Text txtName;
 	private Text txtToDir;
 	private Combo comboImport;
@@ -82,9 +85,8 @@ public class ImportExportDialog extends TitleAreaDialog {
 	private boolean isEdit;
 	private Button dlCheckBtn;
 	private Label lblUrl;
-	private Label lblKey;
+	private Label lblStrgAcc;
 	private Label lblDlMethod;
-	private Label lblDlNote;
 	private WindowsAzureRole windowsAzureRole;
 	private WindowsAzureRoleComponent winAzureRoleCmpnt;
 	private WindowsAzureProjectManager winAzureProjMgr;
@@ -92,6 +94,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 	public ArrayList<String> cmpList = new ArrayList<String>();
 	private String[] cloudMethods = {"same", "unzip",
 	"copy"};
+	private Link accLink;
 
 	/**
 	 * Constructor to be called for adding component.
@@ -189,7 +192,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 		}
 		return super.createDialogArea(parent);
 	}
-	
+
 	/**
 	 * Method creates deploy from download
 	 * group and its components.
@@ -202,21 +205,71 @@ public class ImportExportDialog extends TitleAreaDialog {
 		groupGridData.grabExcessHorizontalSpace = true;
 		groupGridData.horizontalIndent = 10;
 		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridLayout.numColumns = 2;
+		groupGridLayout.numColumns = 3;
 		groupGridLayout.verticalSpacing = 10;
 		dlGrp.setText(Messages.dlgDownloadGrp);
 		dlGrp.setLayout(groupGridLayout);
 		dlGrp.setLayoutData(groupGridData);
 		createDplFrmDlChk(dlGrp);
-		lblUrl = JdkSrvConfig.createUrlComponentLbl(dlGrp);
-		txtUrl = JdkSrvConfig.createUrlComponentTxt(dlGrp);
+		createUrlComponent(dlGrp);
 		createCloudMethodComponent(dlGrp);
-		createAccessKeyComponent(dlGrp);
-		lblDlNote = JdkSrvConfig.createDlNoteLabel(dlGrp,
-				Messages.dlgDlNoteLbl);
+		createStrgAccComponent(dlGrp);
 		setEnableDlGrp(false);
 	}
-	
+
+	/**
+	 * Method prepares and returns grid data object
+	 * as per type of UI component combo box or text box.
+	 * @param isCombo
+	 * @return
+	 */
+	private GridData prepareGridDataDnldGrp(boolean isCombo) {
+		GridData gridData = new GridData();
+		gridData.horizontalIndent = 2;
+		if (isCombo) {
+			gridData.widthHint = 310;
+		} else {
+			gridData.widthHint = 300;
+			gridData.horizontalSpan = 2;
+			gridData.horizontalAlignment = SWT.FILL;
+			gridData.grabExcessHorizontalSpace = true;
+		}
+		return gridData;
+	}
+
+	/**
+	 * Method creates UI components related to
+	 * URL and their listeners.
+	 * @param dlGrp
+	 */
+	private void createUrlComponent(Composite dlGrp) {
+		lblUrl = JdkSrvConfig.createUrlComponentLbl(dlGrp);
+		txtUrl = new Text(dlGrp, SWT.LEFT | SWT.BORDER);
+		txtUrl.setLayoutData(prepareGridDataDnldGrp(false));
+
+		txtUrl.addModifyListener(new ModifyListener() {
+
+			@Override
+			public void modifyText(ModifyEvent arg0) {
+				/*
+				 * Extract storage account name
+				 * and service endpoint from URL
+				 * entered by user.
+				 */
+				String url = txtUrl.getText().trim();
+				String nameInUrl =
+						StorageRegistryUtilMethods.getAccNameFromUrl(
+								url);
+				/*
+				 * If matching account name found then set to that
+				 * else set to none.
+				 */
+				comboStrgAcc = JdkSrvConfig.
+						urlModifyListner(url, nameInUrl, comboStrgAcc);
+			}
+		});
+	}
+
 	/**
 	 * Method creates deploy from download
 	 * group's check box component.
@@ -237,8 +290,10 @@ public class ImportExportDialog extends TitleAreaDialog {
 			public void widgetDefaultSelected(SelectionEvent arg0) {
 			}
 		});
+
+		new Link(parent, SWT.NO);
 	}
-	
+
 	/**
 	 * Method creates deploy from download
 	 * group's cloud method component.
@@ -246,43 +301,53 @@ public class ImportExportDialog extends TitleAreaDialog {
 	 */
 	private void createCloudMethodComponent(Composite group) {
 		lblDlMethod = new Label(group, SWT.LEFT);
-		GridData groupGridData = new GridData();
 		lblDlMethod.setText(Messages.dlgImpMthLbl);
-		lblDlMethod.setLayoutData(groupGridData);
 
 		comboCloud = new Combo(group, SWT.READ_ONLY);
-		groupGridData = new GridData();
-		groupGridData.horizontalIndent = 10;
-		groupGridData.grabExcessHorizontalSpace = true;
-		groupGridData.horizontalAlignment = SWT.FILL;
-		comboCloud.setLayoutData(groupGridData);
+		comboCloud.setLayoutData(prepareGridDataDnldGrp(true));
 		comboCloud.setItems(cloudMethods);
 		comboCloud.setText(cloudMethods[0]);
+
+		new Link(group, SWT.NO);
 	}
-	
+
 	/**
 	 * Method creates deploy from download
 	 * group's Access key component.
 	 * @param group
 	 */
-	private void createAccessKeyComponent(Composite group) {
-		lblKey = new Label(group, SWT.LEFT);
-		GridData groupGridData = new GridData();
-		lblKey.setText(Messages.dlgDlAccessKey);
-		lblKey.setLayoutData(groupGridData);
+	private void createStrgAccComponent(Composite group) {
+		lblStrgAcc = new Label(group, SWT.LEFT);
+		lblStrgAcc.setText(Messages.dlgDlStrgAcc);
 
-		txtKey = new Text(group, SWT.LEFT | SWT.BORDER);
-		groupGridData = new GridData();
-		groupGridData.horizontalIndent = 10;
-		groupGridData.widthHint = 400;
-		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridData.grabExcessHorizontalSpace = true;
-		txtKey.setLayoutData(groupGridData);
+		comboStrgAcc = new Combo(group, SWT.READ_ONLY);
+		comboStrgAcc.setLayoutData(prepareGridDataDnldGrp(true));
+		comboStrgAcc.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				txtUrl = JdkSrvConfig.
+				cmbBoxListener(comboStrgAcc, txtUrl, null);
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
+
+		accLink = JdkSrvConfig.createLink(group, Messages.linkLblAcc, false);
+		accLink.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				comboStrgAcc = JdkSrvConfig.
+						openAccLink(dlCheckBtn, comboStrgAcc);
+			}
+		});
 	}
-	
+
 	/**
 	 * Method populates values of deploy from download group
-	 * that is URL, cloud method and access key. 
+	 * that is URL, cloud method and access key.
 	 */
 	private void updateClouldDlGroup() {
 		String url;
@@ -306,9 +371,14 @@ public class ImportExportDialog extends TitleAreaDialog {
 						comboCloud.setText(cloudMethods[2]);
 					}
 				}
-				if (winAzureRoleCmpnt.getCloudKey() != null) {
-					txtKey.setText(winAzureRoleCmpnt.getCloudKey());
-				}
+				/*
+				 * Find storage account name
+				 * associated with the component's access key
+				 * and populate it.
+				 */
+				String accessKey = winAzureRoleCmpnt.getCloudKey();
+				comboStrgAcc = JdkSrvConfig.
+				populateStrgNameAsPerKey(accessKey, comboStrgAcc);
 			}
 		} catch (Exception e) {
 			PluginUtil.displayErrorDialog(
@@ -324,37 +394,29 @@ public class ImportExportDialog extends TitleAreaDialog {
 	 * @return
 	 */
 	private boolean validateDlGroup() {
-		boolean isValid = true;
+		boolean isValidUrl = true;
 		try {
 			if (dlCheckBtn.getSelection()) {
 				String url = txtUrl.getText().trim();
 				if (url.isEmpty()) {
-					isValid = false;
-					PluginUtil.displayErrorDialog(
-							this.getShell(),
-							Messages.dlgDlUrlErrTtl,
-							Messages.dlgDlUrlErrMsg);
+					isValidUrl = false;
 				} else {
 					new URL(url);
-					if (!txtKey.getText().trim().isEmpty()
-							&& txtKey.getText().
-							trim().contains(" ")) {
-						PluginUtil.displayErrorDialog(
-								this.getShell(),
-								Messages.dlKeyErrTtl,
-								Messages.dlgDlKeyErrMsg);
-						isValid = false;
+					if (!WAEclipseHelper.isBlobStorageUrl(url)) {
+						isValidUrl = false;
 					}
 				}
 			}
 		} catch (MalformedURLException e) {
-			isValid = false;
-			PluginUtil.displayErrorDialogAndLog(
+			isValidUrl = false;
+		}
+		if (!isValidUrl) {
+			PluginUtil.displayErrorDialog(
 					this.getShell(),
 					Messages.dlgDlUrlErrTtl,
-					Messages.dlgDlUrlErrMsg, e);
+					Messages.dlgDlUrlErrMsg);
 		}
-		return isValid;
+		return isValidUrl;
 	}
 
 	@Override
@@ -432,7 +494,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 						}
 					}
 				} else {
-					// Error if duplicate file cmpnt entry is added
+					// Error if duplicate file component entry is added
 					if (cmpList.contains(ProjectNatureHelper.getAsName(txtFromPath.getText(),
 							WindowsAzureRoleComponentImportMethod.valueOf(newMethod),
 							txtName.getText()).toLowerCase())) {
@@ -485,8 +547,12 @@ public class ImportExportDialog extends TitleAreaDialog {
 							txtFromPath.getText().trim());
 				}
 
-				winAzureRoleCmpnt.setCloudDownloadURL(txtUrl.getText());
-				winAzureRoleCmpnt.setCloudKey(txtKey.getText());
+				// set cloud URL.
+				winAzureRoleCmpnt.setCloudDownloadURL(txtUrl.getText().trim());
+				// set access key.
+				String key = JdkSrvConfig.getAccessKey(comboStrgAcc);
+				winAzureRoleCmpnt.setCloudKey(key);
+				// set cloud method.
 				if (comboCloud.getText().equalsIgnoreCase(cloudMethods[0])
 						|| comboCloud.getText().isEmpty()) {
 					winAzureRoleCmpnt.setCloudMethod(
@@ -538,7 +604,6 @@ public class ImportExportDialog extends TitleAreaDialog {
 		updateImportMethodCombo(txtFromPath.getText());
 		updateDeployMethodCombo();
 		updateClouldDlGroup();
-
 	}
 
 	/**
@@ -755,7 +820,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 
 		txtFromPath = new Text(group, SWT.LEFT | SWT.BORDER);
 		groupGridData = new GridData();
-		groupGridData.horizontalIndent = 10;
+		groupGridData.horizontalIndent = 33;
 		groupGridData.horizontalSpan = 3;
 		groupGridData.widthHint = 400;
 		groupGridData.horizontalAlignment = SWT.FILL;
@@ -864,7 +929,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 
 		comboImport = new Combo(group, SWT.READ_ONLY);
 		groupGridData = new GridData();
-		groupGridData.horizontalIndent = 10;
+		groupGridData.horizontalIndent = 33;
 		groupGridData.horizontalSpan = 3;
 		groupGridData.grabExcessHorizontalSpace = true;
 		groupGridData.horizontalAlignment = SWT.FILL;
@@ -905,7 +970,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 
 		txtName = new Text(group, SWT.LEFT | SWT.BORDER);
 		groupGridData = new GridData();
-		groupGridData.horizontalIndent = 10;
+		groupGridData.horizontalIndent = 33;
 		groupGridData.horizontalSpan = 3;
 		groupGridData.widthHint = 400;
 		groupGridData.grabExcessHorizontalSpace = true;
@@ -970,6 +1035,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 
 		comboDeploy = new Combo(group, SWT.READ_ONLY);
 		groupGridData = new GridData();
+		groupGridData.horizontalIndent = 25;
 		groupGridData.grabExcessHorizontalSpace = true;
 		groupGridData.horizontalAlignment = SWT.FILL;
 		comboDeploy.setLayoutData(groupGridData);
@@ -1005,6 +1071,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 
 		txtToDir = new Text(group, SWT.LEFT | SWT.BORDER);
 		groupGridData = new GridData();
+		groupGridData.horizontalIndent = 25;
 		groupGridData.horizontalAlignment = SWT.FILL;
 		groupGridData.widthHint = 400;
 		groupGridData.grabExcessHorizontalSpace = true;
@@ -1040,6 +1107,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 
 		Label lblNote = new Label(group, SWT.LEFT);
 		groupGridData = new GridData();
+		groupGridData.horizontalIndent = 25;
 		groupGridData.horizontalAlignment = SWT.FILL;
 		groupGridData.grabExcessHorizontalSpace = true;
 		lblNote.setText(Messages.dlgImpNoteLbl);
@@ -1293,19 +1361,20 @@ public class ImportExportDialog extends TitleAreaDialog {
 	 */
 	private void setEnableDlGrp(boolean status) {
 		txtUrl.setEnabled(status);
-		txtKey.setEnabled(status);
 		comboCloud.setEnabled(status);
-		lblKey.setEnabled(status);
+		lblStrgAcc.setEnabled(status);
+		comboStrgAcc.setEnabled(status);
 		lblDlMethod.setEnabled(status);
 		lblUrl.setEnabled(status);
-		lblDlNote.setEnabled(status);
 		if (!status) {
 			txtUrl.setText("");
-			txtKey.setText("");
+			comboStrgAcc.removeAll();
 			comboCloud.removeAll();
 		} else {
 			comboCloud.setItems(cloudMethods);
 			comboCloud.setText(cloudMethods[0]);
+			comboStrgAcc = JdkSrvConfig.
+					populateStrgAccComboBox("", comboStrgAcc);
 		}
 	}
 }

@@ -63,7 +63,6 @@ public final class Messages extends NLS {
     public static String remAccDateWrong;
     public static String remAccInvldPath;
     public static String remAccDataInc;
-    public static String remAccPwdNotStrg;
     public static String remAccErCreateCer;
     public static String proPageBFEmul;
     public static String proPageBFCloud;
@@ -90,7 +89,6 @@ public final class Messages extends NLS {
     public static String certDlgImg;
     public static String remAccWkspWrngSel;
     public static String remAccErrTitle;
-    public static String remAccErPwdNtStrg;
     public static String certDlgWrongTitle;
     public static String remAccErProjList;
     public static String remAccSelExpDate;
@@ -102,8 +100,6 @@ public final class Messages extends NLS {
     public static String certDlgPwNtMatch;
     public static String proPageTgtOSLbl;
     public static String waProjNature;
-	public static String win2012ErrTitle;
-	public static String win2012ErrMsgBox;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);
