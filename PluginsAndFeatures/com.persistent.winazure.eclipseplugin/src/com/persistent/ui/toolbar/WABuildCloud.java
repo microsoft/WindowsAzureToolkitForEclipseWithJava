@@ -59,7 +59,8 @@ public class WABuildCloud extends AbstractHandler {
 				waProjManager.setPackageType(WindowsAzurePackageType.CLOUD);
 			}
 			try {
-				String prefSetUrl = PreferenceSetUtil.getSelectedPortalURL();
+				String prefSetUrl = PreferenceSetUtil.getSelectedPortalURL(
+						PreferenceSetUtil.getSelectedPreferenceSetName());
 				/*
 				 * Don't check if URL is empty or null.
 				 * As if it is then we remove "portalurl" attribute

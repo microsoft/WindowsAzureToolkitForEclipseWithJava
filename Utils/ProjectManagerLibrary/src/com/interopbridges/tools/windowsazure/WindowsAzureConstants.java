@@ -110,6 +110,7 @@ public final class WindowsAzureConstants {
     public static final String PROJ_PROPERTY_DESC = "Stores properties used by Windows Azure project";
     public static final String PROJ_PROPERTY = "/project/target[@name='waprojectproperties']";
     public static final String PROJ_PROPERTY_ELEMENT_NAME = "property" ;
+    public static final String PROJ_PROPERTIES = PROJ_PROPERTY + "/" + PROJ_PROPERTY_ELEMENT_NAME;
     public static final String CREATE_PKG_TARGET = "/project/target[@name='createwapackage']";
     public static final String WA_PACK_ROLE = CREATE_PKG_TARGET + "/parallel/windowsazurepackage/workerrole[@name='%s']" ;
     public static final String WA_PACK_STARTUPENV = WA_PACK_ROLE + "/startupenv";
@@ -138,7 +139,7 @@ public final class WindowsAzureConstants {
     public static final String CREATOR_VER = PROJ_PROPERTY
             + "/property[@name='creator.version']";
     public static final String V17_VERSION = "1.7.0";
-    public static final String VERSION = "2.0.0";
+    public static final String VERSION = "2.0.1";
     public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.inputendpoint']";
     public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.internalendpoint']";
     public static final String SA_INTERNAL_ENDPOINT_SUFFIX = "_SESSION_AFFINITY" ;
@@ -200,6 +201,8 @@ public final class WindowsAzureConstants {
     public static final int MAX_LS_SIZE_MEDIUM = 501760;
     public static final int MAX_LS_SIZE_LARGE = 1024000;
     public static final int MAX_LS_SIZE_EXTRALARGE = 2088960;
+    public static final int MAX_LS_SIZE_A6 = 1024000;
+    public static final int MAX_LS_SIZE_A7 = 2088960;
 
     public static final String COMPONENT = WA_PACK_NAME + "/component";
 
@@ -342,6 +345,7 @@ public final class WindowsAzureConstants {
     public static final String TEMP_COMPONENTSET = "/componentsets/componentset[@type='%s']";
     public static final String TEMP_COMPONENT = "/componentsets/componentset[@type='%s']/component";
     public static final String COMPONENTSETS_VERSION = "/componentsets/@version";
+    public static final String PREFERENCESETS_VERSION = "/preferencesets/@version";
     public static final String TEMP_STARTUPENV = "/componentsets/componentset[@type='%s']/component";
     public static final String TEMP_SERVER_COMP = "/componentsets/componentset[@type='%s'][@name='%s']";
     public static final String SERVER_PROP_NAME = "project.%s.server";

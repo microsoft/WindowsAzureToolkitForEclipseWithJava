@@ -67,7 +67,9 @@ public class PublishSettingsDialog extends Dialog {
 		browser.setSize(900, 600);
 		try {
 			browser.setUrl(PreferenceSetUtil.
-					getSelectedPublishSettingsURL());
+					getSelectedPublishSettingsURL(
+							PreferenceSetUtil.
+							getSelectedPreferenceSetName()));
 		} catch (WACommonException e) {
 			e.printStackTrace();
 		}

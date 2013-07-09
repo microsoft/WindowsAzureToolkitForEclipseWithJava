@@ -144,6 +144,13 @@ public final class Messages extends NLS {
 	public static String browseBtn;
 	public static String invalidfPfxFile;
 	public static String projLoadEr;
+	public static String crtStrgAcc;
+	public static String takeMinLbl;
+	public static String dnsCnf;
+	public static String strgAcc;
+	public static String cldSrv;
+	public static String autoUploadEr;
+	public static String confStorageAccount;
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

@@ -26,8 +26,8 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
@@ -35,6 +35,9 @@ import org.eclipse.ui.PlatformUI;
 import com.gigaspaces.azure.model.CreateStorageServiceInput;
 import com.gigaspaces.azure.model.Location;
 import com.gigaspaces.azure.model.Locations;
+import com.gigaspaces.azure.model.StorageService;
+import com.gigaspaces.azure.runnable.NewStorageAccountWithProgressWindow;
+import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
 import com.persistent.util.MessageUtil;
 
@@ -43,38 +46,41 @@ public class NewStorageAccountDialog extends WADialog {
 	private Text storageAccountTxt;
 	private Combo locationComb;
 	private Text descriptionTxt;
-	private ProgressBar bar;
 	boolean valid = false;
 	private String storageAccountNameToCreate;
 	private String storageAccountLocation;
 	private String defaultLocation;
+	private Combo subscrptnCombo;
+	private String subscription;
+	private static StorageService storageService;
 
-	
+
 	private final static String STORAGE_ACCOUNT_NAME_PATTERN = "^[a-z0-9]+$";
 
-	public NewStorageAccountDialog(Shell parentShell) {
+	/**
+	 * Constructor.
+	 * @param parentShell
+	 * @param subscription : Name of subscription if invoked from
+	 * publish wizard else empty if invoked from storage preferences.
+	 */
+	public NewStorageAccountDialog(Shell parentShell,
+			String subscription) {
 		super(parentShell);
+		this.subscription = subscription;
 	}
-	
+
 	public void setDefaultLocation(final String location) {
 		this.defaultLocation = location;
 	}
 
 	@Override
+	protected void configureShell(Shell newShell) {
+		super.configureShell(newShell);
+		newShell.setText(Messages.strgAcc);
+	}
+
+	@Override
 	protected Control createButtonBar(Composite parent) {
-		bar = new ProgressBar(parent, SWT.FILL);
-		GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
-		
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,Messages.pluginPrefix + Messages.newStorageAccountHelp);
-		
-		gridData.horizontalIndent = 10;
-		gridData.grabExcessHorizontalSpace = true;
-
-		bar.setLayoutData(gridData);
-		bar.setMaximum(60000);
-		bar.setSelection(0);
-		bar.setVisible(false);
-
 		Control control = super.createButtonBar(parent);
 
 		Button okButton = getButton(IDialogConstants.OK_ID);
@@ -97,20 +103,49 @@ public class NewStorageAccountDialog extends WADialog {
 
 					boolean isNameAvailable = false;
 					try {
-						isNameAvailable = WizardCacheManager.isStorageAccountNameAvailable(storageAccountNameToCreate);
+						isNameAvailable = WizardCacheManager.
+								isStorageAccountNameAvailable(storageAccountNameToCreate);
 						if (isNameAvailable) {
-							WizardCacheManager.createStorageServiceMock(storageAccountNameToCreate, storageAccountLocation, descriptionTxt.getText());
+							/*
+							 * case 1 : Invoked through publish wizard
+							 * create mock and add account through publish process
+							 */
+							if (subscription != null
+									&& !subscription.isEmpty()) {
+								WizardCacheManager.
+								createStorageServiceMock(storageAccountNameToCreate,
+										storageAccountLocation,
+										descriptionTxt.getText());
+							} else {
+								/*
+								 * case 2 : Invoked through preference page
+								 * Add account immediately.
+								 */
+								PublishData pubData = UIUtils.changeCurrentSubAsPerCombo(subscrptnCombo);
+								NewStorageAccountWithProgressWindow object =
+										new NewStorageAccountWithProgressWindow(
+												pubData, new Shell());
+								object.setCreateStorageAccount(body);
+								Display.getDefault().syncExec(object);
+								storageService =
+										NewStorageAccountWithProgressWindow.
+										getStorageService();
+							}
 							valid = true;
 							close();
 						} else {
-							MessageUtil.displayErrorDialog(getShell(), "DNS Conflict", Messages.storageAccountConflictError);
+							MessageUtil.displayErrorDialog(getShell(),
+									Messages.dnsCnf,
+									Messages.storageAccountConflictError);
 							storageAccountTxt.setFocus();
 							storageAccountTxt.selectAll();
 						}
 					} catch (final Exception e1) {
-						MessageUtil.displayErrorDialogAndLog(getShell(), "Error", e1.getMessage(), e1);
+						MessageUtil.displayErrorDialogAndLog(
+								getShell(),
+								Messages.error,
+								e1.getMessage(), e1);
 					}
-					
 				}
 
 				@Override
@@ -121,13 +156,17 @@ public class NewStorageAccountDialog extends WADialog {
 		return control;
 	}
 
+	public static StorageService getStorageService() {
+		return storageService;
+	}
+
 	@Override
 	public boolean close() {
 		if (this.getReturnCode() == 1) {
 			valid = true;
 		}
 
-		if (valid == true) {
+		if (valid) {
 			valid = super.close();
 		}
 
@@ -139,10 +178,16 @@ public class NewStorageAccountDialog extends WADialog {
 		setTitle(Messages.storageNew);
 		setMessage(Messages.storageCreateNew);
 
+		PlatformUI.getWorkbench().getHelpSystem().
+		setHelp(parent,Messages.pluginPrefix + Messages.newStorageAccountHelp);
+
 		Composite container = new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
+		gridLayout.marginBottom = 50;
+
 		GridData gridData = new GridData();
 		gridData.widthHint = 30;
+		gridData.heightHint = 150;
 		gridLayout.numColumns = 2;
 		gridData.verticalIndent = 10;
 		gridData.grabExcessHorizontalSpace = true;
@@ -154,15 +199,17 @@ public class NewStorageAccountDialog extends WADialog {
 
 		Label hostedServiceLbl = new Label(container, SWT.LEFT);
 		hostedServiceLbl.setText(Messages.storageAccountLbl);
+
 		gridData = new GridData();
 		gridData.widthHint = 250;
 		gridData.horizontalIndent = 10;
+		gridData.verticalIndent = 5;
 		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.BEGINNING;
+		gridData.horizontalAlignment = SWT.FILL;
 
 		storageAccountTxt = new Text(container, SWT.BORDER);
-		storageAccountTxt.addModifyListener(new ValidateInputCompletion());
-
+		storageAccountTxt.addModifyListener(
+				new ValidateInputCompletion());
 		storageAccountTxt.setLayoutData(gridData);
 
 		Label locationLbl = new Label(container, SWT.LEFT);
@@ -172,11 +219,30 @@ public class NewStorageAccountDialog extends WADialog {
 		locationComb.setLayoutData(gridData);
 		populateLocations();
 		locationComb.addModifyListener(new ValidateInputCompletion());
+
 		Label descriptionLbl = new Label(container, SWT.LEFT);
 		descriptionLbl.setText(Messages.hostedLocDescLbl);
 
 		descriptionTxt = new Text(container, SWT.BORDER);
 		descriptionTxt.setLayoutData(gridData);
+
+		Label subLbl = new Label(container, SWT.LEFT);
+		subLbl.setText(Messages.deplSubscriptionLbl);
+
+		subscrptnCombo = new Combo(container, SWT.READ_ONLY);
+		subscrptnCombo.setLayoutData(gridData);
+		subscrptnCombo = UIUtils.
+				populateSubscriptionCombo(subscrptnCombo);
+		/*
+		 * If subscription name is there,
+		 * dialog invoked from publish wizard,
+		 * hence disable subscription combo.
+		 */
+		if (subscription != null
+				&& !subscription.isEmpty()) {
+			subscrptnCombo.setEnabled(false);
+			subscrptnCombo.setText(subscription);
+		}
 
 		validateDialog();
 
@@ -191,16 +257,19 @@ public class NewStorageAccountDialog extends WADialog {
 			locationComb.add(location.getName());
 			locationComb.setData(location.getName(), location);
 		}
-		
-		// default location will exist if the user has created a hosted servicebefore creating the storage account
+
+		/*
+		 * default location will exist if the user has created
+		 * a hosted servicebefore creating the storage account
+		 */
 		if (defaultLocation != null) {
-			int selection = UIUtils.findSelectionByText(defaultLocation, locationComb);
+			int selection = UIUtils.findSelectionByText(
+					defaultLocation, locationComb);
 			if (selection != -1) {
 				locationComb.select(selection);
-			}
-			else {
+			} else {
 				locationComb.select(0);
-			}			
+			}
 		}
 	}
 
@@ -215,7 +284,7 @@ public class NewStorageAccountDialog extends WADialog {
 			setErrorMessage(Messages.wrongStorageName);
 			return false;
 		}
-		
+
 		if (host == null || host.isEmpty()) {
 			setErrorMessage(Messages.storageAccountIsNullError);
 			return false;
@@ -231,8 +300,8 @@ public class NewStorageAccountDialog extends WADialog {
 	}
 
 	private boolean validateStorageAccountName(String host) {
-		
-		if (host.length() < 3 || host.length() > 24) {
+		if (host.length() < 3
+				|| host.length() > 24) {
 			return false;
 		}
 		if (!host.matches(STORAGE_ACCOUNT_NAME_PATTERN)) {
@@ -248,10 +317,8 @@ public class NewStorageAccountDialog extends WADialog {
 	public String getStorageAccountName() {
 		return storageAccountNameToCreate;
 	}
-	
+
 	public String getLocation() {
 		return storageAccountLocation; 
 	}
-
-
 }

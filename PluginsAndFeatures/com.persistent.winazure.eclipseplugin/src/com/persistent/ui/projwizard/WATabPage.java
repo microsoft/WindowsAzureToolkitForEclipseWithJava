@@ -19,11 +19,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import org.eclipse.core.filesystem.EFS;
-import org.eclipse.core.filesystem.IFileStore;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -42,23 +38,17 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.ide.IDE;
 
 import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
-import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
 import com.persistent.util.AppCmpntParam;
 import com.persistent.util.JdkSrvConfig;
+import com.persistent.util.JdkSrvConfigListener;
 import com.persistent.util.WAEclipseHelper;
 /**
  * Class creates wizard page which has
@@ -78,6 +68,8 @@ public class WATabPage extends WizardPage {
 	private WindowsAzureRole waRole;
 	private boolean inHandlePgComplete = false;
 	private boolean inHndlPgCmpltBackBtn = false;
+	private File cmpntFile = new File(WAEclipseHelper.
+			getTemplateFile(Messages.cmpntFile));
 
 	/**
 	 * Constructor.
@@ -172,23 +164,9 @@ public class WATabPage extends WizardPage {
 		 * enable JDK and Server components.
 		 */
 		if (Activator.getDefault().isContextMenu()) {
-			JdkSrvConfig.setEnableJDK(true);
-			JdkSrvConfig.getTxtJdk().
-			setText(WAEclipseHelper.jdkDefaultDirectory(null));
-			JdkSrvConfig.enableJdkRdButtons(JdkSrvConfig.getDlRdLocBtn());
-			JdkSrvConfig.setEnableServer(true);
-			String file = WAEclipseHelper.getTemplateFile();
-			File cmpntFile = new File(file);
-			try {
-				String[] servList = WindowsAzureProjectManager.
-						getServerTemplateNames(cmpntFile);
-				Arrays.sort(servList);
-				JdkSrvConfig.getComboServer().setItems(servList);
-			} catch (WindowsAzureInvalidProjectOperationException e) {
-				Activator.getDefault().log(e.getMessage());
-			}
+			JdkSrvConfigListener.jdkChkBoxChecked();
+			JdkSrvConfigListener.srvChkBoxChecked();
 			JdkSrvConfig.getSerCheckBtn().setSelection(true);
-			JdkSrvConfig.enableSrvRdButtons(JdkSrvConfig.getDlRdLocBtnSrv());
 			handlePageComplete();
 		}
 
@@ -296,6 +274,7 @@ public class WATabPage extends WizardPage {
 					setPageComplete(false);
 				} else {
 					// JDK download group
+					// cloud radio button selected
 					if (JdkSrvConfig.getDlRdCldBtn().getSelection()) {
 						// Validate JDK URL
 						String url = getJdkUrl();
@@ -325,12 +304,10 @@ public class WATabPage extends WizardPage {
 								setPageComplete(false);
 							}
 						}
-					} else if (JdkSrvConfig.getAutoDlRdCldBtn().getSelection()  // Validations if auto upload JDK is selected
-							&& JdkSrvConfig.NONE_TXT.equals(
-									JdkSrvConfig.getCmbStrgAccJdk().getText())) {
-							setErrorMessage(Messages.dlgAutoDlJDKUrlErrMsg);
-							setPageComplete(false);
-					} else {
+					}
+					// No Validation needed if auto upload JDK is selected
+					// local radio button selected
+					else {
 						setErrorMessage(null);
 						setPageComplete(true);
 						isJdkValid = true;
@@ -381,12 +358,10 @@ public class WATabPage extends WizardPage {
 								setPageComplete(false);
 							}
 						}
-					} else if (JdkSrvConfig.getAutoDlRdCldBtnSrv().getSelection()  // Validations if auto upload Server is selected
-							&& JdkSrvConfig.NONE_TXT.equals(
-									JdkSrvConfig.getCmbStrgAccSrv().getText())) {
-							setErrorMessage(Messages.dlgAutoDlSrvUrlErrMsg);
-							setPageComplete(false);
-					} else {
+					}
+					// No validations if auto upload Server is selected
+					// local radio button selected
+					else {
 						setErrorMessage(null);
 						setPageComplete(true);
 					}
@@ -412,23 +387,11 @@ public class WATabPage extends WizardPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getJdkCheckBtn().
 						getSelection()) {
-					JdkSrvConfig.setEnableJDK(true);
-					JdkSrvConfig.getTxtJdk().
-					setText(WAEclipseHelper.
-							jdkDefaultDirectory(null));
-					JdkSrvConfig.getSerCheckBtn().
-					setEnabled(true);
-					JdkSrvConfig.enableJdkRdButtons(JdkSrvConfig.getDlRdLocBtn());
-					handlePageComplete();
+					JdkSrvConfigListener.jdkChkBoxChecked();
 				} else {
-					JdkSrvConfig.
-					getSerCheckBtn().setSelection(false);
-					JdkSrvConfig.setEnableJDK(false);
-					JdkSrvConfig.setEnableServer(false);
-					JdkSrvConfig.setEnableDlGrp(false, false);
-					JdkSrvConfig.setEnableDlGrpSrv(false, false);
-					handlePageComplete();
+					JdkSrvConfigListener.jdkChkBoxUnChecked();
 				}
+				handlePageComplete();
 			}
 			@Override
 			public void widgetDefaultSelected(SelectionEvent arg0) {
@@ -441,13 +404,8 @@ public class WATabPage extends WizardPage {
 		addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent arg0) {
-				if (isJdkAutoUploadChecked()) {
-					JdkSrvConfig.setTxtUrl(JdkSrvConfig.cmbBoxListener(
-							JdkSrvConfig.getCmbStrgAccJdk(),
-							JdkSrvConfig.getTxtUrl(), "JDK"));
-					updateJDKDlNote();
-					updateJDKHome();
-				}
+				JdkSrvConfigListener.modifyJdkText(waRole,
+						Messages.dlNtLblDir);
 				handlePageComplete();
 			}
 		});
@@ -464,28 +422,19 @@ public class WATabPage extends WizardPage {
 			public void focusLost(FocusEvent arg0) {
 				String jdkPath = JdkSrvConfig.getTxtJdk().getText();
 				// Update note below URL text box
-				File file = new File(jdkPath);
-				if (isJdkDownloadChecked()
-						&& !jdkPath.isEmpty()
-						&& file.exists()) {
-					String dirName = file.getName();
-					JdkSrvConfig.getLblDlNoteUrl().
-					setText(String.format(
-							Messages.dlNtLblDir, dirName));
-				}  else {
-					JdkSrvConfig.getLblDlNoteUrl().
-					setText(Messages.dlgDlNtLblUrl);
-				}
+				JdkSrvConfigListener.focusLostJdkText(jdkPath);
 			}
 		});
 
 		JdkSrvConfig.getBtnJdkLoc().setEnabled(false);
+
 		// listener for JDK browse button.
 		JdkSrvConfig.getBtnJdkLoc().
 		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				jdkBrowseBtnListener();
+				JdkSrvConfig.utilJdkBrowseBtnListener(
+						Messages.dlNtLblDir);
 			}
 			@Override
 			public void widgetDefaultSelected(SelectionEvent arg0) {
@@ -499,10 +448,7 @@ public class WATabPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getDlRdCldBtn().getSelection()) {
-					// deploy radio button selected
-					JdkSrvConfig.setEnableDlGrp(true, false);
-					updateJDKDlNote();
-					updateJDKHome();
+					JdkSrvConfigListener.jdkDeployBtnSelected(waRole);
 				} else {
 					// deploy radio button unselected and auto upload selected.
 					if (JdkSrvConfig.getAutoDlRdCldBtn().getSelection()) {
@@ -510,11 +456,7 @@ public class WATabPage extends WizardPage {
 					}
 
 					// deploy radio button unselected and local selected.
-					JdkSrvConfig.setEnableDlGrp(false, false);
-					JdkSrvConfig.enableJdkRdButtons(JdkSrvConfig.getDlRdLocBtn());
-					// Update note below URL text box
-					JdkSrvConfig.getLblDlNoteUrl().
-					setText(Messages.dlgDlNtLblUrl);
+					JdkSrvConfigListener.jdkDeployOrAutoToLocalBtnSelected();
 				}
 				handlePageComplete();
 			}
@@ -530,7 +472,9 @@ public class WATabPage extends WizardPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getAutoDlRdCldBtn().getSelection()) {
 					// auto upload radio button selected
-					configureAutoUploadJDKSettings();
+					JdkSrvConfigListener.
+					configureAutoUploadJDKSettings(
+							waRole, Messages.dlNtLblDir);
 				} else {
 					/*
 					 * auto upload radio button unselected
@@ -546,11 +490,7 @@ public class WATabPage extends WizardPage {
 					 * auto upload radio button unselected
 					 * and local button selected.
 					 */
-					JdkSrvConfig.setEnableDlGrp(false, false);
-					JdkSrvConfig.enableJdkRdButtons(JdkSrvConfig.getDlRdLocBtn());
-					// Update note below URL text box
-					JdkSrvConfig.getLblDlNoteUrl().
-					setText(Messages.dlgDlNtLblUrl);
+					JdkSrvConfigListener.jdkDeployOrAutoToLocalBtnSelected();
 				}
 				handlePageComplete();
 			}
@@ -568,20 +508,10 @@ public class WATabPage extends WizardPage {
 			public void modifyText(ModifyEvent arg0) {
 				if (isJdkAutoUploadChecked()) {
 					handlePageComplete();
-					return; // no need to do any checks if auto upload is selected
+					// no need to do any checks if auto upload is selected
+					return;
 				}
-				/*
-				 * Extract storage account name
-				 * and service endpoint from URL
-				 * entered by user.
-				 */
-				String url = JdkSrvConfig.getTxtUrl().getText().trim();
-				String nameInUrl =
-						StorageRegistryUtilMethods.getAccNameFromUrl(
-								url);
-				JdkSrvConfig.setCmbStrgAccJdk(JdkSrvConfig.
-						urlModifyListner(url, nameInUrl,
-								JdkSrvConfig.getCmbStrgAccJdk()));
+				JdkSrvConfigListener.modifyJdkUrlText();
 				handlePageComplete();
 			}
 		});
@@ -594,23 +524,24 @@ public class WATabPage extends WizardPage {
 				handlePageComplete();
 			}
 		});
+
 		// listener for Accounts link on JDK tab.
 		JdkSrvConfig.getAccLinkJdk().
 		addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				JdkSrvConfig.accountsLinkOfJdkClicked();
-				updateJDKDlURL();
+				JdkSrvConfigListener.jdkAccLinkClicked();
 				handlePageComplete();
 			}
 		});
+
 		// listener for storage account combo box on JDK tab.
 		JdkSrvConfig.getCmbStrgAccJdk().
 		addSelectionListener(new SelectionListener() {
 
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				updateJDKDlURL();
+				JdkSrvConfig.updateJDKDlURL();
 				handlePageComplete();
 			}
 
@@ -619,42 +550,6 @@ public class WATabPage extends WizardPage {
 			}
 		});
 		return control;
-	}
-
-	/**
-	 * Listener for JDK browse button it is used in file system button.
-	 * It will open the file system location.
-	 */
-	protected void jdkBrowseBtnListener() {
-		try {
-			String path = WAEclipseHelper.
-					jdkDefaultDirectory(
-							JdkSrvConfig.getTxtJdk().getText());
-			DirectoryDialog dialog =
-					new DirectoryDialog(new Shell());
-			if (path != null) {
-				File file = new File(path);
-				if (!path.isEmpty()
-						&& file.exists()
-						&& file.isDirectory()) {
-					dialog.setFilterPath(path);
-				}
-			}
-
-			String directory = dialog.open();
-			if (directory != null) {
-				JdkSrvConfig.getTxtJdk().setText(directory);
-				// Update note below URL text box
-				if (isJdkDownloadChecked()) {
-					String dirName = new File(directory).getName();
-					JdkSrvConfig.getLblDlNoteUrl().
-					setText(String.format(
-							Messages.dlNtLblDir, dirName));
-				}
-			}
-		} catch (Exception e) {
-			Activator.getDefault().log(e.getMessage(), e);
-		}
 	}
 
 	/**
@@ -670,28 +565,11 @@ public class WATabPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getSerCheckBtn().getSelection()) {
-					JdkSrvConfig.getSerCheckBtn().setSelection(true);
-					JdkSrvConfig.enableSrvRdButtons(JdkSrvConfig.getDlRdLocBtnSrv());
-					JdkSrvConfig.setEnableServer(true);
-					String file = WAEclipseHelper.getTemplateFile();
-					File cmpntFile = new File(file);
-					try {
-						String[] servList =
-								WindowsAzureProjectManager.
-								getServerTemplateNames(cmpntFile);
-						Arrays.sort(servList);
-						JdkSrvConfig.getComboServer().setItems(servList);
-					} catch (WindowsAzureInvalidProjectOperationException e) {
-						Activator.getDefault().log(e.getMessage());
-					}
-					handlePageComplete();
+					JdkSrvConfigListener.srvChkBoxChecked();
 				} else {
-					JdkSrvConfig.getSerCheckBtn().setSelection(false);
-					JdkSrvConfig.setEnableServer(false);
-					JdkSrvConfig.setEnableDlGrpSrv(false, false);
-					JdkSrvConfig.getSerCheckBtn().setEnabled(true);
-					handlePageComplete();
+					JdkSrvConfigListener.srvChkBoxUnChecked();
 				}
+				handlePageComplete();
 			}
 			@Override
 			public void widgetDefaultSelected(SelectionEvent arg0) {
@@ -702,13 +580,8 @@ public class WATabPage extends WizardPage {
 		addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent arg0) {
-				if (isSrvAutoUploadChecked()) {
-					JdkSrvConfig.setTxtUrlSrv(JdkSrvConfig.cmbBoxListener(
-							JdkSrvConfig.getCmbStrgAccSrv(),
-							JdkSrvConfig.getTxtUrlSrv(), "SERVER"));
-					updateSrvDlNote();
-					updateServerHome();
-				}
+				JdkSrvConfigListener.modifySrvText(waRole,
+						Messages.dlNtLblDirSrv);
 				handlePageComplete();
 			}
 		});
@@ -722,19 +595,10 @@ public class WATabPage extends WizardPage {
 				// Update note below URL text box
 				String path = JdkSrvConfig.
 						getTxtDir().getText().trim();
-				File file = new File(path);
-				if (JdkSrvConfig.getDlRdCldBtnSrv().
-						getSelection()
-						&& !path.isEmpty()
-						&& file.exists()) {
-					String dirName = file.getName();
-					JdkSrvConfig.getLblDlNoteUrlSrv().
-					setText(String.format(
-							Messages.dlNtLblDirSrv, dirName));
-				} else {
-					JdkSrvConfig.getLblDlNoteUrlSrv().
-					setText(Messages.dlNtLblUrlSrv);
-				}
+				JdkSrvConfigListener.
+				focusLostSrvText(path,
+						Messages.dlNtLblDirSrv,
+						Messages.dlNtLblUrlSrv);
 			}
 
 			@Override
@@ -748,13 +612,8 @@ public class WATabPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				serBrowseBtnListener();
-				if (isSrvAutoUploadChecked()) {
-					JdkSrvConfig.setTxtUrlSrv(JdkSrvConfig.cmbBoxListener(
-							JdkSrvConfig.getCmbStrgAccSrv(),
-							JdkSrvConfig.getTxtUrlSrv(), "SERVER"));
-					updateSrvDlNote();
-					updateServerHome();
-				}
+				JdkSrvConfigListener.modifySrvText(waRole,
+						Messages.dlNtLblDirSrv);
 			}
 			@Override
 			public void widgetDefaultSelected(SelectionEvent arg0) {
@@ -767,9 +626,9 @@ public class WATabPage extends WizardPage {
 
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				if (isSrvDownloadChecked()
-						|| isSrvAutoUploadChecked()) {
-					updateServerHome();
+				if (JdkSrvConfig.isSrvDownloadChecked()
+						|| JdkSrvConfig.isSrvAutoUploadChecked()) {
+					JdkSrvConfig.updateServerHome(waRole);
 				}
 				handlePageComplete();
 			}
@@ -784,7 +643,12 @@ public class WATabPage extends WizardPage {
 		.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				serBtnListener();
+				JdkSrvConfig.custLinkListener(
+						Messages.dplSerBtnTtl,
+						Messages.dplSerBtnMsg,
+						isWizard,
+						getShell(),
+						pageObj, cmpntFile);
 			}
 		});
 
@@ -796,10 +660,8 @@ public class WATabPage extends WizardPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getDlRdCldBtnSrv()
 						.getSelection()) {
-					// server deploy radio button selected
-					JdkSrvConfig.setEnableDlGrpSrv(true, false);
-					updateSrvDlNote();
-					updateServerHome();
+					JdkSrvConfigListener.srvDeployBtnSelected(waRole,
+							Messages.dlNtLblDirSrv);
 				} else {
 					/*
 					 * server deploy radio button unselected
@@ -812,11 +674,9 @@ public class WATabPage extends WizardPage {
 					 * server deploy radio button unselected
 					 * and local selected.
 					 */
-					JdkSrvConfig.setEnableDlGrpSrv(false, false);
-					JdkSrvConfig.enableSrvRdButtons(JdkSrvConfig.getDlRdLocBtnSrv());
-					// Update note below server URL text box
-					JdkSrvConfig.getLblDlNoteUrlSrv().
-					setText(Messages.dlNtLblUrlSrv);
+					JdkSrvConfigListener.
+					srvDeployOrAutoToLocalBtnSelected(
+							Messages.dlNtLblUrlSrv);
 				}
 				handlePageComplete();
 			}
@@ -833,7 +693,9 @@ public class WATabPage extends WizardPage {
 				if (JdkSrvConfig.getAutoDlRdCldBtnSrv()
 						.getSelection()) {
 					// server auto upload radio button selected
-					configureAutoUploadServerSettings();
+					JdkSrvConfigListener.
+					configureAutoUploadServerSettings(waRole,
+							Messages.dlNtLblDirSrv);
 				} else {
 					/*
 					 * server auto upload radio button unselected
@@ -849,11 +711,9 @@ public class WATabPage extends WizardPage {
 					 * server auto upload radio button unselected
 					 * and local button selected.
 					 */
-					JdkSrvConfig.setEnableDlGrpSrv(false, false);
-					JdkSrvConfig.enableSrvRdButtons(JdkSrvConfig.getDlRdLocBtnSrv());
-					// Update note below server URL text box
-					JdkSrvConfig.getLblDlNoteUrlSrv().
-					setText(Messages.dlNtLblUrlSrv);
+					JdkSrvConfigListener.
+					srvDeployOrAutoToLocalBtnSelected(
+							Messages.dlNtLblUrlSrv);
 				}
 				handlePageComplete();
 			}
@@ -868,24 +728,12 @@ public class WATabPage extends WizardPage {
 		addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent arg0) {
-				// If auto upload is selected , no need to handle this case
-				if (isSrvAutoUploadChecked()) { 
+				// If auto upload is selected, no need to handle this case
+				if (JdkSrvConfig.isSrvAutoUploadChecked()) { 
 					handlePageComplete();
 					return;
 				}
-				/*
-				 * Extract storage account name
-				 * and service endpoint from URL
-				 * entered by user.
-				 */
-				String url = JdkSrvConfig.getTxtUrlSrv().getText().trim();
-				String nameInUrl =
-						StorageRegistryUtilMethods.
-						getAccNameFromUrl(
-								url);
-				JdkSrvConfig.setCmbStrgAccSrv(JdkSrvConfig.
-						urlModifyListner(url, nameInUrl,
-								JdkSrvConfig.getCmbStrgAccSrv()));
+				JdkSrvConfigListener.modifySrvUrlText();
 				handlePageComplete();
 			}
 		});
@@ -898,23 +746,24 @@ public class WATabPage extends WizardPage {
 				handlePageComplete();
 			}
 		});
+
 		// listener for Accounts link on server tab.
 		JdkSrvConfig.getAccLinkSrv().
 		addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				JdkSrvConfig.accountsLinkOfSrvClicked();
-				updateServerDlURL();
+				JdkSrvConfigListener.srvAccLinkClicked();
 				handlePageComplete();
 			}
 		});
+
 		// listener for storage account combo box on server tab.
 		JdkSrvConfig.getCmbStrgAccSrv().
 		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				updateServerDlURL();
-				updateServerHome();
+				JdkSrvConfig.updateServerDlURL();
+				JdkSrvConfig.updateServerHome(waRole);
 				handlePageComplete();
 			}
 
@@ -931,44 +780,8 @@ public class WATabPage extends WizardPage {
 	 * It will open the file system location.
 	 */
 	protected void serBrowseBtnListener() {
-		try {
-			String path = JdkSrvConfig.getTxtDir().getText();
-			DirectoryDialog dialog =
-					new DirectoryDialog(new Shell());
-			if (path != null) {
-				File file = new File(path);
-				if (!path.isEmpty()
-						&& file.exists()
-						&& file.isDirectory()) {
-					dialog.setFilterPath(path);
-				}
-			}
-			String directory = dialog.open();
-			if (directory != null) {
-				JdkSrvConfig.getTxtDir().setText(directory);
-				// Update note below server URL text box
-				if (isSrvDownloadChecked()) {
-					String dirName = new File(directory).getName();
-					JdkSrvConfig.getLblDlNoteUrlSrv().
-					setText(String.format(
-							Messages.dlNtLblDirSrv, dirName));
-				}
-				// Auto detect server family
-				String serverName = WAEclipseHelper.
-						detectServer(new File(directory));
-				if (serverName != null
-						&& !serverName.isEmpty()) {
-					JdkSrvConfig.getComboServer().
-					setText(serverName);
-				} else {
-					JdkSrvConfig.getComboServer().
-					clearSelection();
-				}
-			}
-			handlePageComplete();
-		} catch (Exception e) {
-			Activator.getDefault().log(e.getMessage(), e);
-		}
+		JdkSrvConfig.utilSerBrowseBtnListener(Messages.dlNtLblDirSrv);
+		handlePageComplete();
 	}
 
 	/**
@@ -1105,36 +918,6 @@ public class WATabPage extends WizardPage {
 				JdkSrvConfig.getTableViewer().
 				refresh();
 			} catch (Exception e) {
-				Activator.getDefault().log(e.getMessage(), e);
-			}
-		}
-	}
-
-	/**
-	 * Server button listener. This will close the wizard and open the
-	 * componentssets.xml in default editor.
-	 */
-	private void serBtnListener() {
-		boolean choice = MessageDialog.openConfirm(getShell(),
-				Messages.dplSerBtnTtl, Messages.dplSerBtnMsg);
-		if (choice) {
-			try {
-				if (isWizard) {
-					WAProjectWizard wiz =
-							(WAProjectWizard) pageObj;
-					wiz.getShell().close();
-				}
-				String file = WAEclipseHelper.getTemplateFile();
-				File cmpntFile = new File(file);
-				if (cmpntFile.exists() && cmpntFile.isFile()) {
-					IFileStore store = EFS.getLocalFileSystem().
-							getStore(cmpntFile.toURI());
-					IWorkbenchPage benchPage = PlatformUI.
-							getWorkbench().getActiveWorkbenchWindow()
-							.getActivePage();
-					IDE.openEditorOnFileStore(benchPage, store);
-				}
-			} catch (PartInitException e) {
 				Activator.getDefault().log(e.getMessage(), e);
 			}
 		}
@@ -1282,24 +1065,6 @@ public class WATabPage extends WizardPage {
 	}
 
 	/**
-	 * Return whether Server download group
-	 * check box is checked or not.
-	 * @return
-	 */
-	public static boolean isSrvDownloadChecked() {
-		return JdkSrvConfig.getDlRdCldBtnSrv().getSelection();
-	}
-
-	/**
-	 * Return whether Server auto download group
-	 * check box is checked or not.
-	 * @return
-	 */
-	public static boolean isSrvAutoUploadChecked() {
-		return JdkSrvConfig.getAutoDlRdCldBtnSrv().getSelection();
-	}
-
-	/**
 	 * Method returns Tabfolder.
 	 * @return
 	 */
@@ -1313,103 +1078,5 @@ public class WATabPage extends WizardPage {
 	 */
 	public static TabItem getJdkTab() {
 		return jdkTab;
-	}
-
-	/**
-	 * Utility method to update note below text box for JDK.
-	 */
-	private void updateJDKDlNote() {
-		// Update note below URL text box
-		String jdkPath = JdkSrvConfig.getTxtJdk().
-				getText();
-		File file = new File(jdkPath);
-		if (!jdkPath.isEmpty() && file.exists()) {
-			String dirName = file.getName();
-			JdkSrvConfig.getLblDlNoteUrl().
-			setText(String.format(
-					Messages.dlNtLblDir, dirName));
-		}
-	}
-
-	/**
-	 * Utility method to update note below text box for Server.
-	 */
-	private void updateSrvDlNote() {
-		String srvPath = JdkSrvConfig.getTxtDir().
-				getText();
-		File file = new File(srvPath);
-		if (!srvPath.isEmpty() && file.exists()) {
-			String dirName = file.getName();
-			JdkSrvConfig.getLblDlNoteUrlSrv().
-			setText(String.format(
-					Messages.dlNtLblDirSrv, dirName));
-		}
-	}
-
-	/**
-	 * Utility method to update java home value.
-	 */
-	private void updateJDKHome() {
-		try {
-			String jdkPath = JdkSrvConfig.getTxtJdk().getText();
-			String jdkHome = waRole.constructJdkHome(jdkPath,
-					new File(WAEclipseHelper.getTemplateFile()));
-			JdkSrvConfig.getTxtJavaHome().setText(jdkHome);
-		} catch (WindowsAzureInvalidProjectOperationException e) {
-			Activator.getDefault().log(e.getMessage());
-		}
-	}
-
-	/**
-	 * Utility method to update server home value.
-	 */
-	private void updateServerHome() {
-		// set server home directory text box value
-		String srvPath = JdkSrvConfig.getTxtDir().getText();
-		try {
-			String srvHome = waRole.constructServerHome(
-					JdkSrvConfig.getComboServer().getText(),
-					srvPath,
-					new File(WAEclipseHelper.getTemplateFile()));
-			JdkSrvConfig.getTxtHomeDir().setText(srvHome);
-		} catch (WindowsAzureInvalidProjectOperationException e) {
-			Activator.getDefault().log(e.getMessage());
-		}
-	}
-
-	private void configureAutoUploadJDKSettings() {
-		JdkSrvConfig.setEnableDlGrp(true, true);
-		updateJDKDlURL();
-		updateJDKDlNote();
-		updateJDKHome();
-	}
-
-	private void configureAutoUploadServerSettings() {
-		JdkSrvConfig.setEnableDlGrpSrv(true, true);
-		JdkSrvConfig.populateDefaultStrgAccForSrvAuto();
-		updateServerDlURL();
-		updateSrvDlNote();
-		updateServerHome();
-	}
-
-	private void updateJDKDlURL() {
-		if (JdkSrvConfig.isSASelectedForJDK()) {
-			JdkSrvConfig.setTxtUrl(JdkSrvConfig.cmbBoxListener(
-					JdkSrvConfig.getCmbStrgAccJdk(),
-					JdkSrvConfig.getTxtUrl(), "JDK"));
-		} else if (!JdkSrvConfig.getDlRdCldBtn().getSelection()) {
-			JdkSrvConfig.getTxtUrl().setText("");
-		}
-	}
-
-	private void updateServerDlURL() {
-		if (JdkSrvConfig.isSASelectedForSrv()) {
-			JdkSrvConfig.setTxtUrlSrv(JdkSrvConfig.cmbBoxListener(
-					JdkSrvConfig.getCmbStrgAccSrv(),
-					JdkSrvConfig.getTxtUrlSrv(),
-					"SERVER"));
-		} else if (!JdkSrvConfig.getDlRdCldBtnSrv().getSelection()) {
-			JdkSrvConfig.getTxtUrlSrv().setText("");
-		}
 	}
 }

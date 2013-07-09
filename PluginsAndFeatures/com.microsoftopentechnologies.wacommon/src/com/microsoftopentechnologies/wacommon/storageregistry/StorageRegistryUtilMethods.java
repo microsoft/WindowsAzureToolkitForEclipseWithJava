@@ -39,7 +39,7 @@ public class StorageRegistryUtilMethods {
 	 * blob service URL to array.
 	 * @return
 	 */
-	public static String[] getStorageAccountNames() {
+	public static String[] getStorageAccountNames(boolean isAutoUpload) {
 		PreferenceUtilStrg.load();
 		ArrayList<String> nameList = new ArrayList<String>();
 		/*
@@ -80,8 +80,17 @@ public class StorageRegistryUtilMethods {
 				}
 			}
 		}
-		// add (none) entry to list.
-		nameList.add(0, ("(none)"));
+		/*
+		 * add (none) or (auto) entry to list.
+		 * Add (auto) depending on isAutoUpload variable value i.e.
+		 * only if user is on server JDK configuration page
+		 * and auto upload option is selected.
+		 */
+		if (isAutoUpload) {
+			nameList.add(0, ("(auto)"));
+		} else {
+			nameList.add(0, ("(none)"));
+		}
 		nameArr = nameList.toArray(new String[nameList.size()]);
 		return nameArr;
 	}

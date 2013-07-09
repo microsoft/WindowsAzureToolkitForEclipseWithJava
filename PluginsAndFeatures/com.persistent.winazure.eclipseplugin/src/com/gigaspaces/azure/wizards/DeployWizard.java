@@ -18,12 +18,11 @@ package com.gigaspaces.azure.wizards;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -34,25 +33,32 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.dialogs.MessageDialogWithToggle;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.Wizard;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
 
 import waeclipseplugin.Activator;
 
+import com.gigaspaces.azure.model.AutoUpldCmpnts;
+import com.gigaspaces.azure.model.CreateStorageServiceInput;
 import com.gigaspaces.azure.model.RemoteDesktopDescriptor;
+import com.gigaspaces.azure.model.StorageService;
+import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
+import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
+import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.MessageUtil;
+import com.persistent.util.WAEclipseHelper;
 
 /**
  * Class responsible for deploying windows azure project
@@ -62,9 +68,19 @@ public class DeployWizard extends Wizard {
 	private SignInPage signInPage;
 	private IProject selectedProject;
 	private WindowsAzurePackageType deployMode = WindowsAzurePackageType.CLOUD;
-	private static Map<String, Boolean> rememberMydecisions = new HashMap<String, Boolean>();
-	private static Map<String, Integer> decisions = new HashMap<String, Integer>();
 	private static final String BASE_PATH = "${basedir}";
+	private final String auto = "auto";
+	private final String dashAuto = "-auto";
+	/**
+	 * To store components which got modified before build.
+	 */
+	List<AutoUpldCmpnts> mdfdCmpntList =
+			new ArrayList<AutoUpldCmpnts>();
+	/**
+	 * To store roles of whom cache property
+	 * got modified before build.
+	 */
+	List<String> roleMdfdCache = new ArrayList<String>();
 
 	/**
 	 * Constructor.
@@ -121,7 +137,8 @@ public class DeployWizard extends Wizard {
 
 			// WORKITEM: China Support customizable portal URL in the plugin
 			try {
-				String prefSetUrl = PreferenceSetUtil.getSelectedPortalURL();
+				String prefSetUrl = PreferenceSetUtil.getSelectedPortalURL(
+						PreferenceSetUtil.getSelectedPreferenceSetName());
 				/*
 				 * Don't check if URL is empty or null.
 				 * As if it is then we remove "portalurl" attribute
@@ -141,34 +158,76 @@ public class DeployWizard extends Wizard {
 
 			waProjManager = WindowsAzureProjectManager.
 					load(new File(selectedProject.getLocation().toOSString()));
-
-			WindowsAzureBuildProjectJob buildProjectJob = new
-					WindowsAzureBuildProjectJob(Messages.buildProj);
-			buildProjectJob.setManager(waProjManager);
-			buildProjectJob.setShell(getShell());
-			buildProjectJob.schedule();
-
-			buildProjectJob.addJobChangeListener(new JobChangeAdapter() {
+			
+			WAAutoStorageConfJob autoStorageConfJob = new WAAutoStorageConfJob(Messages.confStorageAccount);
+			autoStorageConfJob.setManager(waProjManager);
+			autoStorageConfJob.schedule();
+			autoStorageConfJob.addJobChangeListener(new JobChangeAdapter() {
 				public void done(IJobChangeEvent event) {
 					if (event.getResult().isOK()) {
-						Job job = new WindowsAzureDeploymentJob(
-								Messages.deployingToAzure,selectedProject);
-						job.addJobChangeListener(new JobChangeAdapter() {
-							public void done(IJobChangeEvent event) {
-								if (!event.getResult().isOK()) {
-									Display.getDefault().asyncExec(new Runnable() {
-										@Override
-										public void run() {
-											MessageDialog.openInformation(
-													getShell(),
-													Messages.interrupt,
-													Messages.deploymentInterrupted);
+						try {
+							WindowsAzureProjectManager waProjManager = WindowsAzureProjectManager.
+									load(new File(selectedProject.getLocation().toOSString()));
+							
+							WindowsAzureBuildProjectJob buildProjectJob = new
+									WindowsAzureBuildProjectJob(Messages.buildProj);
+							buildProjectJob.setManager(waProjManager);
+							buildProjectJob.schedule();
+
+							buildProjectJob.addJobChangeListener(new JobChangeAdapter() {
+
+								public void done(IJobChangeEvent event) {
+									if (event.getResult().isOK()) {
+										try {
+											WindowsAzureProjectManager waProjManager = WindowsAzureProjectManager.
+													load(new File(selectedProject.getLocation().toOSString()));
+											/*
+											 * Build job is completed.
+											 * If component's url settings done before build then,
+											 * replace with auto.
+											 */
+											if (mdfdCmpntList.size() > 0) {
+												waProjManager = addAutoCloudUrl(waProjManager);
+												waProjManager.save();
+											}
+											/*
+											 * If cache's storage account name and key,
+											 * is changed before build then replace with auto.
+											 */
+											if (roleMdfdCache.size() > 0) {
+												waProjManager = addAutoSettingsForCache(waProjManager);
+												waProjManager.save();
+											}
+											WAEclipseHelper.refreshWorkspace(
+													com.persistent.winazureroles.Messages.rfrshErrTtl,
+													com.persistent.winazureroles.Messages.rfrshErrMsg);
+										} catch (WindowsAzureInvalidProjectOperationException e) {
+											Activator.getDefault().log(Messages.error, e);
 										}
-									});
+										Job job = new WindowsAzureDeploymentJob(
+												Messages.deployingToAzure,selectedProject);
+										job.addJobChangeListener(new JobChangeAdapter() {
+											public void done(IJobChangeEvent event) {
+												if (!event.getResult().isOK()) {
+													Display.getDefault().asyncExec(new Runnable() {
+														@Override
+														public void run() {
+															MessageDialog.openInformation(
+																	getShell(),
+																	Messages.interrupt,
+																	Messages.deploymentInterrupted);
+														}
+													});
+												}
+											}
+										});
+										job.schedule();
+									}
 								}
-							}
-						});
-						job.schedule();
+							});				
+						} catch (WindowsAzureInvalidProjectOperationException e) {
+							Activator.getDefault().log(Messages.error, e);
+						}
 					}
 				}
 			});
@@ -188,15 +247,10 @@ public class DeployWizard extends Wizard {
 
 	private class WindowsAzureBuildProjectJob extends Job {
 
-		private Shell shell;
 		private WindowsAzureProjectManager waProjManager;
 
 		public WindowsAzureBuildProjectJob(String name) {
 			super(name);
-		}
-
-		public void setShell(Shell shell) {
-			this.shell = shell;
 		}
 
 		public void setManager(WindowsAzureProjectManager manager) {
@@ -205,76 +259,93 @@ public class DeployWizard extends Wizard {
 
 		@Override
 		protected IStatus run(IProgressMonitor monitor) {
-
-			MessageDialogWithToggle dialog = null;
-
-			final AtomicReference<MessageDialogWithToggle> dialogRef = new
-					AtomicReference<MessageDialogWithToggle>();
-
-			String projectName = selectedProject.getName();
-
-			Boolean rememberMyDecisionForSelectedProject =
-					rememberMydecisions.get(projectName);
-
-			if (rememberMyDecisionForSelectedProject == null
-					|| rememberMyDecisionForSelectedProject == false) {
-
-				Display.getDefault().syncExec(new Runnable() {
-
-					@Override
-					public void run() {
-						MessageDialogWithToggle dialog = MessageDialogWithToggle.open(
-								MessageDialog.QUESTION, shell,
-								Messages.deplConfirmConfigChangeMsg,
-								Messages.deplFullProjBuildConfirmMsg,
-								Messages.deplRememberMyDecisionMsg,
-								false, null, null,
-								SWT.SHEET);	
-						dialogRef.set(dialog);
-					}
-				});
-			}
-
-			dialog = dialogRef.get();
-
-			if (dialog != null) {
-				/*
-				 * user did not want to remember his
-				 * decision for this project. dialog was opened.
-				 */
-				boolean toogleState = dialog.getToggleState();
-				if (toogleState) {
-					rememberMydecisions.put(projectName, true);
-				} else {
-					rememberMydecisions.put(projectName, false);
-				}
-				decisions.put(projectName, dialog.getReturnCode());
-			}
-			if  (decisions.get(projectName) == IDialogConstants.YES_ID) {
-				monitor.beginTask(String.format(
-						Messages.buildingProjTask,
-						selectedProject.getName()),
-						IProgressMonitor.UNKNOWN);
-				try {
-					waProjManager.setPackageType(deployMode);
-					selectedProject.build(IncrementalProjectBuilder.
-							CLEAN_BUILD, monitor);
-					waProjManager.save();
-					selectedProject.build(IncrementalProjectBuilder.
-							INCREMENTAL_BUILD, null);
-					selectedProject.refreshLocal(IResource.
-							DEPTH_INFINITE, monitor);
-				} catch (Exception e) {
-					Activator.getDefault().log(Messages.error, e);
-					super.setName("");
-					monitor.done();
-					return Status.CANCEL_STATUS;
-				}
+			monitor.beginTask(String.format(
+					Messages.buildingProjTask,
+					selectedProject.getName()),
+					IProgressMonitor.UNKNOWN);
+			try {
+				waProjManager.setPackageType(deployMode);
+				selectedProject.build(IncrementalProjectBuilder.
+						CLEAN_BUILD, monitor);
+				waProjManager.save();
+				selectedProject.build(IncrementalProjectBuilder.
+						INCREMENTAL_BUILD, null);
+				selectedProject.refreshLocal(IResource.
+						DEPTH_INFINITE, monitor);
+			} catch (Exception e) {
+				Activator.getDefault().log(Messages.error, e);
 				super.setName("");
 				monitor.done();
-				return Status.OK_STATUS;
+				return Status.CANCEL_STATUS;
 			}
+			super.setName("");
+			monitor.done();
 			return Status.OK_STATUS;
+		}
+	}
+	
+	
+	private class WAAutoStorageConfJob extends Job {
+
+
+		private WindowsAzureProjectManager waProjManager;
+
+		public WAAutoStorageConfJob(String name) {
+			super(name);
+		}
+
+		public void setManager(WindowsAzureProjectManager manager) {
+			this.waProjManager = manager;
+		}
+
+		@Override
+		protected IStatus run(IProgressMonitor monitor) {
+			monitor.beginTask(Messages.confStorageAccount,				
+					IProgressMonitor.UNKNOWN);
+			try {
+				// Create storage account if it does not exists
+				createStorageAccountIfNotExists();
+				
+				/*
+				 * Check components having upload method "AUTO"
+				 * and cloudurl set to auto, update them with
+				 * appropriate blob url and key
+				 * as per storage account selected on wizard.
+				 */
+				waProjManager = removeAutoCloudUrl(waProjManager);
+				waProjManager.save();
+			} catch (Exception e) {
+				Activator.getDefault().log(Messages.error, e);
+				super.setName("");
+				monitor.done();
+				return Status.CANCEL_STATUS;
+			}
+			super.setName("");
+			monitor.done();
+			return Status.OK_STATUS;
+		}
+	}
+	
+	private void createStorageAccountIfNotExists() throws InterruptedException, Exception {
+		StorageService storageAccount = WizardCacheManager.getCurrentStorageAcount();
+		
+		if (storageAccount.getUrl() == null || storageAccount.getUrl().isEmpty()) {
+			CreateStorageServiceInput body = new CreateStorageServiceInput(storageAccount.getServiceName(),
+			storageAccount.getServiceName(),
+			storageAccount.getStorageServiceProperties().getLocation());
+			body.setDescription(storageAccount.getStorageServiceProperties().getDescription());
+			StorageService storageService = WizardCacheManager.createStorageAccount(body);
+			/*
+			 * Add newly created storage account
+			 * in centralized storage account registry.
+			 */
+			StorageAccount storageAccountPref = new StorageAccount(storageService.getServiceName(),
+					storageService.getStorageServiceKeys().getPrimary(),
+					storageService.
+					getStorageServiceProperties().getEndpoints().
+					getEndpoints().get(0));
+			StorageAccountRegistry.addAccount(storageAccountPref);
+			PreferenceUtilStrg.save();
 		}
 	}
 
@@ -412,5 +483,165 @@ public class DeployWizard extends Wizard {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Check each role and its respective
+	 * components having upload method "AUTO"
+	 * and cloudurl set to auto, update them with
+	 * appropriate blob url and key
+	 * as per storage account selected on wizard.
+	 * Also method remembers which components has been updated
+	 * so that after project build
+	 * they can be restored to original state.
+	 * @param projMngr
+	 * @return
+	 */
+	private WindowsAzureProjectManager removeAutoCloudUrl(
+			WindowsAzureProjectManager projMngr) {
+		mdfdCmpntList.clear();
+		roleMdfdCache.clear();
+		try {
+			// get number of roles in one project
+			List<WindowsAzureRole> roleList = projMngr.getRoles();
+			StorageService curAcc = WizardCacheManager.getCurrentStorageAcount();
+			String curKey = curAcc.getStorageServiceKeys().getPrimary();
+			for (int i = 0; i < roleList.size(); i++) {
+				WindowsAzureRole role = roleList.get(i);
+				/*
+				 * check for caching storage account name given
+				 * and its "auto"
+				 * then update cache name and key.
+				 */
+				String name = role.getCacheStorageAccountName();
+				if (name != null
+						&& !name.isEmpty()
+						&& name.equals(dashAuto)) {
+					roleMdfdCache.add(role.getName());
+					role.setCacheStorageAccountName(curAcc.getServiceName());
+					role.setCacheStorageAccountKey(curKey);
+				}
+				// get list of components in one role.
+				List<WindowsAzureRoleComponent> cmpnntsList =
+						role.getComponents();
+				for (int j = 0; j < cmpnntsList.size(); j++) {
+					WindowsAzureRoleComponent component =
+							cmpnntsList.get(j);
+					/*
+					 * Check component is of JDK or server
+					 * and auto upload is enabled.
+					 */
+					if ((component.getType().equals(
+							com.persistent.winazureroles.Messages.typeJdkDply)
+							|| component.getType().equals(
+									com.persistent.winazureroles.Messages.typeSrvDply))
+									&& component.getCloudUploadMode() != null
+									&& component.getCloudUploadMode().
+									equals(WARoleComponentCloudUploadMode.AUTO)) {
+						/*
+						 * Check storage account is not specified,
+						 * i.e URL is auto
+						 */
+						if (component.getCloudDownloadURL().equalsIgnoreCase(auto)) {
+							// update cloudurl and cloudkey
+							component.setCloudDownloadURL(JdkSrvConfig.
+									prepareCloudBlobURL(
+											component.getImportPath(),
+											curAcc.
+											getStorageServiceProperties().getEndpoints().
+											getEndpoints().get(0)));
+							component.setCloudKey(curKey);
+							// Save components that are modified
+							AutoUpldCmpnts obj = new AutoUpldCmpnts(role.getName());
+							/*
+							 * Check list contains
+							 * entry with this role name,
+							 * if yes then just add index of entry to list
+							 * else create new object.
+							 */
+							if (mdfdCmpntList.contains(obj)) {
+								int index = mdfdCmpntList.indexOf(obj);
+								AutoUpldCmpnts presentObj =
+										mdfdCmpntList.get(index);
+								if (!presentObj.getCmpntIndices().contains(j)) {
+									presentObj.getCmpntIndices().add(j);
+								}
+							} else {
+								mdfdCmpntList.add(obj);
+								obj.getCmpntIndices().add(j);
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			Activator.getDefault().log(Messages.autoUploadEr, e);
+		}
+		return projMngr;
+	}
+
+	/**
+	 * Method restores components which are updated before build
+	 * to original state i.e. again updates cloudurl to "auto"
+	 * and removes cloudkey attribute.
+	 * @param projMngr
+	 * @return
+	 */
+	private WindowsAzureProjectManager addAutoCloudUrl(
+			WindowsAzureProjectManager projMngr) {
+		try {
+			// get number of roles in one project
+			List<WindowsAzureRole> roleList = projMngr.getRoles();
+			for (int i = 0; i < roleList.size(); i++) {
+				WindowsAzureRole role = roleList.get(i);
+				AutoUpldCmpnts obj = new AutoUpldCmpnts(role.getName());
+				// check list has entry with this role name
+				if (mdfdCmpntList.contains(obj)) {
+					// get list of components
+					List<WindowsAzureRoleComponent> cmpnntsList =
+							role.getComponents();
+					// get indices of components which needs to be updated.
+					int index = mdfdCmpntList.indexOf(obj);
+					AutoUpldCmpnts presentObj =
+							mdfdCmpntList.get(index);
+					List<Integer> indices = presentObj.getCmpntIndices();
+					// iterate over indices and update respective components.
+					for (int j = 0; j < indices.size(); j++) {
+						WindowsAzureRoleComponent cmpnt =
+								cmpnntsList.get(indices.get(j));
+						cmpnt.setCloudDownloadURL(auto);
+						cmpnt.setCloudKey("");
+					}
+				}
+			}
+		} catch (Exception e) {
+			Activator.getDefault().log(Messages.autoUploadEr, e);
+		}
+		return projMngr;
+	}
+
+	/**
+	 * Method restores caching properties which are updated before build
+	 * to original state i.e. again updates storage account name to "auto"
+	 * and removes key property.
+	 * @param projMngr
+	 * @return
+	 */
+	private WindowsAzureProjectManager addAutoSettingsForCache(
+			WindowsAzureProjectManager projMngr) {
+		try {
+			// get number of roles in one project
+			List<WindowsAzureRole> roleList = projMngr.getRoles();
+			for (int i = 0; i < roleList.size(); i++) {
+				WindowsAzureRole role = roleList.get(i);
+				if (roleMdfdCache.contains(role.getName())) {
+					role.setCacheStorageAccountName(dashAuto);
+					role.setCacheStorageAccountKey("");
+				}
+			}
+		} catch (Exception e) {
+			Activator.getDefault().log(Messages.autoUploadEr, e);
+		}
+		return projMngr;
 	}
 }

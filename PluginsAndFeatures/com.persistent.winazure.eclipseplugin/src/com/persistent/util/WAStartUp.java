@@ -60,6 +60,8 @@ import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
 @SuppressWarnings("restriction")
 public class WAStartUp implements IStartup {
     private static final int BUFF_SIZE = 1024;
+    private static final String COMPONENTSETS_TYPE = "COMPONENTSETS";
+    private static final String PREFERENCESETS_TYPE = "PREFERENCESETS";
     @Override
     public void earlyStartup() {
         try {
@@ -128,7 +130,7 @@ public class WAStartUp implements IStartup {
      * @param projMngr
      * @return
      */
-    private WindowsAzureProjectManager initializeStorageAccountRegistry(
+    public static WindowsAzureProjectManager initializeStorageAccountRegistry(
     		WindowsAzureProjectManager projMngr) {
     	try {
     		List<StorageAccount> strgAccList = StorageAccountRegistry.getStrgList();
@@ -310,43 +312,9 @@ public class WAStartUp implements IStartup {
             String prefFile = String.format("%s%s%s", pluginInstLoc,
             		File.separator, Messages.prefFileName);
 
-            /*
-             *  Check for componentsets.xml.
-             *  If exists checks its version , if it has latest version then no need to do anything
-             *  else check with older componentsets.xml , if identical then delete existing and copy new one
-             *  else rename existing and copy new one. 
-             */
-            File componentSets = new File(cmpntFile);
-            if (componentSets.exists()) { 
-            	String componentSetsVersion = null ;
-            	try {
-            		componentSetsVersion = WindowsAzureProjectManager.getComponentSetsVersion(componentSets);
-            	} catch(Exception e ) {
-            		Activator.getDefault().log("Error ocured while getting version of componentsets.xml , considering version as null");	
-            	}
-            	
-            	if((componentSetsVersion != null && !componentSetsVersion.isEmpty()) && 
-            			componentSetsVersion.equals(WindowsAzureProjectManager.getCurrVerion())) {
-            		// Donot do anything
-            	} else {
-            		// Check with old component sets for upgrade scenarios
-            		File    oldCmpntFile       = WAEclipseHelper.getResourceAsFile(Messages.oldCmpntFileEntry);
-            		boolean isIdenticalWithOld = WAEclipseHelper.isFilesIdentical(oldCmpntFile,componentSets);
-            		
-            		if(isIdenticalWithOld) {
-            			// Delete old one 
-            			componentSets.delete();            			
-            		} else {
-            			// Rename old one
-            			DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-            			Date date = new Date();
-            			WAEclipseHelper.copyFile(cmpntFile,cmpntFile+".old"+dateFormat.format(date));
-            		}
-            		copyResourceFile(Messages.cmpntFileEntry, cmpntFile);
-            	}
-            } else {
-            	copyResourceFile(Messages.cmpntFileEntry, cmpntFile);
-            }
+            // upgrade component sets and preference sets
+            upgradePluginComponent(cmpntFile, Messages.cmpntFileEntry, Messages.oldCmpntFileEntry, COMPONENTSETS_TYPE);
+            upgradePluginComponent(prefFile, Messages.prefFileEntry, Messages.oldPrefFileEntry, PREFERENCESETS_TYPE);
 
             // Check for WAStarterKitForJava.zip
             if (new File(starterKit).exists()) {
@@ -360,12 +328,60 @@ public class WAStartUp implements IStartup {
             }
             copyResourceFile(Messages.restFileEntry, restFile);
 
-            // Copy preferencesets.xml only if it is not exist
-            if (!new File(prefFile).exists()) {
-            	copyResourceFile(Messages.prefFileEntry, prefFile);
-            }
+       
         } catch (Exception e) {
             Activator.getDefault().log(e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Checks for pluginComponent file.
+     * If exists checks its version. If it has latest version then no upgrade action is needed ,
+     * else checks with older componentsets.xml , if identical then deletes existing and copies new one
+     * else renames existing and copies new one.  
+     * @param pluginComponent
+     * @param resourceFile
+     * @param componentType
+     * @throws Exception 
+     */
+    private void upgradePluginComponent(String pluginComponentPath, String resourceFile, 
+    		String oldResourceFile, String componentType) throws Exception {
+    	
+        File pluginComponentFile = new File(pluginComponentPath);
+        if (pluginComponentFile.exists()) { 
+        	String pluginComponentVersion = null ;
+        	try {
+        		if (COMPONENTSETS_TYPE.equals(componentType)) {
+        			pluginComponentVersion = WindowsAzureProjectManager.getComponentSetsVersion(pluginComponentFile);
+        		} else { 
+        			pluginComponentVersion = WindowsAzureProjectManager.getPreferenceSetsVersion(pluginComponentFile);
+        		}
+        	} catch(Exception e ) {
+        		Activator.getDefault().log("Error ocured while getting version of plugin component "+componentType
+        				+", considering version as null");	
+        	}
+        	
+        	if((pluginComponentVersion != null && !pluginComponentVersion.isEmpty()) && 
+        			pluginComponentVersion.equals(WindowsAzureProjectManager.getCurrVerion())) {
+        		// Donot do anything
+        	} else {
+        		// Check with old plugin component for upgrade scenarios
+        		File    oldPluginComponentFile  = WAEclipseHelper.getResourceAsFile(oldResourceFile);
+        		boolean isIdenticalWithOld 		= WAEclipseHelper.isFilesIdentical(oldPluginComponentFile,pluginComponentFile);
+        		
+        		if(isIdenticalWithOld) {
+        			// Delete old one 
+        			pluginComponentFile.delete();            			
+        		} else {
+        			// Rename old one
+        			DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+        			Date date = new Date();
+        			WAEclipseHelper.copyFile(pluginComponentPath,pluginComponentPath+".old"+dateFormat.format(date));
+        		}
+        		copyResourceFile(resourceFile, pluginComponentPath);
+        	}
+        } else {
+        	copyResourceFile(resourceFile, pluginComponentPath);
         }
     }
 

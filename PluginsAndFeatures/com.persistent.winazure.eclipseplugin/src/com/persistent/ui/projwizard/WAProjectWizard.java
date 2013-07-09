@@ -67,6 +67,7 @@ import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.builder.WADependencyBuilder;
 import com.persistent.ui.propertypage.WAProjectNature;
 import com.persistent.util.AppCmpntParam;
+import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.ParseXML;
 import com.persistent.util.WAEclipseHelper;
 
@@ -85,6 +86,8 @@ implements INewWizard, IPageChangedListener {
 	private WindowsAzureRole waRole;
 	private final int CACH_DFLTVAL = 30;
 	private final String DEBUG_PORT = "8090";
+	private final String auto = "auto";
+	private final String dashAuto = "-auto";
     private static final String LAUNCH_FILE_PATH = File.separator
     		+ Messages.pWizToolBuilder
     		+ File.separator
@@ -233,7 +236,14 @@ implements INewWizard, IPageChangedListener {
             		// Add only if JDK component added
             		if (depMap.get("jdkDwnldChecked").equalsIgnoreCase("true") || 
             				depMap.get("jdkAutoDwnldChecked").equalsIgnoreCase("true")) {
-            			role.setJDKCloudURL(depMap.get("jdkUrl"));
+            			String jdkTabUrl = depMap.get("jdkUrl");
+            			if (depMap.get("jdkAutoDwnldChecked").
+            					equalsIgnoreCase("true")
+            					&& jdkTabUrl.
+            					equalsIgnoreCase(JdkSrvConfig.AUTO_TXT)) {
+            				jdkTabUrl = auto;
+            			}
+            			role.setJDKCloudURL(jdkTabUrl);
             			role.setJDKCloudKey(depMap.get("jdkKey"));
             			/*
             			 * By default package type is local,
@@ -258,7 +268,14 @@ implements INewWizard, IPageChangedListener {
                 	// Add only if Server component added
                 	if (depMap.get("srvDwnldChecked").equalsIgnoreCase("true")
                 		|| depMap.get("srvAutoDwnldChecked").equalsIgnoreCase("true")) {
-                		role.setServerCloudURL(depMap.get("srvUrl"));
+                		String srvTabUrl = depMap.get("srvUrl");
+                		if (depMap.get("srvAutoDwnldChecked").
+                				equalsIgnoreCase("true")
+                				&& srvTabUrl.
+                				equalsIgnoreCase(JdkSrvConfig.AUTO_TXT)) {
+                			srvTabUrl = auto;
+                		}
+                		role.setServerCloudURL(srvTabUrl);
                 		role.setServerCloudKey(depMap.get("srvKey"));
                 		/*
                 		 * By default package type is local,
@@ -266,7 +283,7 @@ implements INewWizard, IPageChangedListener {
                 		 */
                 		role.setServerCloudHome(depMap.get("srvHome"));
                 		if (depMap.get("srvAutoDwnldChecked").equalsIgnoreCase("true")) {
-                			role.setServerCloudUploadMode(WARoleComponentCloudUploadMode.AUTO);                			
+                			role.setServerCloudUploadMode(WARoleComponentCloudUploadMode.AUTO);
                 		}
                 	}
                 }
@@ -320,6 +337,7 @@ implements INewWizard, IPageChangedListener {
             // Caching
             if (ftrMap.get("cacheChecked")) {
             	role.setCacheMemoryPercent(CACH_DFLTVAL);
+            	role.setCacheStorageAccountName(dashAuto);
             }
 
             // Remote Debugging
@@ -520,12 +538,12 @@ implements INewWizard, IPageChangedListener {
     			tabPg.isSrvChecked()).toString());
     	values.put("servername", tabPg.getServerName());
     	values.put("serLoc", tabPg.getServerLoc());
-    	values.put("tempFile", WAEclipseHelper.getTemplateFile());
+    	values.put("tempFile", WAEclipseHelper.getTemplateFile(Messages.cmpntFile));
     	// Server download group
     	values.put("srvDwnldChecked" , Boolean.valueOf(
-    			tabPg.isSrvDownloadChecked()).toString());
+    			JdkSrvConfig.isSrvDownloadChecked()).toString());
     	values.put("srvAutoDwnldChecked" , Boolean.valueOf(
-    			tabPg.isSrvAutoUploadChecked()).toString());
+    			JdkSrvConfig.isSrvAutoUploadChecked()).toString());
     	values.put("srvUrl" , tabPg.getSrvUrl());
     	values.put("srvKey" , tabPg.getSrvKey());
     	values.put("srvHome", tabPg.getSrvHomeDir());

@@ -245,6 +245,11 @@ public final class WizardCacheManager {
 				publishData.getPublishProfile().getSubscriptions().remove(i);
 				if (publishData.getPublishProfile().getSubscriptions().size() == 0) {
 					PUBLISHS.remove(publishData);
+					/*
+					 * If all subscriptions are removed
+					 * set current subscription to null.
+					 */
+					setCurrentPublishData(null);
 				}
 
 				break;

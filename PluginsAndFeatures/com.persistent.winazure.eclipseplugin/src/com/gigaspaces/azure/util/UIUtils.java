@@ -1,6 +1,10 @@
 package com.gigaspaces.azure.util;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.xml.bind.JAXBException;
 
@@ -11,19 +15,100 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 
+import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.rest.WindowsAzureRestUtils;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
 import com.persistent.util.MessageUtil;
 
 public class UIUtils {
-	
-	public static int findSelectionByText(String txt, Combo combo) {
-		if (txt == null || txt.isEmpty()) return 0;
-		for (int i = 0 ; i < combo.getItemCount() ; i++) {
+	/**
+	 * Find index of text from combo box.
+	 * @param txt
+	 * @param combo
+	 * @return
+	 */
+	public static int findSelectionByText(String txt,
+			Combo combo) {
+		if (txt == null
+				|| txt.isEmpty()) {
+			return 0;
+		}
+		for (int i = 0; i < combo.getItemCount(); i++) {
 			String itemText = combo.getItem(i);
-			if (itemText.equals(txt)) return i;
+			if (itemText.equals(txt)) {
+				return i;
+			}
 		}
 		return 0;
+	}
+
+	/**
+	 * Select item from combo box as per item name.
+	 * By finding out selection index as per name.
+	 * @param combo
+	 * @param name
+	 * @return
+	 */
+	public static Combo selectByText(
+			Combo combo, String name) {
+		if (combo.getItemCount() > 0) {
+			int selection = findSelectionByText(name, combo);
+			if (selection != -1) {
+				combo.select(selection);
+			} else {
+				combo.select(0);
+			}
+		}
+		return combo;
+	}
+
+	/**
+	 * Method populates subscription names into subscription
+	 * combo box.
+	 * @param combo
+	 * @return
+	 */
+	public static Combo populateSubscriptionCombo(Combo combo) {
+		Collection<PublishData> publishes =
+				WizardCacheManager.getPublishDatas();
+		Map<String, PublishData> map = new HashMap<String, PublishData>();
+		for (PublishData pd : publishes) {
+			for (Subscription sub : pd.getPublishProfile().getSubscriptions()) {
+				map.put(sub.getName(), pd);
+			}
+		}
+
+		String currentSelection = combo.getText();
+		combo.removeAll();
+		for (Entry<String, PublishData> entry : map.entrySet()) {
+			combo.add(entry.getKey());
+			combo.setData(entry.getKey(), entry.getValue());
+		}
+		combo = selectByText(
+				combo, currentSelection);
+		return combo;
+	}
+
+	/**
+	 * Set current subscription and publish data
+	 * as per subscription selected in combo box.
+	 * @param combo
+	 * @return
+	 */
+	public static PublishData changeCurrentSubAsPerCombo(Combo combo) {
+		PublishData publishData = null;
+		String subscriptionName = combo.getText();
+		if (subscriptionName != null
+				&& !subscriptionName.isEmpty()) {
+			publishData = (PublishData) (combo.getData(subscriptionName));
+			Subscription sub = WizardCacheManager.
+					findSubscriptionByName(subscriptionName);
+			if (publishData != null) {
+				publishData.setCurrentSubscription(sub);
+				WizardCacheManager.setCurrentPublishData(publishData);
+			}
+		}
+		return publishData;
 	}
 
 	/**

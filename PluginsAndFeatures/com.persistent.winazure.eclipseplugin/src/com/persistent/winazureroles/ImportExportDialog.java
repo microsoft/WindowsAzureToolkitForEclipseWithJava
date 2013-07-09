@@ -340,7 +340,9 @@ public class ImportExportDialog extends TitleAreaDialog {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
 				comboStrgAcc = JdkSrvConfig.
-						openAccLink(dlCheckBtn, comboStrgAcc);
+						openAccLink(dlCheckBtn, comboStrgAcc, null);
+				txtUrl = JdkSrvConfig.
+						cmbBoxListener(comboStrgAcc, txtUrl, null);
 			}
 		});
 	}
@@ -1374,7 +1376,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 			comboCloud.setItems(cloudMethods);
 			comboCloud.setText(cloudMethods[0]);
 			comboStrgAcc = JdkSrvConfig.
-					populateStrgAccComboBox("", comboStrgAcc);
+					populateStrgAccComboBox("", comboStrgAcc, null, false);
 		}
 	}
 }

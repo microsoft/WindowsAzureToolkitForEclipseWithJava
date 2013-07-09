@@ -20,23 +20,30 @@ import java.net.URL;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
 
+import com.gigaspaces.azure.model.StorageService;
+import com.gigaspaces.azure.wizards.NewStorageAccountDialog;
+import com.gigaspaces.azure.wizards.WizardCacheManager;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
@@ -51,6 +58,7 @@ public class StorageAccountDialog extends TitleAreaDialog {
 	private boolean isEdit;
 	StorageAccount account;
 	private Button okButton;
+	private Button newStrAccBtn;
 
 	public StorageAccountDialog(Shell parentShell) {
 		super(parentShell);
@@ -93,7 +101,7 @@ public class StorageAccountDialog extends TitleAreaDialog {
 		Composite container = new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
 		GridData gridData = new GridData();
-		gridLayout.numColumns = 2;
+		gridLayout.numColumns = 3;
 		gridLayout.marginBottom = 10;
 		gridData.horizontalAlignment = SWT.FILL;
 		gridData.grabExcessHorizontalSpace = true;
@@ -130,11 +138,11 @@ public class StorageAccountDialog extends TitleAreaDialog {
 	 * Method creates grid data for text field.
 	 * @return
 	 */
-	private GridData gridDataForText() {
+	private GridData gridDataForText(int width) {
 		GridData gridData = new GridData();
 		gridData.horizontalAlignment = SWT.END;
 		gridData.horizontalAlignment = SWT.FILL;
-		gridData.widthHint = 180;
+		gridData.widthHint = width;
 		gridData.verticalIndent = 10;
 		gridData.grabExcessHorizontalSpace = true;
 		return gridData;
@@ -151,7 +159,7 @@ public class StorageAccountDialog extends TitleAreaDialog {
 		lblUrl.setLayoutData(gridData);
 
 		txtUrl = new Text(container, SWT.LEFT | SWT.BORDER);
-		gridData = gridDataForText();
+		gridData = gridDataForText(180);
 		txtUrl.setLayoutData(gridData);
 
 		txtUrl.addFocusListener(new FocusListener() {
@@ -190,6 +198,8 @@ public class StorageAccountDialog extends TitleAreaDialog {
 				}
 			}
 		});
+
+		new Link(container, SWT.NO);
 	}
 
 	/**
@@ -203,7 +213,7 @@ public class StorageAccountDialog extends TitleAreaDialog {
 		lblKey.setText(Messages.strAccKeyTxt);
 
 		txtKey = new Text(container, SWT.LEFT | SWT.BORDER);
-		gridData = gridDataForText();
+		gridData = gridDataForText(180);
 		txtKey.setLayoutData(gridData);
 
 		txtKey.addFocusListener(new FocusListener() {
@@ -223,6 +233,8 @@ public class StorageAccountDialog extends TitleAreaDialog {
 				enableOkBtn();
 			}
 		});
+
+		new Link(container, SWT.NO);
 	}
 
 	/**
@@ -236,7 +248,7 @@ public class StorageAccountDialog extends TitleAreaDialog {
 		lblName.setText(Messages.strDlgNmTxt);
 
 		txtName = new Text(container, SWT.LEFT | SWT.BORDER);
-		gridData = gridDataForText();
+		gridData = gridDataForText(180);
 		txtName.setLayoutData(gridData);
 
 		txtName.addFocusListener(new FocusListener() {
@@ -270,6 +282,43 @@ public class StorageAccountDialog extends TitleAreaDialog {
 						syncUpAccNameAndNameInUrl(name, url);
 					}
 				}
+			}
+		});
+
+		newStrAccBtn =  new Button(container, SWT.PUSH);
+		newStrAccBtn.setText("New...");
+		gridData = gridDataForText(40);
+		newStrAccBtn.setLayoutData(gridData);
+		/*
+		 * If any subscription is present then
+		 * only enable New... button.
+		 */
+		if (WizardCacheManager.
+				getCurrentPublishData() != null) {
+			newStrAccBtn.setEnabled(true);
+		} else {
+			newStrAccBtn.setEnabled(false);
+		}
+		newStrAccBtn.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				NewStorageAccountDialog storageAccountDialog =
+						new NewStorageAccountDialog(getShell(), "");
+				int result = storageAccountDialog.open();
+				// populate data in storage registry dialog
+				if (result == Window.OK) {
+					StorageService service = NewStorageAccountDialog.getStorageService();
+					if (service != null) {
+						txtName.setText(service.getServiceName());
+						txtKey.setText(service.getStorageServiceKeys().getPrimary());
+						txtUrl.setText(service.getStorageServiceProperties().getEndpoints().
+								getEndpoints().get(0));
+					}
+				}
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
 			}
 		});
 	}

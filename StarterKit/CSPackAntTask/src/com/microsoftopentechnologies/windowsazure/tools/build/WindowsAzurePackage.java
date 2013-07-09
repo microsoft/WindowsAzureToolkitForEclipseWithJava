@@ -393,8 +393,7 @@ public class WindowsAzurePackage extends Task {
 		if (errorMap != null ) {
 			StringBuilder sb = new StringBuilder();
 			
-			// We just need map values no need of key here , map key may be useful for some other callers of 
-			// validate API.
+			// We just need map values no need of key here , map key may be useful for some other callers of validate API.
 			for(List<String> valueList : errorMap.values()) {
 				for(String errorMsg : valueList) {
 					sb.append(errorMsg);
@@ -414,17 +413,14 @@ public class WindowsAzurePackage extends Task {
 		String packageFilePath = String.format("%s%s%s", this.packageDir, File.separatorChar, this.packageFileName);
 		
 		// The initial cmd-line will include the path to cspack.exe and the csdef file
-//		StringBuilder csPackCmdLine = new StringBuilder(String.format("\"%s%scspack.exe\" \"%s%s%s\"", this.sdkDir, File.separatorChar, this.projectDir, File.separatorChar, this.definitionFileName));
 		String csPackExePath = String.format("%s%scspack.exe", this.sdkDir, File.separatorChar);
 		String csdefPath = String.format("%s%s%s", this.projectDir, File.separatorChar, this.definitionFileName);
 		commandArgs.add(csPackExePath);
 		commandArgs.add(csdefPath);
 
 		if (this.packageType == PackageType.local) {
-//			csPackCmdLine.append(" /copyOnly");
 			commandArgs.add("/copyOnly");
 		} else if(this.useCtpPackageFormat) {
-//			csPackCmdLine.append(" /useCtpPackageFormat");
 			commandArgs.add("/useCtpPackageFormat");
 		}
 		
@@ -442,17 +438,14 @@ public class WindowsAzurePackage extends Task {
 				throw new BuildException("The required workerrole approotdir setting is missing");
 			}
 
-//			csPackCmdLine.append(String.format(" /role:%s;\"%s\"", roleName, roleAppRootDir.toString()));
 			commandArgs.add(String.format("/role:%s;%s", roleName, roleAppRootDir.toString()));
 			
 			if(rolePropertiesFileName != null) {
-//				csPackCmdLine.append(String.format(" /rolePropertiesFile:%s;\"%s%s%s\"", roleName, this.projectDir, File.separatorChar, this.rolePropertiesFileName));
 				commandArgs.add(String.format("/rolePropertiesFile:%s;%s%s%s", roleName, this.projectDir, File.separatorChar, this.rolePropertiesFileName));
 			}
 		}
 
 		// Add package name
-//		csPackCmdLine.append(String.format(" /out:%s", packageFilePath));
 		commandArgs.add(String.format("/out:%s", packageFilePath));
 
 		return commandArgs;
@@ -685,7 +678,7 @@ public class WindowsAzurePackage extends Task {
 		}
 
 		zipTask.setUpdate(true);
-		zipTask.setCompress(false); // No compression to dramatically improve build and deployment performance
+		zipTask.setCompress(true);
 		zipTask.setDestFile(dest);
 		zipTask.perform();
 	}

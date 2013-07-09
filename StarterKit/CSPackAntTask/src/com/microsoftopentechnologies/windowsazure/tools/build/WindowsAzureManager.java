@@ -31,35 +31,37 @@ public class WindowsAzureManager {
 		}
 		public static class Container {
 			public static class Create extends Command {
-				public final String commandlineTemplate = "container create \"$containerName\" \"$storageName\" \"$accessKey\"";
-				public Create(String containerName, String storageName, String accessKey) {
+				public final String commandlineTemplate = "container create \"$containerName\" \"$storageName\" \"$accessKey\" \"$baseURL\"";
+				public Create(String containerName, String storageName, String accessKey, String baseURL) {
 					expectResponse = true;
 					progressInterval = 0;
 					commandLine = commandlineTemplate
 							.replace("$containerName", containerName)
 							.replace("$storageName", storageName)
-							.replace("$accessKey", accessKey);
+							.replace("$accessKey", accessKey)
+							.replace("$baseURL", baseURL);
 				}
 			}
 		}
 		
 		public static class Blob {
 			public static class Use extends Command {
-				public final String commandlineTemplate = "blob use \"$blobName\" \"$containerName\" \"$storageName\" \"$accessKey\"";
-				public Use(String blobName, String containerName, String storageName, String accessKey) {
+				public final String commandlineTemplate = "blob use \"$blobName\" \"$containerName\" \"$storageName\" \"$accessKey\" \"$baseURL\"";
+				public Use(String blobName, String containerName, String storageName, String accessKey, String baseURL) {
 					expectResponse = true;
 					progressInterval = 0;
 					commandLine = commandlineTemplate
 							.replace("$blobName", blobName)
 							.replace("$containerName", containerName)
 							.replace("$storageName", storageName)
-							.replace("$accessKey", accessKey);
+							.replace("$accessKey", accessKey)
+							.replace("$baseURL", baseURL);
 				}
 			}
 			
 			public static class Upload extends Command {
-				public final String commandlineTemplate = "blob upload \"$filePath\" \"$blobName\" \"$containerName\" \"$storageName\" \"$accessKey\"";
-				public Upload(String filePath, String blobName, String containerName, String storageName, String accessKey) {
+				public final String commandlineTemplate = "blob upload \"$filePath\" \"$blobName\" \"$containerName\" \"$storageName\" \"$accessKey\" \"$baseURL\"";
+				public Upload(String filePath, String blobName, String containerName, String storageName, String accessKey, String baseURL) {
 					expectResponse = true;
 					progressInterval = 5000;
 					progressText = "still uploading";
@@ -68,7 +70,8 @@ public class WindowsAzureManager {
 							.replace("$blobName", blobName)
 							.replace("$containerName", containerName)
 							.replace("$storageName", storageName)
-							.replace("$accessKey", accessKey);
+							.replace("$accessKey", accessKey)
+							.replace("$baseURL", baseURL);
 				}
 			}
 		}

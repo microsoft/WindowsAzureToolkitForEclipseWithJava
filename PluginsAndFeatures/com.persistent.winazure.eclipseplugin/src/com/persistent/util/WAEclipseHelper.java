@@ -83,12 +83,12 @@ public class WAEclipseHelper {
 	/**
 	 * @return Template(componentssets.xml)
 	 */
-	public static String getTemplateFile() {
+	public static String getTemplateFile(String fileName) {
 		String file = String.format("%s%s%s%s%s%s%s", 
 				Platform.getInstallLocation().getURL().getPath().toString(),
 				File.separator, Messages.pluginFolder, 
 				File.separator, Messages.pluginId, File.separator, 
-				Messages.cmpntFileName);
+				fileName);
 		return file;
 	}
 
@@ -184,7 +184,7 @@ public class WAEclipseHelper {
 		final Map<String, String> serverPatterns;
 
 		// Get the templates files
-		final String templateFilePath = WAEclipseHelper.getTemplateFile();
+		final String templateFilePath = WAEclipseHelper.getTemplateFile(Messages.cmpntFileName);
 		if (templateFilePath == null || path == null || !path.isDirectory() || !path.exists()) {
 			return null;
 		}
@@ -829,6 +829,10 @@ public class WAEclipseHelper {
     		FileUtil.copyFileFromZip(starterKitZip, "%proj%/WorkerRole1/approot/util/"+Messages.washFileName,
         			new File(iProject.getLocation().toFile(), role.getName()+"/approot/util/"+Messages.washFileName));
     	}
+    	
+    	// Copy or rewrite .templates/startup/.startup.cmd
+    	FileUtil.copyFileFromZip(starterKitZip, "%proj%/.templates/startup/.startup.cmd",
+    			new File(iProject.getLocation().toFile(), ".templates/startup/.startup.cmd"));
 	}
 	
 	/**

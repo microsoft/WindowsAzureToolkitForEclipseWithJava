@@ -241,12 +241,11 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 	 * @param project to be upgraded
 	 */
 	private void handleProjectOpen(final IProject project) {
-		final WindowsAzureProjectManager projMngr;
+		WindowsAzureProjectManager projMngr;
 		try {
 			projMngr = WindowsAzureProjectManager.
 					load(project.getLocation().toFile());
 			if (!projMngr.isCurrVersion()) {
-				
 				//step1:check if latest SDK is available or not
 				String sdkPath = null;
 				try {
@@ -279,7 +278,7 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 					}
 				}
 			}
-			
+
 	        if (!projMngr.isCurrVersion()) {
               	WAEclipseHelper.handleProjectUpgrade(project,projMngr);
             }
@@ -289,6 +288,9 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 				WAEclipseHelper.
 				correctProjectName(project, projMngr);
 			}
+			projMngr = WAStartUp.initializeStorageAccountRegistry(projMngr);
+			// save object so that access key will get saved in PML.
+			projMngr.save();
 		} catch (Exception e) {
 			//As project open has been occurred already
 			//user should not get any exception prompt.

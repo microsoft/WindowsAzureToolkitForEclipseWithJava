@@ -50,6 +50,8 @@ public final class Messages extends NLS {
 	public static String err;
 	public static String prefFileName;
 	public static String bundleName;
+	public static String nameSetErMsg;
+	public static String saveErMsg;
 	
     static {
         // initialize resource bundle

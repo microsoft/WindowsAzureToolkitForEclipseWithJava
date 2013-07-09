@@ -288,13 +288,15 @@ public class SignInPage extends WindowsAzurePage {
 					PreferenceUtilStrg.load();
 					MethodUtils.prepareListFromPublishData();
 					PreferenceUtil.setLoaded(true);
-					populateSubscriptionCombo();
+					subscriptionCombo = UIUtils.
+							populateSubscriptionCombo(subscriptionCombo);
 				}
 			}
 		});
 
 		if (visible) {
-			populateSubscriptionCombo();
+			subscriptionCombo = UIUtils.
+					populateSubscriptionCombo(subscriptionCombo);
 		}
 		super.setVisible(visible);
 	}
@@ -420,6 +422,14 @@ public class SignInPage extends WindowsAzurePage {
 	 */
 	public String getCurrentService() {
 		return hostedServiceCombo.getText();
+	}
+
+	/**
+	 * Method returns currently selected storage account name.
+	 * @return
+	 */
+	public StorageService getCurrentStorageAccount() {
+		return currentStorageAccount;
 	}
 
 	/**
@@ -763,7 +773,8 @@ public class SignInPage extends WindowsAzurePage {
 							.getCurrentSubscription().getId();
 					if (maxStorageAccounts > publishData.getStoragesPerSubscription().get(currentSubscriptionId).size()) {
 
-						NewStorageAccountDialog storageAccountDialog = new NewStorageAccountDialog(getShell());
+						NewStorageAccountDialog storageAccountDialog =
+								new NewStorageAccountDialog(getShell(), subscription);
 						if (defaultLocation != null) { // user has created a hosted service before a storage account
 							storageAccountDialog.setDefaultLocation(defaultLocation);
 						}
@@ -772,7 +783,9 @@ public class SignInPage extends WindowsAzurePage {
 						if (result == 0) {
 
 							populateStorageAccounts();
-							selectByText(storageAccountCmb, storageAccountDialog.getStorageAccountName());
+							storageAccountCmb = UIUtils.selectByText(
+									storageAccountCmb,
+									storageAccountDialog.getStorageAccountName());
 							defaultLocation = WizardCacheManager.getStorageAccountFromCurrentPublishData(storageAccountDialog.getStorageAccountName()).getStorageServiceProperties().getLocation();
 						}
 					} else {
@@ -808,33 +821,21 @@ public class SignInPage extends WindowsAzurePage {
 
 		subscriptionCombo = createCombo(
 				container, SWT.READ_ONLY, 10, SWT.FILL, 150);
-		populateSubscriptionCombo();
+		subscriptionCombo = UIUtils.
+				populateSubscriptionCombo(subscriptionCombo);
 
 		subscriptionCombo.addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent e) {
-				String subscriptionName = ((Combo) e.getSource()).getText();
-				if ((subscriptionName != null) && (!subscriptionName.isEmpty())) {					
-					publishData = (PublishData) ((Combo) e.getSource()).getData(subscriptionName);
-					Subscription sub = WizardCacheManager.findSubscriptionByName(subscriptionName);
-					if (publishData != null) {
-						publishData.setCurrentSubscription(sub);
-						WizardCacheManager.setCurrentPublishData(publishData);
-					}
-
-					if (storageAccountCmb != null && publishData != null) {
-
-						populateStorageAccounts();
-
-						populateHostedServices();
-
-						setComponentState((subscriptionCombo.getData(subscriptionCombo.getText()) != null));
-					}
-
+				publishData = UIUtils.changeCurrentSubAsPerCombo((Combo) e.getSource());
+				if (storageAccountCmb != null && publishData != null) {
+					populateStorageAccounts();
+					populateHostedServices();
+					setComponentState((subscriptionCombo.
+							getData(subscriptionCombo.getText()) != null));
 				}
 				setPageComplete(validatePageComplete());
 			}
-
 		});
 
 		if (subscriptionCombo.getItemCount() > 0)
@@ -867,7 +868,8 @@ public class SignInPage extends WindowsAzurePage {
 				 * according to functionality.
 				 */
 				doLoadPreferences();
-				populateSubscriptionCombo();
+				subscriptionCombo = UIUtils.
+						populateSubscriptionCombo(subscriptionCombo);
 				// update cache of publish data object
 				publishData = (PublishData) subscriptionCombo
 						.getData(subscriptionCombo.getText());
@@ -948,7 +950,9 @@ public class SignInPage extends WindowsAzurePage {
 						if (result == 0) {
 							populateHostedServices();
 							newServices.add(hostedService.getHostedServiceName());
-							selectByText(hostedServiceCombo, hostedService.getHostedServiceName());
+							hostedServiceCombo = UIUtils.
+									selectByText(hostedServiceCombo,
+											hostedService.getHostedServiceName());
 							defaultLocation = WizardCacheManager.getHostedServiceFromCurrentPublishData(hostedService.getHostedServiceName()).getHostedServiceProperties().getLocation();
 						}
 					} else {
@@ -966,19 +970,6 @@ public class SignInPage extends WindowsAzurePage {
 		});
 	}
 
-	private void selectByText(Combo combo , String name) {
-		if (combo.getItemCount() > 0) {
-			int selection = UIUtils.findSelectionByText(name, combo);
-			if (selection != -1) {
-				combo.select(selection);
-			}
-			else {
-				combo.select(0);
-			}
-		}
-	}
-
-
 	public void populateHostedServices() {
 
 		if (publishData != null) {
@@ -992,14 +983,15 @@ public class SignInPage extends WindowsAzurePage {
 					hostedServiceCombo.add(hsd.getServiceName());
 					hostedServiceCombo.setData(hsd.getServiceName(), hsd);
 				}
-				selectByText(hostedServiceCombo, currentSelection);
+				hostedServiceCombo = UIUtils.selectByText(
+						hostedServiceCombo, currentSelection);
 			}
-		}		
+		}
 	}
-	
+
 	/**
 	 * Method creates UI components
-	 * and listener for deployment state. 
+	 * and listener for deployment state.
 	 * @param container
 	 */
 	private void createDeploymentStateWidget(Composite container) {
@@ -1072,30 +1064,8 @@ public class SignInPage extends WindowsAzurePage {
 					storageAccountCmb.setData(storageService.getServiceName(), storageService);
 				}
 			}
-			selectByText(storageAccountCmb, currentSelection);
+			storageAccountCmb = UIUtils.selectByText(storageAccountCmb, currentSelection);
 		}
-	}
-
-	private void populateSubscriptionCombo() {
-
-		Collection<PublishData> publishes = WizardCacheManager.getPublishDatas();
-
-		Map<String, PublishData> map = new HashMap<String, PublishData>();
-		for (PublishData pd : publishes) {
-			for (Subscription sub : pd.getPublishProfile().getSubscriptions()) {
-				map.put(sub.getName(), pd);
-			}
-		}
-
-		String currentSelection = subscriptionCombo.getText();
-
-		subscriptionCombo.removeAll();
-
-		for (Entry<String, PublishData> entry : map.entrySet()) {
-			subscriptionCombo.add(entry.getKey());
-			subscriptionCombo.setData(entry.getKey(), entry.getValue());
-		}		
-		selectByText(subscriptionCombo, currentSelection);
 	}
 
 	private void importBtn(String fileName) {
@@ -1115,7 +1085,8 @@ public class SignInPage extends WindowsAzurePage {
 				return;
 			}
 			subscriptionCombo.removeAll();
-			populateSubscriptionCombo();
+			subscriptionCombo = UIUtils.
+					populateSubscriptionCombo(subscriptionCombo);
 
 			int selection = 0;
 			selection = findSelectionIndex(publishDataToCache);

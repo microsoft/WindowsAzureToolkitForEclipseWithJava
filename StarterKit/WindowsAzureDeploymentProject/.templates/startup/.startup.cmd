@@ -1,6 +1,14 @@
 rd "\%ROLENAME%"
-mklink /D "\%ROLENAME%" "%ROLEROOT%\approot"
-set SERVER_APPS_LOCATION=\%ROLENAME%
+
+if defined DEPLOYROOT_PATH set DEPLOYROOT=%DEPLOYROOT_PATH%
+if defined DEPLOYROOT (
+	mklink /J "\%ROLENAME%" "%DEPLOYROOT%"
+) else (
+	mklink /J "\%ROLENAME%" "%ROLEROOT%\approot"
+)
+
+set DEPLOYROOT=\%ROLENAME%
+set SERVER_APPS_LOCATION=%DEPLOYROOT%
 
 ${Variables}
 

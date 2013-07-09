@@ -97,6 +97,7 @@ public class WARCaching extends PropertyPage {
 	private Label crdntlLbl;
 	private TableViewer tableViewer;
 	private Map<String, WindowsAzureNamedCache> mapCache;
+	private final String dashAuto = "-auto";
 	/**
 	 * Array to store and display
 	 * expiration policy types in table column.
@@ -128,13 +129,6 @@ public class WARCaching extends PropertyPage {
 	 */
 	private final static int RANGE_MAX = 65535;
 	private boolean isPageDisplayed = false;
-	/**
-	 * Boolean field to track whether
-	 * "Storage Account Information Missing" warning is displayed
-	 * and traversed to another property page
-	 * by clicking on OK button.
-	 */
-	private boolean warnDisplayed = false;
 	/**
 	 * Default time to live value.
 	 */
@@ -184,13 +178,6 @@ public class WARCaching extends PropertyPage {
 		if (tableViewer != null) {
 			tableViewer.refresh();
 		}
-		/*
-		 * As soon as we come to Caching page
-		 * set value to false, as user may traverse to other page
-		 * and come back to caching page again
-		 * and then click on OK
-		 */
-		warnDisplayed = false;
 		return super.getTitle();
 	}
 
@@ -286,6 +273,7 @@ public class WARCaching extends PropertyPage {
 					txtHostName.setText(String.format("%s%s%s",
 							Messages.dlgDbgLclHost, "_",
 							wARole.getName().toLowerCase()));
+					setName(dashAuto);
 				} else {
 					setEnableCaching(false);
 					/* Set cache memory percent to 0
@@ -294,15 +282,8 @@ public class WARCaching extends PropertyPage {
 					 *  and key to empty.
 					 */
 					setCachPerMem(0);
-					try {
-						wARole.setCacheStorageAccountName("");
-						wARole.setCacheStorageAccountKey("");
-					} catch (WindowsAzureInvalidProjectOperationException e) {
-						PluginUtil.displayErrorDialogAndLog(
-								getShell(),
-								Messages.cachErrTtl,
-								Messages.setAccErrMsg, e);
-					}
+					setName("");
+					setKey("");
 				}
 				/*
 				 *  Necessary to refresh table
@@ -721,17 +702,7 @@ public class WARCaching extends PropertyPage {
 
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				String key = JdkSrvConfig.getAccessKey(comboStrgAcc);
-				if (key.isEmpty()) {
-					// none is selected
-					setName("");
-				} else {
-					String name = StorageAccountRegistry.
-							getStrgList().get(StorageRegistryUtilMethods.
-									getStrgAccIndexAsPerKey(key)).getStrgName();
-					setName(name);
-				}
-				setKey(key);
+				setCacheNameKey();
 			}
 
 			@Override
@@ -746,9 +717,28 @@ public class WARCaching extends PropertyPage {
 			public void widgetSelected(SelectionEvent event) {
 				comboStrgAcc = JdkSrvConfig.
 						openAccLink(cacheCheck,
-								comboStrgAcc);
+								comboStrgAcc, null);
+				setCacheNameKey();
 			}
 		});
+	}
+
+	/**
+	 * Method sets cache name and key
+	 * as per storage account combo box value.
+	 */
+	private void setCacheNameKey() {
+		String key = JdkSrvConfig.getAccessKey(comboStrgAcc);
+		if (key.isEmpty()) {
+			// auto is selected
+			setName(dashAuto);
+		} else {
+			String name = StorageAccountRegistry.
+					getStrgList().get(StorageRegistryUtilMethods.
+							getStrgAccIndexAsPerKey(key)).getStrgName();
+			setName(name);
+		}
+		setKey(key);
 	}
 
 	/**
@@ -800,13 +790,12 @@ public class WARCaching extends PropertyPage {
 		explNtLbl.setEnabled(status);
 		txtHostName.setEnabled(status);
 		hostNameLbl.setEnabled(status);
-		strGrp.setEnabled(status);
 		comboStrgAcc.setEnabled(status);
 		crdntlLbl.setEnabled(status);
 		if (status) {
 			comboStrgAcc = JdkSrvConfig.
 					populateStrgAccComboBox("",
-							comboStrgAcc);
+							comboStrgAcc, null, true);
 		} else {
 			cacheScale.
 			setSelection(cacheScale.getMinimum());
@@ -1315,41 +1304,18 @@ public class WARCaching extends PropertyPage {
 	@Override
 	public boolean okToLeave() {
 		boolean okToProceed = false;
-		boolean cachPerValid = true;
-		boolean accValid = true;
 		// Check caching is enabled
 		if (cacheCheck.getSelection()) {
 			/* Check cache memory size 
 			 * is set to valid value or not
 			 */
 			if (isCachPerValid) {
-				cachPerValid = true;
+				okToProceed = true;
 				setErrorMessage(null);
-				/* Check account name or key is empty,
-				 * if then display confirmation dialog.
-				 */
-				if (comboStrgAcc.getSelectionIndex() == 0) {
-					boolean choice = MessageDialog.openConfirm(
-							new Shell(), Messages.cachWarnTtl,
-							Messages.cachWarnMsg);
-					if (choice) {
-						accValid = true;
-						// warning displayed & traversing to other page
-						warnDisplayed = true;
-					} else {
-						accValid = false;
-						// warning displayed & not traversing to other page
-						warnDisplayed = false;
-					}
-				}
 			} else {
-				cachPerValid = false;
 				setErrorMessage(Messages.cachPerErrMsg);
 			}
-		}
-		if (cachPerValid
-				&& accValid) {
-			setErrorMessage(null);
+		} else {
 			okToProceed = true;
 		}
 		boolean retVal = false;
@@ -1366,44 +1332,20 @@ public class WARCaching extends PropertyPage {
 		}
 
 		boolean okToProceed = false;
-		boolean cachPerValid = true;
-		boolean accValid = true;
 		// Check caching is enabled
 		if (cacheCheck.getSelection()) {
 			/* Check cache memory size
 			 * is set to valid value or not
 			 */
 			if (isCachPerValid) {
-				cachPerValid = true;
-				/* Check we are on Caching property page or not
-				 * if yes then check account name or key is empty,
-				 * if yes then display confirmation dialog.
-				 * Logic to avoid displaying warning in case
-				 * of super.performOk() call
-				 * i.e when current selected
-				 * property page is not Caching
-				 */
-				if (!warnDisplayed
-						&& comboStrgAcc.getSelectionIndex() == 0) {
-					boolean choice = MessageDialog.openConfirm(
-							new Shell(), Messages.cachWarnTtl,
-							Messages.cachWarnMsg);
-					if (choice) {
-						accValid = true;
-					} else {
-						accValid = false;
-					}
-				}
+				okToProceed = true;
 			} else {
-				cachPerValid = false;
 				PluginUtil.displayErrorDialog(
 						this.getShell(),
 						Messages.cachPerErrTtl,
 						Messages.cachPerErrMsg);
 			}
-		}
-		if (cachPerValid
-				&& accValid) {
+		} else {
 			okToProceed = true;
 		}
 		if (okToProceed) {

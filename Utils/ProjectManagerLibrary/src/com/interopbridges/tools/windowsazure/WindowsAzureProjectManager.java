@@ -69,8 +69,8 @@ public class WindowsAzureProjectManager {
     protected Map<String, Vector<String>> mapActivity = new HashMap<String, Vector<String>>();
     private static final int BUFF_SIZE = 1024;
 
-    private static enum WAvmSize {EXTRASMALL, SMALL, MEDIUM, LARGE, EXTRALARGE };
-    private static String[] vmSize = {"extrasmall", "small", "medium", "large", "extralarge"};
+    private static enum WAvmSize {EXTRASMALL, SMALL, MEDIUM, LARGE, EXTRALARGE, A6, A7 };
+    private static String[] vmSize = {"extrasmall", "small", "medium", "large", "extralarge", "a6", "a7"};
     private static Set<String> waVmSize = new HashSet<String>(Arrays.asList(vmSize));
     private static final String ENV_PROGRAMFILES_WOW64 = "ProgramW6432";
     private static final String ENV_PROGRAMFILES = "ProgramFiles";
@@ -402,7 +402,7 @@ public class WindowsAzureProjectManager {
         copyResourceFile("/sessionaffinity/Microsoft.Web.PlatformInstaller.UI.dll", destPath + "Microsoft.Web.PlatformInstaller.UI.dll");
         copyResourceFile("/sessionaffinity/WebpiCmdLine.exe", destPath + "WebpiCmdLine.exe"); */
     }
-    
+
     /**
      * Serializes and saves WindowsAzureProjectManager to disk.
      *
@@ -459,7 +459,7 @@ public class WindowsAzureProjectManager {
                 }
                 mapActivity.remove("add");
             }
-            
+
             if (mapActivity.containsKey("rename")) {
                 Vector<String> value = mapActivity.get("rename");
                 boolean success = new File(value.elementAt(0)).renameTo(new File(
@@ -471,7 +471,7 @@ public class WindowsAzureProjectManager {
                 }
                 mapActivity.remove("rename");
             }
-            
+
             if (mapActivity.containsKey("delete")) {
                 Vector<String> value = mapActivity.get("delete");
                 File file = new File(projDirPath + File.separator + value.get(0));
@@ -588,8 +588,8 @@ public class WindowsAzureProjectManager {
     public void setOSFamily(OSFamilyType osFamilyType) throws WindowsAzureInvalidProjectOperationException {
     	try {
     		String osFamily = osFamilyType.getValue()+"" ;
-    		ParserXMLUtility.setExpressionValue(getConfigFileDoc(), WindowsAzureConstants.CONFIG_OSFAMILY,osFamily);   		
-    		
+    		ParserXMLUtility.setExpressionValue(getConfigFileDoc(), WindowsAzureConstants.CONFIG_OSFAMILY,osFamily);
+
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_SET_TARGET_OS_NAME, ex);
         }
@@ -1772,9 +1772,9 @@ public class WindowsAzureProjectManager {
         }
         return isCurrVersion;
     }
-    
+
     /**
-     * Returns current version of eclipse plugin 
+     * Returns current version of eclipse plugin
      * @return
      * @throws WindowsAzureInvalidProjectOperationException
      */
@@ -2008,8 +2008,14 @@ public class WindowsAzureProjectManager {
         case LARGE   :
             maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_LARGE;
             break;
-        default:
+        case EXTRALARGE:
             maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_EXTRALARGE;
+            break;
+        case A6:
+            maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A6;
+            break;
+        default:
+            maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A7;
         }
         return maxLsSize;
     }
@@ -2151,7 +2157,7 @@ public class WindowsAzureProjectManager {
             if (!script.exists()) {
                 throw new Exception(scriptPath + " not found");
             }
-            
+
             final String escScriptPath = scriptPath;
             Thread cmdth = new Thread() {
                 @Override
@@ -2280,26 +2286,47 @@ public class WindowsAzureProjectManager {
 		String expr = String.format(WindowsAzureConstants.TEMP_COMPONENTSET, "server");
 		return (NodeList) xPath.evaluate(expr, compDoc, XPathConstants.NODESET);
     }
-    
+
     /**
      * Returns the componentsets.xml version in plugins folder.
      * @param templateFile
      * @return version if exists else null
      * @throws WindowsAzureInvalidProjectOperationException
      */
-    
+
     public static String getComponentSetsVersion(File templateFile) throws WindowsAzureInvalidProjectOperationException {
 		Document compDoc = ParserXMLUtility.parseXMLFile(templateFile.getAbsolutePath());
-		
+
 		String value = null;
 		try {
 			value = ParserXMLUtility.getExpressionValue(compDoc, WindowsAzureConstants.COMPONENTSETS_VERSION);
 		} catch (Exception e) {
-			//value will be null in this case , just print the stack trace			
+			//value will be null in this case , just print the stack trace
 			e.printStackTrace();
 		}
     	return value;
     }
+    
+    /**
+     * Returns the preferencesets.xml version in plugins folder.
+     * @param templateFile
+     * @return version if exists else null
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+
+    public static String getPreferenceSetsVersion(File templateFile) throws WindowsAzureInvalidProjectOperationException {
+		Document prefDoc = ParserXMLUtility.parseXMLFile(templateFile.getAbsolutePath());
+
+		String value = null;
+		try {
+			value = ParserXMLUtility.getExpressionValue(prefDoc, WindowsAzureConstants.PREFERENCESETS_VERSION);
+		} catch (Exception e) {
+			//value will be null in this case , just print the stack trace
+			e.printStackTrace();
+		}
+    	return value;
+    }
+
 
     /**
      * API return map of server detection paths of the available server templates.
@@ -2311,7 +2338,7 @@ public class WindowsAzureProjectManager {
             throws WindowsAzureInvalidProjectOperationException {
     	return getServerTemplateDetectors(templateFile, "detectpath");
     }
-        
+
     /**
      * API to return map of server detection text patterns of the available server templates.
      * @param templateFile
@@ -2348,7 +2375,7 @@ public class WindowsAzureProjectManager {
                     "Exception reading server templates", e);
         }
     }
-    
+
 
     protected static boolean deleteDir(File dir) {
         boolean status = true;

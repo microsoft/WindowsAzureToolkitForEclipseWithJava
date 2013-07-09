@@ -44,17 +44,17 @@ Note that the order of the components must be preserved as described. The build 
 
 -->
 
-<componentsets version="2.0.0">
+<componentsets version="2.0.1">
 	<componentset name="JDK" type="JDK">
-		<startupenv name="JAVA_HOME" value="%ROLEROOT%\approot\${placeholder}" type="jdk.home"/>
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
-		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy"/>
+		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 	</componentset>
 
 	<componentset name="Jetty 7" type="server" detectpath="lib\jetty-server-7.*">
 		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="\%ROLENAME%" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
 	</componentset>
@@ -62,7 +62,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="Jetty 8" type="server" detectpath="lib\jetty-server-8.*">
 		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="\%ROLENAME%" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
 	</componentset>
@@ -70,7 +70,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="Apache Tomcat 7" type="server" detectpath="RUNNING.TXT" detecttext="Running The Apache Tomcat 7\.">
 		<startupenv name="CATALINA_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%CATALINA_HOME%\webapps" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%CATALINA_HOME%\bin" importas="startup.bat" type="server.start"/>
 	</componentset>
@@ -78,7 +78,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="Apache Tomcat 6" type="server" detectpath="RUNNING.TXT" detecttext="Running The Apache Tomcat 6\.">
 		<startupenv name="CATALINA_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%CATALINA_HOME%\webapps" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%CATALINA_HOME%\bin" importas="startup.bat" type="server.start"/>
 	</componentset>
@@ -86,7 +86,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="JBoss AS 6" type="server" detectpath="lib\jboss-main.jar">
 		<startupenv name="JBOSS_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JBOSS_HOME%\server\default\deploy" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="\%ROLENAME%" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%JBOSS_HOME%\bin" importas="run.bat -b 0.0.0.0" type="server.start"/>
 	</componentset>
@@ -94,7 +94,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="JBoss AS 7 (Standalone)" type="server" detectpath="bin\standalone.bat">
 		<startupenv name="JBOSS_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JBOSS_HOME%\standalone\deployments" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="\%ROLENAME%" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%JBOSS_HOME%\bin" importas="standalone.bat -b 0.0.0.0 -bmanagement 0.0.0.0" type="server.start"/>
 	</componentset>
@@ -102,7 +102,7 @@ Note that the order of the components must be preserved as described. The build 
 	<componentset name="GlassFish OSE 3" type="server" detectpath="glassfish\bin\asadmin.bat">
 		<startupenv name="GLASSFISH_HOME" value="${placeholder}\glassfish" type="server.home" />
 		<startupenv name="SERVER_APPS_LOCATION" value="%GLASSFISH_HOME%\domains\domain1\autodeploy" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy"/>
+		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%GLASSFISH_HOME%\bin" importas="asadmin.bat start-domain" type="server.start"/>
 	</componentset>

@@ -53,7 +53,7 @@ public class WARGeneral extends PropertyPage {
     private Combo comboVMSize;
     private Text txtNoOfInstances;
     private String[] arrVMSize = {"ExtraLarge", "Large",
-    		"Medium", "Small", "ExtraSmall"};
+    		"Medium", "Small", "ExtraSmall", "A6", "A7"};
     private boolean isValidRoleName = false;
     private boolean isValidinstances = true;
     private WindowsAzureProjectManager waProjManager;
@@ -165,10 +165,10 @@ public class WARGeneral extends PropertyPage {
             @Override
             public void widgetSelected(SelectionEvent event) {
             	handleSmallVMCacheConf();
-            	
+
             	// Set VM Size in role
             	vmSizeSelectionListener();
-                
+
             }
 
             @Override
@@ -336,10 +336,10 @@ public class WARGeneral extends PropertyPage {
         			+ Messages.adRolErrMsgBox2, e);
         }
     }
-    
+
     private int getVMSizeIndex() {
     	String vmSize = "";
-    	
+
     	 vmSize = windowsAzureRole.getVMSize();
          int index = 3;
          for (int i = 0; i < arrVMSize.length; i++) {
@@ -349,7 +349,7 @@ public class WARGeneral extends PropertyPage {
              }
          }
          return index;
-    	
+
     }
 
     @Override
@@ -390,31 +390,31 @@ public class WARGeneral extends PropertyPage {
     	}
     	return okToProceed;
     }
-    
+
     private void handleSmallVMCacheConf() {
     	try {
-    		if(Messages.txtExtraSmallVM.equals(comboVMSize.getText()) && windowsAzureRole.getCacheMemoryPercent() > 0 ) { 
+    		if(Messages.txtExtraSmallVM.equals(comboVMSize.getText()) && windowsAzureRole.getCacheMemoryPercent() > 0 ) {
     			// If extra small VM and cache is enabled
     			MessageDialog dialog = new MessageDialog(new Shell(),Messages.cacheConfTitle,null,
     													 Messages.cacheConfMsg,
     													 MessageDialog.WARNING,
     													 new String[] { "Yes", "No"},2);
-    			
+
     			 int choice = dialog.open();
     			 switch(choice) {
     			 	case 0: // Yes - Disable cache
     			 		windowsAzureRole.setCacheMemoryPercent(0);
     			 		break;
-    			 		
+
     			 	case  1:	 // No or if dialog is closed directly then reset VM size back to original
-    			 	case -1:     
+    			 	case -1:
     			 		comboVMSize.setText(arrVMSize[getVMSizeIndex()]);
     			 		break;
     			 }
     		}
     	} catch (WindowsAzureInvalidProjectOperationException e) {
         		PluginUtil.displayErrorDialogAndLog(getShell(),Messages.cachErrTtl,Messages.cachGetErMsg, e);
-       	}    	
+       	}
     }
 
     /**

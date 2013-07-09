@@ -16,6 +16,7 @@
 package com.persistent.ui.preference;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -58,6 +59,7 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 	private Button btnAddStorage;
 	private Button btnRemoveStorage;
 	private Button btnEditStorage;
+	public static int selIndex = -1;
 
 	@Override
 	public void init(IWorkbench arg0) {
@@ -242,6 +244,7 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 
 			@Override
 			public void widgetSelected(SelectionEvent event) {
+				selIndex = tableViewer.getTable().getSelectionIndex();
 				btnEditStorage.setEnabled(true);
 				btnRemoveStorage.setEnabled(true);
 			}
@@ -300,14 +303,21 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 	 * Method removes selected storage account from list.
 	 */
 	protected void removeButtonListener() {
-		int selIndex = tableViewer.getTable().getSelectionIndex();
-		if (selIndex > -1) {
+		int curSelIndex = tableViewer.getTable().getSelectionIndex();
+		if (curSelIndex > -1) {
 			boolean choice = MessageDialog.openConfirm(new Shell(),
 					Messages.accRmvTtl, Messages.accRmvMsg);
 			if (choice) {
-				StorageAccountRegistry.getStrgList().remove(selIndex);
+				StorageAccountRegistry.getStrgList().remove(curSelIndex);
 				PreferenceUtilStrg.save();
 				tableViewer.refresh();
+				/*
+				 * Do not remember selection index when element is removed.
+				 * As after remove no row is selected in table
+				 * and we don't want to set combo box to element
+				 * which is next to removed element.
+				 */
+				selIndex = -1;
 			}
 		}
 	}
@@ -367,6 +377,22 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 	public void setVisible(boolean visible) {
 		// reload information if its new eclipse session.
 		MethodUtils.loadSubInfoFirstTime(tableViewer);
+		selIndex = -1;
 		super.setVisible(visible);
+	}
+
+	public static String getSelIndexValue() {
+		return Arrays.asList(StorageRegistryUtilMethods.
+				getStorageAccountNames(false)).get(selIndex + 1);
+	}
+
+	@Override
+	public boolean performCancel() {
+		/*
+		 * Do not remember selection index if cancel
+		 * is pressed.
+		 */
+		selIndex = -1;
+		return true;
 	}
 }

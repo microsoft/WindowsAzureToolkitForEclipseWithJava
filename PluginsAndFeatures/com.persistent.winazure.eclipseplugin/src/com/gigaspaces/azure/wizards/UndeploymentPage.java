@@ -131,21 +131,13 @@ public class UndeploymentPage extends WindowsAzurePage {
 
 			@Override
 			public void modifyText(ModifyEvent e) {
-				String subscriptionName = ((Combo) e.getSource()).getText();
-				currentPublishData = (PublishData) ((Combo) e.getSource()).getData(subscriptionName);
-				Subscription sub = WizardCacheManager.findSubscriptionByName(subscriptionName);
-				if (currentPublishData != null) {
-					currentPublishData.setCurrentSubscription(sub);
-					WizardCacheManager.setCurrentPublishData(currentPublishData);
-				}
+				currentPublishData = UIUtils.
+						changeCurrentSubAsPerCombo((Combo) e.getSource());
 
 				hostedServiceCombo.setEnabled(false);
 				deploymentCombo.setEnabled(false);
-
 				deploymentCombo.removeAll();
-
 				populateHostedServices();
-
 				setPageComplete(validatePageComplete());
 			}
 		});

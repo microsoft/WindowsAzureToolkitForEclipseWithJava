@@ -52,7 +52,7 @@ public class NewHostedServiceDialog extends WADialog {
 	public NewHostedServiceDialog(Shell parentShell) {
 		super(parentShell);
 	}
-	
+
 	public void setDefaultLocation(final String location) {
 		this.defaultLocation = location;
 	}
@@ -61,9 +61,10 @@ public class NewHostedServiceDialog extends WADialog {
 	protected Control createButtonBar(Composite parent) {
 		bar = new ProgressBar(parent, SWT.FILL);
 		GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
-		
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,Messages.pluginPrefix + Messages.newHostedServiceHelp);
-		
+
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,
+				Messages.pluginPrefix + Messages.newHostedServiceHelp);
+
 		gridData.horizontalIndent = 10;
 		gridData.grabExcessHorizontalSpace = true;
 
@@ -91,24 +92,31 @@ public class NewHostedServiceDialog extends WADialog {
 					hostedServiceLocation = locationComb.getText();
 
 					body.setDescription(descriptionTxt.getText());
-					
-					
+
 					boolean isNameAvailable = false;
 					try {
-						isNameAvailable = WizardCacheManager.isHostedServiceNameAvailable(hostedServiceNameToCreate);
+						isNameAvailable = WizardCacheManager.
+								isHostedServiceNameAvailable(hostedServiceNameToCreate);
 						if (isNameAvailable) {
-							WizardCacheManager.createHostedServiceMock(hostedServiceNameToCreate, hostedServiceLocation, descriptionTxt.getText());						
+							WizardCacheManager.
+							createHostedServiceMock(hostedServiceNameToCreate,
+									hostedServiceLocation,
+									descriptionTxt.getText());
 							valid = true;
 							close();
 						} else {
-							MessageUtil.displayErrorDialog(getShell(), "DNS Conflict", Messages.hostedServiceConflictError);
+							MessageUtil.displayErrorDialog(getShell(),
+									Messages.dnsCnf,
+									Messages.hostedServiceConflictError);
 							hostedServiceTxt.setFocus();
 							hostedServiceTxt.selectAll();
 						}
 					} catch (final Exception e1) {
-						MessageUtil.displayErrorDialogAndLog(getShell(), "Error", e1.getMessage(), e1);
+						MessageUtil.displayErrorDialogAndLog(
+								getShell(),
+								Messages.error,
+								e1.getMessage(), e1);
 					}
-										
 				}
 
 				@Override
@@ -125,7 +133,7 @@ public class NewHostedServiceDialog extends WADialog {
 			valid = true;
 		}
 
-		if (valid == true) {
+		if (valid) {
 			valid = super.close();
 		}
 
@@ -139,6 +147,7 @@ public class NewHostedServiceDialog extends WADialog {
 
 		Composite container = new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
+		gridLayout.marginBottom = 20;
 		GridData gridData = new GridData();
 		gridData.widthHint = 30;
 		gridLayout.numColumns = 2;
@@ -155,8 +164,9 @@ public class NewHostedServiceDialog extends WADialog {
 		gridData = new GridData();
 		gridData.widthHint = 250;
 		gridData.horizontalIndent = 10;
+		gridData.verticalIndent = 5;
 		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.BEGINNING;
+		gridData.horizontalAlignment = SWT.FILL;
 
 		hostedServiceTxt = new Text(container, SWT.BORDER);
 		hostedServiceTxt.addModifyListener(new ValidateInputCompletion());
@@ -189,16 +199,19 @@ public class NewHostedServiceDialog extends WADialog {
 			locationComb.add(location.getName());
 			locationComb.setData(location.getName(), location);
 		}
-		
-		// default location will exist if the user has created a storage account before creating the hosted service
+
+		/*
+		 * default location will exist if the user has
+		 * created a storage account before creating the hosted service
+		 */
 		if (defaultLocation != null) {
-			int selection = UIUtils.findSelectionByText(defaultLocation, locationComb);
+			int selection = UIUtils.
+					findSelectionByText(defaultLocation, locationComb);
 			if (selection != -1) {
 				locationComb.select(selection);
-			}
-			else {
+			} else {
 				locationComb.select(0);
-			}			
+			}
 		}
 	}
 
@@ -226,10 +239,16 @@ public class NewHostedServiceDialog extends WADialog {
 	protected void createButtonClicked() {
 	}
 
+	@Override
+	protected void configureShell(Shell newShell) {
+		super.configureShell(newShell);
+		newShell.setText(Messages.cldSrv);
+	}
+
 	public String getHostedServiceName() {
 		return hostedServiceNameToCreate;
 	}
-	
+
 	public String getLocation() {
 		return hostedServiceLocation;
 	}

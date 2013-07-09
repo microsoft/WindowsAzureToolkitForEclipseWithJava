@@ -77,6 +77,7 @@ public final class Messages extends NLS {
 	public static String prefFileName;
 	public static String prefFileEntry;
 	public static String oldCmpntFileEntry;
+	public static String oldPrefFileEntry;
 	public static String resChgOldPrjOpenTtl;
 	public static String resChgOldPrjOpenMsg;
 	public static String natJavaEMF;

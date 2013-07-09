@@ -280,8 +280,6 @@ public final class Messages extends NLS {
 	public static String minLiveLbl;
 	public static String backupLbl1;
 	public static String backupLbl2;
-	public static String cachWarnTtl;
-	public static String cachWarnMsg;
 	public static String cachPerErrTtl;
 	public static String cachPerErrMsg;
 	public static String cachErrTtl;

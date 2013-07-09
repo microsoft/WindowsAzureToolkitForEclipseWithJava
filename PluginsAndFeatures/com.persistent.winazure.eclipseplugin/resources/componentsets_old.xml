@@ -44,7 +44,7 @@ Note that the order of the components must be preserved as described. The build 
 
 -->
 
-<componentsets version="1.8.1">
+<componentsets version="2.0.0">
 	<componentset name="JDK" type="JDK">
 		<startupenv name="JAVA_HOME" value="%ROLEROOT%\approot\${placeholder}" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
@@ -67,7 +67,7 @@ Note that the order of the components must be preserved as described. The build 
 		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
 	</componentset>
 
-	<componentset name="Apache Tomcat 7" type="server" detectpath="bin\tomcat7.exe">
+	<componentset name="Apache Tomcat 7" type="server" detectpath="RUNNING.TXT" detecttext="Running The Apache Tomcat 7\.">
 		<startupenv name="CATALINA_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%CATALINA_HOME%\webapps" type="server.app.loc"/>
 		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy"/>
@@ -75,7 +75,7 @@ Note that the order of the components must be preserved as described. The build 
 		<component deploymethod="exec" deploydir="%CATALINA_HOME%\bin" importas="startup.bat" type="server.start"/>
 	</componentset>
 
-	<componentset name="Apache Tomcat 6" type="server" detectpath="bin\tomcat6.exe">
+	<componentset name="Apache Tomcat 6" type="server" detectpath="RUNNING.TXT" detecttext="Running The Apache Tomcat 6\.">
 		<startupenv name="CATALINA_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%CATALINA_HOME%\webapps" type="server.app.loc"/>
 		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy"/>

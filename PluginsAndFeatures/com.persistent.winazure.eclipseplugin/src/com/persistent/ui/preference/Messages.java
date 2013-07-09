@@ -46,7 +46,17 @@ public final class Messages extends NLS {
 	public static String blobEnPt;
 	public static String keyErrTtl;
 	public static String keyErrMsg;
-	
+	public static String actvStLbl;
+	public static String urlLbl;
+	public static String prtlLbl;
+	public static String mngtLbl;
+	public static String blbUrlLbl;
+	public static String pubSetLbl;
+	public static String prefFileName;
+	public static String prefFileMsg;
+	public static String edtPrefTtl;
+	public static String getPrefErMsg;
+	public static String setPrefErMsg;
 
 	static {
 		// initialize resource bundle

@@ -18,6 +18,9 @@ package com.persistent.util;
 import java.io.File;
 import java.util.Arrays;
 
+import org.eclipse.core.filesystem.EFS;
+import org.eclipse.core.filesystem.IFileStore;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -26,17 +29,29 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.IDE;
 
+import waeclipseplugin.Activator;
+
+import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
+import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
+import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
 import com.persistent.ui.preference.StorageAccountsPreferencePage;
+import com.persistent.ui.projwizard.WAProjectWizard;
 
 /**
  * Class creates all the UI components
@@ -90,10 +105,13 @@ public class JdkSrvConfig {
 	private static Button btnAdd;
 	private static TableViewer tableViewer;
 	private static TableColumn colName;
-	private static String[] accNames = StorageRegistryUtilMethods.
-			getStorageAccountNames();
+	public static final String JDK_TXT = "JDK";
+	public static final String SRV_TXT = "SERVER";
+	private static String[] accNames = getStrgAccoNamesAsPerTab(null, false);
 	public static final String NONE_TXT = "(none)";
+	public static final String AUTO_TXT = "(auto)";
 	public static final String FWD_SLASH = "/";
+	protected static File cmpntFile = new File(WAEclipseHelper.getTemplateFile(Messages.cmpntFileName));
 
 	/*
 	 * Getter methods for UI components.
@@ -396,7 +414,7 @@ public class JdkSrvConfig {
 	 * @param parent
 	 */
 	public static void createDownloadJdkGrp(Composite parent) {
-		dlJdkGrp = createGroup(parent);
+		dlJdkGrp = createGroup(parent, 3, Messages.dlgDownloadGrp);
 		dlRdLocBtn = createRadioButton(dlJdkGrp,
 				Messages.jdkLocRdBtnLbl);
 		autoDlRdCldBtn = createRadioButton(dlJdkGrp,
@@ -423,7 +441,7 @@ public class JdkSrvConfig {
 	 * @param parent
 	 */
 	public static void createDownloadSrvGrp(Composite parent) {
-		dlSrvGrp = createGroup(parent);
+		dlSrvGrp = createGroup(parent, 3, Messages.dlgDownloadGrp);
 		dlRdLocBtnSrv = createRadioButton(dlSrvGrp,
 				Messages.srvLocRdBtnLbl);
 		autoDlRdCldBtnSrv = createRadioButton(dlSrvGrp,
@@ -485,7 +503,8 @@ public class JdkSrvConfig {
 	 * @param parent
 	 * @return
 	 */
-	public static Group createGroup(Composite parent) {
+	public static Group createGroup(Composite parent,
+			int numCol, String text) {
 		Group group = new Group(parent, SWT.SHADOW_ETCHED_IN);
 		GridLayout groupGridLayout = new GridLayout();
 		GridData groupGridData = new GridData();
@@ -493,9 +512,9 @@ public class JdkSrvConfig {
 		groupGridData.verticalIndent = 15;
 		groupGridData.horizontalAlignment = SWT.FILL;
 		groupGridData.horizontalSpan = 3;
-		groupGridLayout.numColumns = 3;
+		groupGridLayout.numColumns = numCol;
 		groupGridLayout.verticalSpacing = 10;
-		group.setText(Messages.dlgDownloadGrp);
+		group.setText(text);
 		group.setLayout(groupGridLayout);
 		group.setLayoutData(groupGridData);
 		return group;
@@ -721,15 +740,16 @@ public class JdkSrvConfig {
 		lblDlNoteUrl.setEnabled(status);
 		lblJavaHome.setEnabled(status);
 		txtUrl.setEnabled(status);
-		
-		if (status && applyAutoUlParams) { // Always disable and auto-generate JDK url and derive Java home.  
+
+		if (status && applyAutoUlParams) {
+			// Always disable and auto-generate JDK url and derive Java home.
 			txtUrl.setEditable(false);
 			txtJavaHome.setEnabled(!status);
 		} else {
 			txtUrl.setEditable(true);
 			txtJavaHome.setEnabled(status);
 		}
-		
+
 		if (!status) {
 			dlRdCldBtn.setSelection(false);
 			autoDlRdCldBtn.setSelection(false);
@@ -739,14 +759,17 @@ public class JdkSrvConfig {
 			txtJavaHome.setText("");
 			lblDlNoteUrl.setText(Messages.dlgDlNtLblUrl);
 		} else {
-			cmbStrgAccJdk = JdkSrvConfig.populateStrgAccComboBox(cmbStrgAccJdk.getText(),cmbStrgAccJdk);
+			cmbStrgAccJdk = JdkSrvConfig.populateStrgAccComboBox(
+					cmbStrgAccJdk.getText(),
+					cmbStrgAccJdk,
+					JDK_TXT, false);
 		}
 	}
 
 	/**
 	 * Enable both radio buttons of JDK
 	 * cloud deployment and select local one.
-	 * @param defaultSelectButton 
+	 * @param defaultSelectButton
 	 */
 	public static void enableJdkRdButtons(Button defaultSelectButton) {
 		dlRdCldBtn.setEnabled(true);
@@ -770,7 +793,7 @@ public class JdkSrvConfig {
 		lblDlNoteUrlSrv.setEnabled(status);
 		lblHomeDir.setEnabled(status);
 		txtUrlSrv.setEnabled(status);
-		
+
 		if (status && applyAutoUlParams) {
 			txtUrlSrv.setEditable(false);
 			txtHomeDir.setEnabled(!status);
@@ -787,7 +810,10 @@ public class JdkSrvConfig {
 			txtHomeDir.setText("");
 			lblDlNoteUrlSrv.setText(Messages.dlNtLblUrlSrv);
 		} else {
-			cmbStrgAccSrv = JdkSrvConfig.populateStrgAccComboBox(cmbStrgAccSrv.getText(),cmbStrgAccSrv);
+			cmbStrgAccSrv = JdkSrvConfig.populateStrgAccComboBox(
+					cmbStrgAccSrv.getText(),
+					cmbStrgAccSrv,
+					SRV_TXT, false);
 		}
 	}
 
@@ -806,12 +832,18 @@ public class JdkSrvConfig {
 	/**
 	 * Method initializes storage account list
 	 * and populates in combo box.
-	 * @param valToSet : value to set in combo box
+	 * @param valToSet
+	 * @param combo
+	 * @param tabControl
+	 * @param needAuto
+	 * If its caching page, we need auto even though
+	 * tabControl is null
+	 * @return
 	 */
 	public static Combo populateStrgAccComboBox(
-			String valToSet, Combo combo) {
-		accNames = StorageRegistryUtilMethods.
-				getStorageAccountNames();
+			String valToSet, Combo combo,
+			String tabControl, boolean needAuto) {
+		accNames = getStrgAccoNamesAsPerTab(tabControl, needAuto);
 		combo.setItems(accNames);
 		/*
 		 * If value to set is not present
@@ -829,14 +861,53 @@ public class JdkSrvConfig {
 	}
 
 	/**
+	 * Method prepares storage account name list
+	 * as per current tab.
+	 * If no tab = null, then page is other than serverconfiguration
+	 * then add (none)
+	 * If tab is JDK or server, then add (none) or (auto)
+	 * as per selection of radio buttons.
+	 * If auto upload radio button selected --> Add (auto)
+	 * if not --> Add (none)
+	 * @param tabControl
+	 * @param needAuto
+	 * If its caching page, we need auto even though
+	 * tabControl is null
+	 * @return
+	 */
+	private static String[] getStrgAccoNamesAsPerTab(String tabControl,
+			boolean needAuto) {
+		if (tabControl == null) {
+			if (needAuto) {
+				accNames = StorageRegistryUtilMethods.
+						getStorageAccountNames(true);
+			} else {
+				accNames = StorageRegistryUtilMethods.
+						getStorageAccountNames(false);
+			}
+		} else {
+			// For JDK
+			if (JDK_TXT.equals(tabControl)) {
+				accNames = StorageRegistryUtilMethods.
+						getStorageAccountNames(autoDlRdCldBtn.getSelection());
+			} else if (SRV_TXT.equals(tabControl)) {
+				accNames = StorageRegistryUtilMethods.
+						getStorageAccountNames(autoDlRdCldBtnSrv.getSelection());
+			}
+		}
+		return accNames;
+	}
+
+	/**
 	 * Listener for Accounts link.
 	 * Method will open storage accounts preference page
 	 * and will update storage account combo box.
 	 * @param btn
 	 * @param combo
+	 * @param tabControl
 	 * @return
 	 */
-	public static Combo openAccLink(Button btn, Combo combo) {
+	public static Combo openAccLink(Button btn, Combo combo, String tabControl) {
 		Combo updatedCmb = combo;
 		Object storageAcc = new StorageAccountsPreferencePage();
 		WAEclipseHelper.
@@ -857,10 +928,36 @@ public class JdkSrvConfig {
 		 * the same later.
 		 */
 		if (btn.getSelection()) {
-			String oldName = combo.getText();
+			String cmbName = combo.getText();
+			String accPgName =
+					StorageAccountsPreferencePage.getSelIndexValue();
+			String finalNameToSet;
+			/*
+			 * If row selected on preference page.
+			 * set combo box to it always.
+			 * Else keep combo box's previous value
+			 * as it is.
+			 */
+			if (accPgName != NONE_TXT
+					&& accPgName != AUTO_TXT) {
+				finalNameToSet = accPgName;
+			} else {
+				finalNameToSet = cmbName;
+			}
 			// update storage account combo box
-			updatedCmb = JdkSrvConfig.
-					populateStrgAccComboBox(oldName, combo);
+			if (finalNameToSet.equals(AUTO_TXT)) {
+				updatedCmb = JdkSrvConfig.
+						populateStrgAccComboBox(
+								finalNameToSet,
+								combo,
+								tabControl, true);
+			} else {
+				updatedCmb = JdkSrvConfig.
+						populateStrgAccComboBox(
+								finalNameToSet,
+								combo,
+								tabControl, false);
+			}
 		}
 		return updatedCmb;
 	}
@@ -872,11 +969,20 @@ public class JdkSrvConfig {
 	 */
 	public static void accountsLinkOfSrvClicked() {
 		cmbStrgAccSrv = openAccLink(dlRdCldBtnSrv.getSelection()? dlRdCldBtnSrv : autoDlRdCldBtnSrv,
-				cmbStrgAccSrv);
+				cmbStrgAccSrv, SRV_TXT);
 		if (dlRdCldBtn.getSelection() || autoDlRdCldBtn.getSelection()) {
 			cmbStrgAccJdk = populateStrgAccComboBox(
 					cmbStrgAccJdk.getText(),
-					cmbStrgAccJdk);
+					cmbStrgAccJdk,
+					JDK_TXT, false);
+			/*
+			 * If JDK auto button is selected then
+			 * update JDK URL as we may have set
+			 * combo box to (none).
+			 */
+			if (autoDlRdCldBtn.getSelection()) {
+				updateJDKDlURL();
+			}
 		}
 	}
 
@@ -887,11 +993,20 @@ public class JdkSrvConfig {
 	 */
 	public static void accountsLinkOfJdkClicked() {
 		cmbStrgAccJdk = openAccLink(dlRdCldBtn.getSelection() ? dlRdCldBtn : autoDlRdCldBtn,
-				cmbStrgAccJdk);
+				cmbStrgAccJdk, JDK_TXT);
 		if (dlRdCldBtnSrv.getSelection() || autoDlRdCldBtnSrv.getSelection()) {
 			cmbStrgAccSrv = populateStrgAccComboBox(
 					cmbStrgAccSrv.getText(),
-					cmbStrgAccSrv);
+					cmbStrgAccSrv,
+					SRV_TXT, false);
+			/*
+			 * If server auto button is selected then
+			 * update server URL as we may have set
+			 * combo box to (none).
+			 */
+			if (autoDlRdCldBtnSrv.getSelection()) {
+				updateServerDlURL();
+			}
 		}
 	}
 
@@ -899,6 +1014,7 @@ public class JdkSrvConfig {
 	 * Listener for URL text box's text change.
 	 * @param url
 	 * @param nameInUrl
+	 * @param combo
 	 * @return
 	 */
 	public static Combo urlModifyListner(String url,
@@ -946,27 +1062,28 @@ public class JdkSrvConfig {
 	 * Listener for storage account combo box.
 	 * @param combo
 	 * @param urlTxt
-	 * @param isCmbSetNone
+	 * @param tabControl
+	 * @return
 	 */
 	public static Text cmbBoxListener(
 			Combo combo, Text urlTxt, String tabControl) {
 		int index = combo.getSelectionIndex();
 		String url = urlTxt.getText().trim();
-		// check value is not none.
+		// check value is not none and auto.
 		if (index > 0) {
 			String newUrl = StorageAccountRegistry.
 					getStrgList().get(index - 1).getStrgUrl();
-			
-			// For JDK
-			if(tabControl != null && "JDK".equals(tabControl) 
+
+			// For JDK tab and auto upload option selected
+			if (tabControl != null && JDK_TXT.equals(tabControl)
 					&& autoDlRdCldBtn.getSelection()) {
 				String value = prepareCloudBlobURL(txtJdk.getText() , newUrl);
 				urlTxt.setText(value);
 				return urlTxt;
 			}
-			
-			// For Server
-			if(tabControl != null && "SERVER".equals(tabControl) 
+
+			// For Server and auto upload option selected
+			if (tabControl != null && SRV_TXT.equals(tabControl)
 					&& autoDlRdCldBtnSrv.getSelection()) {
 				String value = prepareCloudBlobURL(txtDir.getText() , newUrl);
 				urlTxt.setText(value);
@@ -992,19 +1109,35 @@ public class JdkSrvConfig {
 						getSubStrAccNmSrvcUrlFrmUrl(newUrl);
 				urlTxt.setText(url.replaceFirst(oldVal, newVal));
 			}
+		} else if (index == 0) {
+			// index = 0 means none or auto is selected
+			// For JDK tab and auto upload option selected
+			if (tabControl != null && JDK_TXT.equals(tabControl)
+					&& autoDlRdCldBtn.getSelection()) {
+				urlTxt.setText(AUTO_TXT);
+				return urlTxt;
+			}
+			// For Server and auto upload option selected
+			if (tabControl != null && SRV_TXT.equals(tabControl)
+					&& autoDlRdCldBtnSrv.getSelection()) {
+				urlTxt.setText(AUTO_TXT);
+				return urlTxt;
+			}
 		}
 		return urlTxt;
 	}
 
 	/**
 	 * This API appends eclipse container name and filename to url
-	 * @param text
+	 * in order to construct blob url.
+	 * @param filePath
 	 * @param newUrl
 	 * @return
 	 */
-	private static String prepareCloudBlobURL(String filePath, String newUrl) {
-		if ( (filePath == null || filePath.length() == 0)
-			|| ( newUrl == null || newUrl.length() == 0)) {
+	public static String prepareCloudBlobURL(String filePath,
+			String newUrl) {
+		if ((filePath == null || filePath.length() == 0)
+			|| (newUrl == null || newUrl.length() == 0)) {
 			return "";
 		}
 
@@ -1136,5 +1269,266 @@ public class JdkSrvConfig {
 				&& !(srvIndex > 0)) {
 			cmbStrgAccSrv.select(jdkIndex);
 		}
+	}
+
+	/**
+	 * Method to update JDK cloud URL.
+	 * Will get updated as per storage account
+	 * combo box and radio button selection.
+	 */
+	public static void updateJDKDlURL() {
+		if (isSASelectedForJDK()) {
+			setTxtUrl(cmbBoxListener(
+					getCmbStrgAccJdk(),
+					getTxtUrl(), JDK_TXT));
+		} else if (!getDlRdCldBtn().getSelection()) {
+			getTxtUrl().setText("");
+		}
+	}
+
+	/**
+	 * Method to update server cloud URL.
+	 * Will get updated as per storage account
+	 * combo box and radio button selection.
+	 */
+	public static void updateServerDlURL() {
+		if (isSASelectedForSrv()) {
+			setTxtUrlSrv(cmbBoxListener(
+					getCmbStrgAccSrv(),
+					getTxtUrlSrv(),
+					SRV_TXT));
+		} else if (!getDlRdCldBtnSrv().getSelection()) {
+			getTxtUrlSrv().setText("");
+		}
+	}
+
+	/**
+	 * Utility method to update note below text box for JDK.
+	 */
+	public static void updateJDKDlNote(String label) {
+		// Update note below URL text box
+		String jdkPath = getTxtJdk().
+				getText();
+		File file = new File(jdkPath);
+		if (!jdkPath.isEmpty() && file.exists()) {
+			String dirName = file.getName();
+			getLblDlNoteUrl().setText(String.format(
+					label, dirName));
+		}
+	}
+
+	/**
+	 * Utility method to update note below text box for Server.
+	 */
+	public static void updateSrvDlNote(String label) {
+		// Update note below server URL text box
+		String srvPath = getTxtDir().getText();
+		File file = new File(srvPath);
+		if (!srvPath.isEmpty() && file.exists()) {
+			String dirName = file.getName();
+			getLblDlNoteUrlSrv().setText(String.format(
+					label, dirName));
+		}
+	}
+
+	/**
+	 * Utility method to update java home value.
+	 */
+	public static void updateJDKHome(WindowsAzureRole role) {
+		try {
+			String jdkPath = getTxtJdk().getText();
+			String jdkHome = role.constructJdkHome(jdkPath,
+					cmpntFile);
+			getTxtJavaHome().setText(jdkHome);
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			Activator.getDefault().log(e.getMessage());
+		}
+	}
+
+	/**
+	 * Utility method to update server home value.
+	 */
+	public static void updateServerHome(WindowsAzureRole role) {
+		// set server home directory text box value
+		String srvPath = getTxtDir().getText();
+		try {
+			String srvHome = role.constructServerHome(
+					getComboServer().getText(),
+					srvPath,
+					cmpntFile);
+			getTxtHomeDir().setText(srvHome);
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			Activator.getDefault().log(e.getMessage());
+		}
+	}
+
+	/**
+	 * Return whether Server auto download group
+	 * check box is checked or not.
+	 * @return
+	 */
+	public static boolean isSrvAutoUploadChecked() {
+		return getAutoDlRdCldBtnSrv().getSelection();
+	}
+
+	/**
+	 * Return whether Server download group
+	 * check box is checked or not.
+	 * @return
+	 */
+	public static boolean isSrvDownloadChecked() {
+		return getDlRdCldBtnSrv().getSelection();
+	}
+
+	/**
+	 * Listener for JDK browse button it is used in file system button.
+	 * It will open the file system location.
+	 */
+	public static String utilJdkBrowseBtnListener(String label) {
+		String directory = null;
+		try {
+			String oldTxt = getTxtJdk().getText();
+			String path = WAEclipseHelper.
+					jdkDefaultDirectory(oldTxt);
+			DirectoryDialog dialog =
+					new DirectoryDialog(new Shell());
+			if (path != null) {
+				File file = new File(path);
+				if (!path.isEmpty()
+						&& file.exists()
+						&& file.isDirectory()) {
+					dialog.setFilterPath(path);
+				}
+			}
+
+			directory = dialog.open();
+			if (directory != null
+					&& !directory.equalsIgnoreCase(oldTxt)) {
+				getTxtJdk().setText(directory);
+				// Update note below URL text box
+				if (getDlRdCldBtn().getSelection()) {
+					String dirName = new File(directory).getName();
+					getLblDlNoteUrl().
+					setText(String.format(
+							label, dirName));
+				}
+			}
+		} catch (Exception e) {
+			Activator.getDefault().log(e.getMessage(), e);
+		}
+		return directory;
+	}
+
+	/**
+	 * Server directory browse button listener.
+	 * @param label
+	 * @return
+	 */
+	public static String utilSerBrowseBtnListener(String label) {
+		String directory = null;
+		try {
+			String path = getTxtDir().getText();
+			DirectoryDialog dialog =
+					new DirectoryDialog(new Shell());
+			if (path != null) {
+				File file = new File(path);
+				if (!path.isEmpty()
+						&& file.exists()
+						&& file.isDirectory()) {
+					dialog.setFilterPath(path);
+				}
+			}
+			directory = dialog.open();
+			if (directory != null) {
+				getTxtDir().setText(directory);
+				// Update note below server URL text box
+				if (isSrvDownloadChecked()) {
+					String dirName = new File(directory).getName();
+					getLblDlNoteUrlSrv().
+					setText(String.format(
+							label, dirName));
+				}
+				// Auto detect server family
+				String serverName = WAEclipseHelper.
+						detectServer(new File(directory));
+				if (serverName != null
+						&& !serverName.isEmpty()) {
+					getComboServer().
+					setText(serverName);
+				} else {
+					getComboServer().
+					clearSelection();
+				}
+			}
+		} catch (Exception e) {
+			Activator.getDefault().log(e.getMessage(), e);
+		}
+		return directory;
+	}
+
+	/**
+	 * Customize Link listener. This will close the wizard
+	 * or property page and open the
+	 * componentssets.xml in default editor.
+	 */
+	public static void custLinkListener(
+			String ttl, String msg,
+			boolean isWizard, Shell shell,
+			Object pageObj, File file) {
+		boolean choice = MessageDialog.openConfirm(shell,
+				ttl, msg);
+		if (choice) {
+			try {
+				if (isWizard) {
+					WAProjectWizard wiz =
+							(WAProjectWizard) pageObj;
+					wiz.getShell().close();
+				} else {
+					shell.close();
+				}
+				if (file.exists() && file.isFile()) {
+					IFileStore store = EFS.getLocalFileSystem().
+							getStore(file.toURI());
+					IWorkbenchPage benchPage = PlatformUI.
+							getWorkbench().getActiveWorkbenchWindow()
+							.getActivePage();
+					IDE.openEditorOnFileStore(benchPage, store);
+				}
+			} catch (PartInitException e) {
+				Activator.getDefault().log(e.getMessage(), e);
+			}
+		}
+	}
+
+	/**
+	 * Returns true if auto upload is selected for JDK else false.
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static boolean isJDKAutoUploadPrevSelected(WindowsAzureRole role)
+			throws WindowsAzureInvalidProjectOperationException {
+		WARoleComponentCloudUploadMode uploadMode =
+				role.getJDKCloudUploadMode();
+		if (uploadMode != null
+				&& uploadMode.equals(WARoleComponentCloudUploadMode.AUTO)) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Returns true if auto upload is selected for Server else false.
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static boolean isServerAutoUploadPrevSelected(WindowsAzureRole role)
+			throws WindowsAzureInvalidProjectOperationException {
+		WARoleComponentCloudUploadMode uploadMode =
+				role.getServerCloudUploadMode();
+		if (uploadMode != null
+				&& uploadMode.equals(WARoleComponentCloudUploadMode.AUTO)) {
+			return true;
+		}
+		return false;
 	}
 }

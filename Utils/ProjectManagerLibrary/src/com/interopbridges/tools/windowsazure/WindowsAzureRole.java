@@ -182,88 +182,22 @@ public class WindowsAzureRole {
 
     private void setNameInPackageFile(String name)
             throws WindowsAzureInvalidProjectOperationException {
-
-        WindowsAzureEndpoint saInputEndPoint =
-                getSessionAffinityInputEndpoint();
-        WindowsAzureEndpoint saInternalEndPoint =
-                getSessionAffinityInternalEndpoint();
-
         try {
             XPath xPath = XPathFactory.newInstance().newXPath();
             Document projDoc = getWinProjMgr().getPackageFileDoc();
-
-            //Change session affinity settings in package.xml
-            if (saInputEndPoint != null) {
-                String endPointExpr = String.format(WindowsAzureConstants.
-                        SA_INPUT_ENDPOINT, this.getName());
-                Element propEndPoint = (Element) xPath.evaluate(endPointExpr,
-                        projDoc, XPathConstants.NODE);
-                if (propEndPoint != null) {
-                    propEndPoint.setAttribute(WindowsAzureConstants.ATTR_NAME,
-                            String.format(WindowsAzureConstants.
-                                    SA_INPUT_ENDPOINT_NAME_PROP, name));
-                }
-                //Change internal endpoint name as well
-                if (saInternalEndPoint != null) {
-                    endPointExpr = String.format(WindowsAzureConstants.
-                            SA_INTERNAL_ENDPOINT, this.getName());
-                    propEndPoint = (Element) xPath.evaluate(endPointExpr,
-                            projDoc, XPathConstants.NODE);
-                    if (propEndPoint != null) {
-                        propEndPoint.setAttribute(WindowsAzureConstants.
-                                ATTR_NAME, String.format(WindowsAzureConstants.
-                                        SA_INTERNAL_ENDPOINT_NAME_PROP, name));
-                    }
-                }
-
+            String expr = WindowsAzureConstants.PROJ_PROPERTIES;
+            NodeList properties = (NodeList)xPath.evaluate(
+            		expr, projDoc, XPathConstants.NODESET);
+            for (int i=0; i<properties.getLength(); i++) {
+            	Element property =  (Element)properties.item(i);
+            	String attrVal = property.getAttribute("name");
+            	if (attrVal.startsWith("project." + getName())) {
+            		String newProVal = attrVal.replace(getName(), name);
+            		property.setAttribute("name", newProVal);
+            	}
             }
 
-            //changes to rename role name in property
-            String parentNodeExpr = WindowsAzureConstants.PROJ_PROPERTY;
-            String eleName = WindowsAzureConstants.PROJ_PROPERTY_ELEMENT_NAME;
-            Map<String, String> attrs = new HashMap<String, String>();
-
-            //server property
-            if(getServerName() != null && !getServerName().isEmpty()) {
-                attrs.put(WindowsAzureConstants.ATTR_NAME,
-                        String.format(WindowsAzureConstants.SERVER_PROP_NAME, name));
-                String serExpr = String.format(WindowsAzureConstants.SERVER_PROP_PATH,getName());
-                updateOrCreateElement(projDoc, serExpr, parentNodeExpr, eleName, false, attrs);
-
-                if(getWinProjMgr().getPackageType().equals(WindowsAzurePackageType.LOCAL)
-        		&& !getInstances().equals("1")) {
-                    //instance property
-                	attrs.clear();
-                    attrs.put(WindowsAzureConstants.ATTR_NAME,
-                            String.format(WindowsAzureConstants.INSTANCE_PROPERTY, name));
-                    String propName = String.format(WindowsAzureConstants.INSTANCE_PROPERTY, getName());
-                    serExpr = String.format(WindowsAzureConstants.ROLE_PROP,propName);
-                    updateOrCreateElement(projDoc, serExpr, parentNodeExpr, eleName, false, attrs);
-                }
-            }
-
-
-
-            // cache account name
-            if(getCacheStorageAccountName() != null && !getCacheStorageAccountName().isEmpty()) {
-                attrs.clear();
-                attrs.put(WindowsAzureConstants.ATTR_NAME,
-                        String.format(WindowsAzureConstants.CACHE_ST_ACC_NAME_PROP, name));
-                String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_NAME_PROP,getName());
-                String nodeExpr =  String.format(WindowsAzureConstants.ROLE_PROP, propName);
-                updateOrCreateElement(projDoc, nodeExpr, parentNodeExpr, eleName, false, attrs);
-            }
-            // cache account key
-            if (getCacheStorageAccountKey() != null && !getCacheStorageAccountKey().isEmpty()) {
-                attrs.clear();
-                attrs.put(WindowsAzureConstants.ATTR_NAME,
-                        String.format(WindowsAzureConstants.CACHE_ST_ACC_KEY_PROP, name));
-                String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_KEY_PROP,getName());
-                String nodeExpr =  String.format(WindowsAzureConstants.ROLE_PROP, propName);
-                updateOrCreateElement(projDoc, nodeExpr, parentNodeExpr, eleName, false, attrs);
-            }
-
-            String expr = String.format(
+            expr = String.format(
                     WindowsAzureConstants.WA_PACK_NAME, getName());
             Node role = (Node) xPath.evaluate(expr, projDoc,
                     XPathConstants.NODE);
@@ -280,7 +214,6 @@ public class WindowsAzureRole {
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(
                     "exception in setNameInPackageFile ", ex);
-
         }
     }
     /**
@@ -2655,7 +2588,7 @@ public class WindowsAzureRole {
     					String srvDirName = new File(path).getName();
     					envVal = compEle.getAttribute("value");
     					envVal = envVal.replace("${placeholder}",
-    							"\\%ROLENAME%\\" + srvDirName);
+    							"%DEPLOYROOT%\\" + srvDirName);
     				}
     			}
     		}
@@ -2730,15 +2663,20 @@ public class WindowsAzureRole {
                             getRuntimeEnv().put(compEle.getAttribute("name"), envVal);
                         } else if(compEle.getNodeName().equalsIgnoreCase("component")) {
                             ele = doc.createElement("component");
-                            ele.setAttribute(WindowsAzureConstants.ATTR_IMETHOD, compEle.getAttribute(WindowsAzureConstants.ATTR_IMETHOD));
+                            NamedNodeMap map = compEle.getAttributes();
+                            for (int j=0; j<map.getLength();j++) {
+                                ele.setAttribute(map.item(j).getNodeName(),
+                                		map.item(j).getNodeValue());
+                            }
                             ele.setAttribute(WindowsAzureConstants.ATTR_IPATH, path);
-                            ele.setAttribute(WindowsAzureConstants.ATTR_TYPE, compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE));
                             preNode = role.insertBefore(ele, preNode);
                             WindowsAzureRoleComponent comp = new WindowsAzureRoleComponent(winProjMgr, this);
                             comp.setImportPath(path);
                             comp.setImportMethod(WindowsAzureRoleComponentImportMethod.valueOf(
                                     compEle.getAttribute(WindowsAzureConstants.ATTR_IMETHOD)));
                             comp.setType(compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE));
+                            comp.setDeployDir(compEle.
+                            		getAttribute(WindowsAzureConstants.ATTR_DDIR));
                             // add JDK component at 0th position
                             comps.add(0, comp);
                         }
@@ -2855,7 +2793,7 @@ public class WindowsAzureRole {
                     if (compEle.getNodeName().equalsIgnoreCase("startupenv")) {
                         String jdkDirName = new File(path).getName();
                         String envVal = compEle.getAttribute("value");
-                        envVal = envVal.replace("${placeholder}", "\\%ROLENAME%\\" + jdkDirName);
+                        envVal = envVal.replace("${placeholder}", "%DEPLOYROOT%\\" + jdkDirName);
                         ele = pacDoc.createElement("startupenv");
                         ele.setAttribute("name", compEle.getAttribute("name"));
                         ele.setAttribute("value", envVal);
@@ -3080,7 +3018,7 @@ public class WindowsAzureRole {
           String envVal = "";
           if (serHome != null) {
               envVal= serHome.getAttribute(WindowsAzureConstants.ATTR_VALUE);
-              envVal = envVal.replace("${placeholder}", "\\%ROLENAME%\\" + new File(path).getName());
+              envVal = envVal.replace("${placeholder}", "%DEPLOYROOT%\\" + new File(path).getName());
           }
 
 

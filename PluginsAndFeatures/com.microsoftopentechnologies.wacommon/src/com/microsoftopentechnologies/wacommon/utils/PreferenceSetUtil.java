@@ -16,15 +16,28 @@
 package com.microsoftopentechnologies.wacommon.utils;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.eclipse.core.runtime.Platform;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 /**
  * Class parses the preferencesets.xml file
  * and returns required attribute values.
@@ -32,6 +45,8 @@ import org.w3c.dom.Document;
 public class PreferenceSetUtil {
 
 	public static final String PREF_SET_DEFNAME = "/preferencesets/@default";
+	public static final String PREF_SET_DEFAULT = "/preferencesets";
+	public static final String PREF_SET = "/preferencesets/preferenceset";
 	public static final String PREF_SET_NAME = "/preferencesets/preferenceset[@name='%s']/@name";
 	public static final String PREF_SET_PUBLISHSET = "/preferencesets/preferenceset[@name='%s']/@publishsettings";
 	public static final String PREF_SET_PORTURL = "/preferencesets/preferenceset[@name='%s']/@portalURL";
@@ -50,6 +65,30 @@ public class PreferenceSetUtil {
 			"preferencesets.xml");
 
 	/**
+	 * Method returns preference set name array.
+	 * @return
+	 * @throws WACommonException
+	 */
+	public static String[] getPrefSetNameArr()
+			throws WACommonException {
+		ArrayList<String> nameList = new ArrayList<String>();
+		try {
+			XPath xPath = XPathFactory.newInstance().newXPath();
+			Document doc = parseXMLFile(prefFilePath);
+			String expr = String.format(PREF_SET);
+			NodeList varList = (NodeList) xPath.evaluate(expr, doc,
+					XPathConstants.NODESET);
+			for (int i = 0; i < varList.getLength(); i++) {
+				Element var =  (Element) varList.item(i);
+				nameList.add(var.getAttribute("name"));
+			}
+		} catch (Exception ex) {
+			throw new WACommonException(Messages.nameGetErMsg, ex);
+		}
+		return nameList.toArray(new String[nameList.size()]);
+	}
+
+	/**
 	 * Method returns preferenceset's name.
 	 * @return
 	 * @throws WACommonException
@@ -60,8 +99,7 @@ public class PreferenceSetUtil {
 			Document doc = parseXMLFile(prefFilePath);
 			String expr = PREF_SET_DEFNAME;
 			String defname = getExpressionValue(doc, expr);
-			String name = getExpressionValue(doc, expr);
-			if (name == null || name.isEmpty()) {
+			if (defname == null || defname.isEmpty()) {
 				throw new Exception(Messages.nameNtErMsg);
 			}
 			return defname;
@@ -72,14 +110,14 @@ public class PreferenceSetUtil {
 
 	/**
 	 * Method returns preferenceset's publish settings URL.
+	 * @param name
 	 * @return
 	 * @throws WACommonException
 	 */
-	public static String getSelectedPublishSettingsURL()
+	public static String getSelectedPublishSettingsURL(String name)
 			throws WACommonException {
 		try {
 			Document doc = parseXMLFile(prefFilePath);
-			String name = getSelectedPreferenceSetName();
 			String expr = String.format(PREF_SET_PUBLISHSET, name);
 			String pubSetURL = getExpressionValue(doc, expr);
 			if (pubSetURL == null || pubSetURL.isEmpty()) {
@@ -93,14 +131,14 @@ public class PreferenceSetUtil {
 
 	/**
 	 * Method returns preferenceset's portal URL.
+	 * @param name
 	 * @return
 	 * @throws WACommonException
 	 */
-	public static String getSelectedPortalURL()
+	public static String getSelectedPortalURL(String name)
 			throws WACommonException {
 		try {
 			Document doc = parseXMLFile(prefFilePath);
-			String name = getSelectedPreferenceSetName();
 			String expr = String.format(PREF_SET_PORTURL, name);
 			String portalURL = getExpressionValue(doc, expr);
 			/*
@@ -108,7 +146,8 @@ public class PreferenceSetUtil {
 			 * check for "portalurl" attribute
 			 */
 			if (portalURL.isEmpty() || portalURL == null) {
-				String exprSmall = String.format(PREF_SET_PORTURL_SMALL, name);
+				String exprSmall = String.format(
+						PREF_SET_PORTURL_SMALL, name);
 				portalURL = getExpressionValue(doc, exprSmall);
 			}
 			return portalURL;
@@ -120,29 +159,42 @@ public class PreferenceSetUtil {
 
 	/**
 	 * Method returns preferenceset's blob service URL.
+	 * according to storage account name passed.
 	 * @param storageName
 	 * @return
 	 * @throws WACommonException
 	 */
 	public static String getSelectedBlobServiceURL(String storageName)
 			throws WACommonException {
+		String blobURL = getBlobServiceURL(
+				getSelectedPreferenceSetName());
+		blobURL = blobURL.replace(
+				"${storage-service-name}", storageName);
+		// For blob it always needs to end with forward slash
+		// and customers may forgot about this,
+		// while editing preferences,
+		// hence its safe to append if not exists
+		if (!blobURL.endsWith("/")) {
+			return blobURL + "/";
+		}
+		return blobURL;
+	}
+
+	/**
+	 * Method returns preferenceset's blob service URL.
+	 * @param name
+	 * @return
+	 * @throws WACommonException
+	 */
+	public static String getBlobServiceURL(String name)
+			throws WACommonException {
 		try {
 			Document doc = parseXMLFile(prefFilePath);
-			String name = getSelectedPreferenceSetName();
 			String expr = String.format(PREF_SET_BLOB, name);
 			String blobURL = getExpressionValue(doc, expr);
 			if (blobURL == null || blobURL.isEmpty()) {
 				throw new WACommonException(
 						Messages.blbUrlNtErMsg);
-			}
-			blobURL = blobURL.replace(
-					"${storage-service-name}", storageName);
-			// For blob it always needs to end with forward slash
-			// and customers may forgot about this,
-			// while editing preferences,
-			// hence its safe to append if not exists
-			if (!blobURL.endsWith("/")) {
-				return blobURL + "/";
 			}
 			return blobURL;
 		} catch (Exception e) {
@@ -152,23 +204,36 @@ public class PreferenceSetUtil {
 
 	/**
 	 * Method returns preferenceset's management URL.
+	 * according to subscription ID passed.
 	 * @param subscriptionID
 	 * @return
 	 * @throws WACommonException
 	 */
 	public static String getSelectedManagementURL(String subscriptionID)
 			throws WACommonException {
+		String mgtURL = getManagementURL(
+				getSelectedPreferenceSetName());
+		mgtURL = mgtURL.replace(
+				"${subscription-id}", subscriptionID);
+		return mgtURL;
+	}
+
+	/**
+	 * Method returns preferenceset's management URL.
+	 * @param name
+	 * @return
+	 * @throws WACommonException
+	 */
+	public static String getManagementURL(String name)
+			throws WACommonException {
 		try {
 			Document doc = parseXMLFile(prefFilePath);
-			String name = getSelectedPreferenceSetName();
 			String expr = String.format(PREF_SET_MGT, name);
 			String mgtURL = getExpressionValue(doc, expr);
 			if (mgtURL == null || mgtURL.isEmpty()) {
 				throw new WACommonException(
 						Messages.mngUrlNtErMsg);
 			}
-			mgtURL = mgtURL.replace(
-					"${subscription-id}", subscriptionID);
 			return mgtURL;
 		} catch (Exception e) {
 			throw new WACommonException(Messages.mngUrlGetErMsg, e);
@@ -205,7 +270,8 @@ public class PreferenceSetUtil {
 			Document doc = null;
 			DocumentBuilderFactory docBuilderFactory =
 					DocumentBuilderFactory.newInstance();
-			docBuilderFactory.setIgnoringElementContentWhitespace(true);
+			docBuilderFactory.
+			setIgnoringElementContentWhitespace(true);
 			docBuilder = docBuilderFactory.newDocumentBuilder();
 			File xmlFile = new File(fileName);
 			doc = docBuilder.parse(xmlFile);
@@ -213,5 +279,69 @@ public class PreferenceSetUtil {
 		} catch (Exception e) {
 			throw new Exception(Messages.parseErMsg);
 		}
+	}
+
+	/**
+	 * Method sets preference sets default value.
+	 * @param defaultValToSet
+	 * @throws WACommonException
+	 */
+	public static void setPrefDefault(final String defaultValToSet)
+			throws WACommonException {
+		if ((defaultValToSet == null) || (defaultValToSet.isEmpty())) {
+			throw new IllegalArgumentException(Messages.inValArg);
+		}
+		try {
+			Document doc = parseXMLFile(prefFilePath);
+			XPath xPath = XPathFactory.newInstance().newXPath();
+			String expr = String.format(PREF_SET_DEFAULT);
+			Node prefSets = (Node) xPath.evaluate(expr, doc,
+					XPathConstants.NODE);
+			if (prefSets != null) {
+				Element prefSetsEle = (Element) prefSets;
+				prefSetsEle.setAttribute("default",
+						defaultValToSet);
+			}
+			saveXMLFile(prefFilePath, doc);
+		} catch (Exception ex) {
+			throw new WACommonException(Messages.nameSetErMsg, ex);
+		}
+	}
+
+	/**
+	 * Saves XML file.
+	 * @param fileName
+	 * @param doc
+	 * @return
+	 * @throws IOException
+	 * @throws WACommonException
+	 */
+	protected static boolean saveXMLFile(String fileName, Document doc)
+			throws IOException, WACommonException {
+		File xmlFile = null;
+		FileOutputStream fos = null;
+		Transformer transformer;
+		try {
+			xmlFile = new File(fileName);
+			fos = new FileOutputStream(xmlFile);
+			TransformerFactory transFactory =
+					TransformerFactory.newInstance();
+			transformer = transFactory.newTransformer();
+			DOMSource source = new DOMSource(doc);
+			StreamResult destination = new StreamResult(fos);
+			// transform source into result will do save
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			transformer.setOutputProperty(
+					"{http://xml.apache.org/xslt}indent-amount", "2");
+			transformer.transform(source, destination);
+		} catch (Exception excp) {
+			throw new WACommonException(
+					Messages.saveErMsg, excp);
+		} finally {
+			if (fos != null) {
+				fos.close();
+			}
+		}
+		return true;
 	}
 }

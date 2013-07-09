@@ -6,4 +6,4 @@
 ::     or the Server Configuration property page for a selected role.)
 
 echo Hello World!
-exit 0
+
