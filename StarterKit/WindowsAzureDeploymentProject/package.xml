@@ -28,7 +28,7 @@
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
     <property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-    <property name="creator.version" value="2.0.1"/>
+    <property name="creator.version" value="2.1.0"/>
   </target>
 
   <!-- Force emulator reset to ensure no locks on deploy directory -->
@@ -171,12 +171,17 @@
 					[cloudupload = {never | auto | always}]
 							(This setting is applicable only if cloudsrc and cloudkey are specified and the package is built for the cloud, not  the emulator)
 							never:	(default) The component specified by importsrc will be included in the package based on the selected importmethod
-							auto:	The component specified by importsrc will not be included in the package but will be uploaded by the build process into 
-									the Windows Azure Blob storage location specified by cloudsrc and cloudkey, if a component by the same name (plus the .ZIP 
-									extension) does not already exist at that location.
+							auto:	The component specified by importsrc will not be included in the package. The following deployment logic will be followed:
+							        - if the component is available at the location specified by cloudsrc, it will be deployed from there. 
+							        - else, if cloudaltsrc is provided and the download is available there, it will be deployed from there and also copied 
+							          into the Windows Azure Blob storage location specified by cloudsrc for future deployments. 
+							        - else, the component will be uploaded by the build process into blob specified by cloudsrc.
 							always:	The component specified by importsrc will not be included in the package, but will always be uploaded by the build process
 									into the Windows Azure Blob storage location specified by cloudsrc and cloudkey, regardless of whether it already exists at
 									that location or not.
+									
+					[cloudaltsrc]:
+							If a download from the URL in cloudsrc fails, a download from this alternative URL will be attempted.
 			-->
           <component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importas="HelloWorld.war" type="server.app" />
         </workerrole>

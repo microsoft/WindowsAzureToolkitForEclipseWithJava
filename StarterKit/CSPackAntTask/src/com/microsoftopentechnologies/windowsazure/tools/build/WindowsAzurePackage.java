@@ -22,9 +22,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -59,6 +61,7 @@ public class WindowsAzurePackage extends Task {
 	public static final String UTIL_UNZIP_FILENAME = "unzip.vbs";
 	public static final String UTIL_DOWNLOAD_FILENAME = "download.vbs";
 	public static final String UTIL_WASH_FILENAME = "wash.cmd";
+	public static final String UTIL_WASH_PATH = DEFAULT_UTIL_SUBDIR + File.separator + UTIL_WASH_FILENAME;
 	
 	public static final String INTERNAL_STARTUP_FILE_NAME = ".startup.cmd";
 	private static final String INTERNAL_STARTUP_SUBDIR = "startup";
@@ -857,6 +860,24 @@ public class WindowsAzurePackage extends Task {
 	}
 	
 
+	/** Verifies URL exists */
+	public static boolean verifyURLAvailable(URL url) {
+		if (null == url)
+			return false;
+		
+		HttpURLConnection connection;
+		try {
+			connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("HEAD");
+			return (200 == connection.getResponseCode());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	
 	/** Starts the download verifier thread
 	 */
 	private void startDownloadManagement() {

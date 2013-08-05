@@ -37,14 +37,16 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * Method is used when JDK check box is checked.
 	 * @return
 	 */
-	public static String jdkChkBoxChecked() {
+	public static String jdkChkBoxChecked(
+			WindowsAzureRole role) {
 		// Pre-populate with auto-discovered JDK if any
 		String jdkDefaultDir =
 				WAEclipseHelper.jdkDefaultDirectory(null);
 		getTxtJdk().setText(jdkDefaultDir);
 		setEnableJDK(true);
-		enableJdkRdButtons(getDlRdLocBtn());
+		enableJdkRdButtons(getAutoDlRdCldBtn());
 		getSerCheckBtn().setEnabled(true);
+		configureAutoUploadJDKSettings(role, Messages.dlNtLblDir);
 		return jdkDefaultDir;
 	}
 	/**
@@ -109,18 +111,6 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	}
 
 	/**
-	 * Method is used when JDK's local
-	 * radio button is selected.
-	 */
-	public static void jdkDeployOrAutoToLocalBtnSelected() {
-		setEnableDlGrp(false, false);
-		enableJdkRdButtons(getDlRdLocBtn());
-		// Update note below URL text box
-		getLblDlNoteUrl().
-		setText(Messages.dlgDlNtLblUrl);
-	}
-
-	/**
 	 * Method is used when JDK URL text is modified.
 	 */
 	public static void modifyJdkUrlText() {
@@ -149,8 +139,9 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	/**
 	 * Method is used when Server check box is checked.
 	 */
-	public static void srvChkBoxChecked() {
-		enableSrvRdButtons(getDlRdLocBtnSrv());
+	public static void srvChkBoxChecked(
+			WindowsAzureRole role, String label) {
+		enableSrvRdButtons(getAutoDlRdCldBtnSrv());
 		setEnableServer(true);
 		try {
 			String[] servList =
@@ -158,6 +149,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 					getServerTemplateNames(cmpntFile);
 			Arrays.sort(servList);
 			getComboServer().setItems(servList);
+			configureAutoUploadServerSettings(role, label);
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			Activator.getDefault().log(e.getMessage());
 		}
@@ -223,18 +215,6 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		JdkSrvConfig.setEnableDlGrpSrv(true, false);
 		JdkSrvConfig.updateSrvDlNote(label);
 		JdkSrvConfig.updateServerHome(role);
-	}
-
-	/**
-	 * Method is used when server's local
-	 * radio button is selected.
-	 */
-	public static void srvDeployOrAutoToLocalBtnSelected(String label) {
-		setEnableDlGrpSrv(false, false);
-		enableSrvRdButtons(getDlRdLocBtnSrv());
-		// Update note below server URL text box
-		getLblDlNoteUrlSrv().
-		setText(label);
 	}
 
 	/**

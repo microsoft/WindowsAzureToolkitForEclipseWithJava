@@ -284,6 +284,7 @@ public class WARCaching extends PropertyPage {
 					setCachPerMem(0);
 					setName("");
 					setKey("");
+					setBlobUrl("");
 				}
 				/*
 				 *  Necessary to refresh table
@@ -729,6 +730,7 @@ public class WARCaching extends PropertyPage {
 	 */
 	private void setCacheNameKey() {
 		String key = JdkSrvConfig.getAccessKey(comboStrgAcc);
+		String url = JdkSrvConfig.getBlobEndpointUrl(comboStrgAcc);
 		if (key.isEmpty()) {
 			// auto is selected
 			setName(dashAuto);
@@ -739,6 +741,7 @@ public class WARCaching extends PropertyPage {
 			setName(name);
 		}
 		setKey(key);
+		setBlobUrl(url);
 	}
 
 	/**
@@ -772,6 +775,22 @@ public class WARCaching extends PropertyPage {
 					getShell(),
 					Messages.cachErrTtl,
 					Messages.setAccNmErrMsg, e);
+		}
+	}
+
+	/**
+	 * Method sets windows azure role's
+	 * cache storage account blob endpoint url.
+	 * @param url
+	 */
+	private void setBlobUrl(String url) {
+		try {
+			wARole.setCacheStorageAccountUrl(url);
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			PluginUtil.displayErrorDialogAndLog(
+					getShell(),
+					Messages.cachErrTtl,
+					Messages.setAccUrlErrMsg, e);
 		}
 	}
 

@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.text.DateFormat;
@@ -43,16 +44,17 @@ import org.eclipse.wst.xml.core.internal.catalog.provisional.INextCatalog;
 
 import waeclipseplugin.Activator;
 
+import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
+import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
+import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentCloudMethod;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
-
-
 
 /**
  * This class gets executed after the Workbench initialises.
@@ -62,6 +64,8 @@ public class WAStartUp implements IStartup {
     private static final int BUFF_SIZE = 1024;
     private static final String COMPONENTSETS_TYPE = "COMPONENTSETS";
     private static final String PREFERENCESETS_TYPE = "PREFERENCESETS";
+    private final static String auto = "auto";
+    protected static File cmpntFile = new File(WAEclipseHelper.getTemplateFile(Messages.cmpntFileName));
     @Override
     public void earlyStartup() {
         try {
@@ -101,6 +105,7 @@ public class WAStartUp implements IStartup {
                         	correctProjectName(iProject, projMngr);
                         }
                         projMngr = initializeStorageAccountRegistry(projMngr);
+                        projMngr = changeLocalToAuto(projMngr);
                         // save object so that access key will get saved in PML.
                         projMngr.save();
                     }
@@ -116,7 +121,7 @@ public class WAStartUp implements IStartup {
         } catch (Exception e) {
             /* This is not a user initiated task
                So user should not get any exception prompt.*/
-            Activator.getDefault().log("Exception in early startup", e);
+            Activator.getDefault().log(Messages.expErlStrtUp, e);
         }
     }
 
@@ -124,8 +129,10 @@ public class WAStartUp implements IStartup {
      * Storage account registry project open logic.
      * Plugin needs to detect and aggregate the information
      * about the different storage accounts used by the components.
-     * If account is not there, then add the storage account, with the key to the registry.
-     * If it's there, but the access key is different, then update component's cloud key
+     * If account is not there,
+     * then add the storage account, with the key to the registry.
+     * If it's there,
+     * but the access key is different, then update component's cloud key
      * with the key from the registry.
      * @param projMngr
      * @return
@@ -144,7 +151,8 @@ public class WAStartUp implements IStartup {
     			if (key != null
     					&& name != null
     					&& !key.isEmpty()
-    					&& !name.isEmpty()) {
+    					&& !name.isEmpty()
+    					&& WAEclipseHelper.isLowerCaseAndInteger(name)) {
     				StorageAccount account = new StorageAccount(name,
     						key,
     						PreferenceSetUtil.getSelectedBlobServiceURL(name));
@@ -171,6 +179,8 @@ public class WAStartUp implements IStartup {
     				String url = component.getCloudDownloadURL();
     				if (url != null
     						&& !url.isEmpty()) {
+    					try {
+    					new URL(url);
     					String accessKey = component.getCloudKey();
     					/*
     					 * check cloud key is set or not
@@ -197,11 +207,98 @@ public class WAStartUp implements IStartup {
     							strgAccList.add(account);
     						}
     					}
+    					} catch(MalformedURLException e) {
+    					}
     				}
     			}
     		}
     	} catch (Exception e) {
-    		Activator.getDefault().log("Exception in early startup", e);
+    		Activator.getDefault().log(Messages.expStrgReg, e);
+    	}
+    	return projMngr;
+    }
+
+    /**
+     * Change include in package deployment to
+     * auto upload with auto storage selected.
+     * Need these changes while importing old project
+     * in new plugin.
+     * @param projMngr
+     * @return
+     */
+    public static WindowsAzureProjectManager changeLocalToAuto(
+    		WindowsAzureProjectManager projMngr) {
+    	try {
+    		// get number of roles in one project
+    		List<WindowsAzureRole> roleList = projMngr.getRoles();
+    		for (int i = 0; i < roleList.size(); i++) {
+    			WindowsAzureRole role = roleList.get(i);
+    			// get list of components in one role.
+    			List<WindowsAzureRoleComponent> cmpnntsList =
+    					role.getComponents();
+    			for (int j = 0; j < cmpnntsList.size(); j++) {
+    				WindowsAzureRoleComponent component =
+    						cmpnntsList.get(j);
+    				String type = component.getType();
+    				String key = component.getCloudKey();
+    				String url = component.getCloudDownloadURL();
+    				/*
+    				 * check component is JDK or server
+    				 * and cloud URL and key is not specified
+    				 * i.e. deployment is for local.
+    				 */
+    				if ((type.equals(
+    						com.persistent.winazureroles.Messages.typeJdkDply)
+    						|| type.equals(
+    								com.persistent.winazureroles.Messages.typeSrvDply))
+    								&& (key == null || key.isEmpty())
+    								&& (url == null || url.isEmpty())) {
+    					component.setCloudDownloadURL(auto);
+    					component.setCloudUploadMode(
+    							WARoleComponentCloudUploadMode.AUTO);
+    					component.setCloudMethod(
+    							WindowsAzureRoleComponentCloudMethod.unzip);
+    					// store home properties
+    					/*
+    					 * For auto upload cloud
+    					 * and local home property will be same.
+    					 * So just check package type, construct
+    					 * home value and set.
+    					 */
+    					if (projMngr.getPackageType().
+    							equals(WindowsAzurePackageType.LOCAL)) {
+    						if (type.equals(
+    								com.persistent.winazureroles.Messages.typeJdkDply)) {
+    							role.setJDKCloudHome(
+    									role.constructJdkHome(
+    											component.getImportPath(),
+    											cmpntFile));
+    						} else if (type.equals(
+    								com.persistent.winazureroles.Messages.typeSrvDply)) {
+    							role.setServerCloudHome(
+    									role.constructServerHome(role.getServerName(),
+    											component.getImportPath(),
+    											cmpntFile));
+    						}
+    					} else {
+    						if (type.equals(
+    								com.persistent.winazureroles.Messages.typeJdkDply)) {
+    							role.setJDKLocalHome(
+    									role.constructJdkHome(
+    											component.getImportPath(),
+    											cmpntFile));
+    						} else if (type.equals(
+    								com.persistent.winazureroles.Messages.typeSrvDply)) {
+    							role.setServerLocalHome(
+    									role.constructServerHome(role.getServerName(),
+    											component.getImportPath(), cmpntFile));
+    						}
+    					}
+    				}
+    			}
+    		}
+    	} catch (Exception e) {
+    		Activator.getDefault().log(Messages.expLocToAuto, e);
     	}
     	return projMngr;
     }
@@ -313,8 +410,14 @@ public class WAStartUp implements IStartup {
             		File.separator, Messages.prefFileName);
 
             // upgrade component sets and preference sets
-            upgradePluginComponent(cmpntFile, Messages.cmpntFileEntry, Messages.oldCmpntFileEntry, COMPONENTSETS_TYPE);
-            upgradePluginComponent(prefFile, Messages.prefFileEntry, Messages.oldPrefFileEntry, PREFERENCESETS_TYPE);
+            upgradePluginComponent(cmpntFile,
+            		Messages.cmpntFileEntry,
+            		Messages.oldCmpntFileEntry,
+            		COMPONENTSETS_TYPE);
+            upgradePluginComponent(prefFile,
+            		Messages.prefFileEntry,
+            		Messages.oldPrefFileEntry,
+            		PREFERENCESETS_TYPE);
 
             // Check for WAStarterKitForJava.zip
             if (new File(starterKit).exists()) {
@@ -327,56 +430,65 @@ public class WAStartUp implements IStartup {
             	new File(restFile).delete();
             }
             copyResourceFile(Messages.restFileEntry, restFile);
-
-       
         } catch (Exception e) {
             Activator.getDefault().log(e.getMessage(), e);
         }
     }
-    
+
     /**
      * Checks for pluginComponent file.
-     * If exists checks its version. If it has latest version then no upgrade action is needed ,
-     * else checks with older componentsets.xml , if identical then deletes existing and copies new one
-     * else renames existing and copies new one.  
+     * If exists checks its version.
+     * If it has latest version then no upgrade action is needed,
+     * else checks with older componentsets.xml,
+     * if identical then deletes existing and copies new one
+     * else renames existing and copies new one.
      * @param pluginComponent
      * @param resourceFile
      * @param componentType
-     * @throws Exception 
+     * @throws Exception
      */
     private void upgradePluginComponent(String pluginComponentPath, String resourceFile, 
     		String oldResourceFile, String componentType) throws Exception {
-    	
         File pluginComponentFile = new File(pluginComponentPath);
-        if (pluginComponentFile.exists()) { 
-        	String pluginComponentVersion = null ;
+        if (pluginComponentFile.exists()) {
+        	String pluginComponentVersion = null;
         	try {
         		if (COMPONENTSETS_TYPE.equals(componentType)) {
-        			pluginComponentVersion = WindowsAzureProjectManager.getComponentSetsVersion(pluginComponentFile);
-        		} else { 
-        			pluginComponentVersion = WindowsAzureProjectManager.getPreferenceSetsVersion(pluginComponentFile);
+        			pluginComponentVersion = WindowsAzureProjectManager.
+        					getComponentSetsVersion(pluginComponentFile);
+        		} else {
+        			pluginComponentVersion = WindowsAzureProjectManager.
+        					getPreferenceSetsVersion(pluginComponentFile);
         		}
         	} catch(Exception e ) {
-        		Activator.getDefault().log("Error ocured while getting version of plugin component "+componentType
-        				+", considering version as null");	
+        		Activator.getDefault().log(
+        				"Error occured while getting version of plugin component "
+        	+ componentType
+        	+ ", considering version as null");
         	}
-        	
-        	if((pluginComponentVersion != null && !pluginComponentVersion.isEmpty()) && 
-        			pluginComponentVersion.equals(WindowsAzureProjectManager.getCurrVerion())) {
-        		// Donot do anything
+        	if ((pluginComponentVersion != null
+        			&& !pluginComponentVersion.isEmpty())
+        			&& pluginComponentVersion.equals(
+        					WindowsAzureProjectManager.getCurrVerion())) {
+        		// Do not do anything
         	} else {
         		// Check with old plugin component for upgrade scenarios
-        		File    oldPluginComponentFile  = WAEclipseHelper.getResourceAsFile(oldResourceFile);
-        		boolean isIdenticalWithOld 		= WAEclipseHelper.isFilesIdentical(oldPluginComponentFile,pluginComponentFile);
-        		
-        		if(isIdenticalWithOld) {
-        			// Delete old one 
-        			pluginComponentFile.delete();            			
+        		File oldPluginComponentFile = WAEclipseHelper.
+        				getResourceAsFile(oldResourceFile);
+        		boolean isIdenticalWithOld = WAEclipseHelper.
+        				isFilesIdentical(
+        						oldPluginComponentFile, pluginComponentFile);
+        		if (isIdenticalWithOld) {
+        			// Delete old one
+        			pluginComponentFile.delete();
         		} else {
         			// Rename old one
         			DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
         			Date date = new Date();
-        			WAEclipseHelper.copyFile(pluginComponentPath,pluginComponentPath+".old"+dateFormat.format(date));
+        			WAEclipseHelper.copyFile(pluginComponentPath,
+        					pluginComponentPath
+        					+ ".old"
+        					+ dateFormat.format(date));
         		}
         		copyResourceFile(resourceFile, pluginComponentPath);
         	}

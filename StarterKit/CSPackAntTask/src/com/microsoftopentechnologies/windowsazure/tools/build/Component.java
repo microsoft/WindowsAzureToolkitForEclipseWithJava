@@ -17,9 +17,6 @@
 package com.microsoftopentechnologies.windowsazure.tools.build;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -40,6 +37,7 @@ public class Component {
 	private String deployDir;
 	private String cloudSrc;
 	private String cloudKey;
+	private String cloudAltSrc;
 	private CloudUpload cloudUpload = CloudUpload.NEVER;
 	private WorkerRole role;
 	
@@ -135,10 +133,27 @@ public class Component {
 		try {
 			URI uri = new URI(this.cloudSrc);
 			return uri.toURL();
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			throw new BuildException("Cloud source URL not valid: " + this.cloudSrc);
-		} catch (MalformedURLException e) {
-			throw new BuildException("Cloud source URL not valid: " + this.cloudSrc);
+		}
+	}
+	
+	/**
+	 * Sets/gets the alternative URL to download component from when deploying in cloud (not local) and the download from cloudsrc fails
+	 * @param url
+	 */
+	public void setCloudAltSrc(String url) {
+		this.cloudAltSrc = url;
+	}
+	public URL getCloudAltSrc() {
+		if(this.cloudSrc == null || this.cloudAltSrc == null) {
+			return null;
+		}
+		try {
+			URI uri = new URI(this.cloudAltSrc);
+			return uri.toURL();
+		} catch(Exception e) {
+			throw new BuildException("Cloud alternative source URL not valid: " + this.cloudAltSrc);
 		}
 	}
 	
@@ -340,7 +355,7 @@ public class Component {
 	}
 	
 	/**
-	 * Returns the blob name based on the URL, if this isa private Windows Azure Blob
+	 * Returns the blob name based on the URL, if this is a private Windows Azure Blob
 	 * @return
 	 */
 	private String getCloudBlob() {
@@ -425,20 +440,12 @@ public class Component {
 		}
 		
 		waPackage.log("Verifying download availability (" + cloudSrc.toExternalForm() + ")...");
-		
-		try {
-			final HttpURLConnection connection = (HttpURLConnection) this.getCloudSrc().openConnection();
-			connection.setRequestMethod("HEAD");
-			if(200 != connection.getResponseCode()) {
-				waPackage.log("warning: Failed to confirm download availability! Make sure the URL is correct (" + cloudSrc.toExternalForm() + ").", 1);
-			}
-			
-		} catch (IOException e) {
-			waPackage.log("warning: Failed to confirm download availability! Make sure the URL is correct (" + cloudSrc.toExternalForm() + ").", 1);							
+		if(!WindowsAzurePackage.verifyURLAvailable(this.getCloudSrc())) {
+			waPackage.log("warning: Failed to confirm download availability! Make sure the URL is correct (" + cloudSrc.toExternalForm() + ").", 1);			
 		}
 	}
 	
-	/** Verifies whether the blob pointed to by cloudSrc actually exists
+	/** Ensures that the blob pointed to by cloudSrc actually exists, uploading 
 	 * @return
 	 */
 	private void ensurePrivateDownload(WindowsAzureManager waManager) {
@@ -477,6 +484,8 @@ public class Component {
 				this.getCloudKey(), 
 				this.getCloudStorageEndpoint()))) {
 			; // Blob existence confirmed, nothing else to do
+		} else if(WindowsAzurePackage.verifyURLAvailable(this.getCloudAltSrc())) {
+			; // Alt download existence confirmed, nothing else to do
 		} else if(getCloudUpload() == CloudUpload.NEVER) {
 			waPackage.log("warning: Failed to verify blob availability! Make sure the URL and/or the access key is correct (" + cloudSrc.toExternalForm() + ")", 1);
 		} else if(getCloudUpload() == CloudUpload.AUTO) {
@@ -573,8 +582,8 @@ public class Component {
 						.replace("$deployPath", deployPath);
 			case UNZIP:
 				// Support for deploy method: unzip return
-				cmdLineTemplate = "cscript /NoLogo $utilSubdir\\$unzipFilename \"$destName\" $deployPath";
-				//cmdLineTemplate = "cmd /c $utilSubdir\\$unzipFilename file unzip \"$destName\" $deployPath"; // TODO
+				cmdLineTemplate = "cscript /NoLogo $utilSubdir\\$unzipFilename \"$destName\" \"$deployPath\"";
+				//cmdLineTemplate = "cmd /c $utilSubdir\\$unzipFilename file unzip \"$destName\" \"$deployPath\""; // TODO
 				cmdLineTemplate = cmdLineTemplate
 						.replace("$utilSubdir", WindowsAzurePackage.DEFAULT_UTIL_SUBDIR)
 						.replace("$unzipFilename", WindowsAzurePackage.UTIL_UNZIP_FILENAME)
@@ -584,7 +593,7 @@ public class Component {
 				
 				// Delete the ZIP to make room, but only if downloaded
 				if(null != getCloudSrc()) {
-					cmdLineTemplate += System.getProperty("line.separator") + "del /Q /F \"" + destFile.getName() + "\"";
+					cmdLineTemplate += WindowsAzurePackage.newline + "del /Q /F \"" + destFile.getName() + "\"";
 				}
 				
 				return cmdLineTemplate;
@@ -618,13 +627,94 @@ public class Component {
 			return null;
 		} 
 
-		final String cmd = String.format("cmd /c %s%s%s file download \"%s\" \"%s\"", 
-				WindowsAzurePackage.DEFAULT_UTIL_SUBDIR, 
-				File.separator, 
-				WindowsAzurePackage.UTIL_WASH_FILENAME, 
+		final StringBuilder cmd = new StringBuilder();
+		cmd.append(String.format("cmd /c %s file download \"%s\" \"%s\"", 
+				WindowsAzurePackage.UTIL_WASH_PATH, 
 				getCloudSrc(),
-				this.getCloudDownloadAs());
-		return cmd;
+				this.getCloudDownloadAs()));
+		
+		// Get alternative source and cache mgmt commandline
+		final String cmdLine = createAltDownloadCommandLine();
+		if(null != cmdLine) {
+			cmd.append(WindowsAzurePackage.newline);
+			cmd.append(cmdLine);
+		}
+
+		// Check if downloaded ok
+		cmd.append(WindowsAzurePackage.newline);
+		cmd.append(String.format("if not exist \"%s\" exit 1", this.getCloudDownloadAs()));
+
+		return cmd.toString();
+	}
+	
+	/** Returns commandline for downloading from alternative source
+	 * @return
+	 */
+	private String createAltDownloadCommandLine() {
+		if(getCloudAltSrc() == null) {
+			return null;
+		}
+
+		StringBuilder cmd = new StringBuilder();
+		
+		// Invoke alt download if download from cache fails
+		cmd.append(String.format("if not exist \"%s\" (", this.getCloudDownloadAs()));
+		cmd.append(WindowsAzurePackage.newline);
+		cmd.append(String.format("\tcmd /c %s file download \"%s\" \"%s\"", 
+				WindowsAzurePackage.UTIL_WASH_PATH,
+				getCloudAltSrc(),
+				this.getCloudDownloadAs()));
+
+		// Check if downloaded ok
+		cmd.append(WindowsAzurePackage.newline);
+		cmd.append(String.format("\tif not exist \"%s\" exit 1", this.getCloudDownloadAs()));
+
+		// Upload to cache if needed
+		String cmdLine = createCacheCommandLine();
+		if(cmdLine != null) {
+			cmd.append(WindowsAzurePackage.newline);
+			cmd.append("\t");
+			cmd.append(cmdLine);
+		}
+		
+		cmd.append(WindowsAzurePackage.newline);
+		cmd.append(") else (");
+		cmd.append(WindowsAzurePackage.newline);
+		cmd.append("\techo");
+		cmd.append(WindowsAzurePackage.newline);	
+		cmd.append(")");		
+		return cmd.toString();
+	}
+	
+	/** Returns commandline for caching the download from the alternative source in the main cloud source
+	 * @return
+	 */
+	private String createCacheCommandLine() {
+		if(getCloudAltSrc() == null 
+				|| getCloudUpload() != CloudUpload.AUTO 
+				|| role.getPackage().getPackageType() == PackageType.local 
+				|| getCloudSrc() == null 
+				|| getCloudKey() == null) {
+			return null;
+		}
+		
+		// Extract storage account, container, blob and file names
+		final String storeName = getCloudStorage();
+		final String containerName = getCloudContainer();
+		final String blobName = getCloudBlob();
+		final String fileName = this.getCloudDownloadAs();
+		if(containerName.isEmpty() || blobName.isEmpty() || storeName.isEmpty() || fileName.isEmpty()) {
+			throw new BuildException("\tNot a valid blob URL: " + getCloudSrc().toExternalForm());
+		} 
+
+		return String.format("cmd /c %s blob upload \"%s\" \"%s\" %s %s \"%s\" \"%s\"", 
+				WindowsAzurePackage.UTIL_WASH_PATH,
+				fileName,
+				blobName, 
+				containerName, 
+				storeName, 
+				getCloudKey(),
+				getCloudStorageEndpoint());
 	}
 	
 	/**
@@ -635,34 +725,36 @@ public class Component {
 		if(getCloudSrc() == null || getCloudKey() == null) {
 			return null;
 		}
-		
-		try {
-			// Extract storage account, container, blob and file names
-			final String storeName = getCloudSrc().getHost().split("\\.")[0];
-			final URI uri = getCloudSrc().toURI();
-			final String path = uri.getPath().substring(1);
-			final String[] pathParts = path.split("/");
-			final String containerName = pathParts[0];
-			final String blobName = path.substring(containerName.length()+1);
-			final String fileName = this.getCloudDownloadAs();
-			if(pathParts.length < 2 || containerName.isEmpty() || blobName.isEmpty() || storeName.isEmpty() || fileName.isEmpty()) {
-				throw new BuildException("\tNot a valid blob URL: " + getCloudSrc().toExternalForm());
-			} 
 
-			return String.format("cmd /c %s%s%s blob download \"%s\" \"%s\" %s %s \"%s\" \"%s\"", 
-					WindowsAzurePackage.DEFAULT_UTIL_SUBDIR, 
-					File.separator, 
-					WindowsAzurePackage.UTIL_WASH_FILENAME, 
-					fileName, 
-					blobName, 
-					containerName, 
-					storeName, 
-					getCloudKey(),
-					getCloudStorageEndpoint());
+		// Extract storage account, container, blob and file names
+		final String storeName = getCloudStorage();
+		final String containerName = getCloudContainer();
+		final String blobName = getCloudBlob();
+		final String fileName = this.getCloudDownloadAs();
+		if(containerName.isEmpty() || blobName.isEmpty() || storeName.isEmpty() || fileName.isEmpty()) {
+			throw new BuildException("\tNot a valid blob URL: " + getCloudSrc().toExternalForm());
+		} 
+
+		final StringBuilder cmd = new StringBuilder();
+		cmd.append(String.format("cmd /c %s blob download \"%s\" \"%s\" %s %s \"%s\" \"%s\"", 
+				WindowsAzurePackage.UTIL_WASH_PATH, 
+				fileName, 
+				blobName, 
+				containerName, 
+				storeName, 
+				getCloudKey(),
+				getCloudStorageEndpoint()));
 			
-		} catch (URISyntaxException e) {
-			throw new BuildException("\tNot valid component URL: " + getCloudSrc().toExternalForm());
+		// Add alt download commandline
+		final String cmdLine = createAltDownloadCommandLine();
+		if(null != cmdLine) {
+			cmd.append(WindowsAzurePackage.newline + cmdLine);
 		}
+
+		// Check if downloaded ok
+		cmd.append(WindowsAzurePackage.newline);
+		cmd.append(String.format("if not exist \"%s\" exit 1", fileName));
+		return cmd.toString();
 	}
 
 	/**

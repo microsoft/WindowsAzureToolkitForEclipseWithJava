@@ -139,7 +139,7 @@ public final class WindowsAzureConstants {
     public static final String CREATOR_VER = PROJ_PROPERTY
             + "/property[@name='creator.version']";
     public static final String V17_VERSION = "1.7.0";
-    public static final String VERSION = "2.0.1";
+    public static final String VERSION = "2.1.0";
     public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.inputendpoint']";
     public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.internalendpoint']";
     public static final String SA_INTERNAL_ENDPOINT_SUFFIX = "_SESSION_AFFINITY" ;
@@ -364,7 +364,7 @@ public final class WindowsAzureConstants {
     public static final String SET_DIAGLEVEL = "Microsoft.WindowsAzure.Plugins.Caching.DiagnosticLevel";
     public static final String SET_CONFIGCONN = "Microsoft.WindowsAzure.Plugins.Caching.ConfigStoreConnectionString";
     public static final String SET_CONFIGCONN_VAL = "UseDevelopmentStorage=true";
-    public static final String SET_CONFIGCONN_VAL_CLOULD =  "DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s";
+    public static final String SET_CONFIGCONN_VAL_CLOULD =  "BlobEndpoint=%s;AccountName=%s;AccountKey=%s";
     public static final String SET_NAMEDCACHE = "Microsoft.WindowsAzure.Plugins.Caching.NamedCaches";
     public static final String SET_NAMEDCACHE_VAL = "{&quot;caches&quot;:[{&quot;name&quot;:&quot;default&quot;,&quot;policy&quot;:{&quot;expiration&quot;:{&quot;defaultTTL&quot;:10,&quot;isExpirable&quot;:true,&quot;type&quot;:1}}}]}";
     public static final String CONFIG_SETTING_ROLE = ROLE_NAME
@@ -375,6 +375,7 @@ public final class WindowsAzureConstants {
 
     public static final String CACHE_ST_ACC_NAME_PROP = "project.%s.cachestorageaccount.name";
     public static final String CACHE_ST_ACC_KEY_PROP = "project.%s.cachestorageaccount.key";
+    public static final String CACHE_ST_ACC_URL_PROP = "project.%s.cachestorageaccount.url";
     public static final String INSTANCE_PROPERTY = "project.%s.instances";
     public static final String ROLE_PROP = PROJ_PROPERTY + "/property[@name='%s']";
     public static final String ROLE_PROP_VAL = PROJ_PROPERTY + "/property[@name='%s']/@value";
@@ -386,5 +387,5 @@ public final class WindowsAzureConstants {
     public static final String SRV_CLOUD_HOME = "project.%s.server.home.cloud";
     public static final String SRV_LOCAL_HOME = "project.%s.server.home.local";
 
-    public static final String MIN_SDK_VERSION="v2.0";
+    public static final String MIN_SDK_VERSION="v2.1";
 }

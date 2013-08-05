@@ -125,7 +125,6 @@ public final class Messages extends NLS {
 	public static String dlgDlUrlErrTtl;
 	public static String dlgDlNtLblUrl;
 	public static String dplPageJdkChkBtn;
-	public static String dplDlgJdkLbl;
 	public static String dbgBrowseBtn;
 	public static String dplPageSerChkBtn;
 	public static String dplDlgSelLbl;
@@ -146,14 +145,16 @@ public final class Messages extends NLS {
 	public static String cspackErMsg;
 	public static String cmhIdStrgAcc;
 	public static String cmhLblStrgAcc;
-	public static String jdkLocRdBtnLbl;
 	public static String jdkCldRdBtnLbl;
 	public static String autoDlJdkCldRdBtnLbl;
-	public static String srvLocRdBtnLbl;
 	public static String srvCldRdBtnLbl;
 	public static String autoDlSrvCldRdBtnLbl;
 	public static String linkLblAcc;
 	public static String eclipseDeployContainer;
+	public static String expErlStrtUp;
+	public static String expStrgReg;
+	public static String expLocToAuto;
+	public static String emltrGrp;
 
     static {
         // initialize resource bundle

@@ -372,6 +372,7 @@ public final class Messages extends NLS {
 	public static String linkLblAcc;
 	public static String dlgAutoDlJDKUrlErrMsg;
 	public static String dlgAutoDlSrvUrlErrMsg;
+	public static String setAccUrlErrMsg;
 
 	static {
 		// initialize resource bundle

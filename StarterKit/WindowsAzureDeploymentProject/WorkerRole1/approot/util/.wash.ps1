@@ -1,4 +1,4 @@
-﻿# wash v0.2.1
+﻿# wash v0.2.2
 # Copyright 2013 by Microsoft Open Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,7 +46,7 @@ $entities = @{
     "stores" = @("[store-name-filter]", "[--object]");
     
     "store" = @{
-        "use" = @("<name> [<key>]");
+        "use" = @("<name>", "[<key>]", "[""<service-base-url>""]");
         "create" = @("<name>", "<location>");
         "delete" = @("[<name>]");
         "locations" = @("<>");
@@ -57,10 +57,10 @@ $entities = @{
     "queues" = @("[queue-name-filter]", "[--object]");
     
     "queue" = @{
-        "" = @("<queue-name>", "[<account-name>]", "[<account-key>]");
-        "use" =    @("<queue-name>", "[<account-name>]", "[<account-key>]");
-        "create" = @("<queue-name>", "[<account-name>]", "[<account-key>]");
-        "delete" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]");
+        "" = @("<queue-name>", "[<account-name>]", "[<account-key>]", "[""<service-base-url>""]");
+        "use" =    @("<queue-name>", "[<account-name>]", "[<account-key>]", "[""<service-base-url>""]");
+        "create" = @("<queue-name>", "[<account-name>]", "[<account-key>]", "[""<service-base-url>""]");
+        "delete" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]", "[""<service-base-url>""]");
         "post" = @("<message>", "[<queue-name>]", "[<account-name>]", "[<account-key>]");
         "peek" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]");
         "get" = @("[<queue-name>]", "[<account-name>]", "[<account-key>]");
@@ -73,11 +73,11 @@ $entities = @{
     "containers" = @("[container-name-filter]", "[--object]");
     
     "container" = @{
-        "use" =    @("<container-name>", "[<account-name>]", "[<account-key>]");
-        "create" = @("<container-name>", "[<account-name>]", "[<account-key>]");
-        "delete" = @("[<container-name>]", "[<account-name>]", "[<account-key>]");
+        "use" =    @("<container-name>", "[<account-name>]", "[<account-key>]", "[""<service-base-url>""]");
+        "create" = @("<container-name>", "[<account-name>]", "[<account-key>]", "[""<service-base-url>""]");
+        "delete" = @("[<container-name>]", "[<account-name>]", "[<account-key>]", "[""<service-base-url>""]");
         "reset" = @("<>");
-        "access" = @("container | blob | off", "[<container-name>]", "[<account-name>]", "[<account-key>]");
+        "access" = @("container | blob | off | ?", "[<container-name>]", "[<account-name>]", "[<account-key>]", "[""<service-base-url>""]");
     }
     
     "blobs" = @("[blob-name-filter]", "[--object]");
@@ -85,7 +85,7 @@ $entities = @{
     "blob" = @{
         "" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]", "[--lastchanged]");
         "use" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]");
-        "delete" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]");
+        "delete" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]", "[""<service-base-url>""]");
         "download" = @("<local-path>", "[<blob-name>]", "[<container-name>]", "[<accountName>]", "[<accountKey>]", "[""<service-base-url>""]");
         "url" = @("[<blob-name>]", "[<container-name>]", "[<account-name>]", "[<account-key>]", "[--notepad]");
         "reset" = @("<>");
@@ -265,18 +265,24 @@ function cmd_store([string[]]$cmdTokens) {
 function cmd_store_use([string[]]$cmdTokens) {
     $name = context 'storeName' $cmdTokens[2]
     $key  = $cmdTokens[3]
+	$baseURL = context 'storeURL' $cmdTokens[4]
     
     if($name -eq $null) {
         show_usage $cmdTokens
-    } elseif($key -ne $null) {
-        select_store $name $key
+    } elseif(($null -ne $key) -and ($null -ne $baseURL)) {
+        select_store $name $key $baseURL
     } elseif(!(check_sub)) {
         return
     } elseif($null -eq ($name = resolve_storeName $name)) {
         Write-ErrorBrief "Failed to find this storage account"
     } else {
-        $key = get_storageKey $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $global:context["subscriptionCertificate"] $name
-        select_store $name $key
+		if($null -eq $baseURL) {
+			$baseURL = get_storageURL $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $global:context["subscriptionCertificate"] $name
+		}
+		if($null -eq $key) {
+        	$key = get_storageKey $global:context["subscriptionManagementURL"] $global:context["subscriptionID"] $global:context["subscriptionCertificate"] $name
+		}
+        select_store $name $key $baseURL
     }
 }
 
@@ -372,10 +378,11 @@ function cmd_queue([string[]]$cmdTokens) {
     $queueName = context 'queueName' $cmdTokens[1]
     $accountName = context 'storeName' $cmdTokens[2]
     $accountKey = context 'storeKey' $cmdTokens[3]
+	$baseURL = context 'storeURL' $cmdTokens[4]
     
-    if(!$queueName -or !$accountName -or !$accountKey) {
+    if(!$queueName -or !$accountName -or !$accountKey -or !$baseURL) {
         return $null
-    } elseif($null -eq  ($queue = get_queue $queueName $accountName $accountKey)) {
+    } elseif($null -eq  ($queue = get_queue $queueName $accountName $accountKey $baseURL)) {
         Write-ErrorBrief "Failed to access the queue"
     } else {
         $queue
@@ -421,10 +428,11 @@ function cmd_queue_use([string[]]$cmdTokens) {
     $name = $cmdTokens[2] 
     $accountName = context 'storeName' $cmdTokens[3]
     $accountKey = context 'storeKey' $cmdTokens[4]
+	$baseURL = context 'storeURL' $cmdTokens[5]
             
-    if(!$name -or !$accountName -or !$accountKey) {
+    if(!$name -or !$accountName -or !$accountKey -or !$baseURL) {
         show_usage $cmdTokens
-    } elseif($null -eq ($name = resolve_queueName $name $accountName $accountKey)) {
+    } elseif($null -eq ($name = resolve_queueName $name $accountName $accountKey $baseURL)) {
         Write-ErrorBrief "Failed to access the queue"
     } else {
         if($global:context["queueName"] -ne $name) {
@@ -434,6 +442,7 @@ function cmd_queue_use([string[]]$cmdTokens) {
         $global:context["queueName"] = $name
 		$global:context["storeName"] = $accountName
 		$global:context["storeKey"] = $accountKey
+		$global:context["storeURL"] = $baseURL
     } 
 }
 
@@ -457,7 +466,7 @@ function cmd_queue_post([string[]]$cmdTokens) {
     } 
     
     if($filter -ne $null) {
-        $queues = @(cmd_store_queues $cmdArgs $cmdOptions)
+        $queues = @(cmd_queues $cmdArgs $cmdOptions)
     }
     
     if($queues.Length -gt 0) {
@@ -469,15 +478,11 @@ function cmd_queue_post([string[]]$cmdTokens) {
         $queues += $queue
     }
     
-    try {
-        foreach($queue in $queues) {
-            $queue.EncodeMessage = $true
-            $msgObject = New-Object Microsoft.WindowsAzure.StorageClient.CloudQueueMessage($message)
-            $queue.AddMessage($msgObject)
-        }    
-    } catch {
-        Write-ErrorBrief "Failed to add a message to the queue"
-    }
+	foreach($queue in $queues) {
+		$queue.EncodeMessage = $true
+		$msgObject = New-Object Microsoft.WindowsAzure.StorageClient.CloudQueueMessage($message)
+		$queue.AddMessage($msgObject)
+	}
 }
 
 
@@ -581,18 +586,16 @@ function cmd_containers([string[]]$cmdTokens, [string[]]$cmdOptions) {
 function cmd_container([string[]]$cmdTokens) {
     $accountName = context 'storeName' $cmdTokens[2]
     $accountKey = context 'storeKey' $cmdTokens[3]
-    $containerName = context_containerName $cmdTokens[1] $accountName $accountKey
-    $container = $null
+	$baseURL = context 'storeURL' $cmdTokens[4]
+    $containerName = context_containerName $cmdTokens[1] $accountName $accountKey $baseURL
     
     if($null -eq $containerName) {
         Write-ErrorBrief "Failed to find this container"
-    } elseif($accountName -and $accountKey) {
-        $container = get_container $containerName $accountName $accountKey		
+    } elseif($accountName -and $accountKey -and $baseURL) {
+        get_container $containerName $accountName $accountKey $baseURL
 	} else {
         Write-ErrorBrief "Failed to open a connection with the storage service"
     }
-	
-    return $container
 }
 
 
@@ -600,10 +603,11 @@ function cmd_container_use([string[]]$cmdTokens) {
     $name = $cmdTokens[2]
     $accountName = context 'storeName' $cmdTokens[3]
     $accountKey = context 'storeKey' $cmdTokens[4]
+	$baseURL = context 'storeURL' $cmdTokens[5]
     
-    if(!$name -or !$accountName -or !$accountKey) {
+    if(!$name -or !$accountName -or !$accountKey -or !$baseURL) {
         show_usage $cmdTokens
-    } elseif($null -eq ($name = resolve_containerName $name $accountName $accountKey)) {
+    } elseif($null -eq ($name = resolve_containerName $name $accountName $accountKey $baseURL)) {
         Write-ErrorBrief "Failed to find this container"        
     } else {
         if($global:context["containerName"] -ne $name) {
@@ -613,6 +617,7 @@ function cmd_container_use([string[]]$cmdTokens) {
         $global:context["containerName"] = $name        
 		$global:context["storeName"] = $accountName
 		$global:context["storeKey"] = $accountKey
+		$global:context["storeURL"] = $baseURL
     } 
 }
 
@@ -643,44 +648,36 @@ function cmd_container_create([string[]]$cmdTokens) {
 }
 
 
-function cmd_container_access([string[]]$cmdTokens) {
-    [string]$access = $cmdTokens[2]
-    $cmdArgs = $cmdTokens[2..$cmdTokens.Length]
-    if((-not ([String]::IsNullOrEmpty($access))) -and (@("container", "off", "blob") -notcontains $access)) {
-        show_usage $cmdTokens
-    } elseif($null -eq ($container = cmd_container $cmdArgs)) {
-        Write-ErrorBrief "Failed to access the container"
-    } elseif(-not([String]::IsNullOrEmpty($access))) {
-        $perms = New-Object Microsoft.WindowsAzure.StorageClient.BlobContainerPermissions
-        try {
-            $perms.PublicAccess = $access.ToLower()
-            $container.SetPermissions($perms)
-        } catch {
-            Write-ErrorBrief "Failed to set container access permissions"
-        }
-    } elseif($null -eq ($perms = $container.GetPermissions())) {
-        Write-ErrorBrief "Failed to read container access permissions"
-    } else {
-        ([string]($perms.PublicAccess)).ToLower()
-    }
-}
-
-
 function cmd_container_delete([string[]]$cmdTokens) {
     $cmdArgs = $cmdTokens[1..$cmdTokens.Length]
     if($null -eq ($container = cmd_container $cmdArgs)) {
         Write-ErrorBrief "Failed to access the container"
     } else {
-        try {
-            $containerName = $container.Name
-            $container.Delete()
-            if($containerName -eq $global:context["containerName"]) {
-                $global:context["containerName"] = $null
-                $global:context["blobName"] = $null
-            }
-        } catch {
-            Write-ErrorBrief "Failed to delete the container"
-        }
+		$containerName = $container.Name
+		$container.Delete()
+		if($containerName -eq $global:context["containerName"]) {
+			$global:context["containerName"] = $null
+			$global:context["blobName"] = $null
+		}
+    }
+}
+
+
+function cmd_container_access([string[]]$cmdTokens) {
+    [string]$access = $cmdTokens[2]
+    $cmdArgs = $cmdTokens[2..$cmdTokens.Length]
+    if($null -eq ($container = cmd_container $cmdArgs)) {
+        Write-ErrorBrief "Failed to access the container"
+    } elseif($null -eq ($perms = $container.GetPermissions())) {
+        Write-ErrorBrief "Failed to read container access permissions"
+	} elseif(($access -eq '?') -or !$access) {
+        ([string]($perms.PublicAccess)).ToLower()		
+    } elseif(@("container", "off", "blob") -notcontains $access) {
+        show_usage $cmdTokens
+    } else {
+        $perms = New-Object Microsoft.WindowsAzure.StorageClient.BlobContainerPermissions
+		$perms.PublicAccess = $access.ToLower()
+		$container.SetPermissions($perms)
     }
 }
 
@@ -787,9 +784,10 @@ function cmd_blob_delete([string[]]$cmdTokens) {
     $blobName = context 'blobName' $cmdTokens[2]
     $accountName = context 'storeName' $cmdTokens[4]
     $accountKey = context 'storeKey' $cmdTokens[5]
-    $containerName = context_containerName $cmdTokens[3] $accountName $accountKey
-    
-    if($null -eq ($container = get_container $containerName $accountName $accountKey)) {
+	$baseURL = context 'storeURL' $cmdTokens[6]
+    $containerName = context_containerName $cmdTokens[3] $accountName $accountKey $baseURL
+
+    if($null -eq ($container = get_container $containerName $accountName $accountKey $baseURL)) {
         show_usage $cmdTokens
     } elseif($null -eq ($blob = $container.GetBlobReference($blobName))) {
         show_usage $cmdTokens
@@ -833,6 +831,7 @@ function cmd_blob_download([string[]]$cmdTokens) {
             $blob.DownloadToFile($filepath)
         } catch {
             Write-ErrorBrief "Blob download failed"
+			Remove-Item $filepath
         }
     }
 }
@@ -1232,6 +1231,7 @@ function list_storage_entities([string[]]$cmdTokens, [string[]]$cmdOptions, [str
     $accountName = $global:context["storeName"]
     $accountKey = $global:context["storeKey"]
 	$containerName = $global:context["containerName"]
+	$baseURL = $global:context["storeURL"]
 	
 	if($null -eq ($filter = $cmdTokens[1])) {
         $filter = "*"
@@ -1248,9 +1248,9 @@ function list_storage_entities([string[]]$cmdTokens, [string[]]$cmdOptions, [str
 	} elseif(!(Get-Command $functionName -ea SilentlyContinue)) {
 		# Error?
 	} elseif($cmdOptions -contains "--object") {
-		& $listFunction $accountName $accountKey $containerName | Where-Object {$_ -ne $null} | Where-Object {$_.Name -like $filter}
+		& $listFunction $accountName $accountKey $baseURL $containerName | Where-Object {$_ -ne $null} | Where-Object {$_.Name -like $filter}
     } else {
-        & $listFunction $accountName $accountKey $containerName | Where-Object {$_ -ne $null} | Where-Object {$_.Name -like $filter} | foreach { $_.Name }
+        & $listFunction $accountName $accountKey $baseURL $containerName | Where-Object {$_ -ne $null} | Where-Object {$_.Name -like $filter} | foreach { $_.Name }
     }	
 }
 
@@ -1262,14 +1262,14 @@ function list_containers([string]$accountName, [string]$accountKey, [string]$bas
 }
 
 
-function list_queues($accountName, $accountKey) {
-    if($null -ne ($queueClient = get_queue_client $accountName $accountKey)) {
+function list_queues($accountName, $accountKey, $baseURL) {
+    if($null -ne ($queueClient = get_queue_client $accountName $accountKey $baseURL)) {
         $queueClient.ListQueues()
     }
 }
 
 
-function list_blobs($accountName, $accountKey, $containerName, $baseURL) {
+function list_blobs($accountName, $accountKey, $baseURL, $containerName) {
 	if($null -ne ($container = get_container $containerName $accountName $accountKey $baseURL)) {
         load_storage_client
         $options = New-Object Microsoft.WindowsAzure.StorageClient.BlobRequestOptions
@@ -1290,13 +1290,15 @@ function select_directory($path) {
 }
 
 
-function select_store($name, $key) {
+function select_store($name, $key, $baseURL) {
     if(($name -eq $null) -or ($key -eq $null)) {
         $global:context["storeName"] = $null
         $global:context["storeKey"] = $null
+		$global:context["storeURL"] = $null
     } else {
         $global:context["storeName"] = $name
         $global:context["storeKey"] = $key
+		$global:context["storeURL"] = $baseURL
     }
     $global:context["containerName"] = $null
     $global:context["blobName"] = $null
@@ -1341,8 +1343,8 @@ function resolve_storeName($storeName) {
 }
 
 
-function resolve_queueName($queueName, $accountName, $accountKey) {
-    (list_queues $accountName $accountKey) | Where-Object { $_.Name -like $queueName } | Select-Object -ExpandProperty Name -first 1
+function resolve_queueName($queueName, $accountName, $accountKey, $baseURL) {
+    (list_queues $accountName $accountKey $baseURL) | Where-Object { $_.Name -like $queueName } | Select-Object -ExpandProperty Name -first 1
 }
 
 
@@ -1352,7 +1354,7 @@ function resolve_containerName($containerName, $accountName, $accountKey, $baseU
 
 
 function resolve_blobName($blobName, $containerName, $accountName, $accountKey, $baseURL) {
-    (list_blobs $accountName $accountKey $containerName $baseURL) | Where-Object { $_.Name -like $blobName } | Select-Object -ExpandProperty Name -first 1
+    (list_blobs $accountName $accountKey $baseURL $containerName) | Where-Object { $_.Name -like $blobName } | Select-Object -ExpandProperty Name -first 1
 }
 
 
@@ -1391,7 +1393,7 @@ function get_subscriptionXML($cloudURL, $subscriptionID, $cert) {
 }
 
 
-function get_storageXML($cloudURL, $subscriptionID, $cert) {
+function get_storesXML($cloudURL, $subscriptionID, $cert) {
     Call-Subscription $cloudURL $subscriptionID "services/storageservices" "GET" $cert
 }
 
@@ -1413,14 +1415,14 @@ function create_storage([string]$name, [string]$location, $cloudURL, $subscripti
 
 
 function list_stores($cloudURL, $subID, $cert) {
-    if($null -ne ($storageXML = (get_storageXML $cloudURL $subID $cert))) {
+    if($null -ne ($storageXML = (get_storesXML $cloudURL $subID $cert))) {
         $storageXML.StorageServices.StorageService | Where-Object { $_ -ne $null }       
     }
 }
 
 
 function list_storeNames($cloudURL, $subID, $cert) {
-    if($null -eq ($storageXML = (get_storageXML $cloudURL $subID $cert))) {
+    if($null -eq ($storageXML = (get_storesXML $cloudURL $subID $cert))) {
         return $null
     } else {
         $storageXML.StorageServices.StorageService | foreach {$_.ServiceName } | Where-Object { [String]::IsNullOrEmpty($_) -eq $False }       
@@ -1437,8 +1439,6 @@ function get_storageKey($cloudURL, $subscriptionID, $cert, $storageName) {
     $storeKeysXML = get_storageKeysXML $storageName  $cloudURL $subscriptionID $cert
     if($storeKeysXML -ne $null) {
         $storeKeysXML.StorageService.StorageServiceKeys.Primary
-    } else {
-        return $null
     }            
 }
 
@@ -1448,6 +1448,28 @@ function get_storageKeysXML($name, $cloudURL, $subscriptionID, $cert) {
     Call-Subscription $cloudURL $subscriptionID $operation "GET" $cert    
 }
 
+
+function get_storageURL($cloudURL, $subscriptionID, $cert, $storageName) {
+	if($null -ne ($storageXML = get_storageXML $cloudURL $subscriptionID $cert $storageName)) {
+		$url = $storageXML.StorageService.StorageServiceProperties.Endpoints.Endpoint[0]
+		if($url.StartsWith("http://")) {
+			$http = "http://"
+		} elseif($url.StartsWith("https://")) {
+			$http = "https://"
+		}
+		[string[]]$urlParts = $url.Split(".")
+		$urlParts[0] = ""	#Blank out storage name
+		$urlParts[1] = ""	#Blank out service type
+		$url = $urlParts -join '.'
+		$http + $url.TrimStart('.').TrimEnd('/')
+	} 
+}
+
+
+function get_storageXML($cloudURL, $subscriptionID, $cert, $storageName) {
+    $operation = "services/storageServices/" + $name
+	Call-Subscription $cloudURL $subscriptionID $operation "GET" $cert
+}
 
 function connection_string($accountName, $accountKey) {
     'DefaultEndpointsProtocol=https;AccountName=' + $accountName + ';AccountKey=' + $accountKey
@@ -1464,10 +1486,10 @@ function get_container($name, [string]$accountName, [string]$accountKey, [string
     }
 }
 
-function get_queue($name, $accountName, $accountKey) {
-    if(!$accountName -or !$name -or !$accountKey) {
+function get_queue($name, $accountName, $accountKey, $baseURL) {
+    if(!$accountName -or !$name -or !$accountKey -or !$baseURL) {
         return $null
-    } elseif ($null -eq ($queueClient = get_queue_client $accountName $accountKey)) {
+    } elseif ($null -eq ($queueClient = get_queue_client $accountName $accountKey $baseURL)) {
         return $null
     } else {
         $queueClient.GetQueueReference($name)
@@ -1483,10 +1505,10 @@ function get_blob_client([string]$accountName, [string]$accountKey, [string]$bas
 }
 
 
-function get_queue_client($accountName, $accountKey) {
-	$storageAccount = get_storageAccount $accountName $accountKey
+function get_queue_client($accountName, $accountKey, $baseURL) {
+	$storageAccount = get_storageAccount $accountName $accountKey $baseURL
     if($storageAccount) {
-    	New-Object Microsoft.WindowsAzure.StorageClient.CloudQueueClient($storageAccount.QueueEndpoint, $storageAccount.Credentials)
+		[Microsoft.WindowsAzure.StorageClient.CloudStorageAccountStorageClientExtensions]::CreateCloudQueueClient($storageAccount)
 	}
 }
 

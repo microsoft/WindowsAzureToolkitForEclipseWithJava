@@ -241,6 +241,7 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 	 * @param project to be upgraded
 	 */
 	private void handleProjectOpen(final IProject project) {
+		refreshWorkspace();
 		WindowsAzureProjectManager projMngr;
 		try {
 			projMngr = WindowsAzureProjectManager.
@@ -289,6 +290,7 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 				correctProjectName(project, projMngr);
 			}
 			projMngr = WAStartUp.initializeStorageAccountRegistry(projMngr);
+			projMngr = WAStartUp.changeLocalToAuto(projMngr);
 			// save object so that access key will get saved in PML.
 			projMngr.save();
 		} catch (Exception e) {

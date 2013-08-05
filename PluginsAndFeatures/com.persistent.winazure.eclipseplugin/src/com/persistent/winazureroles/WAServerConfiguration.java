@@ -106,10 +106,7 @@ public class WAServerConfiguration extends PropertyPage {
 				getTxtJdk().setText(jdkSrcPath);
 				String jdkUrl = windowsAzureRole.getJDKCloudURL();
 				// JDK download group
-				if (jdkUrl == null || jdkUrl.isEmpty()) {
-					JdkSrvConfig.setEnableDlGrp(false, false);
-					JdkSrvConfig.enableJdkRdButtons(JdkSrvConfig.getDlRdLocBtn());
-				} else {
+				if (jdkUrl != null && !jdkUrl.isEmpty()) {
 					// JDK auto upload option configured
 					if (JdkSrvConfig.
 							isJDKAutoUploadPrevSelected(windowsAzureRole)) {
@@ -166,10 +163,7 @@ public class WAServerConfiguration extends PropertyPage {
 				JdkSrvConfig.getTxtDir().setText(srvSrcPath);
 				// Server download group
 				String srvUrl = windowsAzureRole.getServerCloudURL();
-				if (srvUrl == null || srvUrl.isEmpty()) {
-					JdkSrvConfig.setEnableDlGrpSrv(false, false);
-					JdkSrvConfig.enableSrvRdButtons(JdkSrvConfig.getDlRdLocBtnSrv());
-				} else {
+				if (srvUrl != null && !srvUrl.isEmpty()) {
 					// server auto upload option configured
 					if (JdkSrvConfig.
 							isServerAutoUploadPrevSelected(windowsAzureRole)) {
@@ -354,7 +348,7 @@ public class WAServerConfiguration extends PropertyPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getJdkCheckBtn().getSelection()) {
 					try {
-						setJDK(JdkSrvConfigListener.jdkChkBoxChecked());
+						setJDK(JdkSrvConfigListener.jdkChkBoxChecked(windowsAzureRole));
 					} catch (WindowsAzureInvalidProjectOperationException e) {
 						PluginUtil.displayErrorDialogAndLog(
 								getShell(),
@@ -419,15 +413,6 @@ public class WAServerConfiguration extends PropertyPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getDlRdCldBtn().getSelection()) {
 					JdkSrvConfigListener.jdkDeployBtnSelected(windowsAzureRole);
-				} else {
-					// deploy radio button unselected and auto upload selected.
-					if (JdkSrvConfig.getAutoDlRdCldBtn().getSelection()) {
-						return;
-					}
-
-					// deploy radio button unselected and local selected.
-					removeJdkCloudSettings(false);
-					JdkSrvConfigListener.jdkDeployOrAutoToLocalBtnSelected();
 				}
 				handlePageComplete();
 			}
@@ -457,12 +442,6 @@ public class WAServerConfiguration extends PropertyPage {
 										JdkSrvConfig.getCmbStrgAccJdk()));
 						return;
 					}
-					/*
-					 * auto upload radio button unselected
-					 * and local button selected.
-					 */
-					removeJdkCloudSettings(true);
-					JdkSrvConfigListener.jdkDeployOrAutoToLocalBtnSelected();
 				}
 				handlePageComplete();
 			}
@@ -536,7 +515,9 @@ public class WAServerConfiguration extends PropertyPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getSerCheckBtn().getSelection()) {
-					JdkSrvConfigListener.srvChkBoxChecked();
+					JdkSrvConfigListener.srvChkBoxChecked(
+							windowsAzureRole,
+							Messages.dlNtLblDir);
 				} else {
 					// Remove server home settings
 					removeServerHomeSettings();
@@ -687,22 +668,6 @@ public class WAServerConfiguration extends PropertyPage {
 					JdkSrvConfigListener.
 					srvDeployBtnSelected(windowsAzureRole,
 							Messages.dlNtLblDir);
-				} else {
-					/*
-					 * server deploy radio button unselected
-					 * and server auto upload selected.
-					 */
-					if (JdkSrvConfig.getAutoDlRdCldBtnSrv().getSelection()) {
-						return;
-					}
-					/*
-					 * server deploy radio button unselected
-					 * and local selected.
-					 */
-					removeServerCloudSettings(false);
-					JdkSrvConfigListener.
-					srvDeployOrAutoToLocalBtnSelected(
-							Messages.dlgDlNtLblUrl);
 				}
 				handlePageComplete();
 			}
@@ -733,14 +698,6 @@ public class WAServerConfiguration extends PropertyPage {
 										JdkSrvConfig.getCmbStrgAccSrv()));
 						return;
 					}
-					/*
-					 * server auto upload radio button unselected
-					 * and local button selected.
-					 */
-					removeServerCloudSettings(true);
-					JdkSrvConfigListener.
-					srvDeployOrAutoToLocalBtnSelected(
-							Messages.dlgDlNtLblUrl);
 				}
 				handlePageComplete();
 			}
@@ -1813,56 +1770,6 @@ public class WAServerConfiguration extends PropertyPage {
 					getShell(),
 					Messages.genErrTitle,
 					Messages.srvHomeErr);
-		}
-	}
-
-	/**
-	 * Method will remove server cloud settings.
-	 * @param isAuto : to check upload mode is auto or not.
-	 */
-	private void removeServerCloudSettings(boolean isAuto) {
-		try {
-			/*
-			 * To avoid exception if user
-			 * un-check text box without configuring
-			 * server.
-			 */
-			if (windowsAzureRole.getServerName() != null
-					&& windowsAzureRole.
-					getServerSourcePath() != null) {
-				removeServerHomeSettings();
-				windowsAzureRole.setServerCloudKey(null);
-				windowsAzureRole.setServerCloudURL(null);
-				if (isAuto) {
-					windowsAzureRole.setServerCloudUploadMode(null);
-				}
-			}
-		} catch (WindowsAzureInvalidProjectOperationException e) {
-			PluginUtil.displayErrorDialog(getShell(),
-					Messages.genErrTitle,
-					Messages.urlKeySetErMsgSrv);
-		}
-	}
-
-	/**
-	 * Method will remove JDK cloud settings.
-	 * @param isAuto : to check upload mode is auto or not.
-	 */
-	private void removeJdkCloudSettings(boolean isAuto) {
-		try {
-			if (windowsAzureRole.
-					getJDKSourcePath() != null) {
-				removeJavaHomeSettings();
-				windowsAzureRole.setJDKCloudKey(null);
-				windowsAzureRole.setJDKCloudURL(null);
-				if (isAuto) {
-					windowsAzureRole.setJDKCloudUploadMode(null);
-				}
-			}
-		} catch (WindowsAzureInvalidProjectOperationException e) {
-			PluginUtil.displayErrorDialog(getShell(),
-					Messages.genErrTitle,
-					Messages.urlKeySetErrMsg);
 		}
 	}
 }

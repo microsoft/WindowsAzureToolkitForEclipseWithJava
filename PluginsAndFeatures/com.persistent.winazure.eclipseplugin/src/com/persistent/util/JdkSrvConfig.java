@@ -65,7 +65,6 @@ public class JdkSrvConfig {
 	private static Text txtUrl;
 	private static Combo cmbStrgAccJdk;
 	private static Link accLinkJdk;
-	private static Button dlRdLocBtn;
 	private static Button dlRdCldBtn;
 	private static Button autoDlRdCldBtn;
 	private static Label lblUrl;
@@ -78,7 +77,6 @@ public class JdkSrvConfig {
 	private static Text txtUrlSrv;
 	private static Combo cmbStrgAccSrv;
 	private static Link accLinkSrv;
-	private static Button dlRdLocBtnSrv;
 	private static Button dlRdCldBtnSrv;
 	private static Button autoDlRdCldBtnSrv;
 	private static Label lblUrlSrv;
@@ -88,12 +86,10 @@ public class JdkSrvConfig {
 	private static Text txtHomeDir;
 	// Variables for JDK group
 	private static Button jdkCheckBtn;
-	private static Label lblJdkLoc;
 	private static Button btnJdkLoc;
 	private static Text txtJdk;
 	// Variables for Server group
 	private static Button serCheckBtn;
-	private static Label lblDir;
 	private static Text txtDir;
 	private static Button btnSrvLoc;
 	private static Label lblSelect;
@@ -123,7 +119,7 @@ public class JdkSrvConfig {
 	public static Button getJdkCheckBtn() {
 		return jdkCheckBtn;
 	}
-	
+
 	public static void setTxtUrl(Text txtUrl) {
 		JdkSrvConfig.txtUrl = txtUrl;
 	}
@@ -192,26 +188,18 @@ public class JdkSrvConfig {
 		return txtUrl;
 	}
 
-	public static Button getDlRdLocBtn() {
-		return dlRdLocBtn;
-	}
-
 	public static Button getDlRdCldBtn() {
 		return dlRdCldBtn;
 	}
-	
+
 	public static Button getAutoDlRdCldBtn() {
 		return autoDlRdCldBtn;
-	}
-
-	public static Button getDlRdLocBtnSrv() {
-		return dlRdLocBtnSrv;
 	}
 
 	public static Button getDlRdCldBtnSrv() {
 		return dlRdCldBtnSrv;
 	}
-	
+
 	public static Button getAutoDlRdCldBtnSrv() {
 		return autoDlRdCldBtnSrv;
 	}
@@ -261,27 +249,25 @@ public class JdkSrvConfig {
 	public static Control createJDKGrp(Composite parent) {
 		// JDK container
 		Composite containerJDK = createContainer(parent);
+		Group jdkEmlGrp = createGroup(
+				containerJDK, 3, Messages.emltrGrp);
 
 		// JDK Checkbox
-		jdkCheckBtn = createCheckButton(containerJDK,
+		jdkCheckBtn = createCheckButton(jdkEmlGrp,
 				Messages.dplPageJdkChkBtn);
 
 		// JDK Directory
-		lblJdkLoc = new Label(containerJDK, SWT.LEFT);
+		txtJdk = new Text(jdkEmlGrp, SWT.LEFT | SWT.BORDER);
 		GridData groupGridData = new GridData();
-		groupGridData.horizontalAlignment = SWT.FILL;
-		lblJdkLoc.setText(Messages.dplDlgJdkLbl);
-		lblJdkLoc.setLayoutData(groupGridData);
-
-		txtJdk = new Text(containerJDK, SWT.LEFT | SWT.BORDER);
-		groupGridData = new GridData();
 		groupGridData.grabExcessHorizontalSpace = true;
+		groupGridData.horizontalSpan = 2;
+		groupGridData.horizontalIndent = 20;
 		groupGridData.widthHint = 330;
 		groupGridData.horizontalAlignment = SWT.FILL;
 		txtJdk.setLayoutData(groupGridData);
 
 		// JDK Browse button
-		btnJdkLoc = new Button(containerJDK, SWT.PUSH | SWT.CENTER);
+		btnJdkLoc = new Button(jdkEmlGrp, SWT.PUSH | SWT.CENTER);
 		groupGridData = new GridData();
 		groupGridData.horizontalAlignment = SWT.FILL;
 		groupGridData.grabExcessHorizontalSpace = true;
@@ -303,41 +289,40 @@ public class JdkSrvConfig {
 	public static Control createServerGrp(Composite parent) {
 		// Server container
 		Composite containerSrv = createContainer(parent);
+		Group srvEmGrp = createGroup(
+				containerSrv, 3, Messages.emltrGrp);
 
 		// Server checkbox
-		serCheckBtn = createCheckButton(containerSrv,
+		serCheckBtn = createCheckButton(srvEmGrp,
 				Messages.dplPageSerChkBtn);
 
-		// Server directory
-		lblDir = new Label(containerSrv, SWT.LEFT);
+		txtDir = new Text(srvEmGrp, SWT.LEFT | SWT.BORDER);
 		GridData groupGridData = new GridData();
-		lblDir.setText(Messages.dplDlgJdkLbl);
-		lblDir.setLayoutData(groupGridData);
-
-		txtDir = new Text(containerSrv, SWT.LEFT | SWT.BORDER);
-		groupGridData = new GridData();
+		groupGridData.horizontalSpan = 2;
+		groupGridData.horizontalIndent = 20;
 		groupGridData.horizontalAlignment = SWT.FILL;
 		groupGridData.grabExcessHorizontalSpace = true;
 		groupGridData.widthHint = 330;
 		txtDir.setLayoutData(groupGridData);
 
-		btnSrvLoc = new Button(containerSrv, SWT.PUSH | SWT.CENTER);
+		btnSrvLoc = new Button(srvEmGrp, SWT.PUSH | SWT.CENTER);
 		groupGridData = new GridData();
 		groupGridData.horizontalAlignment = SWT.FILL;
-		groupGridData.widthHint = 95;
+		groupGridData.widthHint = 50;
 		btnSrvLoc.setText(Messages.dbgBrowseBtn);
 		btnSrvLoc.setLayoutData(groupGridData);
 
 		// Server dropdown
-		lblSelect = new Label(containerSrv, SWT.LEFT);
+		lblSelect = new Label(srvEmGrp, SWT.LEFT);
 		groupGridData = new GridData();
+		groupGridData.horizontalIndent = 20;
 		groupGridData.horizontalAlignment = SWT.FILL;
 		lblSelect.setText(Messages.dplDlgSelLbl);
 		lblSelect.setLayoutData(groupGridData);
 
-		comboServer = createCombo(containerSrv, false);
+		comboServer = createCombo(srvEmGrp, false);
 
-		custLink = createLink(containerSrv,
+		custLink = createLink(srvEmGrp,
 				Messages.dplDlgSerBtn, false);
 
 		// Server's Deploy from download group
@@ -368,7 +353,7 @@ public class JdkSrvConfig {
 		tblApp.setHeaderVisible(true);
 		tblApp.setLinesVisible(true);
 		gridData = new GridData();
-		gridData.heightHint = 270;
+		gridData.heightHint = 300;
 		gridData.horizontalIndent = 2;
 		gridData.horizontalAlignment = SWT.FILL;
 		gridData.grabExcessHorizontalSpace = true;
@@ -415,8 +400,6 @@ public class JdkSrvConfig {
 	 */
 	public static void createDownloadJdkGrp(Composite parent) {
 		dlJdkGrp = createGroup(parent, 3, Messages.dlgDownloadGrp);
-		dlRdLocBtn = createRadioButton(dlJdkGrp,
-				Messages.jdkLocRdBtnLbl);
 		autoDlRdCldBtn = createRadioButton(dlJdkGrp,
 				Messages.autoDlJdkCldRdBtnLbl);
 		dlRdCldBtn = createRadioButton(dlJdkGrp,
@@ -442,8 +425,6 @@ public class JdkSrvConfig {
 	 */
 	public static void createDownloadSrvGrp(Composite parent) {
 		dlSrvGrp = createGroup(parent, 3, Messages.dlgDownloadGrp);
-		dlRdLocBtnSrv = createRadioButton(dlSrvGrp,
-				Messages.srvLocRdBtnLbl);
 		autoDlRdCldBtnSrv = createRadioButton(dlSrvGrp,
 				Messages.autoDlSrvCldRdBtnLbl);
 		dlRdCldBtnSrv = createRadioButton(dlSrvGrp,
@@ -695,7 +676,6 @@ public class JdkSrvConfig {
 	 */
 	public static void setEnableJDK(boolean status){
 		jdkCheckBtn.setSelection(status);
-		lblJdkLoc.setEnabled(status);
 		txtJdk.setEnabled(status);
 		btnJdkLoc.setEnabled(status);
 		if (!status) {
@@ -712,7 +692,6 @@ public class JdkSrvConfig {
 		comboServer.setEnabled(status);
 		lblSelect.setEnabled(status);
 		custLink.setEnabled(status);
-		lblDir.setEnabled(status);
 		btnSrvLoc.setEnabled(status);
 		txtDir.setEnabled(status);
 		tblApp.setEnabled(status);
@@ -733,7 +712,6 @@ public class JdkSrvConfig {
 	public static void setEnableDlGrp(boolean status, boolean applyAutoUlParams) {
 		dlRdCldBtn.setEnabled(status);
 		autoDlRdCldBtn.setEnabled(status);
-		dlRdLocBtn.setEnabled(status);
 		cmbStrgAccJdk.setEnabled(status);
 		lblKey.setEnabled(status);
 		lblUrl.setEnabled(status);
@@ -753,7 +731,6 @@ public class JdkSrvConfig {
 		if (!status) {
 			dlRdCldBtn.setSelection(false);
 			autoDlRdCldBtn.setSelection(false);
-			dlRdLocBtn.setSelection(false);
 			txtUrl.setText("");
 			cmbStrgAccJdk.removeAll();
 			txtJavaHome.setText("");
@@ -774,7 +751,6 @@ public class JdkSrvConfig {
 	public static void enableJdkRdButtons(Button defaultSelectButton) {
 		dlRdCldBtn.setEnabled(true);
 		autoDlRdCldBtn.setEnabled(true);
-		dlRdLocBtn.setEnabled(true);
 		defaultSelectButton.setSelection(true);
 	}
 
@@ -786,7 +762,6 @@ public class JdkSrvConfig {
 	public static void setEnableDlGrpSrv(boolean status, boolean applyAutoUlParams) {
 		dlRdCldBtnSrv.setEnabled(status);
 		autoDlRdCldBtnSrv.setEnabled(status);
-		dlRdLocBtnSrv.setEnabled(status);
 		cmbStrgAccSrv.setEnabled(status);
 		lblKeySrv.setEnabled(status);
 		lblUrlSrv.setEnabled(status);
@@ -804,7 +779,6 @@ public class JdkSrvConfig {
 		if (!status) {
 			dlRdCldBtnSrv.setSelection(false);
 			autoDlRdCldBtnSrv.setSelection(false);
-			dlRdLocBtnSrv.setSelection(false);
 			txtUrlSrv.setText("");
 			cmbStrgAccSrv.removeAll();
 			txtHomeDir.setText("");
@@ -825,7 +799,6 @@ public class JdkSrvConfig {
 	public static void enableSrvRdButtons(Button defaultSelectButton) {
 		dlRdCldBtnSrv.setEnabled(true);
 		autoDlRdCldBtnSrv.setEnabled(true);
-		dlRdLocBtnSrv.setEnabled(true);
 		defaultSelectButton.setSelection(true);
 	}
 
@@ -1156,7 +1129,7 @@ public class JdkSrvConfig {
 	 */
 	public static String getAccessKey(Combo combo) {
 		String key = "";
-		// set access key.
+		// get access key.
 		int strgAccIndex = combo.getSelectionIndex();
 		if (strgAccIndex > 0
 				&& !combo.getText().isEmpty()) {
@@ -1165,6 +1138,24 @@ public class JdkSrvConfig {
 					getStrgKey();
 		}
 		return key;
+	}
+
+	/**
+	 * Method returns blob endpoint URL from storage registry
+	 * according to account name selected in combo box.
+	 * @param combo
+	 * @return
+	 */
+	public static String getBlobEndpointUrl(Combo combo) {
+		String url = "";
+		int strgAccIndex = combo.getSelectionIndex();
+		if (strgAccIndex > 0
+				&& !combo.getText().isEmpty()) {
+			url = StorageAccountRegistry.
+					getStrgList().get(strgAccIndex - 1).
+					getStrgUrl();
+		}
+		return url;
 	}
 
 	/**

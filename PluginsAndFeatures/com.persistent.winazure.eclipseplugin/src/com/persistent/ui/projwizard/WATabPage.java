@@ -164,8 +164,9 @@ public class WATabPage extends WizardPage {
 		 * enable JDK and Server components.
 		 */
 		if (Activator.getDefault().isContextMenu()) {
-			JdkSrvConfigListener.jdkChkBoxChecked();
-			JdkSrvConfigListener.srvChkBoxChecked();
+			JdkSrvConfigListener.jdkChkBoxChecked(waRole);
+			JdkSrvConfigListener.srvChkBoxChecked(waRole,
+					Messages.dlNtLblDirSrv);
 			JdkSrvConfig.getSerCheckBtn().setSelection(true);
 			handlePageComplete();
 		}
@@ -387,7 +388,7 @@ public class WATabPage extends WizardPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getJdkCheckBtn().
 						getSelection()) {
-					JdkSrvConfigListener.jdkChkBoxChecked();
+					JdkSrvConfigListener.jdkChkBoxChecked(waRole);
 				} else {
 					JdkSrvConfigListener.jdkChkBoxUnChecked();
 				}
@@ -449,14 +450,6 @@ public class WATabPage extends WizardPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getDlRdCldBtn().getSelection()) {
 					JdkSrvConfigListener.jdkDeployBtnSelected(waRole);
-				} else {
-					// deploy radio button unselected and auto upload selected.
-					if (JdkSrvConfig.getAutoDlRdCldBtn().getSelection()) {
-						return;
-					}
-
-					// deploy radio button unselected and local selected.
-					JdkSrvConfigListener.jdkDeployOrAutoToLocalBtnSelected();
 				}
 				handlePageComplete();
 			}
@@ -486,11 +479,6 @@ public class WATabPage extends WizardPage {
 										JdkSrvConfig.getCmbStrgAccJdk()));
 						return;
 					}
-					/*
-					 * auto upload radio button unselected
-					 * and local button selected.
-					 */
-					JdkSrvConfigListener.jdkDeployOrAutoToLocalBtnSelected();
 				}
 				handlePageComplete();
 			}
@@ -565,7 +553,8 @@ public class WATabPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getSerCheckBtn().getSelection()) {
-					JdkSrvConfigListener.srvChkBoxChecked();
+					JdkSrvConfigListener.srvChkBoxChecked(waRole,
+							Messages.dlNtLblDirSrv);
 				} else {
 					JdkSrvConfigListener.srvChkBoxUnChecked();
 				}
@@ -662,21 +651,6 @@ public class WATabPage extends WizardPage {
 						.getSelection()) {
 					JdkSrvConfigListener.srvDeployBtnSelected(waRole,
 							Messages.dlNtLblDirSrv);
-				} else {
-					/*
-					 * server deploy radio button unselected
-					 * and server auto upload selected.
-					 */
-					if (JdkSrvConfig.getAutoDlRdCldBtnSrv().getSelection()) {
-						return;
-					}
-					/*
-					 * server deploy radio button unselected
-					 * and local selected.
-					 */
-					JdkSrvConfigListener.
-					srvDeployOrAutoToLocalBtnSelected(
-							Messages.dlNtLblUrlSrv);
 				}
 				handlePageComplete();
 			}
@@ -707,13 +681,6 @@ public class WATabPage extends WizardPage {
 										JdkSrvConfig.getCmbStrgAccSrv()));
 						return;
 					}
-					/*
-					 * server auto upload radio button unselected
-					 * and local button selected.
-					 */
-					JdkSrvConfigListener.
-					srvDeployOrAutoToLocalBtnSelected(
-							Messages.dlNtLblUrlSrv);
 				}
 				handlePageComplete();
 			}

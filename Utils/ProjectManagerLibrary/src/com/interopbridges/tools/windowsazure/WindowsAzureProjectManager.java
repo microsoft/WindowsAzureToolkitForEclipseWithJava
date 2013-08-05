@@ -645,8 +645,10 @@ public class WindowsAzureProjectManager {
 
             //iterate on each role and call setCacheSettingInCscfg and setInstance
             for (WindowsAzureRole role : roles) {
-				role.setCacheSettingInCscfg(role.getCacheStorageAccountName()
-						, role.getCacheStorageAccountKey());
+				role.setCacheSettingInCscfg(
+						role.getCacheStorageAccountName(),
+						role.getCacheStorageAccountKey(),
+						role.getCacheStorageAccountUrl());
 				role.setInstances(InstanceMap.get(role.getName()));
 				// check the current package type is not equal
 				// to the one which are setting
@@ -2051,7 +2053,7 @@ public class WindowsAzureProjectManager {
                 File versionedSdkDir = new File(sdkDir, iterator.next());
                 if (versionedSdkDir.isDirectory()) {
 
-                	// Since we are iterating in descending manner , below if will be true only if SDK1.8 or greater version is not installed.
+                	// Since we are iterating in descending manner , below if will be true only if SDK2.1 or greater version is not installed.
                 	// If greater version is installed we always break loop and return the value.
                 	if(versionedSdkDir.getName().compareToIgnoreCase(WindowsAzureConstants.MIN_SDK_VERSION) < 0)
                 		throw new IOException("Windows Azure SDK is not installed.");

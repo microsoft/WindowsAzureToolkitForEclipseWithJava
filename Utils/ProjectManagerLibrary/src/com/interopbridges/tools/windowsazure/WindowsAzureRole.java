@@ -891,6 +891,20 @@ public class WindowsAzureRole {
             doc = getWinProjMgr().getPackageFileDoc();
             expr = String.format(WindowsAzureConstants.WA_PACK_NAME, getName());
             ParserXMLUtility.deleteElement(doc, expr);
+
+            // delete properties from package.xml
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            expr = WindowsAzureConstants.PROJ_PROPERTIES;
+            NodeList properties = (NodeList) xPath.evaluate(
+            		expr, doc, XPathConstants.NODESET);
+            for (int i = 0; i < properties.getLength(); i++) {
+            	Node node = properties.item(i);
+            	Element property =  (Element) node;
+            	String attrVal = property.getAttribute("name");
+            	if (attrVal.startsWith("project." + getName())) {
+            		node.getParentNode().removeChild(node);
+            	}
+            }
             // Delete folder from HD
             getWinProjMgr().mapActivity.put("delete", value);
             //Add remoteForward to another role
@@ -3361,6 +3375,7 @@ public class WindowsAzureRole {
               disableCache();
               setCacheStorageAccountName("");
               setCacheStorageAccountKey("");
+              setCacheStorageAccountUrl("");
           }
       } else {
           try {
@@ -3608,24 +3623,13 @@ public class WindowsAzureRole {
    * @param name .
    * @throws WindowsAzureInvalidProjectOperationException .
    */
-
-  public void setCacheStorageAccountName(String name) throws WindowsAzureInvalidProjectOperationException {
-      try {
-          String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_NAME_PROP,getName());
-          if(name.isEmpty()) {
-              //remove property from package.xml
-              ParserXMLUtility.deleteElement(winProjMgr.getPackageFileDoc(),
-                      String.format(WindowsAzureConstants.ROLE_PROP,  propName));
-          } else {
-              //add entry in package.xml
-              addPropertyInPackageXML(propName, name);
-          }
-          //sets entry in cscfg
-          setCacheSettingInCscfg(name, getCacheStorageAccountKey());
-      } catch(Exception ex) {
-          throw new WindowsAzureInvalidProjectOperationException(
-                  WindowsAzureConstants.EXCP, ex);
-      }
+  public void setCacheStorageAccountName(String name)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  setProperty(WindowsAzureConstants.CACHE_ST_ACC_NAME_PROP, name);
+	  //sets entry in cscfg
+	  setCacheSettingInCscfg(name,
+			  getCacheStorageAccountKey(),
+			  getCacheStorageAccountUrl());
   }
 
   /**
@@ -3634,23 +3638,25 @@ public class WindowsAzureRole {
    * @param key
    * @throws WindowsAzureInvalidProjectOperationException
    */
-  public void setCacheStorageAccountKey(String key) throws WindowsAzureInvalidProjectOperationException {
-      try {
-          String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_KEY_PROP,getName());
-          if(key.isEmpty()) {
-              //remove property from package.xml
-              ParserXMLUtility.deleteElement(winProjMgr.getPackageFileDoc(),
-                      String.format(WindowsAzureConstants.ROLE_PROP,  propName));
-          } else {
-              //add entry in package.xml
-              addPropertyInPackageXML(propName, key);
-          }
-          //sets entry in cscfg
-          setCacheSettingInCscfg(getCacheStorageAccountName(), key);
-      } catch(Exception ex) {
-          throw new WindowsAzureInvalidProjectOperationException(
-                  WindowsAzureConstants.EXCP, ex);
-      }
+  public void setCacheStorageAccountKey(String key)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  setProperty(WindowsAzureConstants.CACHE_ST_ACC_KEY_PROP, key);
+	  //sets entry in cscfg
+	  setCacheSettingInCscfg(getCacheStorageAccountName(),
+			  key, getCacheStorageAccountUrl());
+  }
+
+  /**
+   * Sets the storage account blob endpoint url from the plugin property and
+   * sets setting value in config depending upon the package type.
+   * @param url
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public void setCacheStorageAccountUrl(String url)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  setProperty(WindowsAzureConstants.CACHE_ST_ACC_URL_PROP, url);
+	  setCacheSettingInCscfg(getCacheStorageAccountName(),
+			  getCacheStorageAccountKey(), url);
   }
 
   /**
@@ -3687,7 +3693,7 @@ public class WindowsAzureRole {
    */
   public String getProperty(String property)
 		  throws WindowsAzureInvalidProjectOperationException {
-	  String jdkHome = null;
+	  String propVal = null;
 	  try {
 		  Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
 		  if (packageFileDoc != null) {
@@ -3697,13 +3703,13 @@ public class WindowsAzureRole {
 			  String nodeExpr =  String.format(
 					  WindowsAzureConstants.ROLE_PROP_VAL, propName);
 			  XPath xPath = XPathFactory.newInstance().newXPath();
-			  jdkHome = xPath.evaluate(nodeExpr, packageFileDoc);
+			  propVal = xPath.evaluate(nodeExpr, packageFileDoc);
 		  }
 	  } catch (Exception ex) {
 		  throw new WindowsAzureInvalidProjectOperationException(
 				  WindowsAzureConstants.EXCP, ex);
 	  }
-	  return jdkHome;
+	  return propVal;
   }
 
   /**
@@ -3802,7 +3808,8 @@ public class WindowsAzureRole {
    * @param value
    * @throws WindowsAzureInvalidProjectOperationException
    */
-  protected void setCacheSettingInCscfg(String name, String value) throws WindowsAzureInvalidProjectOperationException {
+  protected void setCacheSettingInCscfg(String name, String value, String url)
+		  throws WindowsAzureInvalidProjectOperationException {
       try {
           Document doc = winProjMgr.getConfigFileDoc();
           String expr = String.format(WindowsAzureConstants.CONFIG_SETTING_ROLE, getName(),
@@ -3811,18 +3818,27 @@ public class WindowsAzureRole {
                   WindowsAzureConstants.CONFIG_ROLE_SET, getName());
           HashMap<String, String> map = new HashMap<String, String>();
           if(isCachingEnable()) {
-        	  if(winProjMgr.getPackageType() == WindowsAzurePackageType.CLOUD && ( name == null || name.isEmpty() ) &&
-                      (value == null || value.isEmpty())) {
+        	  if (winProjMgr.getPackageType() == WindowsAzurePackageType.CLOUD
+        			  && (name == null || name.isEmpty())
+        			  && (value == null || value.isEmpty())
+        			  && (url == null || url.isEmpty())) {
         		  // Donot do any thing.
-        	  }else if(winProjMgr.getPackageType() == WindowsAzurePackageType.LOCAL || name == null || value == null ||
-                      name.isEmpty() || value.isEmpty()) {
+        	  } else if(winProjMgr.getPackageType() == WindowsAzurePackageType.LOCAL
+        			  || name == null
+        			  || value == null
+        			  || url == null
+        			  || name.isEmpty()
+                      || value.isEmpty()
+                      || url.isEmpty()) {
                   map.clear();
                   map.put(WindowsAzureConstants.ATTR_NAME, WindowsAzureConstants.SET_CONFIGCONN);
                   map.put(WindowsAzureConstants.ATTR_VALUE, WindowsAzureConstants.SET_CONFIGCONN_VAL);
                   updateOrCreateElement(doc, expr, parentNodeExpr, "Setting", false, map);
-              } else if(name != null && value != null) {
+              } else if(name != null
+            		  && value != null
+            		  && url != null) {
                   String val =  String.format(WindowsAzureConstants.SET_CONFIGCONN_VAL_CLOULD,
-                          name,value);
+                          url, name, value);
                   map.clear();
                   map.put(WindowsAzureConstants.ATTR_NAME, WindowsAzureConstants.SET_CONFIGCONN);
                   map.put(WindowsAzureConstants.ATTR_VALUE, val);
@@ -3840,21 +3856,11 @@ public class WindowsAzureRole {
    * @return
    * @throws WindowsAzureInvalidProjectOperationException
    */
-  public String getCacheStorageAccountKey() throws WindowsAzureInvalidProjectOperationException {
-      String key = null;
-      try {
-          Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
-          if(packageFileDoc != null ){
-              String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_KEY_PROP,getName());
-              String nodeExpr =  String.format(WindowsAzureConstants.ROLE_PROP_VAL, propName);
-              XPath xPath = XPathFactory.newInstance().newXPath();
-              key = xPath.evaluate(nodeExpr, packageFileDoc);
-          }
-      } catch(Exception ex) {
-          throw new WindowsAzureInvalidProjectOperationException(
-                  WindowsAzureConstants.EXCP, ex);
-      }
-      return key;
+  public String getCacheStorageAccountKey()
+		  throws WindowsAzureInvalidProjectOperationException {
+	  String key = getProperty(WindowsAzureConstants.
+			  CACHE_ST_ACC_KEY_PROP);
+	  return key;
   }
 
   /**
@@ -3862,21 +3868,23 @@ public class WindowsAzureRole {
    * @return
    * @throws WindowsAzureInvalidProjectOperationException
    */
-  public String getCacheStorageAccountName() throws WindowsAzureInvalidProjectOperationException {
-      String name = null;
-      try {
-          Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
-          if(packageFileDoc != null ){
-              String propName = String.format(WindowsAzureConstants.CACHE_ST_ACC_NAME_PROP,getName());
-              String nodeExpr =  String.format(WindowsAzureConstants.ROLE_PROP_VAL, propName);
-              XPath xPath = XPathFactory.newInstance().newXPath();
-              name = xPath.evaluate(nodeExpr, packageFileDoc);
-          }
-      } catch(Exception ex) {
-          throw new WindowsAzureInvalidProjectOperationException(
-                  WindowsAzureConstants.EXCP, ex);
-      }
-      return name;
+  public String getCacheStorageAccountName()
+		  throws WindowsAzureInvalidProjectOperationException {
+	  String name = getProperty(WindowsAzureConstants.
+			  CACHE_ST_ACC_NAME_PROP);
+	  return name;
+  }
+
+  /**
+   * Gets the storage account blob endpoint URL from the plugin property.
+   * @return
+   * @throws WindowsAzureInvalidProjectOperationException
+   */
+  public String getCacheStorageAccountUrl()
+		  throws WindowsAzureInvalidProjectOperationException {
+	  String url = getProperty(WindowsAzureConstants.
+			  CACHE_ST_ACC_URL_PROP);
+	  return url;
   }
 
   /**

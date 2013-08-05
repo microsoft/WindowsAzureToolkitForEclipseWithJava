@@ -219,6 +219,9 @@ public class DeployWizard extends Wizard {
 														}
 													});
 												}
+												WAEclipseHelper.refreshWorkspace(
+														com.persistent.winazureroles.Messages.rfrshErrTtl,
+														com.persistent.winazureroles.Messages.rfrshErrMsg);
 											}
 										});
 										job.schedule();
@@ -520,6 +523,9 @@ public class DeployWizard extends Wizard {
 					roleMdfdCache.add(role.getName());
 					role.setCacheStorageAccountName(curAcc.getServiceName());
 					role.setCacheStorageAccountKey(curKey);
+					role.setCacheStorageAccountUrl(
+							curAcc.getStorageServiceProperties().getEndpoints().
+							getEndpoints().get(0));
 				}
 				// get list of components in one role.
 				List<WindowsAzureRoleComponent> cmpnntsList =
@@ -637,6 +643,7 @@ public class DeployWizard extends Wizard {
 				if (roleMdfdCache.contains(role.getName())) {
 					role.setCacheStorageAccountName(dashAuto);
 					role.setCacheStorageAccountKey("");
+					role.setCacheStorageAccountUrl("");
 				}
 			}
 		} catch (Exception e) {
