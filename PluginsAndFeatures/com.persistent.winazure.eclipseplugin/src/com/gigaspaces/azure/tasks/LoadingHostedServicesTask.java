@@ -70,7 +70,7 @@ public class LoadingHostedServicesTask extends LoadingTask<Map<String,HostedServ
 			catch (TimeoutException e) {
 				AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
 				event.setException(e);
-				event.setMessage("Timed out while waiting for hosted services, please try again");
+				event.setMessage("Timed out while waiting for cloud services, please try again");
 				threadPool.shutdownNow();
 				fireRestAPIErrorEvent(event);
 				return new ConcurrentHashMap<String, HostedServices>();
@@ -105,7 +105,7 @@ public class LoadingHostedServicesTask extends LoadingTask<Map<String,HostedServ
 
 			HostedServices hostedServicesForSubscription;
 			try {
-				hostedServicesForSubscription = service.listHostedServices(subcriptionId);
+				hostedServicesForSubscription = service.listHostedServices(subcriptionId, data.getPublishProfile().getUrl());
 				hostedServicesMap.put(subcriptionId, hostedServicesForSubscription);
 			} 
 			catch (InterruptedException e) {

@@ -198,18 +198,27 @@ public final class DeploymentManager {
 			notifyProgress(deploymentDesc.getDeploymentId(), 20, RequestStatus.InProgress,
 					Messages.creatingDeployment);
 
-			String storageAccountURL = PreferenceSetUtil.getSelectedBlobServiceURL(deploymentDesc.getStorageAccount().getServiceName());
+			String storageAccountURL = deploymentDesc.getStorageAccount().
+					getStorageServiceProperties().getEndpoints().
+					getEndpoints().get(0);
+			
 			String cspkgUrl = String.format("%s%s/%s", storageAccountURL,
 					Messages.eclipseDeployContainer.toLowerCase(), targetCspckgName);
 			
 			String deploymentName = hostedService.getServiceName() + deployState;
 			
 			String requestId = createDeployment(deploymentDesc, service,cspkgUrl);
-			RequestStatus status = waitForStatus(deploymentDesc.getSubscriptionId(), service, requestId);			
+			RequestStatus status = waitForStatus(deploymentDesc.getSubscriptionId(),
+					service, requestId, deploymentDesc.getMngUrl());
 			
 			notifyProgress(deploymentDesc.getDeploymentId(), 20, RequestStatus.InProgress,Messages.waitingForDeployment);
 			
-			Deployment deployment = waitForDeployment(deploymentDesc.getSubscriptionId(), hostedService.getServiceName(), service, deploymentName);
+			Deployment deployment = waitForDeployment(
+					deploymentDesc.getSubscriptionId(),
+					hostedService.getServiceName(),
+					service,
+					deploymentName,
+					deploymentDesc.getMngUrl());
 
 			notifyProgress(deploymentDesc.getDeploymentId(), 20, status,
 					deployment.getStatus().toString());
@@ -290,14 +299,14 @@ public final class DeploymentManager {
 	}
 
 	private Deployment waitForDeployment(String subscriptionId,
-			String serviceName, WindowsAzureServiceManagement service, String deploymentName)
+			String serviceName, WindowsAzureServiceManagement service, String deploymentName, String mngUrl)
 					throws WACommonException, InterruptedException, DeploymentException, RestAPIException, CommandLineException {
 		Deployment deployment = null;
 		InstanceStatus status = null;
 		do {
 			Thread.sleep(5000);
 			deployment = service.getDeployment(subscriptionId, serviceName,
-					deploymentName);
+					deploymentName, mngUrl);
 
 			for (RoleInstance instance : deployment.getRoleInstanceList()) {
 				status = instance.getInstanceStatus();
@@ -319,12 +328,13 @@ public final class DeploymentManager {
 		return deployment;
 	}
 
-	private RequestStatus waitForStatus(String subscriptionId,WindowsAzureServiceManagement service, String requestId) throws WACommonException, 
+	private RequestStatus waitForStatus(String subscriptionId,
+			WindowsAzureServiceManagement service, String requestId, String mngUrl) throws WACommonException,
 	InterruptedException, RestAPIException, CommandLineException {
 		Operation op;
 		RequestStatus status = null;
 		do {
-			op = service.getOperationStatus(subscriptionId, requestId);
+			op = service.getOperationStatus(subscriptionId, requestId, mngUrl);
 			status = RequestStatus.valueOf(op.getStatus());
 
 			Activator.getDefault().log(Messages.deplId + op.getID());
@@ -380,7 +390,12 @@ public final class DeploymentManager {
 
 		body.setStartDeployment(true);
 
-		return service.createDeployment(deploymentDesc.getSubscriptionId(),deploymentDesc.getHostedService().getServiceName(),deployState, body);
+		return service.createDeployment(
+				deploymentDesc.getSubscriptionId(),
+				deploymentDesc.getHostedService().getServiceName(),
+				deployState,
+				body,
+				deploymentDesc.getMngUrl());
 	}
 
 	private static void uploadPackageService(final WindowsAzureStorageServices service, final String cspkg, String cspckgTargetName,
@@ -644,7 +659,10 @@ public final class DeploymentManager {
 			}
 
 			CertificateFile certFile = new CertificateFile(buff,azureRemoteDesktopPfxFilePassword);
-			service.addCertificate(deploymentDesc.getSubscriptionId(),deploymentDesc.getHostedService().getServiceName(),certFile);
+			service.addCertificate(
+					deploymentDesc.getSubscriptionId(),
+					deploymentDesc.getHostedService().getServiceName(),
+					certFile, deploymentDesc.getMngUrl());
 			WindowsAzureRestUtils.getInstance().installPublishSettings(new File(deploymentDesc.getRemoteDesktopDescriptor().getPublicKey()), null);
 			
 		} catch (Exception e) {
@@ -708,16 +726,17 @@ public final class DeploymentManager {
 			notifyProgress(deplymentName, 50, RequestStatus.InProgress,Messages.stoppingMsg, serviceName);
 
 			String subscriptionId = WizardCacheManager.getCurrentPublishData().getCurrentSubscription().getId();
+			String mngUrl = WizardCacheManager.getCurrentPublishData().getPublishProfile().getUrl();
 
-			String requestId = service.updateDeploymentStatus(subscriptionId,serviceName, deplymentName, Status.Suspended);
+			String requestId = service.updateDeploymentStatus(subscriptionId,serviceName, deplymentName, Status.Suspended, mngUrl);
 
 			notifyProgress(deplymentName, 30, RequestStatus.InProgress,Messages.undeployProgressMsg, deplymentName);
 
-			waitForStatus(subscriptionId, service, requestId);
+			waitForStatus(subscriptionId, service, requestId, mngUrl);
 
-			requestId = service.deleteDeployment(subscriptionId, serviceName,deplymentName);
+			requestId = service.deleteDeployment(subscriptionId, serviceName,deplymentName, mngUrl);
 
-			waitForStatus(subscriptionId, service, requestId);
+			waitForStatus(subscriptionId, service, requestId, mngUrl);
 
 			notifyProgress(deplymentName, 20, RequestStatus.Succeeded,Messages.undeployCompletedMsg, serviceName);
 		} 

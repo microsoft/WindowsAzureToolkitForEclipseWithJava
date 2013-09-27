@@ -107,7 +107,7 @@ public class LoadingSubscriptionTask extends LoadingTask<List<Subscription>> {
 		public void run() {
 			try {
 				if (errorHappened.get() == false) {
-					Subscription subs = service.getSubscription(subcriptionId);
+					Subscription subs = service.getSubscription(subcriptionId, data.getPublishProfile().getUrl());
 					addSubscription(subs);
 				}
 			} catch (Exception e) {

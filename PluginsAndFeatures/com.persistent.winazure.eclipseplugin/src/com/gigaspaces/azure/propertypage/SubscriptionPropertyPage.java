@@ -44,7 +44,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -52,7 +51,6 @@ import org.eclipse.ui.dialogs.PropertyDialogAction;
 import org.eclipse.ui.dialogs.PropertyPage;
 
 import com.gigaspaces.azure.model.Subscription;
-import com.gigaspaces.azure.runnable.LoadAccountWithProgressWindow;
 import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PublishData;

@@ -100,7 +100,7 @@ public abstract class AccountActionRunnable implements IRunnableWithProgress , L
 	@Override
 	public synchronized void onLoadedSubscriptions() {
 		setWorked(TASKS / (5 * numberOfAccounts) );
-		progressMonitor.subTask("Storage Services, Hosted Services and Locations");
+		progressMonitor.subTask("Storage Services, Cloud Services and Locations");
 	}
 
 	@Override

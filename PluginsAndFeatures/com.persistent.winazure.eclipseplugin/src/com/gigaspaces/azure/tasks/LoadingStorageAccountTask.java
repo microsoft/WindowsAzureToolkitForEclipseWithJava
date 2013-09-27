@@ -102,7 +102,8 @@ public class LoadingStorageAccountTask extends LoadingTask<Map<String, StorageSe
 		public void run() {
 			List<StorageService> storageServicesForSubscription;
 			try {
-				storageServicesForSubscription = service.listStorageAccounts(subcriptionId);
+				storageServicesForSubscription = service.listStorageAccounts(subcriptionId,
+						data.getPublishProfile().getUrl());
 				StorageServices services = new StorageServices();
 				services.setStorageServices(storageServicesForSubscription);
 				storageServicesMap.put(subcriptionId, services);

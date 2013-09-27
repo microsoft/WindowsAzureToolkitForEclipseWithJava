@@ -65,7 +65,13 @@ public class WARunEmulator extends AbstractHandler {
 			        	WindowsAzureProjectManager waProjMgr = WindowsAzureProjectManager.
 			        			load(new File(selProj.getLocation().toOSString()));
 						selProj.build(IncrementalProjectBuilder.FULL_BUILD, null);
-						waProjMgr.deployToEmulator();
+						waProjMgr = WindowsAzureProjectManager.
+			        			load(new File(selProj.getLocation().toOSString()));
+						if (WAEclipseHelper.isBuildSuccessful(waProjMgr, selProj)) {
+							waProjMgr.deployToEmulator();
+						} else {
+							return Status.CANCEL_STATUS;
+						}
 					} catch (WindowsAzureInvalidProjectOperationException e) {
 						errorTitle = String.format("%s%s%s", Messages.waEmulator,
 								" ", Messages.runEmltrErrTtl);
@@ -90,7 +96,7 @@ public class WARunEmulator extends AbstractHandler {
 							}
 						});
 						return Status.CANCEL_STATUS;
-					}				
+					}
 			        monitor.done();
 			        return Status.OK_STATUS;
 			    }

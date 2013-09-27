@@ -103,7 +103,8 @@ public class LoadingLocationsTask extends LoadingTask<Map<String, Locations>> {
 		public void run() {
 			Locations storageLocationsForSubscription;
 			try {
-				storageLocationsForSubscription = service.listLocations(subcriptionId);
+				storageLocationsForSubscription = service.listLocations(subcriptionId,
+						data.getPublishProfile().getUrl());
 				locationsServicesMap.put(subcriptionId, storageLocationsForSubscription);
 			} catch (InterruptedException e) {
 				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);

@@ -451,6 +451,7 @@ public class Component {
 	private void ensurePrivateDownload(WindowsAzureManager waManager) {
 		final WindowsAzurePackage waPackage = role.getPackage();
 		final URL cloudSrc = getCloudSrc();
+		final URL cloudAltSrc = getCloudAltSrc();
 		String containerName, blobName, storageName;
 		final boolean isNetworkAvailable;
 		
@@ -484,10 +485,12 @@ public class Component {
 				this.getCloudKey(), 
 				this.getCloudStorageEndpoint()))) {
 			; // Blob existence confirmed, nothing else to do
-		} else if(WindowsAzurePackage.verifyURLAvailable(this.getCloudAltSrc())) {
+		} else if(WindowsAzurePackage.verifyURLAvailable(cloudAltSrc)) {
 			; // Alt download existence confirmed, nothing else to do
 		} else if(getCloudUpload() == CloudUpload.NEVER) {
 			waPackage.log("warning: Failed to verify blob availability! Make sure the URL and/or the access key is correct (" + cloudSrc.toExternalForm() + ")", 1);
+		} else if(cloudAltSrc != null) {
+			throw new BuildException("The cloud source of this component (" + cloudAltSrc.toExternalForm() + ") is not available, so it cannot be deployed.");
 		} else if(getCloudUpload() == CloudUpload.AUTO) {
 			uploadBlob(waManager, blobName, containerName, storageName, this.getCloudKey());
 		} 

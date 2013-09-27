@@ -120,7 +120,8 @@ public final class WizardCacheManager {
 				currentPublishData.getCurrentSubscription().getId(),
 				getCurrentStorageAcount(), currentAccessKey,
 				getCurentHostedService(), deployFile, deployConfigFile,
-				deployState, remoteDesktopDescriptor);
+				deployState, remoteDesktopDescriptor,
+				currentPublishData.getPublishProfile().getUrl());
 
 		remoteDesktopDescriptor = null;
 
@@ -140,7 +141,7 @@ public final class WizardCacheManager {
 					key = storageService.getStorageServiceKeys().getSecondary();
 
 				return new WindowsAzureStorageServices(
-						storageService.getServiceName(), key);
+						storageService, key);
 			} catch (InvalidKeyException e) {
 				Activator.getDefault().log(Messages.error, e);
 			} catch (NoSuchAlgorithmException e) {
@@ -336,8 +337,9 @@ public final class WizardCacheManager {
 			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
 
 			String subscriptionId = subscription.getId();
-			service.createHostedService(subscriptionId, body);
-			HostedService hostedServiceProperties = service.getHostedServiceWithProperties(subscriptionId, body.getServiceName());
+			String mngUrl = currentPublishData.getPublishProfile().getUrl();
+			service.createHostedService(subscriptionId, body, mngUrl);
+			HostedService hostedServiceProperties = service.getHostedServiceWithProperties(subscriptionId, body.getServiceName(), mngUrl);
 			
 			// remove previos mock if existed
 			currentPublishData.getServicesPerSubscription().get(subscriptionId).remove(body.getServiceName());
@@ -357,12 +359,13 @@ public final class WizardCacheManager {
 
 		try {
 			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
+			String mngUrl = currentPublishData.getPublishProfile().getUrl();
 
-			String requestId = service.createStorageAccount(subscription.getId(), body);
+			String requestId = service.createStorageAccount(subscription.getId(), body, mngUrl);
 
 			waitForStatus(subscription.getId(), service, requestId);
 
-			StorageService storageAccount = service.getStorageAccount(subscription.getId(), body.getServiceName());
+			StorageService storageAccount = service.getStorageAccount(subscription.getId(), body.getServiceName(), mngUrl);
 			
 			// remove previous mock if existed
 			currentPublishData.getStoragesPerSubscription().get(subscription.getId()).remove(body.getServiceName());
@@ -382,7 +385,8 @@ public final class WizardCacheManager {
 		Subscription subscription = currentPublishData.getCurrentSubscription();
 		try {
 			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
-			return service.checkForCloudServiceDNSAvailability(subscription.getId(), hostedServiceName);
+			return service.checkForCloudServiceDNSAvailability(subscription.getId(), hostedServiceName,
+					currentPublishData.getPublishProfile().getUrl());
 		} 
 		catch (InvalidThumbprintException e) {
 			throw new CommandLineException(e);
@@ -396,7 +400,8 @@ public final class WizardCacheManager {
 		Subscription subscription = currentPublishData.getCurrentSubscription();
 		try {
 			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
-			return service.checkForStorageAccountDNSAvailability(subscription.getId(), storageAccountName);
+			return service.checkForStorageAccountDNSAvailability(subscription.getId(), storageAccountName,
+					currentPublishData.getPublishProfile().getUrl());
 
 		} 
 		catch (InvalidThumbprintException e) {
@@ -442,7 +447,7 @@ public final class WizardCacheManager {
 		Operation op;
 		RequestStatus status = null;
 		do {
-			op = service.getOperationStatus(subscriptionId, requestId);
+			op = service.getOperationStatus(subscriptionId, requestId, currentPublishData.getPublishProfile().getUrl());
 			status = RequestStatus.valueOf(op.getStatus());
 
 			if (op.getError() != null) {
@@ -563,8 +568,10 @@ public final class WizardCacheManager {
 				.getId();
 
 		WindowsAzureServiceManagement service = null;
-		service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());	
-		return service.getHostedServiceWithProperties(subscriptionId, hostedService);			
+		service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
+		return service.getHostedServiceWithProperties(
+				subscriptionId, hostedService,
+				currentPublishData.getPublishProfile().getUrl());
 	}
 
 	public static void setCurrentPublishData(PublishData currentSubscription2) {

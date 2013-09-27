@@ -51,7 +51,7 @@ public class WindowsAzureRoleComponent {
      * in Component tag in package.xml.
      */
     private WARoleComponentCloudUploadMode cloudUploadMode = null;
-
+    private String cloudAltSrc = null;
     /**
      * importPath variable represents importPath attribute
      * in Component tag in package.xml.
@@ -226,6 +226,26 @@ public class WindowsAzureRoleComponent {
     }
 
     /**
+     * This API sets the cloudaltsrc attribute in Component tag in package.xml.
+     * @param url
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public void setCloudAltSrc(String url) throws WindowsAzureInvalidProjectOperationException {
+    	try {
+    		Element component = getComponentNode();
+    		if (url == null || url.isEmpty()) {
+    			component.removeAttribute(WindowsAzureConstants.ATTR_CLD_ALT_SRC);
+    		} else {
+    			component.setAttribute(WindowsAzureConstants.ATTR_CLD_ALT_SRC, url);
+    		}
+    		this.cloudAltSrc = url;
+    	} catch (Exception ex) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				"Exception in setCloudAltSrc", ex);
+    	}
+    }
+
+    /**
      * This API is to returns the value of the import from attribute
      * @return
      */
@@ -334,7 +354,7 @@ public class WindowsAzureRoleComponent {
      * @param deployName
      * @throws WindowsAzureInvalidProjectOperationException
      */
-    public void setDeployname(String deployName)
+    public void setDeployName(String deployName)
             throws WindowsAzureInvalidProjectOperationException {
         if (null == deployName) {
             throw new IllegalArgumentException(

@@ -67,6 +67,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 */
 	public static void modifyJdkText(
 			WindowsAzureRole role, String label) {
+		// update only for auto upload not for third party JDK.
 		if (getAutoDlRdCldBtn().getSelection()) {
 			setTxtUrl(cmbBoxListener(
 					getCmbStrgAccJdk(),
@@ -108,6 +109,21 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		setEnableDlGrp(true, false);
 		updateJDKDlNote(Messages.dlNtLblDir);
 		updateJDKHome(role);
+		enableThirdPartyJdkCombo(false);
+	}
+
+	/**
+	 * Method is used when third party JDK
+	 * radio button is selected.
+	 * @param role
+	 * @param label
+	 */
+	public static void thirdPartyJdkBtnSelected(
+			WindowsAzureRole role, String label) {
+		setEnableDlGrp(true, true);
+		enableThirdPartyJdkCombo(true);
+		thirdPartyComboListener();
+		updateJDKDlNote(label);
 	}
 
 	/**
@@ -187,7 +203,8 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @param label
 	 * @param labelNext
 	 */
-	public static void focusLostSrvText(String srvPath, String label,
+	public static void focusLostSrvText(String srvPath,
+			String label,
 			String labelNext) {
 		File file = new File(srvPath);
 		if (getDlRdCldBtnSrv().
@@ -212,9 +229,9 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	public static void srvDeployBtnSelected(
 			WindowsAzureRole role, String label) {
 		// server deploy radio button selected
-		JdkSrvConfig.setEnableDlGrpSrv(true, false);
-		JdkSrvConfig.updateSrvDlNote(label);
-		JdkSrvConfig.updateServerHome(role);
+		setEnableDlGrpSrv(true, false);
+		updateSrvDlNote(label);
+		updateServerHome(role);
 	}
 
 	/**
@@ -273,5 +290,47 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		updateJDKDlURL();
 		updateJDKDlNote(label);
 		updateJDKHome(role);
+		enableThirdPartyJdkCombo(false);
+	}
+
+	/**
+	 * Enable or disable third party JDK
+	 * related components.
+	 * @param status
+	 */
+	public static void enableThirdPartyJdkCombo(Boolean status) {
+		JdkSrvConfig.getThrdPrtJdkCmb().setEnabled(status);
+		if (status) {
+			try {
+				String [] thrdPrtJdkArr = WindowsAzureProjectManager.
+						getThirdPartyJdkNames(cmpntFile);
+				// check at least one element is present
+				if (thrdPrtJdkArr.length >= 1) {
+					getThrdPrtJdkCmb().setItems(thrdPrtJdkArr);
+					getThrdPrtJdkCmb().setText(thrdPrtJdkArr[0]);
+				}
+			} catch (WindowsAzureInvalidProjectOperationException e) {
+				Activator.getDefault().log(e.getMessage());
+			}
+		} else {
+			getThrdPrtJdkCmb().removeAll();
+			getThrdPrtJdkCmb().setText("");
+			getThrdPrtJdkBtn().setSelection(false);
+		}
+	}
+
+	/**
+	 * Listener for third party JDK name combo box.
+	 * Updates URL and java home.
+	 */
+	public static void thirdPartyComboListener() {
+		updateJDKDlURL();
+		try {
+			getTxtJavaHome().setText(WindowsAzureProjectManager.
+					getCloudValue(getThrdPrtJdkCmb().getText(),
+							cmpntFile));
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			Activator.getDefault().log(e.getMessage());
+		}
 	}
 }

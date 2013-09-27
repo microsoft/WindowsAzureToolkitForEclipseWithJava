@@ -275,15 +275,20 @@ public class DeployWizard extends Wizard {
 						INCREMENTAL_BUILD, null);
 				selectedProject.refreshLocal(IResource.
 						DEPTH_INFINITE, monitor);
+				super.setName("");
+				monitor.done();
+				if (WAEclipseHelper.isBuildSuccessful(
+						waProjManager, selectedProject)) {
+					return Status.OK_STATUS;
+				} else {
+					return Status.CANCEL_STATUS;
+				}
 			} catch (Exception e) {
 				Activator.getDefault().log(Messages.error, e);
 				super.setName("");
 				monitor.done();
 				return Status.CANCEL_STATUS;
 			}
-			super.setName("");
-			monitor.done();
-			return Status.OK_STATUS;
 		}
 	}
 	
@@ -509,6 +514,9 @@ public class DeployWizard extends Wizard {
 			List<WindowsAzureRole> roleList = projMngr.getRoles();
 			StorageService curAcc = WizardCacheManager.getCurrentStorageAcount();
 			String curKey = curAcc.getStorageServiceKeys().getPrimary();
+			String accUrl = curAcc.
+					getStorageServiceProperties().getEndpoints().
+					getEndpoints().get(0);
 			for (int i = 0; i < roleList.size(); i++) {
 				WindowsAzureRole role = roleList.get(i);
 				/*
@@ -523,9 +531,7 @@ public class DeployWizard extends Wizard {
 					roleMdfdCache.add(role.getName());
 					role.setCacheStorageAccountName(curAcc.getServiceName());
 					role.setCacheStorageAccountKey(curKey);
-					role.setCacheStorageAccountUrl(
-							curAcc.getStorageServiceProperties().getEndpoints().
-							getEndpoints().get(0));
+					role.setCacheStorageAccountUrl(accUrl);
 				}
 				// get list of components in one role.
 				List<WindowsAzureRoleComponent> cmpnntsList =
@@ -550,12 +556,30 @@ public class DeployWizard extends Wizard {
 						 */
 						if (component.getCloudDownloadURL().equalsIgnoreCase(auto)) {
 							// update cloudurl and cloudkey
-							component.setCloudDownloadURL(JdkSrvConfig.
-									prepareCloudBlobURL(
-											component.getImportPath(),
-											curAcc.
-											getStorageServiceProperties().getEndpoints().
-											getEndpoints().get(0)));
+							/*
+							 * If component is JDK, then check if its
+							 * third party JDK.
+							 */
+							if (component.getType().equals(
+									com.persistent.winazureroles.Messages.typeJdkDply)) {
+								String jdkName = role.getJDKCloudName();
+								if (jdkName == null || jdkName.isEmpty()) {
+									component.setCloudDownloadURL(JdkSrvConfig.
+											prepareCloudBlobURL(
+													component.getImportPath(),
+													accUrl));
+								} else {
+									component.setCloudDownloadURL(
+											JdkSrvConfig.prepareUrlForThirdPartyJdk(
+													jdkName,
+													accUrl));
+								}
+							} else {
+								component.setCloudDownloadURL(JdkSrvConfig.
+										prepareCloudBlobURL(
+												component.getImportPath(),
+												accUrl));
+							}
 							component.setCloudKey(curKey);
 							// Save components that are modified
 							AutoUpldCmpnts obj = new AutoUpldCmpnts(role.getName());

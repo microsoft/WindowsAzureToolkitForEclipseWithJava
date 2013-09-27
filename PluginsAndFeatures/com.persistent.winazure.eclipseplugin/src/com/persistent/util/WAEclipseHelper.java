@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -924,5 +925,89 @@ public class WAEclipseHelper {
 				"^https?://[a-z0-9]+\\.{1}[a-z0-9.]+/{1}([a-z]|\\d){1}([a-z]|-|\\d){1,61}([a-z]|\\d){1}/{1}[\\w\\p{Punct}]+$");
 		Matcher m = blob.matcher(text);
 		return m.matches();
+	}
+	
+	/**
+	 * API to find the hostname. This API first checks OS type. If Windows then tries to get 
+	 * hostname from computername environment variable else uses environment variable hostname.
+	 * 
+	 * In case if hostname is not found from environment variable then uses java networking apis
+	 * 
+	 */
+	public static String getHostName() {		
+		String hostOS   = System.getProperty("os.name");
+		String hostName = null;
+		
+		// Check host Operating System and get value of hostname.   
+		if (hostOS != null && hostOS.indexOf("Win") >= 0) {
+			hostName = System.getenv("COMPUTERNAME");
+		} else { // non-windows platforms
+			hostName = System.getenv("HOSTNAME");
+		}
+		
+		// If hostname is still null , use java network apis
+		try {
+			if (hostName == null || hostName.isEmpty()) {
+				hostName = InetAddress.getLocalHost().getHostName();
+			}
+		} catch (Exception ex) { // catches UnknownHostException
+			// just ignore this exception
+		}
+		
+		if (hostName == null || hostName.isEmpty()) { // most probabily this case won't happen 
+			hostName = "localhost";
+		}
+		
+		return hostName;
+	} 
+
+	/**
+	 * Returns ant build is successful or not
+	 * on the basis of existence of files under deploy folder.
+	 * @param waProjMngr
+	 * @param selProj
+	 * @return
+	 */
+	public static boolean isBuildSuccessful(
+			WindowsAzureProjectManager waProjMngr,
+			IProject selProj) {
+		Boolean isSuccessful = false;
+		try {
+			String dplyFolderPath =
+					getDeployFolderPath(waProjMngr, selProj);
+			File deployFile = new File(dplyFolderPath);
+
+			if (deployFile.exists() && deployFile.isDirectory()
+					&& deployFile.listFiles().length > 0) {
+				isSuccessful =  true;
+			}
+		} catch (Exception ex) {
+			Activator.getDefault().log(ex.getMessage());
+		}
+		return isSuccessful;
+	}
+
+	/**
+	 * Returns path of deploy folder.
+	 * @param waProjMngr
+	 * @param selProj
+	 * @return
+	 */
+	public static String getDeployFolderPath(
+			WindowsAzureProjectManager waProjMngr,
+			IProject selProj) {
+		String dplyFolderPath = "";
+		try {
+			String dplyFldrName = waProjMngr.getPackageDir();
+			String projPath = selProj.getLocation().toOSString();
+
+			if (dplyFldrName.startsWith(".")) {
+				dplyFldrName = dplyFldrName.substring(1);
+			}
+			dplyFolderPath = String.format("%s%s", projPath, dplyFldrName);
+		} catch (Exception e) {
+			Activator.getDefault().log(e.getMessage());
+		}
+		return dplyFolderPath;
 	}
 }

@@ -2278,14 +2278,175 @@ public class WindowsAzureProjectManager {
     }
 
     /**
-     * Returns NodeList of componentset elements with type="type"
+     * API returns sorted array of third party JDK names.
+     * @param templateFile
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public static String[] getThirdPartyJdkNames(File templateFile)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	try {
+    		ArrayList<String> thrdJdkList = new ArrayList<String>();
+    		NodeList compSet = getComponentSets(templateFile, "JDK");
+    		for (int i = 0; i < compSet.getLength(); i++) {
+    			if (compSet.item(i).getAttributes().getLength() != 0) {
+    				Element ele = (Element) compSet.item(i);
+    				String name = ele.getAttribute("name");
+    				if (!name.equalsIgnoreCase("JDK")) {
+    					thrdJdkList.add(name);
+    				}
+    			}
+    		}
+    		String[] jdkArr = thrdJdkList.
+    				toArray(new String[thrdJdkList.size()]);
+    		Arrays.sort(jdkArr);
+    		return jdkArr;
+    	} catch (Exception e) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				"Exception while getting third party JDK names", e);
+    	}
+    }
+
+    /**
+     * API returns license URL of third party JDK
+     * as per JDK name.
+     * @param jdkName
+     * @param templateFile
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public static String getLicenseUrl(String jdkName, File templateFile)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	String licenseUrl = "";
+    	try {
+    		NodeList compSet = getComponentSets(templateFile, "JDK");
+    		for (int i = 0; i < compSet.getLength(); i++) {
+    			if (compSet.item(i).getAttributes().getLength() != 0) {
+    				Element ele = (Element) compSet.item(i);
+    				if (ele.getAttribute("name").
+    						equalsIgnoreCase(jdkName)) {
+    					licenseUrl = ele.getAttribute(
+    							WindowsAzureConstants.ATTR_LCNS_VAL);
+    					return licenseUrl;
+    				}
+    			}
+    		}
+    		return licenseUrl;
+    	} catch (Exception e) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				"Exception while getting third party JDK license URL", e);
+    	}
+    }
+
+    /**
+     * API returns cloud value of third party JDK
+     * as per JDK name.
+     * @param jdkName
+     * @param templateFile
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public static String getCloudValue(String jdkName, File templateFile)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	String cloudValue = "";
+    	try {
+    		NodeList nodeList = getThirdPartyJdkCmpntSets(jdkName, templateFile);
+    		if (nodeList != null) {
+    			for (int i = 0; i < nodeList.getLength(); i++) {
+    				Node compNode = (Node) nodeList.item(i);
+    				if (!compNode.hasAttributes()) {
+    					continue;
+    				}
+    				Element compEle = (Element) compNode;
+    				if (compEle.getNodeName().equalsIgnoreCase("startupenv")
+    						&& compEle.getAttribute("type").equalsIgnoreCase("jdk.home")) {
+    					cloudValue = compEle.getAttribute(WindowsAzureConstants.
+    							ATTR_CLD_VAL);
+    					return cloudValue;
+    				}
+    			}
+    		}
+    	}catch (Exception e) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				"Exception while getting third party JDK cloud value", e);
+    	}
+    	return cloudValue;
+    }
+
+    /**
+     * API returns cloud alternative source of third party JDK
+     * as per JDK name.
+     * @param jdkName
+     * @param templateFile
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    public static String getCloudAltSrc(String jdkName, File templateFile)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	String cldAltSrc = "";
+    	try {
+    		NodeList nodeList = getThirdPartyJdkCmpntSets(jdkName, templateFile);
+    		if (nodeList != null) {
+    			for (int i = 0; i < nodeList.getLength(); i++) {
+    				Node compNode = (Node) nodeList.item(i);
+    				if (!compNode.hasAttributes()) {
+    					continue;
+    				}
+    				Element compEle = (Element) compNode;
+    				if (compEle.getNodeName().equalsIgnoreCase("component")) {
+    					cldAltSrc = compEle.getAttribute(
+    							WindowsAzureConstants.ATTR_CLD_ALT_SRC);
+    					return cldAltSrc;
+    				}
+    			}
+    		}
+    	}catch (Exception e) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				"Exception while getting third party JDK cloud alternative source", e);
+    	}
+    	return cldAltSrc;
+    }
+
+    /**
+     * Returns NodeList of componentset elements with type="JDK" and
+     * third party JDK name.
+     * @param jdkName
+     * @param templateFile
+     * @return
      * @throws WindowsAzureInvalidProjectOperationException
      * @throws XPathExpressionException
      */
-    private static NodeList getComponentSets(File templateFile, String type) throws WindowsAzureInvalidProjectOperationException, XPathExpressionException {
+    private static NodeList getThirdPartyJdkCmpntSets(String jdkName, File templateFile)
+    		throws WindowsAzureInvalidProjectOperationException,
+    		XPathExpressionException {
+    	NodeList nodelist = null;
+    	//parse template file and find componentset name
+    	Document compDoc = ParserXMLUtility.parseXMLFile(templateFile.getAbsolutePath());
+    	XPath xPath = XPathFactory.newInstance().newXPath();
+    	// check for third party JDK
+    	if (jdkName != null && !jdkName.isEmpty()) {
+    		String expr = String.format(
+    				WindowsAzureConstants.TEMP_SERVER_COMP, "JDK", jdkName);
+    		Element compSet = (Element) xPath.evaluate(
+    				expr, compDoc, XPathConstants.NODE);
+    		if (compSet != null) {
+    			nodelist = compSet.getChildNodes();
+    		}
+    	}
+    	return nodelist;
+    }
+
+    /**
+     * Returns NodeList of componentset elements with type="type".
+     * @throws WindowsAzureInvalidProjectOperationException
+     * @throws XPathExpressionException
+     */
+    private static NodeList getComponentSets(File templateFile, String type)
+    		throws WindowsAzureInvalidProjectOperationException,
+    		XPathExpressionException {
 		XPath xPath = XPathFactory.newInstance().newXPath();
 		Document compDoc = ParserXMLUtility.parseXMLFile(templateFile.getAbsolutePath());
-		String expr = String.format(WindowsAzureConstants.TEMP_COMPONENTSET, "server");
+		String expr = String.format(WindowsAzureConstants.TEMP_COMPONENTSET, type);
 		return (NodeList) xPath.evaluate(expr, compDoc, XPathConstants.NODESET);
     }
 

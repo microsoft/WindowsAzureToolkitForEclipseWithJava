@@ -31,11 +31,8 @@ import waeclipseplugin.Activator;
 import com.gigaspaces.azure.deploy.Notifier;
 import com.gigaspaces.azure.model.EnumerationResults;
 import com.gigaspaces.azure.model.Response;
+import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.util.CommandLineException;
-
-import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
-import com.microsoftopentechnologies.wacommon.utils.WACommonException;
-
 import com.microsoft.windowsazure.services.blob.client.BlobContainerPermissions;
 import com.microsoft.windowsazure.services.blob.client.BlobContainerPublicAccessType;
 import com.microsoft.windowsazure.services.blob.client.CloudBlobClient;
@@ -45,6 +42,7 @@ import com.microsoft.windowsazure.services.core.storage.CloudStorageAccount;
 import com.microsoft.windowsazure.services.core.storage.RetryNoRetry;
 import com.microsoft.windowsazure.services.core.storage.StorageCredentialsAccountAndKey;
 import com.microsoft.windowsazure.services.core.storage.StorageException;
+import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
 
 public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
@@ -96,13 +94,13 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 //
 //	}
 
-	private String storageAccount;
+	private StorageService storageAccount;
 	private String storageKey;
 	private final static int NTHREAD = 4;
 
-	public WindowsAzureStorageServices(String storageAccount, String storageKey) throws NoSuchAlgorithmException, InvalidKeyException {
+	public WindowsAzureStorageServices(StorageService storageAccount, String storageKey) throws NoSuchAlgorithmException, InvalidKeyException {
 		super();
-		if (storageAccount == null || storageAccount.isEmpty())
+		if (storageAccount == null)
 			throw new InvalidRestAPIArgument(Messages.invalidStrgAcc);
 		this.storageAccount = storageAccount;
 		if (storageKey == null || storageKey.isEmpty())
@@ -112,7 +110,9 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 
 	public EnumerationResults listContainers() throws WACommonException, InvalidKeyException, 
 	RestAPIException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedBlobServiceURL(storageAccount).concat(LIST_CONTAINERS);
+		String url = storageAccount.
+				getStorageServiceProperties().getEndpoints().
+				getEndpoints().get(0).concat(LIST_CONTAINERS);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
@@ -177,7 +177,7 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 	 * @throws StorageException
 	 * @throws WACommonException 
 	 */
-	private CloudBlobContainer getBlobContainerReference(String strAccName, String key, String containerName, 
+	private CloudBlobContainer getBlobContainerReference(StorageService strAccName, String key, String containerName, 
 			boolean createCnt, boolean allowRetry, Boolean cntPubAccess, int concurrentRequestCount) 
 	throws URISyntaxException, StorageException, WACommonException {
 
@@ -186,9 +186,11 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
         CloudBlobContainer  container;
         StorageCredentialsAccountAndKey credentials;
 
-        credentials = new StorageCredentialsAccountAndKey(strAccName,key);
+        credentials = new StorageCredentialsAccountAndKey(strAccName.getServiceName(), key);
 
-        String blobURL = PreferenceSetUtil.getSelectedBlobServiceURL(strAccName);
+        String blobURL = strAccName.
+        		getStorageServiceProperties().getEndpoints().
+        		getEndpoints().get(0);
        	cloudStorageAccount = new CloudStorageAccount(credentials,new URI(blobURL),null,null);
 
 
@@ -398,8 +400,10 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 
 	public String createContainer(String container) throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedBlobServiceURL(storageAccount).concat(
-						container.toLowerCase() + "?restype=container");
+		String url = storageAccount.
+				getStorageServiceProperties().getEndpoints().
+				getEndpoints().get(0).
+				concat(container.toLowerCase() + "?restype=container");
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 

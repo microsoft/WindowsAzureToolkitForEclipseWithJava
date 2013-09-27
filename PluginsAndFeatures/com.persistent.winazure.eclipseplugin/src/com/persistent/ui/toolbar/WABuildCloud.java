@@ -93,21 +93,16 @@ public class WABuildCloud extends AbstractHandler {
 						WindowsAzureProjectManager waProjMngr = WindowsAzureProjectManager.
 								load(new File(selProj.getLocation().toOSString()));
 
-						String dplyFldrName = waProjMngr.getPackageDir();
-						String projPath = selProj.getLocation().toOSString();
-
-						if (dplyFldrName.startsWith(".")) {
-							dplyFldrName = dplyFldrName.substring(1);
-						}
-
-						dplyFolderPath = String.format("%s%s", projPath, dplyFldrName);
-//						String cmd = String.format("%s%s", "explorer.exe", dplyFolderPath);
+						dplyFolderPath = WAEclipseHelper.
+								getDeployFolderPath(waProjMngr, selProj);
 						File deployFile = new File(dplyFolderPath);
-						
+
 						if (deployFile.exists() && deployFile.isDirectory() 
 								&& deployFile.listFiles().length > 0) {
 							String[] cmd = {"explorer.exe", "\""+dplyFolderPath+"\""};
 							new ProcessBuilder(cmd).start();
+						} else {
+							return Status.CANCEL_STATUS;
 						}
 						waProjMngr.save();
 					} catch (IOException e) {

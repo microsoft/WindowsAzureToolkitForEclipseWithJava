@@ -24,6 +24,7 @@ package com.microsoftopentechnologies.windowsazure.tools.build;
 public class StartupEnv {
 	private String name;
 	private String value;
+	private String cloudValue;
 
 	/**
 	 * Sets name attribute
@@ -58,7 +59,28 @@ public class StartupEnv {
 	public String getValue() {
 		return this.value;
 	}
-	
+
+	/**
+	 * Sets cloudvalue attribute
+	 * @param value
+	 *            Value
+	 */
+	public void setCloudValue(String value) {
+		this.cloudValue = value;
+	}
+
+	/**
+	 * Gets cloudvalue attribute
+	 * @return
+	 */
+	public String getCloudValue() {
+		if(this.cloudValue != null) {
+			return this.cloudValue;
+		} else {
+			return this.value;
+		}
+	}
+
 	/** Allows the use of an arbitrary type attribute setting on a component by external tools, but the Ant extension currently 
 	 * has no functionality associated with it
 	 * 
@@ -69,10 +91,18 @@ public class StartupEnv {
 	}
 	
 	/**
-	 * Returns the environment variable setting commandline
+	 * Returns the environment variable setting command line
 	 * @return
 	 */
+	public String createCommandLine(boolean forCloud) {
+		if(!forCloud) {
+			return String.format("set %s=%s", this.name, this.getValue());
+		} else {
+			return String.format("set %s=%s", this.name, this.getCloudValue());			
+		}
+	}
+	
 	public String createCommandLine() {
-		return String.format("set %s=%s", this.name, this.value);
+		return createCommandLine(false);
 	}
 }

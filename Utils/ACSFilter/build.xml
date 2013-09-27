@@ -16,7 +16,7 @@
 
     <target name="compile">
         <mkdir dir="${classes.dir}"/>
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" >
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" source="1.6" target="1.6">
         	<classpath refid="ACSAuthFilter.classpath"/>
         </javac>
     </target>

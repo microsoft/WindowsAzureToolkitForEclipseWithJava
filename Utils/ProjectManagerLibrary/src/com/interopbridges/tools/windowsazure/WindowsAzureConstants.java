@@ -139,7 +139,7 @@ public final class WindowsAzureConstants {
     public static final String CREATOR_VER = PROJ_PROPERTY
             + "/property[@name='creator.version']";
     public static final String V17_VERSION = "1.7.0";
-    public static final String VERSION = "2.1.0";
+    public static final String VERSION = "2.1.1";
     public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.inputendpoint']";
     public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.internalendpoint']";
     public static final String SA_INTERNAL_ENDPOINT_SUFFIX = "_SESSION_AFFINITY" ;
@@ -208,6 +208,7 @@ public final class WindowsAzureConstants {
 
     public static final String ATTR_IMETHOD = "importmethod";
     public static final String ATTR_CLOUD_UPLOAD = "cloudupload";
+    public static final String ATTR_CLD_ALT_SRC = "cloudaltsrc";
     public static final String ATTR_IPATH = "importsrc";
     public static final String ATTR_DMETHOD = "deploymethod";
     public static final String ATTR_DDIR = "deploydir";
@@ -216,6 +217,8 @@ public final class WindowsAzureConstants {
     public static final String ATTR_CURL = "cloudsrc";
     public static final String ATTR_CKEY = "cloudkey";
     public static final String ATTR_CMTHD = "cloudmethod";
+    public static final String ATTR_CLD_VAL = "cloudvalue";
+    public static final String ATTR_LCNS_VAL = "licenseurl";
 
     public static final String COMPONENT_IMPORTAS = COMPONENT + "[@"  + ATTR_IMPORTAS + "='%s']";
     public static final String COMPONENT_IPATH = COMPONENT + "[@"  + ATTR_IPATH + "='%s']";
@@ -386,6 +389,8 @@ public final class WindowsAzureConstants {
     public static final String JDK_LOCAL_HOME = "project.%s.jdk.home.local";
     public static final String SRV_CLOUD_HOME = "project.%s.server.home.cloud";
     public static final String SRV_LOCAL_HOME = "project.%s.server.home.local";
+    
+    public static final String THRD_PARTY_JDK_NAME = "project.%s.jdk.name";
 
     public static final String MIN_SDK_VERSION="v2.1";
 }

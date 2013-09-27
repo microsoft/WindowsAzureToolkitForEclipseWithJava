@@ -178,7 +178,7 @@ public class WorkerRole {
 		StringBuilder variablesScript = new StringBuilder();
 
 		for (StartupEnv v : getVariables()) {
-			String cmdLine = v.createCommandLine();
+			String cmdLine = v.createCommandLine(wapackage.getPackageType() == PackageType.cloud);
 			variablesScript.append(cmdLine + WindowsAzurePackage.newline);
 		}
 

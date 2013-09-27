@@ -18,10 +18,6 @@ package com.gigaspaces.azure.wizards;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.window.Window;

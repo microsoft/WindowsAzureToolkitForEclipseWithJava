@@ -36,6 +36,7 @@ import com.gigaspaces.azure.model.CreateStorageServiceInput;
 import com.gigaspaces.azure.model.Location;
 import com.gigaspaces.azure.model.Locations;
 import com.gigaspaces.azure.model.StorageService;
+import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.runnable.NewStorageAccountWithProgressWindow;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
@@ -217,7 +218,6 @@ public class NewStorageAccountDialog extends WADialog {
 
 		locationComb = new Combo(container, SWT.READ_ONLY);
 		locationComb.setLayoutData(gridData);
-		populateLocations();
 		locationComb.addModifyListener(new ValidateInputCompletion());
 
 		Label descriptionLbl = new Label(container, SWT.LEFT);
@@ -233,6 +233,17 @@ public class NewStorageAccountDialog extends WADialog {
 		subscrptnCombo.setLayoutData(gridData);
 		subscrptnCombo = UIUtils.
 				populateSubscriptionCombo(subscrptnCombo);
+		subscrptnCombo.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				populateLocations();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
 		/*
 		 * If subscription name is there,
 		 * dialog invoked from publish wizard,
@@ -244,13 +255,25 @@ public class NewStorageAccountDialog extends WADialog {
 			subscrptnCombo.setText(subscription);
 		}
 
+		populateLocations();
 		validateDialog();
 
 		return super.createDialogArea(parent);
 	}
 
 	private void populateLocations() {
-		Locations items = WizardCacheManager.getLocation();
+		Locations items = null;
+		String subscriptionName = subscrptnCombo.getText();
+		if (subscriptionName != null && !subscriptionName.isEmpty()) {
+			PublishData publishData = (PublishData) subscrptnCombo
+					.getData(subscriptionName);
+			Subscription sub = WizardCacheManager.
+					findSubscriptionByName(subscriptionName);
+			items = publishData.getLocationsPerSubscription().
+					get(sub.getId());
+		} else {
+			items = WizardCacheManager.getLocation();
+		}
 		locationComb.removeAll();
 
 		for (Location location : items) {

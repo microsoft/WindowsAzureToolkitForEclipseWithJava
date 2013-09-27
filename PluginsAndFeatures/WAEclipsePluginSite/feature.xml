@@ -25,6 +25,10 @@
          version="0.0.0"/>
 
    <includes
+         id="com.microsoftopentechnologies.qpid.feature"
+         version="0.0.0"/>
+
+   <includes
          id="com.microsoftopentechnologies.wacommon.feature"
          version="0.0.0"/>
 
@@ -34,10 +38,6 @@
 
    <includes
          id="com.persistent.winazure.eclipseplugin.feature"
-         version="0.0.0"/>
-
-   <includes
-         id="com.microsoftopentechnologies.qpid.feature"
          version="0.0.0"/>
 
 </feature>

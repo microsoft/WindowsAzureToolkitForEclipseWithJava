@@ -143,9 +143,11 @@ class SAML11Assertion extends SAMLAssertion {
 	public void checkAssertionSignatureValidity(TrustParameters certTrustParams) throws InvalidAssertionException {
 		try {
 			// The SAML 1.1 assertion is identified by AssertionID attribute
-			CustomIdentifiedElement customIdentifiedElement = new CustomIdentifiedElement(assertionXMLElement, new QName(null, ATTR_ASSERTION_ID));
+			//CustomIdentifiedElement customIdentifiedElement = new CustomIdentifiedElement(assertionXMLElement, new QName(null, ATTR_ASSERTION_ID));
+			
 			SignatureValidator signatureValidator = new SignatureValidator();
-			SignatureValidationResult validationResult = signatureValidator.validateSignature(certTrustParams, assertionXMLElement, customIdentifiedElement);
+			assertionXMLElement.setIdAttribute(ATTR_ASSERTION_ID, true);
+			SignatureValidationResult validationResult = signatureValidator.validateSignature(certTrustParams, assertionXMLElement);
 			if (!validationResult.isSignatureValid()) {
 				throw new InvalidAssertionException("XML Signature in the assertion failed validation." + validationResult.getReasonForFailure());
 			}

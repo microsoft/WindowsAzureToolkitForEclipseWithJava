@@ -140,6 +140,7 @@ class SAML20Assertion extends SAMLAssertion {
 	public void checkAssertionSignatureValidity(TrustParameters certTrustParams) throws InvalidAssertionException {
 		try {
 			SignatureValidator signatureValidator = new SignatureValidator();
+			assertionXMLElement.setIdAttribute("ID", true);
 			SignatureValidationResult validationResult = signatureValidator.validateSignature(certTrustParams, assertionXMLElement);
 			if (!validationResult.isSignatureValid()) {
 				throw new InvalidAssertionException("XML Signature in the assertion failed validation." + validationResult.getReasonForFailure());

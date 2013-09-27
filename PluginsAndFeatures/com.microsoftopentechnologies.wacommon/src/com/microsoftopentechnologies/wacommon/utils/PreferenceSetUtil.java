@@ -209,12 +209,20 @@ public class PreferenceSetUtil {
 	 * @return
 	 * @throws WACommonException
 	 */
-	public static String getSelectedManagementURL(String subscriptionID)
+	public static String getSelectedManagementURL(String subscriptionID, String url)
 			throws WACommonException {
-		String mgtURL = getManagementURL(
-				getSelectedPreferenceSetName());
-		mgtURL = mgtURL.replace(
-				"${subscription-id}", subscriptionID);
+		String mgtURL;
+		/*
+		 * URL will be null if user is going to add
+		 * subscription using Add.. button on subscription
+		 * property page as we don't know management URL.
+		 */
+		if (url == null) {
+			mgtURL = getManagementURL(getSelectedPreferenceSetName());
+			mgtURL = mgtURL.replace("${subscription-id}", subscriptionID);
+		} else {
+			mgtURL = String.format("%s%s%s", url, "/", subscriptionID);
+		}
 		return mgtURL;
 	}
 

@@ -57,10 +57,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		context = ModelFactory.createInstance();
 	}
 
-	public Subscription getSubscription(String subscriptionId) throws 
+	public Subscription getSubscription(String subscriptionId, String mngUrl) throws
 	WACommonException, RestAPIException, InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId);
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
@@ -76,10 +76,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return (Subscription) response.getBody();
 	}
 
-	public HostedService getHostedServiceWithProperties(String subscriptionId,String serviceName) throws
+	public HostedService getHostedServiceWithProperties(String subscriptionId,String serviceName, String mngUrl) throws
 	WACommonException, RestAPIException, InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
 									  .replace(SERVICE_NAME, serviceName)
 									  .concat("?embed-detail=true"); //$NON-NLS-1$
@@ -98,10 +98,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return (HostedService) response.getBody();
 	}
 
-	public StorageService getStorageAccount(String subscriptionId,String serviceName)
+	public StorageService getStorageAccount(String subscriptionId,String serviceName, String mngUrl)
 	throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 					 				  .concat(LIST_STRG_ACC).concat(HOST_SERV)
 					 				  .replace(SERVICE_NAME, serviceName);
 
@@ -117,16 +117,16 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		validateResponse(response);
 
 		StorageService storageService = (StorageService) response.getBody();
-		StorageServiceKeys storageServiceKeys = getStorageKeys(subscriptionId, storageService.getServiceName()).getStorageServiceKeys();
+		StorageServiceKeys storageServiceKeys = getStorageKeys(subscriptionId, storageService.getServiceName(), mngUrl).getStorageServiceKeys();
 		storageService.setStorageServiceKeys(storageServiceKeys);
 
 		return storageService;
 	}
 	
-	public boolean checkForStorageAccountDNSAvailability(final String subscriptionId, final String storageAccountName) 
+	public boolean checkForStorageAccountDNSAvailability(final String subscriptionId, final String storageAccountName, String mngUrl) 
 	throws WACommonException, InterruptedException, CommandLineException, RestAPIException {
 		
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat("/services/storageservices/operations/isavailable/" + storageAccountName);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
@@ -145,10 +145,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 	}
 	
-	public boolean checkForCloudServiceDNSAvailability(final String subscriptionId, final String hostedServiceName) 
+	public boolean checkForCloudServiceDNSAvailability(final String subscriptionId, final String hostedServiceName, String mngUrl)
 	throws WACommonException, InterruptedException, CommandLineException, RestAPIException {
 		
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat("/services/hostedservices/operations/isavailable/" + hostedServiceName);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
@@ -168,9 +168,9 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	}	
 
 
-	public Operation getOperationStatus(String subscriptionId, String requestId) throws WACommonException,
+	public Operation getOperationStatus(String subscriptionId, String requestId, String mngUrl) throws WACommonException,
 	RestAPIException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat(GET_OPERTN_STAT).replace(REQUEST_ID, requestId);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
@@ -188,8 +188,8 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	}
 
 	public synchronized List<StorageService> listStorageAccounts(
-			String subscriptionId) throws WACommonException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId).concat(LIST_STRG_ACC);
+			String subscriptionId, String mngUrl) throws WACommonException, InterruptedException, CommandLineException {
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_STRG_ACC);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
@@ -207,7 +207,7 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		if (!services.isEmpty()) {
 			for (StorageService ss : services) {
 				StorageService storageService = getStorageKeys(subscriptionId,
-						ss.getServiceName());
+						ss.getServiceName(), mngUrl);
 				storageService.setServiceName(ss.getServiceName());
 				storageService.setStorageServiceProperties(ss.
 						getStorageServiceProperties());
@@ -218,9 +218,9 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return storageServices;
 	}
 
-	public StorageService getStorageKeys(String subscriptionId, String serviceName) throws 
+	public StorageService getStorageKeys(String subscriptionId, String serviceName, String mngUrl) throws
 	WACommonException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat(LIST_STRG_ACC).concat(GET_STRG_KEYS)
 									  .replace(SERVICE_NAME, serviceName);
 
@@ -236,10 +236,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return (StorageService) response.getBody();
 	}
 
-	public synchronized Locations listLocations(String subscriptionId) throws 
+	public synchronized Locations listLocations(String subscriptionId, String mngUrl) throws
 	WACommonException, InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId).concat(LIST_LOC);
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_LOC);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
@@ -253,10 +253,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return (Locations) response.getBody();
 	}
 
-	public AffinityGroups listAffinityGroups(String subscriptionId) throws WACommonException,
+	public AffinityGroups listAffinityGroups(String subscriptionId, String mngUrl) throws WACommonException,
 	InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId).concat(LIST_AFF_GRPS);
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_AFF_GRPS);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
@@ -270,10 +270,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return (AffinityGroups) response.getBody();
 	}
 
-	public synchronized HostedServices listHostedServices(String subscriptionId) throws 
+	public synchronized HostedServices listHostedServices(String subscriptionId, String mngUrl) throws
 	WACommonException, InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId).concat(LIST_HOST_SERV);
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_HOST_SERV);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
@@ -287,10 +287,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return (HostedServices) response.getBody();
 	}
 
-	public String createHostedService(String subscriptionId, CreateHostedService body) throws 
+	public String createHostedService(String subscriptionId, CreateHostedService body, String mngUrl) throws
 	WACommonException, RestAPIException, InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId).concat(LIST_HOST_SERV);
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_HOST_SERV);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
@@ -309,10 +309,10 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	}
 
 
-	public String createStorageAccount(String subscriptionId, CreateStorageServiceInput body) throws 
+	public String createStorageAccount(String subscriptionId, CreateStorageServiceInput body, String mngUrl) throws
 	WACommonException, RestAPIException, InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId).concat(LIST_STRG_ACC);
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_STRG_ACC);
 
 		HashMap<String, String> headers = new HashMap<String, String>();
 
@@ -331,9 +331,9 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	}
 
 
-	public Deployment getDeployment(String subscriptionId, String serviceName,String deploymentName) throws 
+	public Deployment getDeployment(String subscriptionId, String serviceName,String deploymentName, String mngUrl) throws
 	WACommonException, RestAPIException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
 									  .replace(SERVICE_NAME, serviceName).concat(DPLY_NAME)
 									  .replace(DEPLOYMENT_NAME, deploymentName);
@@ -352,9 +352,9 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return (Deployment) response.getBody();			
 	}
 
-	public String deleteDeployment(String subscriptionId, String serviceName,String deploymentName) throws 
+	public String deleteDeployment(String subscriptionId, String serviceName,String deploymentName, String mngUrl) throws
 	WACommonException, RestAPIException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
 									  .replace(SERVICE_NAME, serviceName).concat(DPLY_NAME)
 									  .replace(DEPLOYMENT_NAME, deploymentName);
@@ -371,9 +371,11 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return getXRequestId(response);
 	}
 
-	public String updateDeploymentStatus(String subscriptionId,String serviceName, String deploymentName, Status status) 
+	public String updateDeploymentStatus(String subscriptionId,
+			String serviceName, String deploymentName,
+			Status status, String mngUrl)
 			throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
 									  .replace(SERVICE_NAME, serviceName).concat(DPLY_NAME)
 									  .replace(DEPLOYMENT_NAME, deploymentName)
@@ -398,9 +400,9 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	}
 
 	public String createDeployment(String subscriptionId, String serviceName,
-			String slotName, CreateDeployment body) throws WACommonException, RestAPIException , InterruptedException, CommandLineException{
+			String slotName, CreateDeployment body, String mngUrl) throws WACommonException, RestAPIException , InterruptedException, CommandLineException{
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
 									  .replace(SERVICE_NAME, serviceName.toLowerCase())
 									  .concat(CREATE_DPLY)
@@ -424,9 +426,9 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 	}
 
 	public String addCertificate(String subscriptionId, String serviceName,
-			CertificateFile body) throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
+			CertificateFile body, String mngUrl) throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId)
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat(LIST_HOST_SERV).concat(ADD_CERT)
 									  .replace(SERVICE_NAME, serviceName);
 		HashMap<String, String> headers = new HashMap<String, String>();

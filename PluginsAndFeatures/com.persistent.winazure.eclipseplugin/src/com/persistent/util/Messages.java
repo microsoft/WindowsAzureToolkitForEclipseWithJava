@@ -145,9 +145,8 @@ public final class Messages extends NLS {
 	public static String cspackErMsg;
 	public static String cmhIdStrgAcc;
 	public static String cmhLblStrgAcc;
-	public static String jdkCldRdBtnLbl;
 	public static String autoDlJdkCldRdBtnLbl;
-	public static String srvCldRdBtnLbl;
+	public static String cldRdBtnLbl;
 	public static String autoDlSrvCldRdBtnLbl;
 	public static String linkLblAcc;
 	public static String eclipseDeployContainer;
@@ -155,7 +154,11 @@ public final class Messages extends NLS {
 	public static String expStrgReg;
 	public static String expLocToAuto;
 	public static String emltrGrp;
-
+	public static String thrdPrtJdkLbl;
+	public static String aggTtl;
+	public static String aggMsg;
+	public static String aggLnk;
+	public static String acptBtn;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

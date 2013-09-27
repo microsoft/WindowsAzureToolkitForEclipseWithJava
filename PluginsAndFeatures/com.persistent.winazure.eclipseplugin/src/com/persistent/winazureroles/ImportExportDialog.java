@@ -521,7 +521,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 				winAzureRoleCmpnt.setDeployMethod(
 						WindowsAzureRoleComponentDeployMethod.
 						valueOf(comboDeploy.getText()));
-				winAzureRoleCmpnt.setDeployname(txtName.getText().trim());
+				winAzureRoleCmpnt.setDeployName(txtName.getText().trim());
 				if (comboImport.getText().equalsIgnoreCase("WAR")
 						|| comboImport.getText().equalsIgnoreCase("JAR")
 						|| comboImport.getText().equalsIgnoreCase("EAR")) {

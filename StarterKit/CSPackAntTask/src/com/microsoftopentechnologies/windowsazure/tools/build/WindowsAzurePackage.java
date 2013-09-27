@@ -107,6 +107,8 @@ public class WindowsAzurePackage extends Task {
 	private boolean verifyDownloads = true;
 	private Thread downloadManagerThread = null;
 	
+	private DownloadManager downloadManager;
+	
 	/**
 	 * WindowsAzurePackage constructor
 	 */
@@ -871,8 +873,6 @@ public class WindowsAzurePackage extends Task {
 			connection.setRequestMethod("HEAD");
 			return (200 == connection.getResponseCode());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 			return false;
 		}
 	}
@@ -882,7 +882,7 @@ public class WindowsAzurePackage extends Task {
 	 */
 	private void startDownloadManagement() {
 		if(getPackageType() == PackageType.cloud) {
-			DownloadManager downloadManager = new DownloadManager(this);
+			downloadManager = new DownloadManager(this);
 			downloadManagerThread = new Thread(downloadManager);
 			downloadManagerThread.start();
 		}
@@ -897,6 +897,9 @@ public class WindowsAzurePackage extends Task {
 			} catch (InterruptedException e) {
 				;
 			}
+			if(downloadManager != null && downloadManager.exception != null) {
+				throw downloadManager.exception;
+			}
 		}		
 	}
 	
@@ -907,6 +910,7 @@ public class WindowsAzurePackage extends Task {
 	private class DownloadManager implements Runnable {
 		private WindowsAzurePackage windowsAzurePackage = null;
 		private WindowsAzureManager windowsAzureManager = null;
+		public BuildException exception = null;
 		public DownloadManager(WindowsAzurePackage windowsAzurePackage) {
 			this.windowsAzurePackage = windowsAzurePackage;
 			windowsAzureManager = new WindowsAzureManager();
@@ -916,15 +920,19 @@ public class WindowsAzurePackage extends Task {
 		
 	    public void run() {
 	    	// Ensure download availability
-	    	for(WorkerRole role : windowsAzurePackage.roles) {
-	    		for(Component component : role.getComponents()) {
-	    			component.ensureDownload(windowsAzureManager);
-	    		}
-	    	}
-	    	
-	    	if(windowsAzureManager != null) {
-	    		windowsAzureManager.stop();
-	    	}
+			try {
+				for(WorkerRole role : windowsAzurePackage.roles) {
+					for(Component component : role.getComponents()) {
+	    				component.ensureDownload(windowsAzureManager);
+					}
+				}
+			} catch(BuildException e) {
+				exception = e;
+			} finally {
+				if(windowsAzureManager != null) {
+					windowsAzureManager.stop();
+				}
+			}
 	    }
 	}
 

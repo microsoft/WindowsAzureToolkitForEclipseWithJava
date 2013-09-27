@@ -22,6 +22,7 @@ import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -46,6 +47,7 @@ import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
+import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
@@ -67,6 +69,9 @@ public class JdkSrvConfig {
 	private static Link accLinkJdk;
 	private static Button dlRdCldBtn;
 	private static Button autoDlRdCldBtn;
+	private static Button thrdPrtJdkBtn;
+	private static Combo thrdPrtJdkCmb;
+	private static Link thrdPrtJdkLink;
 	private static Label lblUrl;
 	private static Label lblKey;
 	private static Label lblDlNoteUrl;
@@ -240,6 +245,18 @@ public class JdkSrvConfig {
 		return txtHomeDir;
 	}
 
+	public static Combo getThrdPrtJdkCmb() {
+		return thrdPrtJdkCmb;
+	}
+
+	public static Button getThrdPrtJdkBtn() {
+		return thrdPrtJdkBtn;
+	}
+
+	public static Link getThrdPrtJdkLink() {
+		return thrdPrtJdkLink;
+	}
+
 	/**
 	 * Method creates all components
 	 * required for JDK tab.
@@ -402,8 +419,13 @@ public class JdkSrvConfig {
 		dlJdkGrp = createGroup(parent, 3, Messages.dlgDownloadGrp);
 		autoDlRdCldBtn = createRadioButton(dlJdkGrp,
 				Messages.autoDlJdkCldRdBtnLbl);
+		thrdPrtJdkBtn = createRadioButton(dlJdkGrp,
+				Messages.thrdPrtJdkLbl);
+		thrdPrtJdkCmb = createThirdPartyJdkCombo(dlJdkGrp);
+		thrdPrtJdkLink = createThirdPartyJdkLink(
+				dlJdkGrp, Messages.dplDlgSerBtn);
 		dlRdCldBtn = createRadioButton(dlJdkGrp,
-				Messages.jdkCldRdBtnLbl);
+				Messages.cldRdBtnLbl);
 		lblUrl = createUrlComponentLbl(dlJdkGrp);
 		txtUrl = createUrlComponentTxt(dlJdkGrp);
 		lblDlNoteUrl = createDlNoteLabel(dlJdkGrp,
@@ -428,7 +450,7 @@ public class JdkSrvConfig {
 		autoDlRdCldBtnSrv = createRadioButton(dlSrvGrp,
 				Messages.autoDlSrvCldRdBtnLbl);
 		dlRdCldBtnSrv = createRadioButton(dlSrvGrp,
-				Messages.srvCldRdBtnLbl);
+				Messages.cldRdBtnLbl);
 		lblUrlSrv = createUrlComponentLbl(dlSrvGrp);
 		txtUrlSrv = createUrlComponentTxt(dlSrvGrp);
 		lblDlNoteUrlSrv = createDlNoteLabel(dlSrvGrp,
@@ -558,6 +580,21 @@ public class JdkSrvConfig {
 	}
 
 	/**
+	 * Method creates third party JDK combo box.
+	 * @param parent
+	 * @return
+	 */
+	public static Combo createThirdPartyJdkCombo(Composite parent) {
+		Combo combo = new Combo(parent, SWT.READ_ONLY);
+		GridData groupGridData = new GridData();
+		groupGridData.horizontalSpan = 2;
+		groupGridData.horizontalIndent = 17;
+		groupGridData.widthHint = 382;
+		combo.setLayoutData(groupGridData);
+		return combo;
+	}
+
+	/**
 	 * Method creates link.
 	 * @param parent
 	 * @param text
@@ -576,6 +613,24 @@ public class JdkSrvConfig {
 			gridData.horizontalAlignment = SWT.FILL;
 			gridData.grabExcessHorizontalSpace = true;
 		}
+		link.setLayoutData(gridData);
+		link.setText(text);
+		return link;
+	}
+
+	/**
+	 * Method creates third party JDK link.
+	 * @param parent
+	 * @param text
+	 * @return
+	 */
+	public static Link createThirdPartyJdkLink(Composite parent,
+			String text) {
+		Link link = new Link(parent, SWT.LEFT);
+		GridData gridData = new GridData();
+		gridData.horizontalIndent = 10;
+		gridData.horizontalAlignment = SWT.FILL;
+		gridData.grabExcessHorizontalSpace = true;
 		link.setLayoutData(gridData);
 		link.setText(text);
 		return link;
@@ -712,6 +767,7 @@ public class JdkSrvConfig {
 	public static void setEnableDlGrp(boolean status, boolean applyAutoUlParams) {
 		dlRdCldBtn.setEnabled(status);
 		autoDlRdCldBtn.setEnabled(status);
+		thrdPrtJdkBtn.setEnabled(status);
 		cmbStrgAccJdk.setEnabled(status);
 		lblKey.setEnabled(status);
 		lblUrl.setEnabled(status);
@@ -735,6 +791,7 @@ public class JdkSrvConfig {
 			cmbStrgAccJdk.removeAll();
 			txtJavaHome.setText("");
 			lblDlNoteUrl.setText(Messages.dlgDlNtLblUrl);
+			JdkSrvConfigListener.enableThirdPartyJdkCombo(false);
 		} else {
 			cmbStrgAccJdk = JdkSrvConfig.populateStrgAccComboBox(
 					cmbStrgAccJdk.getText(),
@@ -751,6 +808,7 @@ public class JdkSrvConfig {
 	public static void enableJdkRdButtons(Button defaultSelectButton) {
 		dlRdCldBtn.setEnabled(true);
 		autoDlRdCldBtn.setEnabled(true);
+		thrdPrtJdkBtn.setEnabled(true);
 		defaultSelectButton.setSelection(true);
 	}
 
@@ -840,7 +898,7 @@ public class JdkSrvConfig {
 	 * then add (none)
 	 * If tab is JDK or server, then add (none) or (auto)
 	 * as per selection of radio buttons.
-	 * If auto upload radio button selected --> Add (auto)
+	 * If auto upload or third party JDK radio button selected --> Add (auto)
 	 * if not --> Add (none)
 	 * @param tabControl
 	 * @param needAuto
@@ -861,8 +919,13 @@ public class JdkSrvConfig {
 		} else {
 			// For JDK
 			if (JDK_TXT.equals(tabControl)) {
+				/*
+				 * (auto) storage account is needed for
+				 * auto upload as well as third party JDK
+				 */
 				accNames = StorageRegistryUtilMethods.
-						getStorageAccountNames(autoDlRdCldBtn.getSelection());
+						getStorageAccountNames(autoDlRdCldBtn.getSelection()
+								|| thrdPrtJdkBtn.getSelection());
 			} else if (SRV_TXT.equals(tabControl)) {
 				accNames = StorageRegistryUtilMethods.
 						getStorageAccountNames(autoDlRdCldBtnSrv.getSelection());
@@ -941,21 +1004,27 @@ public class JdkSrvConfig {
 	 * of JDK as well if cloud radio button is selected.
 	 */
 	public static void accountsLinkOfSrvClicked() {
-		cmbStrgAccSrv = openAccLink(dlRdCldBtnSrv.getSelection()? dlRdCldBtnSrv : autoDlRdCldBtnSrv,
+		cmbStrgAccSrv = openAccLink(dlRdCldBtnSrv.getSelection() ? dlRdCldBtnSrv
+				: autoDlRdCldBtnSrv,
 				cmbStrgAccSrv, SRV_TXT);
-		if (dlRdCldBtn.getSelection() || autoDlRdCldBtn.getSelection()) {
-			cmbStrgAccJdk = populateStrgAccComboBox(
-					cmbStrgAccJdk.getText(),
-					cmbStrgAccJdk,
-					JDK_TXT, false);
-			/*
-			 * If JDK auto button is selected then
-			 * update JDK URL as we may have set
-			 * combo box to (none).
-			 */
-			if (autoDlRdCldBtn.getSelection()) {
-				updateJDKDlURL();
-			}
+		/*
+		 * Always update JDK combo box
+		 * as at least one radio button
+		 * would be always selected.
+		 */
+		cmbStrgAccJdk = populateStrgAccComboBox(
+				cmbStrgAccJdk.getText(),
+				cmbStrgAccJdk,
+				JDK_TXT, false);
+		/*
+		 * If JDK auto button is selected then
+		 * update JDK URL as we may have set
+		 * combo box to (auto) by removing
+		 * selected storage account from registry.
+		 */
+		if (autoDlRdCldBtn.getSelection()
+				|| thrdPrtJdkBtn.getSelection()) {
+			updateJDKDlURL();
 		}
 	}
 
@@ -965,8 +1034,16 @@ public class JdkSrvConfig {
 	 * of server as well if cloud radio button is selected.
 	 */
 	public static void accountsLinkOfJdkClicked() {
-		cmbStrgAccJdk = openAccLink(dlRdCldBtn.getSelection() ? dlRdCldBtn : autoDlRdCldBtn,
-				cmbStrgAccJdk, JDK_TXT);
+		cmbStrgAccJdk = openAccLink(dlRdCldBtn.getSelection() ? dlRdCldBtn
+				: autoDlRdCldBtn.getSelection() ? autoDlRdCldBtn
+						: thrdPrtJdkBtn,
+						cmbStrgAccJdk,
+						JDK_TXT);
+		/*
+		 * If server auto or deploy button selected then
+		 * update server combo box as well even though
+		 * link on JDK tab is clicked.
+		 */
 		if (dlRdCldBtnSrv.getSelection() || autoDlRdCldBtnSrv.getSelection()) {
 			cmbStrgAccSrv = populateStrgAccComboBox(
 					cmbStrgAccSrv.getText(),
@@ -975,7 +1052,8 @@ public class JdkSrvConfig {
 			/*
 			 * If server auto button is selected then
 			 * update server URL as we may have set
-			 * combo box to (none).
+			 * combo box to (auto) by removing
+			 * selected storage account from registry.
 			 */
 			if (autoDlRdCldBtnSrv.getSelection()) {
 				updateServerDlURL();
@@ -1048,11 +1126,15 @@ public class JdkSrvConfig {
 					getStrgList().get(index - 1).getStrgUrl();
 
 			// For JDK tab and auto upload option selected
-			if (tabControl != null && JDK_TXT.equals(tabControl)
-					&& autoDlRdCldBtn.getSelection()) {
-				String value = prepareCloudBlobURL(txtJdk.getText() , newUrl);
-				urlTxt.setText(value);
-				return urlTxt;
+			if (tabControl != null && JDK_TXT.equals(tabControl)) {
+				if (autoDlRdCldBtn.getSelection()) {
+					urlTxt.setText(prepareCloudBlobURL(txtJdk.getText() , newUrl));
+					return urlTxt;
+				} else if (thrdPrtJdkBtn.getSelection()) {
+					urlTxt.setText(prepareUrlForThirdPartyJdk(
+							thrdPrtJdkCmb.getText(), newUrl));
+					return urlTxt;
+				}
 			}
 
 			// For Server and auto upload option selected
@@ -1086,7 +1168,8 @@ public class JdkSrvConfig {
 			// index = 0 means none or auto is selected
 			// For JDK tab and auto upload option selected
 			if (tabControl != null && JDK_TXT.equals(tabControl)
-					&& autoDlRdCldBtn.getSelection()) {
+					&& (autoDlRdCldBtn.getSelection()
+							|| thrdPrtJdkBtn.getSelection())) {
 				urlTxt.setText(AUTO_TXT);
 				return urlTxt;
 			}
@@ -1119,6 +1202,31 @@ public class JdkSrvConfig {
 											.append(FWD_SLASH)
 											.append(jdkPath.getName().trim().replaceAll("\\s+", "-"))
 											.append(".zip").toString();
+	}
+
+	/**
+	 * Method prepares third party JDK URL
+	 * by appending eclipse container name and
+	 * filename from third party URL.
+	 * @param url
+	 * @return
+	 */
+	public static String prepareUrlForThirdPartyJdk(String jdkName, String url) {
+		String finalUrl = "";
+		try {
+			String cloudValue = WindowsAzureProjectManager.
+					getCloudValue(jdkName, cmpntFile);
+			String dirName = cloudValue.substring(cloudValue.lastIndexOf("\\") + 1,
+					cloudValue.length());
+			finalUrl = new StringBuilder(url)
+			.append(Messages.eclipseDeployContainer)
+			.append(FWD_SLASH)
+			.append(dirName)
+			.append(".zip").toString();
+		} catch (Exception ex) {
+			Activator.getDefault().log(ex.getMessage());
+		}
+		return finalUrl;
 	}
 
 	/**
@@ -1521,5 +1629,22 @@ public class JdkSrvConfig {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Display third party JDK license agreement.
+	 * @return : boolean
+	 * true : license accepted "Accept" button pressed
+	 * false : license not accepted "Cancel" button pressed
+	 */
+	public static boolean createAccLicenseAggDlg() {
+		boolean licenseAccepted = false;
+		AcceptLicenseAgreementDlg dlg =
+				new AcceptLicenseAgreementDlg(new Shell());
+		int btnId = dlg.open();
+		if (btnId == Window.OK) {
+			licenseAccepted = true;
+		}
+		return licenseAccepted;
 	}
 }

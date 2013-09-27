@@ -182,7 +182,20 @@ implements INewWizard, IPageChangedListener {
             }
         };
         try {
-            getContainer().run(true, false, runnable);
+        	/*
+        	 * Check if third party JDK is selected
+        	 * then license is accepted or not.
+        	 */
+        	boolean tempAccepted = true;
+        	if (WATabPage.isThirdPartyJdkChecked()
+        			&& !WATabPage.isAccepted()) {
+        		tempAccepted = JdkSrvConfig.createAccLicenseAggDlg();
+        	}
+        	if (tempAccepted) {
+        		getContainer().run(true, false, runnable);
+        	} else {
+        		return false;
+        	}
         } catch (InterruptedException e) {
         	PluginUtil.displayErrorDialog(this.getShell(),
         			Messages.pWizErrTitle,
@@ -229,31 +242,37 @@ implements INewWizard, IPageChangedListener {
             	// JDK
             	if (depMap.get("jdkChecked").equalsIgnoreCase("true")
             			&& !depMap.get("jdkLoc").isEmpty()) {
-            		role.setJDKSourcePath(depMap.get("jdkLoc"),
-            				new File(depMap.get("tempFile")));
+            		// Third party JDK selected
+            		if (depMap.get("jdkThrdPartyChecked").equalsIgnoreCase("true")) {
+            			String jdkName = depMap.get("jdkName");
+            			role.setJDKSourcePath(depMap.get("jdkLoc"),
+                				new File(depMap.get("tempFile")),
+                				jdkName);
+            			role.setJDKCloudName(jdkName);
+            		} else {
+            			role.setJDKSourcePath(depMap.get("jdkLoc"),
+                				new File(depMap.get("tempFile")), "");
+            		}
 
             		// JDK download group
-            		// Add only if JDK component added
-            		if (depMap.get("jdkDwnldChecked").equalsIgnoreCase("true") || 
-            				depMap.get("jdkAutoDwnldChecked").equalsIgnoreCase("true")) {
-            			String jdkTabUrl = depMap.get("jdkUrl");
-            			if (depMap.get("jdkAutoDwnldChecked").
-            					equalsIgnoreCase("true")
-            					&& jdkTabUrl.
+            		// By default auto upload will be selected.
+            		String jdkTabUrl = depMap.get("jdkUrl");
+            		if (depMap.get("jdkAutoDwnldChecked").
+            				equalsIgnoreCase("true")
+            				|| depMap.get("jdkThrdPartyChecked").equalsIgnoreCase("true")) {
+            			if (jdkTabUrl.
             					equalsIgnoreCase(JdkSrvConfig.AUTO_TXT)) {
             				jdkTabUrl = auto;
             			}
-            			role.setJDKCloudURL(jdkTabUrl);
-            			role.setJDKCloudKey(depMap.get("jdkKey"));
-            			/*
-            			 * By default package type is local,
-            			 * hence store JAVA_HOME for cloud.
-            			 */
-            			role.setJDKCloudHome(depMap.get("javaHome"));
-            			if (depMap.get("jdkAutoDwnldChecked").equalsIgnoreCase("true")) {
-            				role.setJDKCloudUploadMode(WARoleComponentCloudUploadMode.AUTO);
-            			}
+            			role.setJDKCloudUploadMode(WARoleComponentCloudUploadMode.AUTO);
             		}
+            		role.setJDKCloudURL(jdkTabUrl);
+            		role.setJDKCloudKey(depMap.get("jdkKey"));
+            		/*
+            		 * By default package type is local,
+            		 * hence store JAVA_HOME for cloud.
+            		 */
+            		role.setJDKCloudHome(depMap.get("javaHome"));
             	}
 
                 // Server
@@ -530,6 +549,9 @@ implements INewWizard, IPageChangedListener {
     			tabPg.isJdkDownloadChecked()).toString());
     	values.put("jdkAutoDwnldChecked" , Boolean.valueOf(
     			tabPg.isJdkAutoUploadChecked()).toString());
+    	values.put("jdkThrdPartyChecked" , Boolean.valueOf(
+    			tabPg.isThirdPartyJdkChecked()).toString());
+    	values.put("jdkName" , tabPg.getJdkName());
     	values.put("jdkUrl" , tabPg.getJdkUrl());
     	values.put("jdkKey" , tabPg.getJdkKey());
     	values.put("javaHome", tabPg.getJavaHome());
@@ -538,7 +560,8 @@ implements INewWizard, IPageChangedListener {
     			tabPg.isSrvChecked()).toString());
     	values.put("servername", tabPg.getServerName());
     	values.put("serLoc", tabPg.getServerLoc());
-    	values.put("tempFile", WAEclipseHelper.getTemplateFile(Messages.cmpntFile));
+    	values.put("tempFile", WAEclipseHelper.
+    			getTemplateFile(Messages.cmpntFile));
     	// Server download group
     	values.put("srvDwnldChecked" , Boolean.valueOf(
     			JdkSrvConfig.isSrvDownloadChecked()).toString());

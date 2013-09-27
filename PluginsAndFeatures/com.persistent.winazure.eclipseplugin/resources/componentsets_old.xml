@@ -44,7 +44,7 @@ Note that the order of the components must be preserved as described. The build 
 
 -->
 
-<componentsets version="2.0.1">
+<componentsets version="2.1.0">
 	<componentset name="JDK" type="JDK">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>

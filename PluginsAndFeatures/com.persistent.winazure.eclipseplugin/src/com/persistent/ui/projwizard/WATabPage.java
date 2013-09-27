@@ -68,8 +68,12 @@ public class WATabPage extends WizardPage {
 	private WindowsAzureRole waRole;
 	private boolean inHandlePgComplete = false;
 	private boolean inHndlPgCmpltBackBtn = false;
+	private boolean dueToBackBtn = false;
 	private File cmpntFile = new File(WAEclipseHelper.
 			getTemplateFile(Messages.cmpntFile));
+	private int prevTabIndex;
+	private static boolean accepted = false;
+	private String jdkPrevName;
 
 	/**
 	 * Constructor.
@@ -141,14 +145,11 @@ public class WATabPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				if (folder.getSelectionIndex() == 0) {
-					getWizard().getPage(Messages.tbPg).
-					setDescription(Messages.dplPageJdkMsg);
+					changeToJdkTab();
 				} else if (folder.getSelectionIndex() == 1) {
-					getWizard().getPage(Messages.tbPg).
-					setDescription(Messages.dplPageSrvMsg);
+					changeToSrvTab();
 				} else if (folder.getSelectionIndex() == 2) {
-					getWizard().getPage(Messages.tbPg).
-					setDescription(Messages.dplPageAppMsg);
+					changeToAppTab();
 				}
 			}
 
@@ -174,6 +175,38 @@ public class WATabPage extends WizardPage {
 		setControl(folder);
 		// Set by default tab selection to JDK
 		folder.setSelection(jdkTab);
+		prevTabIndex = 0;
+	}
+
+	private void changeToSrvTab() {
+		if (displayLicenseAgreement()) {
+			getWizard().getPage(Messages.tbPg).
+			setDescription(Messages.dplPageSrvMsg);
+			folder.setSelection(srvTab);
+			prevTabIndex = 1;
+		} else {
+			folder.setSelection(jdkTab);
+			prevTabIndex = 0;
+		}
+	}
+
+	private void changeToAppTab() {
+		if (displayLicenseAgreement()) {
+			getWizard().getPage(Messages.tbPg).
+			setDescription(Messages.dplPageAppMsg);
+			folder.setSelection(appTab);
+			prevTabIndex = 2;
+		} else {
+			folder.setSelection(jdkTab);
+			prevTabIndex = 0;
+		}
+	}
+
+	private void changeToJdkTab() {
+		folder.setSelection(jdkTab);
+		getWizard().getPage(Messages.tbPg).
+		setDescription(Messages.dplPageJdkMsg);
+		prevTabIndex = 0;
 	}
 
 	/**
@@ -187,7 +220,7 @@ public class WATabPage extends WizardPage {
 	@Override
 	public IWizardPage getNextPage() {
 		int tabIndex = folder.getSelectionIndex();
-		IWizardPage page;
+		IWizardPage page = getWizard().getPage(Messages.tbPg);
 		/*
 		 * If getNextPage() is called due to
 		 * setPageComplete() method
@@ -196,29 +229,32 @@ public class WATabPage extends WizardPage {
 		 */
 		if (inHandlePgComplete) {
 			folder.setSelection(tabIndex);
-			page = getWizard().getPage(Messages.tbPg);
-		} else {
+		} else if (!dueToBackBtn) {
 			/*
 			 * Next button has been clicked.
 			 */
 			if (tabIndex == 0
 					&& isJdkChecked()
 					&& !getJdkLoc().isEmpty()) {
-				folder.setSelection(srvTab);
-				page = getWizard().getPage(Messages.tbPg);
-				page.setDescription(Messages.dplPageSrvMsg);
+				changeToSrvTab();
 			} else if (tabIndex == 1
 					&& isSrvChecked()
 					&& !getServerName().isEmpty()
 					&& !getServerLoc().isEmpty()
 					&& isJdkChecked()) {
-				folder.setSelection(appTab);
-				page = getWizard().getPage(Messages.tbPg);
-				page.setDescription(Messages.dplPageAppMsg);
+				changeToAppTab();
 			} else {
 				page = getWizard().getPage(Messages.keyPg);
+				if (isSrvChecked()) {
+					prevTabIndex = 2;
+				} else if (isJdkChecked()) {
+					prevTabIndex = 1;
+				} else {
+					prevTabIndex = 0;
+				}
 			}
 		}
+		dueToBackBtn = false;
 		inHandlePgComplete = false;
 		return page;
 	}
@@ -226,7 +262,7 @@ public class WATabPage extends WizardPage {
 	@Override
 	public IWizardPage getPreviousPage() {
 		int tabIndex = folder.getSelectionIndex();
-		IWizardPage page;
+		IWizardPage page = getWizard().getPage(Messages.tbPg);
 		/*
 		 * If getPreviousPage() is called due to
 		 * setPageComplete() method
@@ -235,19 +271,20 @@ public class WATabPage extends WizardPage {
 		 */
 		if (inHndlPgCmpltBackBtn) {
 			folder.setSelection(tabIndex);
-			page = getWizard().getPage(Messages.tbPg);
 		} else {
 			/*
 			 * Back button has been clicked.
 			 */
+			dueToBackBtn = true;
 			if (tabIndex == 1) {
-				page = getWizard().getPage(Messages.tbPg);
-				folder.setSelection(jdkTab);
+				changeToJdkTab();
 			} else if (tabIndex == 2) {
-				page = getWizard().getPage(Messages.tbPg);
 				folder.setSelection(srvTab);
+				page.setDescription(Messages.dplPageSrvMsg);
+				prevTabIndex = 1;
 			} else {
 				page = super.getPreviousPage();
+				prevTabIndex = 0;
 			}
 		}
 		inHndlPgCmpltBackBtn = false;
@@ -306,7 +343,8 @@ public class WATabPage extends WizardPage {
 							}
 						}
 					}
-					// No Validation needed if auto upload JDK is selected
+					// No Validation needed if auto upload or
+					// third party JDK is selected
 					// local radio button selected
 					else {
 						setErrorMessage(null);
@@ -391,6 +429,7 @@ public class WATabPage extends WizardPage {
 					JdkSrvConfigListener.jdkChkBoxChecked(waRole);
 				} else {
 					JdkSrvConfigListener.jdkChkBoxUnChecked();
+					accepted = false;
 				}
 				handlePageComplete();
 			}
@@ -449,9 +488,13 @@ public class WATabPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getDlRdCldBtn().getSelection()) {
+					JdkSrvConfig.getTxtUrl().setText(
+							JdkSrvConfig.getUrl(
+									JdkSrvConfig.getCmbStrgAccJdk()));
 					JdkSrvConfigListener.jdkDeployBtnSelected(waRole);
 				}
 				handlePageComplete();
+				accepted = false;
 			}
 			@Override
 			public void widgetDefaultSelected(SelectionEvent arg0) {
@@ -468,19 +511,9 @@ public class WATabPage extends WizardPage {
 					JdkSrvConfigListener.
 					configureAutoUploadJDKSettings(
 							waRole, Messages.dlNtLblDir);
-				} else {
-					/*
-					 * auto upload radio button unselected
-					 * and deploy button selected.
-					 */
-					if (JdkSrvConfig.getDlRdCldBtn().getSelection()) {
-						JdkSrvConfig.getTxtUrl().setText(
-								JdkSrvConfig.getUrl(
-										JdkSrvConfig.getCmbStrgAccJdk()));
-						return;
-					}
 				}
 				handlePageComplete();
+				accepted = false;
 			}
 
 			@Override
@@ -488,6 +521,24 @@ public class WATabPage extends WizardPage {
 			}
 		});
 
+		// listener for third party JDK radio button.
+		JdkSrvConfig.getThrdPrtJdkBtn().
+		addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				if (JdkSrvConfig.getThrdPrtJdkCmb().getText().isEmpty()) {
+					JdkSrvConfigListener.thirdPartyJdkBtnSelected(waRole,
+							Messages.dlNtLblDir);
+					jdkPrevName = JdkSrvConfig.
+							getThrdPrtJdkCmb().getText();
+				}
+			}
+		});
 
 		// listener for JDK URL text.
 		JdkSrvConfig.getTxtUrl().
@@ -531,6 +582,43 @@ public class WATabPage extends WizardPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				JdkSrvConfig.updateJDKDlURL();
 				handlePageComplete();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
+
+		// listener for JDK customize link.
+		JdkSrvConfig.getThrdPrtJdkLink()
+		.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				JdkSrvConfig.custLinkListener(
+						Messages.dplSerBtnTtl,
+						Messages.dplSerBtnMsg,
+						isWizard,
+						getShell(),
+						pageObj, cmpntFile);
+			}
+		});
+
+		// listener for third party JDK combo box.
+		JdkSrvConfig.getThrdPrtJdkCmb().
+		addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				JdkSrvConfigListener.thirdPartyComboListener();
+				/*
+				 * If JDK name is changed by user then license
+				 * has to be accepted again.
+				 */
+				String currentName = JdkSrvConfig.
+						getThrdPrtJdkCmb().getText();
+				if (!currentName.equalsIgnoreCase(jdkPrevName)) {
+					accepted = false;
+					jdkPrevName = currentName;
+				}
 			}
 
 			@Override
@@ -999,6 +1087,23 @@ public class WATabPage extends WizardPage {
 	}
 
 	/**
+	 * Returns whether third party radio button
+	 * is selected or not.
+	 * @return
+	 */
+	public static boolean isThirdPartyJdkChecked() {
+		return JdkSrvConfig.getThrdPrtJdkBtn().getSelection();
+	}
+
+	/**
+	 * Returns name of third party JDK.
+	 * @return
+	 */
+	public static String getJdkName() {
+		return JdkSrvConfig.getThrdPrtJdkCmb().getText();
+	}
+
+	/**
 	 * Return Server URL specified by user.
 	 * @return Server URL
 	 */
@@ -1045,5 +1150,35 @@ public class WATabPage extends WizardPage {
 	 */
 	public static TabItem getJdkTab() {
 		return jdkTab;
+	}
+
+	/**
+	 * Method returns if license is accepted
+	 * or not by user.
+	 * User have to accept license only once.
+	 * @return
+	 */
+	public static boolean isAccepted() {
+		return accepted;
+	}
+
+	/**
+	 * If user is trying to move from JDK tab
+	 * and third party JDK is selected
+	 * but license is not accepted till now
+	 * then show license agreement dialog.
+	 * @return boolean
+	 * true : license accepted
+	 * false : license not accepted
+	 */
+	private boolean displayLicenseAgreement() {
+		boolean temp = true;
+		if (prevTabIndex == 0
+				&& isThirdPartyJdkChecked()
+				&& !accepted) {
+			temp = JdkSrvConfig.createAccLicenseAggDlg();
+			accepted =  temp;
+		}
+		return temp;
 	}
 }
