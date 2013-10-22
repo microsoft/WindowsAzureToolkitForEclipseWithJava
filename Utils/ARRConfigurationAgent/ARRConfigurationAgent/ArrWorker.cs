@@ -37,7 +37,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
         /// Starts the ArrWorker agent.
         /// This method returns as soon as IIS is configured to forward http traffic to ARR farm.
         /// </summary>
-        internal static void Start(string arrEndpointName, string serverEndPointName)
+        internal static void Start(string arrEndpointName, string serverEndPointName, byte[] certHash, string certStoreName)
         {
             RoleInstanceEndpoint arrEndpoint;
 
@@ -48,7 +48,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
             }
 
             // Do one-time IIS/ARR setup.
-            ConfigureOnce(serverEndPointName, arrEndpoint.IPEndpoint);
+            ConfigureOnce(serverEndPointName, arrEndpoint.IPEndpoint, certHash, certStoreName);
 
             // Update the server farm based on the discovered server endpoint instances.
             UpdateFarm(serverEndPointName);
@@ -67,7 +67,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
         /// <summary>
         /// Performs one-time configuration of IIS/ARR.
         /// </summary>
-        private static void ConfigureOnce(string serverEndpointName, IPEndPoint bindInfo)
+        private static void ConfigureOnce(string serverEndpointName, IPEndPoint bindInfo, byte[] certHash, string certStoreName)
         {
             using (ServerManager sm = new ServerManager())
             {
@@ -107,11 +107,22 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
                     {
                         if (binding.Protocol.Equals("http", StringComparison.OrdinalIgnoreCase))
                         {
-                            binding["bindingInformation"] = string.Format(
+                            var bindingInformation = string.Format(
                                 CultureInfo.InvariantCulture,
                                 "{0}:{1}:",
                                 bindInfo.Address.ToString(),
                                 bindInfo.Port);
+
+                            if (certHash!=null)
+                            {
+                                var httpsBinding = sm.Sites["Default Web Site"].Bindings.Add(bindingInformation, certHash, certStoreName);
+                                httpsBinding.Protocol = "https";
+                                sm.Sites["Default Web Site"].Bindings.Remove(binding);
+                            }
+                            else
+                            {
+                                binding["bindingInformation"] = bindingInformation;
+                            }
                             break;
                         }
                     }
