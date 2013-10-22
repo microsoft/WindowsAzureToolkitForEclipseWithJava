@@ -26,6 +26,8 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
     {
         private static bool blockStartup;
         private static string arrEndpoint;
+        private static string certStoreName;
+        private static byte[] certHash;
         private static string serverEndpoint;
 
         /// <summary>
@@ -48,7 +50,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
                     bool succeeded = false;
                     try
                     {
-                        ArrWorker.Start(arrEndpoint, serverEndpoint);
+                        ArrWorker.Start(arrEndpoint, serverEndpoint, certHash, certStoreName);
                         succeeded = true;
                     }
                     finally
@@ -87,16 +89,52 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
             {
                 blockStartup = true;
             }
+            else if (args.Length == 2 || args.Length == 4)
+            {
+                arrEndpoint = args[0];
+                serverEndpoint = args[1];
+                if (args.Length == 4)
+                {
+                    certHash = args[2].ConvertHexToBytes();
+                    certStoreName = args[3];
+                }
+            }
             else
             {
-                if (args.Length != 2)
                 {
                     throw new InvalidOperationException("Incorrect arguments specified");
                 }
-
-                arrEndpoint = args[0];
-                serverEndpoint = args[1];
             }
         }
     }
+
+    static class HexExtention
+    {
+        private static int H2N(char c)
+        {
+            if (c >= '0' && c <= '9')
+                return c - '0';
+            if (c >= 'A' && c <= 'F')
+                return c - 'A' + 10;
+            if (c >= 'a' && c <= 'f')
+                return c - 'a' + 10;
+            throw new ArgumentException(String.Format("c:{0}", c));
+        }
+
+        public static byte[] ConvertHexToBytes(this string hex)
+        {
+            var chars = hex.ToCharArray();
+            if (chars.Length % 2 != 0)
+                throw new ArgumentException("not even length");
+            var ret = new byte[chars.Length / 2];
+            for (var i = 0; i < chars.Length; i += 2)
+            {
+                var h = H2N(chars[i]) << 4;
+                var l = H2N(chars[i + 1]);
+                ret[i / 2] = (byte)(h + l);
+            }
+            return ret;
+        }
+    }
+
 }
