@@ -30,6 +30,15 @@ public class DeploymentEventArgs extends EventObject {
 	private int deployCompleteness;
 	private Date startTime;
 	private RequestStatus status;
+	private String deploymentURL;
+
+	public String getDeploymentURL() {
+		return deploymentURL;
+	}
+
+	public void setDeploymentURL(String deploymentURL) {
+		this.deploymentURL = deploymentURL;
+	}
 
 	public DeploymentEventArgs(Object source) {
 		super(source);
@@ -64,7 +73,8 @@ public class DeploymentEventArgs extends EventObject {
 		if (deployMessage.equals(com.gigaspaces.azure.wizards.Messages.deploymentCanceled)) {
 			return deployMessage;
 		}
-		SimpleDateFormat dateFormat = new SimpleDateFormat(Messages.dateFormatEventArgs, Locale.getDefault()); 
+		SimpleDateFormat dateFormat = new SimpleDateFormat(
+				Messages.dateFormatEventArgs, Locale.getDefault());
 		String format = String.format(Messages.toStringFormat, dateFormat.format(getStartTime()), getDeployMessage());
 		return format;
 	}

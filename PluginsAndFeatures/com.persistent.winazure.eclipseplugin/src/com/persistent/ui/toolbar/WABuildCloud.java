@@ -95,10 +95,16 @@ public class WABuildCloud extends AbstractHandler {
 
 						dplyFolderPath = WAEclipseHelper.
 								getDeployFolderPath(waProjMngr, selProj);
+						String bldFlFilePath = String.format("%s%s%s",
+								dplyFolderPath,
+								"\\",
+								com.persistent.util.Messages.bldErFileName);
+						File buildFailFile = new File(bldFlFilePath);
 						File deployFile = new File(dplyFolderPath);
 
 						if (deployFile.exists() && deployFile.isDirectory() 
-								&& deployFile.listFiles().length > 0) {
+								&& deployFile.listFiles().length > 0
+								&& !buildFailFile.exists()) {
 							String[] cmd = {"explorer.exe", "\""+dplyFolderPath+"\""};
 							new ProcessBuilder(cmd).start();
 						} else {

@@ -1,0 +1,36 @@
+@REM *** Sample startup script containing the steps for starting a custom server and deploying a WAR file. 
+@REM *** $TODO: Modify this sample template as needed to create deployment script for an arbitrary server
+
+@REM To use the sample, follow these steps:
+@REM *** 1) Copy all this content into approot/startup.cmd in the role folder, close this file, and edit the copy
+@REM *** 2) Place a JRE distribution as jre.zip under approot
+@REM *** 3) Place a server distribution as server.zip under approot in your project
+@REM *** 3.1) If you want to download the server into Azure directly from a URL instead, then
+@REM          uncomment the next line and modify the URL as appropriate:
+@REM cscript "util\download.vbs" "http://???/???.zip" "server.zip"
+
+@REM *** 4) Update SERVER_DIR_NAME below as appropriate:
+@REM *** (IMPORTANT: There must be no trailing nor leading whitespace around the setting)
+
+SET SERVER_DIR_NAME=server_dir_name
+
+@REM *** 5) To deploy your own WAR file, place it in approot and update WAR_NAME below:
+@REM *** (IMPORTANT: There must be no trailing nor leading whitespace around the setting)
+
+SET WAR_NAME=HelloWorld.war
+
+			
+@REM *************************************************************************************
+@REM *** Edit and expand this script as appropriate to deploy your server and application.
+rd "\%ROLENAME%"
+mklink /D "\%ROLENAME%" "%ROLEROOT%\approot"
+cd /d "\%ROLENAME%"
+cscript util\unzip.vbs jre.zip "%CD%"
+cscript util\unzip.vbs server.zip "%CD%"
+
+@REM $TODO: Put the app deployment and server startup logic here
+
+@ECHO OFF
+if %ERRORLEVEL%==0 exit %ERRORLEVEL%
+choice /d y /t 5 /c Y /N /M "*** Windows Azure startup failed - exiting..."
+exit %ERRORLEVEL%

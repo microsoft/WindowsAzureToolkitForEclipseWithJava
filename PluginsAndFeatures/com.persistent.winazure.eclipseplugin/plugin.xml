@@ -746,6 +746,11 @@
 	        id="com.persistent.winazure.eclipseplugin.project.general"
 	        name="Properties...">
 	  </command>
+	  <command
+	  		description="Add worker role to Windows Azure Project"
+	        id="com.persistent.winazure.eclipseplugin.project.addrole"
+	        name="Add Role...">
+	  </command>
 	</extension>
 
 	<!-- Handlers for fly menu on Project folder -->
@@ -784,8 +789,8 @@
           </and>
 		 </or>
 		</enabledWhen>
-	     
 	  </handler>
+
 	  <handler
 	        class="com.gigaspaces.azure.handler.UndeployCommandHandler"
 	        commandId="com.gigaspaces.azure.commands.undeploy">	        
@@ -794,6 +799,42 @@
 	<handler
 	        class="com.persistent.contextmenu.ProjectPropertiesHandler"
 	        commandId="com.persistent.winazure.eclipseplugin.project.general">
+			
+		<enabledWhen>
+         <or>
+			<with
+				variable="selection">
+				<count value="1"/>
+				<iterate
+					operator="or">
+					<adapt type="org.eclipse.core.resources.IResource">
+        				<test property="org.eclipse.core.resources.projectNature"
+         				value="com.persistent.ui.projectnature"/>
+            		</adapt>
+				</iterate>
+		    </with>
+		  <and>
+		    <with
+              variable="activePart">
+           		<instanceof
+                  value="org.eclipse.ui.IEditorPart">
+                 </instanceof>
+            </with>
+           <with
+              variable="activePart">
+              	<adapt type="org.eclipse.ui.IEditorPart">
+           			<test property="com.persistent.ui.property.isProjFile">
+          			</test>
+          		</adapt>
+          	</with>
+          </and>
+		 </or>
+		</enabledWhen>
+	  </handler>
+	  
+	  <handler
+	        class="com.persistent.contextmenu.AddWorkerRole"
+	        commandId="com.persistent.winazure.eclipseplugin.project.addrole">
 			
 		<enabledWhen>
          <or>
@@ -841,11 +882,19 @@
 		    	 <command icon="icons/unpublish.png"
 		           commandId="com.gigaspaces.azure.commands.undeploy">
 			     </command>
-			     
+
+				<separator name="separator_above" visible="true"/>
+
+			      <command icon="icons/RoleFolder.gif"
+	        		commandId="com.persistent.winazure.eclipseplugin.project.addrole">
+	  			 </command>
+
+				<separator name="separator_below" visible="true"/>
+
 			     <command icon="icons/projprop.png"
 	        		commandId="com.persistent.winazure.eclipseplugin.project.general">
 	  			 </command>
-			    
+	  			 
 			    <visibleWhen checkEnabled="false">
 			    <with 
 				variable="selection"> 

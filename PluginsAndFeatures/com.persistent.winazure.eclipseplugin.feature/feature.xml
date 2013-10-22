@@ -2,7 +2,7 @@
 <feature
       id="com.persistent.winazure.eclipseplugin.feature"
       label="Windows Azure Plugin for Eclipse with Java (by MS Open Tech)"
-      version="2.1.1.qualifier"
+      version="2.2.0.qualifier"
       provider-name="Microsoft Open Technologies Inc."
       os="win32">
 

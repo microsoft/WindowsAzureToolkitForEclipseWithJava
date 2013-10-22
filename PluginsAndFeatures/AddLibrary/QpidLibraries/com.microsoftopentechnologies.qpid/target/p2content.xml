@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<units size='1'>
+  <unit id='com.microsoftopentechnologies.qpid' version='0.19.0.201310221433'>
+    <update id='com.microsoftopentechnologies.qpid' range='[0.0.0,0.19.0.201310221433)' severity='0'/>
+    <properties size='5'>
+      <property name='org.eclipse.equinox.p2.name' value='Package for Apache Qpid Client Libraries for JMS Library (by MS Open Tech)'/>
+      <property name='org.eclipse.equinox.p2.provider' value='Microsoft Open Technologies Inc.'/>
+      <property name='maven-groupId' value='com.microsoftopentechnologies.wap4ej.build'/>
+      <property name='maven-artifactId' value='com.microsoftopentechnologies.qpid'/>
+      <property name='maven-version' value='0.19.0-SNAPSHOT'/>
+    </properties>
+    <provides size='22'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='com.microsoftopentechnologies.qpid' version='0.19.0.201310221433'/>
+      <provided namespace='osgi.bundle' name='com.microsoftopentechnologies.qpid' version='0.19.0.201310221433'/>
+      <provided namespace='java.package' name='javax.jms' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.client' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.codec' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.framing' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.jms' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.jms.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.jms.jndi' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.messaging' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.transport' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type.codec' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type.messaging' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type.messaging.codec' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type.security' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type.security.codec' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type.transaction' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type.transaction.codec' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type.transport' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.qpid.amqp_1_0.type.transport.codec' version='0.0.0'/>
+      <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+    </provides>
+    <artifacts size='1'>
+      <artifact classifier='osgi.bundle' id='com.microsoftopentechnologies.qpid' version='0.19.0.201310221433'/>
+    </artifacts>
+    <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+    <touchpointData size='1'>
+      <instructions size='2'>
+        <instruction key='manifest'>
+          Bundle-SymbolicName: com.microsoftopentechnologies.qpid;singleton:=true&#xA;Bundle-Version: 0.19.0.201310221433&#xA;
+        </instruction>
+        <instruction key='zipped'>
+          true
+        </instruction>
+      </instructions>
+    </touchpointData>
+  </unit>
+</units>

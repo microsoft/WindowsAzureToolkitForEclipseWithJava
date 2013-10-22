@@ -92,6 +92,7 @@ public final class WizardCacheManager {
 	private static String deployConfigFile;
 	private static String deployState;
 	private static WindowsAzurePackageType deployMode;
+	private static String unpublish;
 
 	private static RemoteDesktopDescriptor remoteDesktopDescriptor;
 
@@ -121,7 +122,7 @@ public final class WizardCacheManager {
 				getCurrentStorageAcount(), currentAccessKey,
 				getCurentHostedService(), deployFile, deployConfigFile,
 				deployState, remoteDesktopDescriptor,
-				currentPublishData.getPublishProfile().getUrl());
+				currentPublishData.getPublishProfile().getUrl(), unpublish);
 
 		remoteDesktopDescriptor = null;
 
@@ -184,6 +185,10 @@ public final class WizardCacheManager {
 
 	public static String getCurrentDeplyState() {
 		return deployState;
+	}
+	
+	public static String getUnpublish() {
+		return unpublish;
 	}
 
 	public static RemoteDesktopDescriptor getCurrentRemoteDesktopDescriptor() {
@@ -549,7 +554,10 @@ public final class WizardCacheManager {
 		} 
 		else if (ConfigurationEventArgs.DEPLOY_MODE.equals(config.getKey())) {
 			deployMode = (WindowsAzurePackageType) config.getValue();
-		} 
+		}
+		else if (ConfigurationEventArgs.UN_PUBLISH.equals(config.getKey())) {
+			unpublish = config.getValue().toString();
+		}
 		else if (ConfigurationEventArgs.STORAGE_ACCESS_KEY.equals(config.getKey())) {
 			String value = config.getValue().toString();
 

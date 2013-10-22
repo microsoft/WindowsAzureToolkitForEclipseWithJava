@@ -63,6 +63,7 @@ import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
+import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
@@ -81,6 +82,7 @@ public class SignInPage extends WindowsAzurePage {
 	private Combo storageAccountCmb;
 	private Combo hostedServiceCombo;
 	private Combo deployStateCmb;
+	private Combo targetOS;
 	private String deployState;
 	private String deployFileName;
 	private String deployConfigFileName;
@@ -108,6 +110,7 @@ public class SignInPage extends WindowsAzurePage {
 	private boolean isPwdChanged;
 	private Button conToDplyChkBtn;
 	public ArrayList<String> newServices = new ArrayList<String>();
+	private Button unpublishChBox;
 
 	/**
 	 * Constructor.
@@ -132,9 +135,7 @@ public class SignInPage extends WindowsAzurePage {
 
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 3;
-		GridData gridData = new GridData();
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.FILL;
+		GridData gridData = createGridData(0, 0, 0);
 		Composite container = new Composite(parent, SWT.NONE);
 		container.setLayout(gridLayout);
 		container.setLayoutData(gridData);
@@ -147,13 +148,21 @@ public class SignInPage extends WindowsAzurePage {
 		createSubscriptionIdWidget(container);
 		createStorageAccountWidget(container);
 		createHostedServiceWidget(container);
+		createTargetOSWidget(container);
 		createDeploymentStateWidget(container);
+		createUnpublishCheckBox(container);
 		createRemoteDesktopWidget(container);
 
 		setControl(container);
 		setComponentState((subscriptionCombo.
 				getData(subscriptionCombo.getText()) != null));
 		loadDefaultRDPValues();
+		//Set current value for target OS
+		try {
+			targetOS.setText(waProjManager.getOSFamily().getName());
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			Activator.getDefault().log(Messages.error, e);
+		}
 		setPageComplete(validatePageComplete());
 	}
 
@@ -176,7 +185,8 @@ public class SignInPage extends WindowsAzurePage {
 	private void doLoadPreferences() {
 		try {
 			getContainer().run(true, true,
-					new LoadAccountWithProgressBar(null,this.getShell()));
+					new LoadAccountWithProgressBar(null,
+							this.getShell()));
 		} catch (InvocationTargetException e) {
 			MessageUtil.displayErrorDialog(getShell(),
 					Messages.importDlgTitle,e.getMessage());
@@ -252,12 +262,15 @@ public class SignInPage extends WindowsAzurePage {
 		storageAccountCmb.setEnabled(enabled);
 		newStorageAccountBtn.setEnabled(enabled);
 		hostedServiceCombo.setEnabled(enabled);
+		targetOS.setEnabled(enabled);
 		if (!enabled) {
 			hostedServiceCombo.removeAll();
 			storageAccountCmb.removeAll();
+			unpublishChBox.setSelection(enabled);
 		}
 		deployStateCmb.setEnabled(enabled);
 		newHostedServiceBtn.setEnabled(enabled);
+		unpublishChBox.setEnabled(enabled);
 	}
 
 	private void setEnabledState(Composite composite,
@@ -286,6 +299,11 @@ public class SignInPage extends WindowsAzurePage {
 					PreferenceUtil.setLoaded(true);
 					subscriptionCombo = UIUtils.
 							populateSubscriptionCombo(subscriptionCombo);
+					if ((subscriptionCombo.
+							getData(subscriptionCombo.getText()) != null)) {
+						unpublishChBox.setSelection(true);
+						setPageComplete(validatePageComplete());
+					}
 				}
 			}
 		});
@@ -368,6 +386,10 @@ public class SignInPage extends WindowsAzurePage {
 				ConfigurationEventArgs.DEPLOY_STATE,
 				deployState));
 
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.UN_PUBLISH,
+				Boolean.valueOf(unpublishChBox.getSelection()).toString()));
+
 		deployFileName = constructCspckFilePath();
 
 		deployConfigFileName = constructCscfgFilePath();
@@ -385,6 +407,14 @@ public class SignInPage extends WindowsAzurePage {
 				currentHostedService));
 
 		return true;
+	}
+
+	/**
+	 * Method returns target OS selected by user.
+	 * @return
+	 */
+	public String getTargetOSName() {
+		return targetOS.getText();
 	}
 
 	/**
@@ -445,12 +475,8 @@ public class SignInPage extends WindowsAzurePage {
 		rdGrp = new Group(parent, SWT.SHADOW_ETCHED_IN);
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 3;
-		GridData gridData = new GridData();
+		GridData gridData = createGridData(0, 5, 3);
 		gridData.horizontalSpan = 3;
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalIndent = 3;
-		gridData.verticalIndent = 5;
-		gridData.horizontalAlignment = SWT.FILL;
 		rdGrp.setText(Messages.rmtAccLbl);
 		rdGrp.setLayout(gridLayout);
 		rdGrp.setLayoutData(gridData);
@@ -485,11 +511,7 @@ public class SignInPage extends WindowsAzurePage {
 		userNameLabel.setText(Messages.remAccUserName);
 		txtUserName = new Text(container,
 				SWT.LEFT | SWT.BORDER);
-		GridData gridData = new GridData();
-		gridData.widthHint = 300;
-		gridData.horizontalIndent = 33;
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.FILL;
+		GridData gridData = createGridData(300, 0, 33);
 		txtUserName.setLayoutData(gridData);
 
 		txtUserName.addModifyListener(new ModifyListener() {
@@ -522,12 +544,7 @@ public class SignInPage extends WindowsAzurePage {
 
 		txtPassword = new Text(container,
 				SWT.LEFT | SWT.PASSWORD | SWT.BORDER);
-		gridData = new GridData();
-		gridData.widthHint = 300;
-		gridData.verticalIndent = 10;
-		gridData.horizontalIndent = 33;
-		gridData.horizontalAlignment = SWT.FILL;
-		gridData.grabExcessHorizontalSpace = true;
+		gridData = createGridData(300, 10, 33);
 		txtPassword.setLayoutData(gridData);
 
 		/*
@@ -562,12 +579,7 @@ public class SignInPage extends WindowsAzurePage {
 		});
 
 		encLink = new Link(container, SWT.RIGHT);
-		gridData = new GridData();
-		gridData.widthHint = 60;
-		gridData.verticalIndent = 10;
-		gridData.horizontalIndent = 10;
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.FILL;
+		gridData = createGridData(60, 10, 10);
 		encLink.setText(Messages.linkLblEnc);
 		encLink.setLayoutData(gridData);
 		encLink.addSelectionListener(new SelectionAdapter() {
@@ -636,19 +648,14 @@ public class SignInPage extends WindowsAzurePage {
 	 */
 	private void createConfPwdComponent(Composite container) {
 		confirmPasswordLbl = new Label(container, SWT.LEFT);
-		confirmPasswordLbl.setText(Messages.certDlgConfPwdLbl); //$NON-NLS-1$
+		confirmPasswordLbl.setText(Messages.certDlgConfPwdLbl);
 		GridData gridData = new GridData();
 		gridData.verticalIndent = 10;
 		confirmPasswordLbl.setLayoutData(gridData);
 
 		txtConfirmPassword = new Text(container,
 				SWT.LEFT | SWT.PASSWORD | SWT.BORDER);
-		gridData = new GridData();
-		gridData.widthHint = 300;
-		gridData.verticalIndent = 10;
-		gridData.horizontalIndent = 33;
-		gridData.horizontalAlignment = SWT.FILL;
-		gridData.grabExcessHorizontalSpace = true;
+		gridData = createGridData(300, 10, 33);
 		txtConfirmPassword.setLayoutData(gridData);
 
 		txtConfirmPassword.addFocusListener(new FocusListener() {
@@ -719,22 +726,12 @@ public class SignInPage extends WindowsAzurePage {
 	 * @param container
 	 */
 	private void createStorageAccountWidget(Composite container) {
-		Label label = new Label(container, SWT.NONE);
-		GridData gridData = new GridData();
-		gridData.horizontalIndent = 3;
-		gridData.verticalIndent = 10;
-		label.setLayoutData(gridData);
-		label.setText(Messages.deplStorageAccLbl);
+		createLabel(container, Messages.deplStorageAccLbl);
 
 		storageAccountCmb = createCombo(
 				container, SWT.READ_ONLY, 10, SWT.FILL, 150);
 
-		gridData = new GridData();
-		gridData.widthHint = 80;
-		gridData.verticalIndent = 10;
-		gridData.horizontalIndent = 5;
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.FILL;
+		GridData gridData = createGridData(80, 10, 5);
 
 		newStorageAccountBtn = new Button(container, SWT.PUSH);
 		newStorageAccountBtn.setLayoutData(gridData);
@@ -801,19 +798,14 @@ public class SignInPage extends WindowsAzurePage {
 		if (storageAccountCmb.getItemCount() > 0)
 			storageAccountCmb.select(0);
 	}
-	
+
 	/**
 	 * Method creates UI components
-	 * and listener for subscriptions. 
+	 * and listener for subscriptions.
 	 * @param container
 	 */
 	private void createSubscriptionIdWidget(Composite container) {
-		Label label = new Label(container, SWT.NONE);
-		GridData gridData = new GridData();
-		gridData.horizontalIndent = 3;
-		gridData.verticalIndent = 10;
-		label.setLayoutData(gridData);
-		label.setText(Messages.deplSubscriptionLbl);
+		createLabel(container, Messages.deplSubscriptionLbl);
 
 		subscriptionCombo = createCombo(
 				container, SWT.READ_ONLY, 10, SWT.FILL, 150);
@@ -837,12 +829,7 @@ public class SignInPage extends WindowsAzurePage {
 		if (subscriptionCombo.getItemCount() > 0)
 			subscriptionCombo.select(0);
 
-		gridData = new GridData();
-		gridData.widthHint = 80;
-		gridData.verticalIndent = 10;
-		gridData.horizontalIndent = 10;
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.FILL;
+		GridData gridData = createGridData(80, 10, 10);
 
 		subLink = new Link(container, SWT.RIGHT);
 		subLink.setText(Messages.linkLblSub);
@@ -876,19 +863,36 @@ public class SignInPage extends WindowsAzurePage {
 			}
 		});
 	}
-	
-	/**
-	 * Method creates UI components
-	 * and listener for services. 
-	 * @param container
-	 */
-	private void createHostedServiceWidget(Composite container) {
+
+	private Label createLabel(Composite container, String text) {
 		Label label = new Label(container, SWT.NONE);
 		GridData gridData = new GridData();
 		gridData.horizontalIndent = 3;
 		gridData.verticalIndent = 10;
 		label.setLayoutData(gridData);
-		label.setText(Messages.deplHostedServiceLbl);
+		label.setText(text);
+		return label;
+	}
+
+	private GridData createGridData(int width,
+			int verInd,
+			int horInd) {
+		GridData gridData = new GridData();
+		gridData.widthHint = width;
+		gridData.verticalIndent = verInd;
+		gridData.horizontalIndent = horInd;
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
+		return gridData;
+	}
+
+	/**
+	 * Method creates UI components
+	 * and listener for services.
+	 * @param container
+	 */
+	private void createHostedServiceWidget(Composite container) {
+		createLabel(container, Messages.deplHostedServiceLbl);
 
 		hostedServiceCombo = createCombo(
 				container, SWT.READ_ONLY, 10, SWT.FILL, 150);
@@ -905,16 +909,10 @@ public class SignInPage extends WindowsAzurePage {
 			}
 		});
 
-		gridData = new GridData();
-		gridData.widthHint = 80;
-		gridData.verticalIndent = 10;
-		gridData.horizontalIndent = 5;
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = SWT.FILL;
+		GridData gridData = createGridData(80, 10, 5);
 
 		newHostedServiceBtn = new Button(container, SWT.PUSH | SWT.CENTER);
 		newHostedServiceBtn.setLayoutData(gridData);
-
 		newHostedServiceBtn.setText(Messages.newBtn);
 
 		newHostedServiceBtn.addSelectionListener(new SelectionListener() {
@@ -966,12 +964,24 @@ public class SignInPage extends WindowsAzurePage {
 		});
 	}
 
-	public void populateHostedServices() {
+	public void createTargetOSWidget(Composite container) {
+		createLabel(container,
+				com.persistent.ui.propertypage.Messages.proPageTgtOSLbl);
+		String[] targetOSType =
+			{OSFamilyType.WINDOWS_SERVER_2008_R2.getName(),
+				OSFamilyType.WINDOWS_SERVER_2012.getName()};
+		targetOS = createCombo(
+				container, SWT.READ_ONLY, 10, SWT.FILL, 300);
+		targetOS.setItems(targetOSType);
+		new Link(container, SWT.NO);
+	}
 
+	public void populateHostedServices() {
 		if (publishData != null) {
 			String currentSelection = hostedServiceCombo.getText();
 			Subscription currentSubscription = publishData.getCurrentSubscription();
-			HostedServices hostedServices = publishData.getServicesPerSubscription().get(currentSubscription.getId());
+			HostedServices hostedServices = publishData.getServicesPerSubscription().
+					get(currentSubscription.getId());
 			hostedServiceCombo.removeAll();
 			if (hostedServices != null && !hostedServices.isEmpty()) {
 
@@ -992,13 +1002,7 @@ public class SignInPage extends WindowsAzurePage {
 	 */
 	private void createDeploymentStateWidget(Composite container) {
 		String[] items = { Messages.deplStaging, Messages.deplProd };
-		Label label = new Label(container, SWT.NONE);
-		GridData gridData = new GridData();
-		gridData.horizontalIndent = 3;
-		gridData.verticalIndent = 10;
-		label.setLayoutData(gridData);
-		label.setText(Messages.deplState);
-
+		createLabel(container, Messages.deplState);
 		deployState = getFirstItem(items);
 
 		deployStateCmb = createCombo(
@@ -1009,6 +1013,9 @@ public class SignInPage extends WindowsAzurePage {
 			@Override
 			public void modifyText(ModifyEvent e) {
 				deployState = ((Combo) e.getSource()).getText();
+				if (deployState.equalsIgnoreCase(Messages.deplProd)) {
+					unpublishChBox.setSelection(false);
+				}
 				setPageComplete(validatePageComplete());
 			}
 		});
@@ -1023,6 +1030,29 @@ public class SignInPage extends WindowsAzurePage {
 		new Link(container, SWT.NO);
 	}
 
+	private void createUnpublishCheckBox(Composite container) {
+		new Link(container, SWT.NO);
+		GridData gridData = new GridData();
+		gridData.verticalIndent = 10;
+		unpublishChBox = new Button(container, SWT.CHECK);
+		unpublishChBox.setText(Messages.unpubPrvDply);
+		unpublishChBox.setLayoutData(gridData);
+		// by default target environment will be staging
+		unpublishChBox.setSelection(true);
+		new Link(container, SWT.NO);
+
+		unpublishChBox.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				setPageComplete(validatePageComplete());
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
+	}
+
 	private String getFirstItem(String[] items) {
 		return items != null && items.length > 0 ? items[0] : null;
 	}
@@ -1035,23 +1065,21 @@ public class SignInPage extends WindowsAzurePage {
 		String projectLocation = selectedProject.getLocation().toOSString().replace("/", File.separator);
 		return projectLocation + File.separator + Messages.deployDir + File.separator + Messages.cspckDefaultFileName;
 	}
-	
+
 	private String constructCscfgFilePath() {
 		if (selectedProject == null) {
 			return null;
 		}
-		
 		String projectLocation = selectedProject.getLocation().toOSString().replace("/", File.separator);
 		return projectLocation + File.separator + Messages.deployDir + File.separator + Messages.cscfgDefaultFileName;
-		
 	}
 
 	protected void populateStorageAccounts() {
-
 		if (publishData != null) {
 			String currentSelection = storageAccountCmb.getText();
 			Subscription currentSubscription = publishData.getCurrentSubscription();
-			StorageServices storageServices = publishData.getStoragesPerSubscription().get(currentSubscription.getId());
+			StorageServices storageServices = publishData.getStoragesPerSubscription().
+					get(currentSubscription.getId());
 			storageAccountCmb.removeAll();
 			if (storageServices != null && !storageServices.isEmpty()) {
 
@@ -1070,7 +1098,7 @@ public class SignInPage extends WindowsAzurePage {
 			File file = new File(fileName);
 
 			PublishData publishDataToCache = null;
-			if (file.getName().endsWith(Messages.publishSettExt)) {				
+			if (file.getName().endsWith(Messages.publishSettExt)) {
 				publishDataToCache = handlePublishSettings(file);
 			}
 			else {
@@ -1079,6 +1107,14 @@ public class SignInPage extends WindowsAzurePage {
 
 			if (publishDataToCache == null) {
 				return;
+			}
+			/*
+			 * logic to set un-pubilsh check box to true
+			 * when ever importing publish settings
+			 * file for the first time.
+			 */
+			if (subscriptionCombo.getItemCount() == 0) {
+				unpublishChBox.setSelection(true);
 			}
 			subscriptionCombo.removeAll();
 			subscriptionCombo = UIUtils.

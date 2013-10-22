@@ -16,6 +16,7 @@
 
 package com.gigaspaces.azure.views;
 
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,9 +27,13 @@ import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -37,6 +42,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
 import waeclipseplugin.Activator;
+
 import com.gigaspaces.azure.deploy.DeploymentEventArgs;
 import com.gigaspaces.azure.deploy.DeploymentEventListener;
 
@@ -45,7 +51,7 @@ public class WindowsAzureActivityLogView extends ViewPart {
 	private TableViewer viewer;
 	private Table table;
 	private SimpleDateFormat dateFormat = new SimpleDateFormat(
-			"MM/dd/yyyy hh:mm:ss", Locale.getDefault()); 
+			"MM/dd/yyyy hh:mm:ss", Locale.getDefault());
 
 	private HashMap<String, TableRowDescriptor> rows = new HashMap<String, TableRowDescriptor>();
 
@@ -59,7 +65,7 @@ public class WindowsAzureActivityLogView extends ViewPart {
 				.getWorkbench()
 				.getHelpSystem()
 				.setHelp(viewer.getControl(),
-						"com.gigaspaces.azrue.views.waactivitylogview"); 
+						"com.gigaspaces.azrue.views.waactivitylogview");
 
 		registerDeploymentListener();
 	}
@@ -110,7 +116,9 @@ public class WindowsAzureActivityLogView extends ViewPart {
 		editor.grabHorizontal = editor.grabVertical = true;
 		editor.setEditor(bar, item, 1);
 
-		rows.put(key, new TableRowDescriptor(item, bar));
+		Link link = new Link(table, SWT.LEFT);
+		link.setText(String.format("%s%s%s%s", "  ", "<a>", Messages.runStatusVisible, "</a>"));
+		rows.put(key, new TableRowDescriptor(item, bar, link));
 	}
 
 	public void registerDeploymentListener() {
@@ -118,7 +126,7 @@ public class WindowsAzureActivityLogView extends ViewPart {
 				new DeploymentEventListener() {
 
 					@Override
-					public void onDeploymentStep(final DeploymentEventArgs args) {						
+					public void onDeploymentStep(final DeploymentEventArgs args) {
 						if (rows.containsKey(args.getId())) {
 
 							Display.getDefault().asyncExec(new Runnable() {
@@ -127,12 +135,32 @@ public class WindowsAzureActivityLogView extends ViewPart {
 								public void run() {
 
 									TableRowDescriptor row = rows.get(args.getId());
-									
+
 									if (!row.getProgressBar().isDisposed()) {
 										row.getProgressBar().setSelection(row.getProgressBar().getSelection() + args.getDeployCompleteness());
 										if (row.getProgressBar().getMaximum() <= (row.getProgressBar().getSelection())) {
-											row.getItem().setText(1,args.getDeployMessage());
 											row.getProgressBar().setVisible(false);
+											/*
+											 * Need link only if service is running.
+											 */
+											if (args.getDeployMessage().equalsIgnoreCase(Messages.runStatus)) {
+												TableEditor editor = new TableEditor(table);
+												editor.grabHorizontal = editor.grabVertical = true;
+												editor.setEditor(row.getLink(), row.getItem(), 1);
+												row.getLink().setVisible(true);
+												row.getLink().addSelectionListener(new SelectionAdapter() {
+													@Override
+													public void widgetSelected(SelectionEvent event) {
+														try {
+															PlatformUI.getWorkbench().getBrowserSupport().
+															getExternalBrowser().openURL(new URL(args.getDeploymentURL()));
+														} catch (Exception e) {
+														}
+													}
+												});
+											} else {
+												row.getItem().setText(1, args.getDeployMessage());
+											}
 										}
 									}
 								}

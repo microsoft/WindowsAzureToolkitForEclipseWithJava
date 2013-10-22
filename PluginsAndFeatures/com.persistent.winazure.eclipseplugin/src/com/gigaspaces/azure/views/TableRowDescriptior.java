@@ -16,18 +16,21 @@
 
 package com.gigaspaces.azure.views;
 
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.TableItem;
 
 class TableRowDescriptor{
 	private final ProgressBar progressBar;
 	private final TableItem item;
-	
-	public TableRowDescriptor(TableItem item,ProgressBar progressBar){
+	private final Link link;
+
+	public TableRowDescriptor(TableItem item,ProgressBar progressBar, Link link){
 		this.item = item;
 		this.progressBar = progressBar;
+		this.link = link;
 	}
-	
+
 	/**
 	 * @return the progressBar
 	 */
@@ -40,5 +43,9 @@ class TableRowDescriptor{
 	 */
 	public TableItem getItem() {
 		return item;
+	}
+
+	public Link getLink() {
+		return link;
 	}
 }

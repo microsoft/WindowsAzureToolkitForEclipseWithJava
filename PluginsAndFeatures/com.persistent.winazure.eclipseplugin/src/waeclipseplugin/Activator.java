@@ -18,6 +18,8 @@ package waeclipseplugin;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.event.EventListenerList;
 
@@ -31,6 +33,7 @@ import org.eclipse.ui.console.IConsoleManager;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
+
 import com.gigaspaces.azure.deploy.DeploymentEventArgs;
 import com.gigaspaces.azure.deploy.DeploymentEventListener;
 import com.gigaspaces.azure.deploy.UploadProgressEventArgs;
@@ -74,7 +77,7 @@ public class Activator extends AbstractUIPlugin {
 	private static final EventListenerList DEPLOYMENT_EVENT_LISTENERS = new EventListenerList();
 	
 	private static final EventListenerList UPLOAD_PROGRESS_EVENT_LISTENERS = new EventListenerList();
-
+	public static List<DeploymentEventListener> depEveList = new ArrayList<DeploymentEventListener>();
 
     /**
      * The constructor
@@ -190,12 +193,19 @@ public class Activator extends AbstractUIPlugin {
 		conMan.addConsoles(new IConsole[] { messageConsole });
 		return messageConsole;
 	}
-	
+
+	public static void removeUnNecessaryListener() {
+		for (int i = 0 ; i < depEveList.size(); i++) {
+			removeDeploymentEventListener(depEveList.get(i));
+		}
+		depEveList.clear();
+	}
+
 	public void addDeploymentEventListener(DeploymentEventListener listener) {
 		DEPLOYMENT_EVENT_LISTENERS.add(DeploymentEventListener.class, listener);
 	}
 
-	public void removeDeploymentEventListener(DeploymentEventListener listener) {
+	public static void removeDeploymentEventListener(DeploymentEventListener listener) {
 		DEPLOYMENT_EVENT_LISTENERS.remove(DeploymentEventListener.class, listener);
 	}
 	

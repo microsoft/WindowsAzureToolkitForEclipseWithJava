@@ -1,0 +1,194 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<units size='1'>
+  <unit id='com.microsoftopentechnologies.windowsazure.tools.sdk' version='0.4.6.201310221433'>
+    <update id='com.microsoftopentechnologies.windowsazure.tools.sdk' range='[0.0.0,0.4.6.201310221433)' severity='0'/>
+    <properties size='5'>
+      <property name='org.eclipse.equinox.p2.name' value='Package for Windows Azure Libraries for Java Plugin (by MS Open Tech)'/>
+      <property name='org.eclipse.equinox.p2.provider' value='Microsoft Open Technologies Inc.'/>
+      <property name='maven-groupId' value='com.microsoftopentechnologies.wap4ej.build'/>
+      <property name='maven-artifactId' value='com.microsoftopentechnologies.windowsazure.tools.sdk'/>
+      <property name='maven-version' value='0.4.6-SNAPSHOT'/>
+    </properties>
+    <provides size='165'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='com.microsoftopentechnologies.windowsazure.tools.sdk' version='0.4.6.201310221433'/>
+      <provided namespace='osgi.bundle' name='com.microsoftopentechnologies.windowsazure.tools.sdk' version='0.4.6.201310221433'/>
+      <provided namespace='java.package' name='com.microsoft.schemas._2003._10.serialization' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.serviceruntime' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.blob' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.blob.client' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.blob.core.storage' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.blob.implementation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.blob.models' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.core' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.core.storage' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.core.storage.utils' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.core.storage.utils.implementation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.core.utils' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.core.utils.pipeline' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.management' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.management.implementation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.management.models' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.media' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.media.entityoperations' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.media.implementation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.media.implementation.atom' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.media.implementation.content' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.media.models' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.queue' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.queue.client' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.queue.implementation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.queue.models' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.serviceBus' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.serviceBus.implementation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.serviceBus.models' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.table' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.table.client' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.table.implementation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoft.windowsazure.services.table.models' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.istack' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.istack.localization' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.istack.logging' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.api.client' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.api.client.async' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.api.client.config' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.api.client.filter' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.api.json' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.api.provider.jaxb' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.api.representation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.api.uri' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.client.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.client.impl.async' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.client.osgi' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.client.proxy' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.client.urlconnection' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.header' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.header.reader' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.impl.provider.entity' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.impl.provider.header' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.impl.provider.xml' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.osgi' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.provider' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.provider.jaxb' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.reflection' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.spi.component' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.spi.component.ioc' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.spi.factory' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.spi.scanning' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.spi.scanning.uri' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.core.util' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.json.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.json.impl.provider.entity' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.json.impl.reader' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.json.impl.writer' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.localization' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.spi' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.spi.inject' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.jersey.spi.service' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.mail.handlers' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.mail.iap' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.mail.imap' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.mail.imap.protocol' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.mail.pop3' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.mail.smtp' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.mail.util' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.ws.rs.ext' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.annotation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.api' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.api.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.marshaller' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.unmarshaller' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.util' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.bytecode' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.model.annotation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.model.core' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.model.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.model.nav' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.model.runtime' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.runtime' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.runtime.output' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.runtime.property' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.runtime.reflect' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.runtime.reflect.opt' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.runtime.unmarshaller' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.schemagen' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.schemagen.episode' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.schemagen.xmlschema' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.bind.v2.util' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.txw2' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.txw2.annotation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.sun.xml.txw2.output' version='0.0.0'/>
+      <provided namespace='java.package' name='javax.inject' version='0.0.0'/>
+      <provided namespace='java.package' name='javax.mail' version='0.0.0'/>
+      <provided namespace='java.package' name='javax.mail.event' version='0.0.0'/>
+      <provided namespace='java.package' name='javax.mail.internet' version='0.0.0'/>
+      <provided namespace='java.package' name='javax.mail.search' version='0.0.0'/>
+      <provided namespace='java.package' name='javax.mail.util' version='0.0.0'/>
+      <provided namespace='java.package' name='javax.ws.rs' version='0.0.0'/>
+      <provided namespace='java.package' name='javax.ws.rs.core' version='0.0.0'/>
+      <provided namespace='java.package' name='javax.ws.rs.ext' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.builder' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.concurrent' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.event' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.exception' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.math' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.mutable' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.reflect' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.text' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.text.translate' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.time' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.lang3.tuple' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.logging' version='0.0.0'/>
+      <provided namespace='java.package' name='org.apache.commons.logging.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.annotate' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.format' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.io' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.jaxrs' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.annotate' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.deser' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.deser.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.exc' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.ext' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.introspect' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.jsontype' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.jsontype.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.module' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.ser' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.ser.impl' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.type' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.map.util' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.node' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.schema' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.sym' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.type' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.util' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jackson.xc' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jettison' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jettison.badgerfish' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jettison.json' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jettison.mapped' version='0.0.0'/>
+      <provided namespace='java.package' name='org.codehaus.jettison.util' version='0.0.0'/>
+      <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+    </provides>
+    <artifacts size='1'>
+      <artifact classifier='osgi.bundle' id='com.microsoftopentechnologies.windowsazure.tools.sdk' version='0.4.6.201310221433'/>
+    </artifacts>
+    <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+    <touchpointData size='1'>
+      <instructions size='2'>
+        <instruction key='manifest'>
+          Bundle-SymbolicName: com.microsoftopentechnologies.windowsazure.tools.sdk;singleton:=true&#xA;Bundle-Version: 0.4.6.201310221433&#xA;
+        </instruction>
+        <instruction key='zipped'>
+          true
+        </instruction>
+      </instructions>
+    </touchpointData>
+  </unit>
+</units>

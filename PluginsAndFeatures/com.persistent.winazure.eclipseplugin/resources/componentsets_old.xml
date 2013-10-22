@@ -13,44 +13,120 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-***********************************************
-HOW TO CREATE A NEW SERVER DEPLOYMENT TEMPLATE:
-***********************************************
-
-1) In the <componentsets> list below, copy an existing <componentset> element whose logic most closely resembles your new server.
-
-2) Give the copied <componentset> a unique name (name="..."). This is what the user will see listed in the UI.
-
-3) Optionally, and only for components of type "server", set the detectpath attribute to a Windows path that uniquely distinguishes this server from all the others, to enable the plugin to automatically discover the server type based on the directory the user specifies (Windows wildcards supported only in last path part)
-
-4) Set the name of the server home environment variable (in <startupenv>) as appropriate. Ensure type="server.home". In value, note that ${placeholder} will be replaced by the plugin with the installation directory of the server based on the approot and the server's directory name. So if the home directory is intended to be relative to the installation directory (e.g. as in the case of GlassFish), you can add additional path components after it. Note that currently, only one such environment variable per server configuration is supported.
-
-5) Adjust the component whose type="server.deploy" as needed to express the import and deployment logic of your server. In importsrc, note that ${placeholder} will be replaced by the plugin with the directory selected by the user in the UI - do not change this. Change the other settings depending on how your server is to be imported and deployed:
-
-  a) if as a straight directory copy (fastest deployment but slowest build and upload, and beware of "path too long" problems), then the <component> would look like this:
-     <component type="server.deploy" importsrc="${placeholder}" importmethod="copy"/>
-
-  b) if as a ZIP of a user-selected directory (slower deployment but faster build and upload and no "path too long" problems), then the <component> would look like this:
-     <component type="server.deploy" importsrc="${placeholder}" importmethod="zip" deploymethod="unzip"/>
-
-  c) currently, importing already ZIP'd server distribution files is not supported as part of the server configuration wizard. But you may achieve that by manipulating the component settings in the Components page of the role properties dialog directly. Or by providing your own startup.cmd logic altogether (see the "samples" directory in your project for examples of that). This would result in the slowest deployment out of the three options presented here, but the fastest build, and the same upload speed as (b). 
-
-6) Adjust the component whose type="server.app" as needed to express the import and deployment logic of your applications. Currently, only servers supporting auto-deploy can be configured this way here (i.e. the application files must be deployed before the server is started). The only setting you should change here is deploydir, which represents the web application deployment directory where the application file is to be placed. Leave the other attribute settings unchanged (i.e. set to ${placeholder}) so that the plugin can replace them with appropriate values based on the user selection in the UI.
-
-7) Adjust the component whose type="server.start" as needed to express the startup logic of your server. Because this component's deploymethod is "exec", importas is interpreted as the literal commandline that will be executed after the other steps are completed, relative to the directory specified by deploydir. You may reference Windows environment variables in deploydir and importas.
-
-Note that the order of the components must be preserved as described. The build process will output startup script commands based on each component in the exact order the components are listed in this template, so getting them out of order will likely produce faulty logic.
-
-
 -->
 
-<componentsets version="2.1.0">
+<componentsets version="2.1.1">
+<!-- 
+*******************************************************************************
+HOW TO CREATE A NEW JDK PACKAGE DEPLOYMENT TEMPLATE:
+*******************************************************************************
+
+1) In the <componentsets> list below, copy an existing <componentset> element 
+   whose type="JDK" and whose logic most closely resembles your new JDK 
+   package, and make the following changes to it:
+   a) Give the copied <componentset> a unique name (name="..."). This is what 
+      the user will see listed in the UI.
+   b) Set the licenseurl attribute to the URL of the license to show the user
+
+2) In the startupenv element whose name="JAVA_HOME", set the cloudvalue 
+   attribute to refer to the name of the topmost directory in your JDK package 
+   after it is unzipped. Keep the "%DEPLOYROOT%\" prefix though!
+
+3) In the component whose type="jdk.deploy", set the cloudaltsrc attribute to 
+   the download URL of the ZIP that you are making available for your users.
+
+Note that the order of the components must be preserved as described. The 
+build process will output startup script commands based on each component in 
+the exact order the components are listed in this template, so getting them out
+of order will likely produce faulty logic.
+	 -->
+	 
 	<componentset name="JDK" type="JDK">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
 		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 	</componentset>
 
+	<componentset name="Azul Zulu, OpenJDK 1.7.0_u25" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_25-7.0.0.0-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_25-7.0.0.0-win64.zip" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
+<!-- 
+*******************************************************************************
+HOW TO CREATE A NEW SERVER DEPLOYMENT TEMPLATE:
+*******************************************************************************
+
+1) In the <componentsets> list below, copy an existing <componentset> element 
+   whose logic most closely resembles your new server. (Ensure type="server")
+
+2) Give the copied <componentset> a unique name (name="..."). This is what the 
+   user will see listed in the UI.
+
+3) Optionally, and only for components of type "server", set the detectpath 
+   attribute to a Windows path that uniquely distinguishes this server from all
+   the others, to enable the plugin to automatically discover the server type 
+   based on the directory the user specifies (Windows wildcards supported only 
+   in last path part)
+
+4) Set the name of the server home environment variable (in <startupenv>) as 
+   appropriate. Ensure type="server.home". In value, note that ${placeholder} 
+   will be replaced by the plugin with the installation directory of the server
+   based on the approot and the server's directory name. So if the home 
+   directory is intended to be relative to the installation directory (e.g. as 
+   in the case of GlassFish), you can add additional path components after it. 
+   Note that currently, only one such environment variable per server 
+   configuration is supported.
+
+5) Adjust the component whose type="server.deploy" as needed to express the 
+   import and deployment logic of your server. In importsrc, note that 
+   ${placeholder} will be replaced by the plugin with the directory selected by
+   the user in the UI - do not change this. Change the other settings depending
+   on how your server is to be imported and deployed:
+
+   a) if as a straight directory copy (fastest deployment but slowest build and 
+      upload, and beware of "path too long" problems), then the <component> 
+      would look like this:
+      <component type="server.deploy" importsrc="${placeholder}" 
+       importmethod="copy"/>
+
+   b) if as a ZIP of a user-selected directory (slower deployment but faster 
+      build and upload and no "path too long" problems), then the <component> 
+      would look like this:
+      <component type="server.deploy" importsrc="${placeholder}" 
+       importmethod="zip" deploymethod="unzip"/>
+
+   c) currently, importing already ZIP'd server distribution files is not 
+      supported as part of the server configuration wizard. But you may achieve
+      that by manipulating the component settings in the Components page of the
+      role properties dialog directly. Or by providing your own startup.cmd 
+      logic altogether. This would result in the slowest deployment out of the 
+      three options, but the fastest build, and the same upload speed as (b). 
+
+6) Adjust the component whose type="server.app" as needed to express the import
+   and deployment logic of your applications. Currently, only servers 
+   supporting auto-deploy can be configured this way here (i.e. the application
+   files must be deployed before the server is started). The only setting you 
+   should change here is deploydir, which represents the web application 
+   deployment directory where the application file is to be placed. Leave the 
+   other attribute settings unchanged (i.e. set to ${placeholder}) so that the 
+   plugin can replace them with appropriate values based on the user selection 
+   in the UI.
+
+7) Adjust the component whose type="server.start" as needed to express the 
+   startup logic of your server. Because this component's deploymethod is 
+   "exec", importas is interpreted as the literal commandline that will be 
+   executed after the other steps are completed, relative to the directory 
+   specified by deploydir. You may reference Windows environment variables in 
+   deploydir and importas.
+
+Note that the order of the components must be preserved as described. The build
+process will output startup script commands based on each component in the 
+exact order the components are listed in the compomnentset template, so getting
+them out of order will likely produce faulty logic.
+ -->	
+ 
 	<componentset name="Jetty 7" type="server" detectpath="lib\jetty-server-7.*">
 		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>

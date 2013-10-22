@@ -2,7 +2,7 @@
 <feature
       id="com.microsoftopentechnologies.wacommon.feature"
       label="Windows Azure Common Plugin (by MS Open Tech)"
-      version="2.1.1.qualifier"
+      version="2.2.0.qualifier"
       provider-name="Microsoft Open Technologies Inc."
       os="win32">
 

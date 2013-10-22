@@ -159,6 +159,7 @@ public final class Messages extends NLS {
 	public static String aggMsg;
 	public static String aggLnk;
 	public static String acptBtn;
+	public static String bldErFileName;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

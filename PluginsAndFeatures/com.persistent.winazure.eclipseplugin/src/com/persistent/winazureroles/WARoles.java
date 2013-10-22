@@ -19,7 +19,6 @@ import java.io.File;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -377,28 +376,9 @@ public class WARoles {
      */
     private static void addButtonListener(final Composite composite) {
         try {
-            loadProject();
-            StringBuffer strBfr = new StringBuffer(
-                    Messages.dlgWorkerRole1);
-            int roleNo = 2;
-            while (!waProjManager
-                    .isAvailableRoleName(strBfr.toString())) {
-                strBfr.delete(10, strBfr.length());
-                strBfr.append(roleNo++);
-            }
-            String strKitLoc = String.format("%s%s%s%s%s%s",
-					Platform.getInstallLocation().
-					getURL().getPath().toString(),
-					File.separator, Messages.pluginFolder,
-					File.separator, Messages.pluginId,
-					Messages.pWizStarterKit);
-            WindowsAzureRole windowsAzureRole = waProjManager
-                    .addRole(strBfr.toString(), strKitLoc);
-            windowsAzureRole.setInstances(Messages.rolsNoOfInst);
-            windowsAzureRole.setVMSize(Messages.rolsVMSmall);
-            Activator.getDefault().setWaProjMgr(waProjManager);
-            Activator.getDefault().setWaRole(windowsAzureRole);
-            Activator.getDefault().setEdit(false);
+        	loadProject();
+        	WindowsAzureRole windowsAzureRole = WAEclipseHelper.
+        			prepareRoleToAdd(waProjManager);
             /*
              * Check whether user has pressed OK or Cancel button.
              * If OK : Refresh roles table so that newly added role is visible

@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?artifactRepository version='1.1.0'?>
+<artifacts size='1'>
+  <artifact classifier='osgi.bundle' id='com.microsoftopentechnologies.acsfilter.ui' version='0.2.0.201310221433'>
+    <properties size='5'>
+      <property name='artifact.size' value='41056'/>
+      <property name='download.size' value='41056'/>
+      <property name='maven-groupId' value='com.microsoftopentechnologies.wap4ej.build'/>
+      <property name='maven-artifactId' value='com.microsoftopentechnologies.acsfilter.ui'/>
+      <property name='maven-version' value='0.2.0-SNAPSHOT'/>
+    </properties>
+  </artifact>
+</artifacts>

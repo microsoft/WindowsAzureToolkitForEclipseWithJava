@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<units size='1'>
+  <unit id='com.microsoftopentechnologies.acsfilter' version='0.2.0.201310221433' singleton='false'>
+    <update id='com.microsoftopentechnologies.acsfilter' range='[0.0.0,0.2.0.201310221433)' severity='0'/>
+    <properties size='5'>
+      <property name='org.eclipse.equinox.p2.name' value='Windows Azure Access Control Services Filter Library (by MS Open Tech)'/>
+      <property name='org.eclipse.equinox.p2.provider' value='Microsoft Open Technologies Inc.'/>
+      <property name='maven-groupId' value='com.microsoftopentechnologies.wap4ej.build'/>
+      <property name='maven-artifactId' value='com.microsoftopentechnologies.acsfilter'/>
+      <property name='maven-version' value='0.2.0-SNAPSHOT'/>
+    </properties>
+    <provides size='7'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='com.microsoftopentechnologies.acsfilter' version='0.2.0.201310221433'/>
+      <provided namespace='osgi.bundle' name='com.microsoftopentechnologies.acsfilter' version='0.2.0.201310221433'/>
+      <provided namespace='java.package' name='com.microsoftopentechnologies.acs.federation' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoftopentechnologies.acs.saml' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoftopentechnologies.acs.util' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoftopentechnologies.acs.xmldsig' version='0.0.0'/>
+      <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+    </provides>
+    <artifacts size='1'>
+      <artifact classifier='osgi.bundle' id='com.microsoftopentechnologies.acsfilter' version='0.2.0.201310221433'/>
+    </artifacts>
+    <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+    <touchpointData size='1'>
+      <instructions size='2'>
+        <instruction key='manifest'>
+          Bundle-SymbolicName: com.microsoftopentechnologies.acsfilter&#xA;Bundle-Version: 0.2.0.201310221433&#xA;
+        </instruction>
+        <instruction key='zipped'>
+          true
+        </instruction>
+      </instructions>
+    </touchpointData>
+  </unit>
+</units>

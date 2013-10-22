@@ -56,7 +56,7 @@ public class WindowsAzurePackage extends Task {
 	private static final String DEFAULT_CONFIGURATION_FILE_NAME = "ServiceConfiguration.cscfg";
 	private static final String DEFAULT_PACKAGE_SUBDIR = "deploy";
 	private static final String DEFAULT_EMULATOR_TOOLS_SUBDIR = "emulatorTools";
-	
+	private static final String BUILD_ERROR_FILENAME = "BuildFailure.txt";
 	public static final String DEFAULT_UTIL_SUBDIR = "util"; // relative to approot
 	public static final String UTIL_UNZIP_FILENAME = "unzip.vbs";
 	public static final String UTIL_DOWNLOAD_FILENAME = "download.vbs";
@@ -264,7 +264,7 @@ public class WindowsAzurePackage extends Task {
 		try {
 			this.verifyAppRoots();
 		} catch (IOException e) {
-			throw new BuildException(e);
+			reportBuildError(e);
 		}
 
 		// Start verifying downloads if needed, on a separate thread
@@ -280,7 +280,7 @@ public class WindowsAzurePackage extends Task {
 		try {
 			this.createStartupScripts();
 		} catch (IOException e) {
-			throw new BuildException(e);
+			reportBuildError(e);
 		}
 
 		// Run cspack.exe
@@ -288,10 +288,8 @@ public class WindowsAzurePackage extends Task {
 
 		try {
 			this.runCommandLine(csPackCmdLine);
-		} catch (InterruptedException e) {
-			throw new BuildException(e);
-		} catch (IOException e) {
-			throw new BuildException(e);
+		} catch (Exception e) {
+			reportBuildError(e);
 		}
 		
 		this.log("Completed package generation.");
@@ -300,13 +298,39 @@ public class WindowsAzurePackage extends Task {
 		try {
 			prepareDeployFiles();
 		} catch (IOException e) {
-			throw new BuildException(e);
+			reportBuildError(e);
 		}
 
 		// Wait for the download verifier thread
-		finishDownloadManagement();
-}
+		try { 
+			finishDownloadManagement();
+		} catch(Exception e) {
+			reportBuildError(e);
+		}
+	}
 
+	/**
+	 * Reports build error
+	 */
+	private void reportBuildError(Exception e) {
+		final File deployPathFile = new File(this.packageDir);
+		final File buildLogFile = new File(deployPathFile, BUILD_ERROR_FILENAME);
+		if(e == null) {
+			return;
+		} else if(!deployPathFile.exists() || !deployPathFile.isDirectory()) {
+			throw new BuildException(e);
+		} else {
+			try {
+				buildLogFile.createNewFile();
+				saveTextFile(buildLogFile, e.getMessage());
+				throw new BuildException(e);
+			} catch (IOException e1) {
+				throw new BuildException(e);
+			} 
+		}
+	}
+	
+	
 	/**
 	 * Creates a new instance of WorkerRole
 	 * @return New instance of WorkerRole

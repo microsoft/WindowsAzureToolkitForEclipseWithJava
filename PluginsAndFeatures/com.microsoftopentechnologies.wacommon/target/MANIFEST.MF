@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Export-Package: com.microsoftopentechnologies.wacommon,com.microsoftop
+ entechnologies.wacommon.commoncontrols,com.microsoftopentechnologies.
+ wacommon.startup,com.microsoftopentechnologies.wacommon.storageregist
+ ry,com.microsoftopentechnologies.wacommon.utils
+Require-Bundle: org.eclipse.ui;bundle-version="3.6.0",org.eclipse.core
+ .runtime,org.eclipse.jdt.ui;bundle-version="3.6.0",org.eclipse.jdt.co
+ re;bundle-version="3.6.0",org.eclipse.core.resources;bundle-version="
+ 3.6.0",com.microsoftopentechnologies.windowsazure.tools.sdk;bundle-ve
+ rsion="0.4.6"
+Bundle-Vendor: Microsoft Open Technologies Inc.
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Bundle-Version: 2.2.0.201310221433
+Bundle-Name: Windows Azure Common Plugin Library (by MS Open Tech)
+Bundle-Activator: com.microsoftopentechnologies.wacommon.Activator
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: com.microsoftopentechnologies.wacommon;singleton:
+ =true
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+

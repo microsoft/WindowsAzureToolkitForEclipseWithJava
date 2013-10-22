@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<ServiceDefinition xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" name="WindowsAzureDeploymentProject">
+  <WorkerRole name="WorkerRole1" vmsize="Small">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd .startup.cmd" executionContext="elevated" taskType="simple"/>
+    </Startup>
+    <Runtime executionContext="elevated">
+    	<EntryPoint>
+	  		<!-- Sample entry point calling run.cmd from the role's approot folder -->
+    		<ProgramEntryPoint commandLine="run.cmd" setReadyOnProcessStart="true"/>
+    	</EntryPoint>
+    </Runtime> 
+    <Imports>
+  	  <Import moduleName="RemoteAccess"/>
+  	  <Import moduleName="RemoteForwarder"/>
+    </Imports>
+    <Endpoints>
+      <InputEndpoint localPort="8080" name="http" port="80" protocol="tcp"/>
+    </Endpoints>
+  </WorkerRole>
+<WorkerRole enableNativeCodeExecution="true" name="WorkerRole2" vmsize="Small">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd .startup.cmd" executionContext="elevated" taskType="simple"/>
+    </Startup>
+    <Runtime executionContext="elevated">
+      <EntryPoint>
+        <!-- Sample entry point calling run.cmd from the role's approot folder -->
+        <ProgramEntryPoint commandLine="run.cmd" setReadyOnProcessStart="true"/>
+      </EntryPoint>
+    </Runtime>
+    <Imports>
+      <Import moduleName="RemoteAccess"/>
+    </Imports>
+    <Endpoints/>
+  </WorkerRole>
+<WorkerRole enableNativeCodeExecution="true" name="WorkerRole3" vmsize="Small">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd .startup.cmd" executionContext="elevated" taskType="simple"/>
+    </Startup>
+    <Runtime executionContext="elevated">
+      <EntryPoint>
+        <!-- Sample entry point calling run.cmd from the role's approot folder -->
+        <ProgramEntryPoint commandLine="run.cmd" setReadyOnProcessStart="true"/>
+      </EntryPoint>
+    </Runtime>
+    <Imports>
+      <Import moduleName="RemoteAccess"/>
+    </Imports>
+    <Endpoints/>
+  </WorkerRole>
+<WorkerRole enableNativeCodeExecution="true" name="WorkerRole4" vmsize="Small">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd .startup.cmd" executionContext="elevated" taskType="simple"/>
+    </Startup>
+    <Runtime executionContext="elevated">
+      <EntryPoint>
+        <!-- Sample entry point calling run.cmd from the role's approot folder -->
+        <ProgramEntryPoint commandLine="run.cmd" setReadyOnProcessStart="true"/>
+      </EntryPoint>
+    </Runtime>
+    <Imports>
+      <Import moduleName="RemoteAccess"/>
+    </Imports>
+    <Endpoints/>
+  </WorkerRole>
+<WorkerRole enableNativeCodeExecution="true" name="WorkerRole5" vmsize="Small">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd .startup.cmd" executionContext="elevated" taskType="simple"/>
+    </Startup>
+    <Runtime executionContext="elevated">
+      <EntryPoint>
+        <!-- Sample entry point calling run.cmd from the role's approot folder -->
+        <ProgramEntryPoint commandLine="run.cmd" setReadyOnProcessStart="true"/>
+      </EntryPoint>
+    </Runtime>
+    <Imports>
+      <Import moduleName="RemoteAccess"/>
+    </Imports>
+    <Endpoints/>
+  </WorkerRole>
+</ServiceDefinition>

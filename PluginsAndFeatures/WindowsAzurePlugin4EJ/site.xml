@@ -12,13 +12,13 @@
    <feature url="features/com.microsoftopentechnologies.qpid.feature_0.19.0.qualifier.jar" id="com.microsoftopentechnologies.qpid.feature" version="0.19.0.qualifier" os="win32">
       <category name="com.persistent.winazure.eclipseplugin.category"/>
    </feature>
-   <feature url="features/com.microsoftopentechnologies.wacommon.feature_2.1.1.qualifier.jar" id="com.microsoftopentechnologies.wacommon.feature" version="2.1.1.qualifier" os="win32">
+   <feature url="features/com.microsoftopentechnologies.wacommon.feature_2.2.0.qualifier.jar" id="com.microsoftopentechnologies.wacommon.feature" version="2.2.0.qualifier" os="win32">
       <category name="com.persistent.winazure.eclipseplugin.category"/>
    </feature>
-   <feature url="features/com.microsoftopentechnologies.windowsazure.tools.sdk.feature_0.4.5.qualifier.jar" id="com.microsoftopentechnologies.windowsazure.tools.sdk.feature" version="0.4.5.qualifier" os="win32">
+   <feature url="features/com.microsoftopentechnologies.windowsazure.tools.sdk.feature_0.4.6.qualifier.jar" id="com.microsoftopentechnologies.windowsazure.tools.sdk.feature" version="0.4.6.qualifier" os="win32">
       <category name="com.persistent.winazure.eclipseplugin.category"/>
    </feature>
-   <feature url="features/com.persistent.winazure.eclipseplugin.feature_2.1.1.qualifier.jar" id="com.persistent.winazure.eclipseplugin.feature" version="2.1.1.qualifier" os="win32">
+   <feature url="features/com.persistent.winazure.eclipseplugin.feature_2.2.0.qualifier.jar" id="com.persistent.winazure.eclipseplugin.feature" version="2.2.0.qualifier" os="win32">
       <category name="com.persistent.winazure.eclipseplugin.category"/>
    </feature>
    <category-def name="com.persistent.winazure.eclipseplugin.category" label="Windows Azure Toolkit for Java">

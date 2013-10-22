@@ -2299,7 +2299,7 @@ public class WindowsAzureProjectManager {
     		}
     		String[] jdkArr = thrdJdkList.
     				toArray(new String[thrdJdkList.size()]);
-    		Arrays.sort(jdkArr);
+//    		Arrays.sort(jdkArr);
     		return jdkArr;
     	} catch (Exception e) {
     		throw new WindowsAzureInvalidProjectOperationException(

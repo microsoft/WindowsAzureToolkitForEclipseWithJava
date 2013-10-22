@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<units size='1'>
+  <unit id='201310221433.com.persistent.winazure.eclipseplugin.category' version='1.0.0.7F7uF47cShGnh7iMWmSIccSwmm'>
+    <properties size='3'>
+      <property name='org.eclipse.equinox.p2.name' value='Windows Azure Toolkit for Java'/>
+      <property name='org.eclipse.equinox.p2.description' value='Provides support for developing projects that help build, test and deploy Java applications for the Windows Azure cloud in Eclipse and via command line.'/>
+      <property name='org.eclipse.equinox.p2.type.category' value='true'/>
+    </properties>
+    <provides size='1'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='201310221433.com.persistent.winazure.eclipseplugin.category' version='1.0.0.7F7uF47cShGnh7iMWmSIccSwmm'/>
+    </provides>
+    <requires size='6'>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.microsoftopentechnologies.windowsazure.tools.sdk.feature.feature.group' range='[0.4.6.201310221433,0.4.6.201310221433]'>
+        <filter>
+          (osgi.os=win32)
+        </filter>
+      </required>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.microsoft.sqljdbc4.feature.feature.group' range='[4.0.2206.100,4.0.2206.100]'>
+        <filter>
+          (osgi.os=win32)
+        </filter>
+      </required>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.microsoftopentechnologies.qpid.feature.feature.group' range='[0.19.0.201310221433,0.19.0.201310221433]'>
+        <filter>
+          (osgi.os=win32)
+        </filter>
+      </required>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.persistent.winazure.eclipseplugin.feature.feature.group' range='[2.2.0.201310221433,2.2.0.201310221433]'>
+        <filter>
+          (osgi.os=win32)
+        </filter>
+      </required>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.microsoftopentechnologies.acsfilter.feature.feature.group' range='[0.2.0.201310221433,0.2.0.201310221433]'>
+        <filter>
+          (osgi.os=win32)
+        </filter>
+      </required>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.microsoftopentechnologies.wacommon.feature.feature.group' range='[2.2.0.201310221433,2.2.0.201310221433]'>
+        <filter>
+          (osgi.os=win32)
+        </filter>
+      </required>
+    </requires>
+    <touchpoint id='null' version='0.0.0'/>
+  </unit>
+</units>

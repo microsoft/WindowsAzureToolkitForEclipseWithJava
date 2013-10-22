@@ -34,12 +34,14 @@ public class DeployDescriptor {
 	private final RemoteDesktopDescriptor remoteDesktopDescriptor;
 	private final WindowsAzurePackageType deployMode;
 	private final String mngUrl;
+	private final String unpublish;
 
 	public DeployDescriptor(WindowsAzurePackageType deployMode,
 			String subscriptionId, StorageService storageAcount,
 			KeyName accessKey, HostedService hostedService, String cspkgFile,
 			String cscfgFile, String deployState,
-			RemoteDesktopDescriptor remoteDesktopDescriptor, String mngUrl) {
+			RemoteDesktopDescriptor remoteDesktopDescriptor, String mngUrl,
+			String unpublish) {
 		this.deployMode = deployMode;
 		this.startTime = new Date();
 		this.deploymentId = String.format(Messages.deploymentIdFormat,
@@ -53,6 +55,7 @@ public class DeployDescriptor {
 		this.cscfgFile = cscfgFile;
 		this.deployState = deployState;
 		this.mngUrl = mngUrl;
+		this.unpublish = unpublish;
 	}
 
 	public WindowsAzurePackageType getDeployMode() {
@@ -131,5 +134,9 @@ public class DeployDescriptor {
 
 	public String getMngUrl() {
 		return mngUrl;
+	}
+
+	public String getUnpublish() {
+		return unpublish;
 	}
 }

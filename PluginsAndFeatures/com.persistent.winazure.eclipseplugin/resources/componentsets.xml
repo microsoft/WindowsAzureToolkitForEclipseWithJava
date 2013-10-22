@@ -15,7 +15,7 @@ limitations under the License.
 
 -->
 
-<componentsets version="2.1.1">
+<componentsets version="2.2.0">
 <!-- 
 *******************************************************************************
 HOW TO CREATE A NEW JDK PACKAGE DEPLOYMENT TEMPLATE:
@@ -47,10 +47,16 @@ of order will likely produce faulty logic.
 		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 	</componentset>
 
+	<componentset name="Azul Zulu, OpenJDK 1.7.0_u40" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_40-7.1.0.0-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_40-7.1.0.0-win64.zip" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+	
 	<componentset name="Azul Zulu, OpenJDK 1.7.0_u25" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_25-7.0.0.0-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
-        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_25-7.0.0.0-win64.zip" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_25-7.0.0.0-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
 	</componentset>
 
 <!-- 
@@ -143,6 +149,14 @@ them out of order will likely produce faulty logic.
 		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
 	</componentset>
 
+	<componentset name="Jetty 9" type="server" detectpath="lib\jetty-server-9.*">
+		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
+		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
+		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
+		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
+	</componentset>
+	
 	<componentset name="Apache Tomcat 7" type="server" detectpath="RUNNING.TXT" detecttext="Running The Apache Tomcat 7\.">
 		<startupenv name="CATALINA_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%CATALINA_HOME%\webapps" type="server.app.loc"/>

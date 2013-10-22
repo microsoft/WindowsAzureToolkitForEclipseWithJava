@@ -151,6 +151,8 @@ public final class Messages extends NLS {
 	public static String cldSrv;
 	public static String autoUploadEr;
 	public static String confStorageAccount;
+	public static String unpubPrvDply;
+	public static String unpubchk;
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

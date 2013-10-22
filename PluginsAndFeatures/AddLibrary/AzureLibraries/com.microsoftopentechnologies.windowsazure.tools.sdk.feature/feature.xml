@@ -2,7 +2,7 @@
 <feature
       id="com.microsoftopentechnologies.windowsazure.tools.sdk.feature"
       label="Package for Windows Azure Libraries for Java (by MS Open Tech)"
-      version="0.4.5.qualifier"
+      version="0.4.6.qualifier"
       provider-name="Microsoft Open Technologies Inc."
       os="win32">
 

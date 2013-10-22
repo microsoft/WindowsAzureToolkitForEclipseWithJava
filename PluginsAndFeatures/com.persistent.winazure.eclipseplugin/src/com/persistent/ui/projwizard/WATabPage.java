@@ -531,7 +531,13 @@ public class WATabPage extends WizardPage {
 
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				if (JdkSrvConfig.getThrdPrtJdkCmb().getText().isEmpty()) {
+				/*
+				 * Check if third party radio button
+				 * is already selected
+				 * and user is selecting same radio button again
+				 * then do not do any thing.
+				 */
+				if (!JdkSrvConfig.getThrdPrtJdkCmb().isEnabled()) {
 					JdkSrvConfigListener.thirdPartyJdkBtnSelected(waRole,
 							Messages.dlNtLblDir);
 					jdkPrevName = JdkSrvConfig.

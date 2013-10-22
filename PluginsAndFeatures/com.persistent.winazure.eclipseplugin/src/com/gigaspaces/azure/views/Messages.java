@@ -23,6 +23,8 @@ public final class Messages extends NLS {
 	public static String desc;
 	public static String startTime;
 	public static String status;
+	public static String runStatus;
+	public static String runStatusVisible;
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

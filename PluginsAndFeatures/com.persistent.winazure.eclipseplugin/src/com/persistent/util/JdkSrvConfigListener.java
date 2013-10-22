@@ -47,6 +47,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		enableJdkRdButtons(getAutoDlRdCldBtn());
 		getSerCheckBtn().setEnabled(true);
 		configureAutoUploadJDKSettings(role, Messages.dlNtLblDir);
+		showThirdPartyJdkNames(true);
 		return jdkDefaultDir;
 	}
 	/**
@@ -58,6 +59,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		setEnableServer(false);
 		setEnableDlGrp(false, false);
 		setEnableDlGrpSrv(false, false);
+		showThirdPartyJdkNames(false);
 	}
 
 	/**
@@ -299,7 +301,16 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @param status
 	 */
 	public static void enableThirdPartyJdkCombo(Boolean status) {
-		JdkSrvConfig.getThrdPrtJdkCmb().setEnabled(status);
+		getThrdPrtJdkCmb().setEnabled(status);
+		getThrdPrtJdkBtn().setSelection(status);
+	}
+
+	/**
+	 * Method decides whether to
+	 * show third party JDK names or not.
+	 * @param status
+	 */
+	public static void showThirdPartyJdkNames(Boolean status) {
 		if (status) {
 			try {
 				String [] thrdPrtJdkArr = WindowsAzureProjectManager.
@@ -315,7 +326,6 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		} else {
 			getThrdPrtJdkCmb().removeAll();
 			getThrdPrtJdkCmb().setText("");
-			getThrdPrtJdkBtn().setSelection(false);
 		}
 	}
 

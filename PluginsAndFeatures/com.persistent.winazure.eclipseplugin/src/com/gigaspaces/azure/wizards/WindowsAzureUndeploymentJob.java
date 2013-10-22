@@ -56,18 +56,19 @@ public class WindowsAzureUndeploymentJob extends Job {
 		final MessageConsoleStream out = console.newMessageStream();
 
 		monitor.beginTask(name, 100);
+		Activator.removeUnNecessaryListener();
+		DeploymentEventListener undeployListnr = new DeploymentEventListener() {
 
-		Activator.getDefault().addDeploymentEventListener(
-				new DeploymentEventListener() {
+			@Override
+			public void onDeploymentStep(DeploymentEventArgs args) {
+				monitor.subTask(args.toString());
+				monitor.worked(args.getDeployCompleteness());
+				out.println(args.toString());
+			}
+		};
+		Activator.getDefault().addDeploymentEventListener(undeployListnr);
+		Activator.depEveList.add(undeployListnr);
 
-					@Override
-					public void onDeploymentStep(DeploymentEventArgs args) {
-						monitor.subTask(args.toString());
-						monitor.worked(args.getDeployCompleteness());
-						out.println(args.toString());
-					}
-				});
-		
 		try {
 			DeploymentManager.getInstance().undeploy(serviceName, deploymentName,deploymentState);
 		} 

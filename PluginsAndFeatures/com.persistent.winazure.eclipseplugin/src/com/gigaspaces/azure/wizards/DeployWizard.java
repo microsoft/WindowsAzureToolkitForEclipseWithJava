@@ -44,6 +44,7 @@ import com.gigaspaces.azure.model.AutoUpldCmpnts;
 import com.gigaspaces.azure.model.CreateStorageServiceInput;
 import com.gigaspaces.azure.model.RemoteDesktopDescriptor;
 import com.gigaspaces.azure.model.StorageService;
+import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
@@ -135,6 +136,17 @@ public class DeployWizard extends Wizard {
 			// clear new service array
 			signInPage.getNewServices().clear();
 
+			// set target OS
+			String wizTargetOS = signInPage.getTargetOSName();
+			if (!waProjManager.getOSFamily().getName().
+					equalsIgnoreCase(wizTargetOS)) {
+				if (wizTargetOS.equals(OSFamilyType.
+						WINDOWS_SERVER_2008_R2.getName())) {
+					waProjManager.setOSFamily(OSFamilyType.WINDOWS_SERVER_2008_R2);
+				} else {
+					waProjManager.setOSFamily(OSFamilyType.WINDOWS_SERVER_2012);
+				}
+			}
 			// WORKITEM: China Support customizable portal URL in the plugin
 			try {
 				String prefSetUrl = PreferenceSetUtil.getSelectedPortalURL(
@@ -227,7 +239,7 @@ public class DeployWizard extends Wizard {
 										job.schedule();
 									}
 								}
-							});				
+							});
 						} catch (WindowsAzureInvalidProjectOperationException e) {
 							Activator.getDefault().log(Messages.error, e);
 						}
@@ -291,10 +303,8 @@ public class DeployWizard extends Wizard {
 			}
 		}
 	}
-	
-	
-	private class WAAutoStorageConfJob extends Job {
 
+	private class WAAutoStorageConfJob extends Job {
 
 		private WindowsAzureProjectManager waProjManager;
 
@@ -313,7 +323,7 @@ public class DeployWizard extends Wizard {
 			try {
 				// Create storage account if it does not exists
 				createStorageAccountIfNotExists();
-				
+
 				/*
 				 * Check components having upload method "AUTO"
 				 * and cloudurl set to auto, update them with
@@ -333,7 +343,7 @@ public class DeployWizard extends Wizard {
 			return Status.OK_STATUS;
 		}
 	}
-	
+
 	private void createStorageAccountIfNotExists() throws InterruptedException, Exception {
 		StorageService storageAccount = WizardCacheManager.getCurrentStorageAcount();
 		

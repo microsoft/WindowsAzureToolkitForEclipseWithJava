@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<ServiceDefinition xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" name="WindowsAzureProject">
+  <WorkerRole name="WorkerRole1" vmsize="Small">
+    <Startup>
+      <!--Do not delete this startup task or insert tasks before it. It was created by Windows Azure Plugin for Eclipse with Java to enable session affinity. -->
+      <Task commandLine=".sessionaffinity\ConfigureARR.cmd http http_SESSION_AFFINITY" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="EMULATED">
+            <RoleInstanceValue xpath="/RoleEnvironment/Deployment/@emulated"/>
+          </Variable>
+        </Environment>
+      </Task>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd startup.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="_JAVA_OPTIONS" value="-agentlib:jdwp=transport=dt_socket,server=y,address=8090,suspend=n"/>
+          <Variable name="JAVA_HOME" value="c:\java"/>
+          <Variable name="LocalStorage1_PATH">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='LocalStorage1']/@path"/>
+          </Variable>
+          <Variable name="LocalStorage2_PATH">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='LocalStorage2']/@path"/>
+          </Variable>
+        </Environment>
+      </Task>
+    </Startup>
+    <Runtime executionContext="elevated">
+    	<EntryPoint>
+	  		<!-- Sample entry point calling run.cmd from the role's approot folder -->
+    		<ProgramEntryPoint commandLine="run.cmd" setReadyOnProcessStart="true"/>
+    	</EntryPoint>
+    </Runtime> 
+    <Imports>
+  	  <Import moduleName="RemoteAccess"/>
+  	  <Import moduleName="RemoteForwarder"/>
+    </Imports>
+    <Endpoints>
+      <InputEndpoint localPort="31221" name="http" port="80" protocol="tcp"/>
+    <InputEndpoint localPort="8090" name="Debugging" port="8090" protocol="tcp"/>
+      <InternalEndpoint name="EP1" protocol="tcp">
+        <FixedPort port="11"/>
+      </InternalEndpoint>
+      <InternalEndpoint name="http_SESSION_AFFINITY" protocol="tcp">
+        <FixedPort port="8080"/>
+      </InternalEndpoint>
+    </Endpoints>
+  <LocalResources>
+      <LocalStorage cleanOnRoleRecycle="false" name="LocalStorage1" sizeInMB="1"/>
+      <LocalStorage cleanOnRoleRecycle="true" name="LocalStorage2" sizeInMB="1"/>
+    </LocalResources>
+  </WorkerRole>
+<WorkerRole enableNativeCodeExecution="true" name="WorkerRole2" vmsize="Small">
+    <Startup>
+      <!-- Sample startup task calling startup.cmd from the role's approot folder -->
+      <Task commandLine="util/.start.cmd startup.cmd" executionContext="elevated" taskType="simple"/>
+    </Startup>
+    <Runtime executionContext="elevated">
+      <EntryPoint>
+        <!-- Sample entry point calling run.cmd from the role's approot folder -->
+        <ProgramEntryPoint commandLine="startup.cmd" setReadyOnProcessStart="true"/>
+      </EntryPoint>
+    </Runtime>
+    <Imports>
+      <Import moduleName="RemoteAccess"/>
+    </Imports>
+    <Endpoints/>
+  </WorkerRole>
+</ServiceDefinition>

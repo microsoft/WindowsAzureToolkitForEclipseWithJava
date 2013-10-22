@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Export-Package: com.microsoftopentechnologies.acs.federation,com.micro
+ softopentechnologies.acs.saml,com.microsoftopentechnologies.acs.util,
+ com.microsoftopentechnologies.acs.xmldsig
+Bundle-Vendor: Microsoft Open Technologies Inc.
+Bundle-ClassPath: ACSAuthFilter.jar
+Eclipse-BundleShape: dir
+Bundle-Version: 0.2.0.201310221433
+Bundle-Name: Windows Azure Access Control Services Filter Library (by 
+ MS Open Tech)
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: com.microsoftopentechnologies.acsfilter
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Package for Windows Azure Libraries for Java UI(by MS Open Tech)
 Bundle-SymbolicName: com.microsoftopentechnologies.windowsazure.tools.wasdkjava.ui;singleton:=true
-Bundle-Version: 0.4.5.qualifier
+Bundle-Version: 0.4.6.qualifier
 Bundle-Vendor: Microsoft Open Technologies Inc.
 Bundle-Activator: com.microsoftopentechnologies.windowsazure.tools.wasdkjava.ui.Activator
 Require-Bundle: org.eclipse.ui,

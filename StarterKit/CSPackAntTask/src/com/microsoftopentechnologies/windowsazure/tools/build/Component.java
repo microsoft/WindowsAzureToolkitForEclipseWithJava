@@ -209,7 +209,9 @@ public class Component {
 
 		final String path = uri.getPath().substring(1);
 		final String[] pathParts = path.split("/");
-		return pathParts[pathParts.length-1];
+		String fileName = pathParts[pathParts.length-1];
+		fileName.replaceFirst("\\?.*", "");
+		return fileName;
 	}
 	
 	/**
@@ -643,9 +645,9 @@ public class Component {
 			cmd.append(cmdLine);
 		}
 
-		// Check if downloaded ok
+		// Check if downloaded ok; return SUCCESS (0) if not downloaded to avoid spamming cloudaltsrc with role recycles
 		cmd.append(WindowsAzurePackage.newline);
-		cmd.append(String.format("if not exist \"%s\" exit 1", this.getCloudDownloadAs()));
+		cmd.append(String.format("if not exist \"%s\" exit 0", this.getCloudDownloadAs()));
 
 		return cmd.toString();
 	}
@@ -659,18 +661,18 @@ public class Component {
 		}
 
 		StringBuilder cmd = new StringBuilder();
-		
+		String downloadAsFilename = this.getCloudDownloadAs();
 		// Invoke alt download if download from cache fails
-		cmd.append(String.format("if not exist \"%s\" (", this.getCloudDownloadAs()));
+		cmd.append(String.format("if not exist \"%s\" (", downloadAsFilename));
 		cmd.append(WindowsAzurePackage.newline);
 		cmd.append(String.format("\tcmd /c %s file download \"%s\" \"%s\"", 
 				WindowsAzurePackage.UTIL_WASH_PATH,
 				getCloudAltSrc(),
-				this.getCloudDownloadAs()));
+				downloadAsFilename));
 
-		// Check if downloaded ok
+		// Check if downloaded ok; return SUCCESS (0) if not downloaded to avoid spamming cloudaltsrc with role recycles
 		cmd.append(WindowsAzurePackage.newline);
-		cmd.append(String.format("\tif not exist \"%s\" exit 1", this.getCloudDownloadAs()));
+		cmd.append(String.format("\tif not exist \"%s\" exit 0", downloadAsFilename));
 
 		// Upload to cache if needed
 		String cmdLine = createCacheCommandLine();
@@ -756,7 +758,7 @@ public class Component {
 
 		// Check if downloaded ok
 		cmd.append(WindowsAzurePackage.newline);
-		cmd.append(String.format("if not exist \"%s\" exit 1", fileName));
+		cmd.append(String.format("if not exist \"%s\" exit 0", fileName));
 		return cmd.toString();
 	}
 

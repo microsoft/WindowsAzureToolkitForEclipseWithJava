@@ -30,6 +30,7 @@ public class ConfigurationEventArgs extends EventObject {
 	public static final String DEPLOY_STATE = Messages.deployStateConfig;
 	public static final String STORAGE_ACCESS_KEY = Messages.credentialConfig;
 	public static final String DEPLOY_MODE = Messages.deployModeConfig;
+	public static final String UN_PUBLISH = Messages.unpubchk;
 	
 	private final String key;
 	private final Object value;

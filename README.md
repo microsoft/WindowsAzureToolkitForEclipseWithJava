@@ -2,7 +2,7 @@ Windows Azure Toolkit For Eclipse With Java
 ===========================================
 
 This includes the Windows Azure Plugin for Eclipse with Java for developing projects that help build, test and deploy Java applications for the Windows Azure cloud in Eclipse, as well as other related components.
-The latest version is v2.0
+The latest version is v2.2
 
 To install, point Eclipse's "Install New Software" command at http://dl.msopentech.com/eclipse
 

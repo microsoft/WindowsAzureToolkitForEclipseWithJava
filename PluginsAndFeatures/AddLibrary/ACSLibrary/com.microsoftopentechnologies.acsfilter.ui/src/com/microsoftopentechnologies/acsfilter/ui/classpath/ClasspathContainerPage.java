@@ -473,8 +473,7 @@ public class ClasspathContainerPage extends WizardPage implements
         relTxt = new Text(relGrp, SWT.LEFT | SWT.BORDER);
         groupGridData = new GridData();
         groupGridData.horizontalSpan = 2;
-        groupGridData.horizontalAlignment = SWT.FILL;
-        groupGridData.grabExcessHorizontalSpace  = true;
+        groupGridData.widthHint = 470;
         relTxt.setLayoutData(groupGridData);
 
     }
@@ -508,8 +507,7 @@ public class ClasspathContainerPage extends WizardPage implements
         acsTxt = new Text(acsGrp, SWT.LEFT | SWT.BORDER);
         groupGridData = new GridData();
         groupGridData.horizontalSpan = 2;
-        groupGridData.horizontalAlignment = SWT.FILL;
-        groupGridData.grabExcessHorizontalSpace  = true;
+        groupGridData.widthHint = 470;
         acsTxt.setText(Messages.acsTxt);
         acsTxt.setLayoutData(groupGridData);
    }

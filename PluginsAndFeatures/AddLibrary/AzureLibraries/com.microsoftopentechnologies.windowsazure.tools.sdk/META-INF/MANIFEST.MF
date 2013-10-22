@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Package for Windows Azure Libraries for Java Plugin (by MS Open Tech)
 Bundle-SymbolicName: com.microsoftopentechnologies.windowsazure.tools.sdk;singleton:=true
-Bundle-Version: 0.4.5.qualifier
+Bundle-Version: 0.4.6.qualifier
 Bundle-Vendor: Microsoft Open Technologies Inc.
-Bundle-ClassPath: microsoft-windowsazure-api-0.4.5.jar,
+Bundle-ClassPath: microsoft-windowsazure-api-0.4.6.jar,
  dependencies/commons-lang3-3.1.jar,
  dependencies/commons-logging-1.1.1.jar,
  dependencies/jackson-core-asl-1.8.3.jar,

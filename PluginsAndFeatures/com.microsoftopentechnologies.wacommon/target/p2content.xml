@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<units size='1'>
+  <unit id='com.microsoftopentechnologies.wacommon' version='2.2.0.201310221433'>
+    <update id='com.microsoftopentechnologies.wacommon' range='[0.0.0,2.2.0.201310221433)' severity='0'/>
+    <properties size='5'>
+      <property name='org.eclipse.equinox.p2.name' value='Windows Azure Common Plugin Library (by MS Open Tech)'/>
+      <property name='org.eclipse.equinox.p2.provider' value='Microsoft Open Technologies Inc.'/>
+      <property name='maven-groupId' value='com.microsoftopentechnologies.wap4ej.build'/>
+      <property name='maven-artifactId' value='com.microsoftopentechnologies.wacommon'/>
+      <property name='maven-version' value='2.2.0-SNAPSHOT'/>
+    </properties>
+    <provides size='8'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='com.microsoftopentechnologies.wacommon' version='2.2.0.201310221433'/>
+      <provided namespace='osgi.bundle' name='com.microsoftopentechnologies.wacommon' version='2.2.0.201310221433'/>
+      <provided namespace='java.package' name='com.microsoftopentechnologies.wacommon' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoftopentechnologies.wacommon.commoncontrols' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoftopentechnologies.wacommon.startup' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoftopentechnologies.wacommon.storageregistry' version='0.0.0'/>
+      <provided namespace='java.package' name='com.microsoftopentechnologies.wacommon.utils' version='0.0.0'/>
+      <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+    </provides>
+    <requires size='6'>
+      <required namespace='osgi.bundle' name='org.eclipse.ui' range='3.6.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.core.runtime' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.jdt.ui' range='3.6.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.jdt.core' range='3.6.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.core.resources' range='3.6.0'/>
+      <required namespace='osgi.bundle' name='com.microsoftopentechnologies.windowsazure.tools.sdk' range='0.4.6'/>
+    </requires>
+    <artifacts size='1'>
+      <artifact classifier='osgi.bundle' id='com.microsoftopentechnologies.wacommon' version='2.2.0.201310221433'/>
+    </artifacts>
+    <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+    <touchpointData size='1'>
+      <instructions size='1'>
+        <instruction key='manifest'>
+          Bundle-SymbolicName: com.microsoftopentechnologies.wacommon;singleton:=true&#xA;Bundle-Version: 2.2.0.201310221433&#xA;
+        </instruction>
+      </instructions>
+    </touchpointData>
+  </unit>
+</units>

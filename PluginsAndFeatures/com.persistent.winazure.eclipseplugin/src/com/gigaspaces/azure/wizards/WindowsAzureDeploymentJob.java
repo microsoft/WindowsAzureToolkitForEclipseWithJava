@@ -58,18 +58,19 @@ public class WindowsAzureDeploymentJob extends Job {
 
 		monitor.beginTask(name, 100);
 		out.println(Messages.deployingToAzureMsg);
+		Activator.removeUnNecessaryListener();
+		DeploymentEventListener deployListnr = new DeploymentEventListener() {
 
-		Activator.getDefault().addDeploymentEventListener(
-				new DeploymentEventListener() {
-
-					@Override
-					public void onDeploymentStep(DeploymentEventArgs args) {
-						deploymentId = args.getId();
-						monitor.subTask(args.toString());
-						monitor.worked(args.getDeployCompleteness());
-						out.println(args.toString());
-					}
-				});
+			@Override
+			public void onDeploymentStep(DeploymentEventArgs args) {
+				deploymentId = args.getId();
+				monitor.subTask(args.toString());
+				monitor.worked(args.getDeployCompleteness());
+				out.println(args.toString());
+			}
+		};
+		Activator.getDefault().addDeploymentEventListener(deployListnr);
+		Activator.depEveList.add(deployListnr);
 
 
 		Activator.getDefault().addUploadProgressEventListener(new UploadProgressEventListener() {

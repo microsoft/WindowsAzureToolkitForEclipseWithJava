@@ -28,7 +28,7 @@
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
     <property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-    <property name="creator.version" value="2.1.1"/>
+    <property name="creator.version" value="2.2.0"/>
   </target>
 
   <!-- Force emulator reset to ensure no locks on deploy directory -->

@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Export-Package: com.microsoft.sqlserver.jdbc,microsoft.sql
+Bundle-Vendor: Microsoft Open Technologies Inc.
+Bundle-ClassPath: sqljdbc4.jar
+Eclipse-BundleShape: dir
+Bundle-Version: 4.0.2206.100
+Bundle-Name: Microsoft JDBC Driver 4.0 for SQL Server Library
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: com.microsoft.sqljdbc4
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+

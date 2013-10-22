@@ -975,10 +975,14 @@ public class WAEclipseHelper {
 		try {
 			String dplyFolderPath =
 					getDeployFolderPath(waProjMngr, selProj);
+			String bldFlFilePath = String.format("%s%s%s",
+					dplyFolderPath, "\\", Messages.bldErFileName);
 			File deployFile = new File(dplyFolderPath);
+			File buildFailFile = new File(bldFlFilePath);
 
 			if (deployFile.exists() && deployFile.isDirectory()
-					&& deployFile.listFiles().length > 0) {
+					&& deployFile.listFiles().length > 0
+					&& !buildFailFile.exists()) {
 				isSuccessful =  true;
 			}
 		} catch (Exception ex) {
@@ -1009,5 +1013,36 @@ public class WAEclipseHelper {
 			Activator.getDefault().log(e.getMessage());
 		}
 		return dplyFolderPath;
+	}
+
+	public static WindowsAzureRole prepareRoleToAdd(
+			WindowsAzureProjectManager waProjManager) {
+		WindowsAzureRole windowsAzureRole = null;
+		try {
+			StringBuffer strBfr = new StringBuffer(
+					com.persistent.winazureroles.Messages.dlgWorkerRole1);
+			int roleNo = 2;
+			while (!waProjManager
+					.isAvailableRoleName(strBfr.toString())) {
+				strBfr.delete(10, strBfr.length());
+				strBfr.append(roleNo++);
+			}
+			String strKitLoc = String.format("%s%s%s%s%s%s",
+					Platform.getInstallLocation().
+					getURL().getPath().toString(),
+					File.separator, Messages.pluginFolder,
+					File.separator, Messages.pluginId,
+					com.persistent.winazureroles.Messages.pWizStarterKit);
+			windowsAzureRole = waProjManager
+					.addRole(strBfr.toString(), strKitLoc);
+			windowsAzureRole.setInstances(com.persistent.winazureroles.Messages.rolsNoOfInst);
+			windowsAzureRole.setVMSize(com.persistent.winazureroles.Messages.rolsVMSmall);
+			Activator.getDefault().setWaProjMgr(waProjManager);
+			Activator.getDefault().setWaRole(windowsAzureRole);
+			Activator.getDefault().setEdit(false);
+		} catch (Exception e) {
+			Activator.getDefault().log(e.getMessage());
+		}
+		return windowsAzureRole;
 	}
 }

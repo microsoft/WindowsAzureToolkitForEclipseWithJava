@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<units size='1'>
+  <unit id='com.persistent.winazure.eclipseplugin' version='2.2.0.201310221433'>
+    <update id='com.persistent.winazure.eclipseplugin' range='[0.0.0,2.2.0.201310221433)' severity='0'/>
+    <properties size='5'>
+      <property name='org.eclipse.equinox.p2.name' value='Windows Azure Plugin for Eclipse with Java Library(by MS Open Tech)'/>
+      <property name='org.eclipse.equinox.p2.provider' value='Microsoft Open Technologies Inc.'/>
+      <property name='maven-groupId' value='com.microsoftopentechnologies.wap4ej.build'/>
+      <property name='maven-artifactId' value='com.persistent.winazure.eclipseplugin'/>
+      <property name='maven-version' value='2.2.0-SNAPSHOT'/>
+    </properties>
+    <provides size='9'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='com.persistent.winazure.eclipseplugin' version='2.2.0.201310221433'/>
+      <provided namespace='osgi.bundle' name='com.persistent.winazure.eclipseplugin' version='2.2.0.201310221433'/>
+      <provided namespace='java.package' name='com.persistent.ui.propertypage' version='0.0.0'/>
+      <provided namespace='java.package' name='com.persistent.util' version='0.0.0'/>
+      <provided namespace='java.package' name='com.gigaspaces.azure.deploy' version='0.0.0'/>
+      <provided namespace='java.package' name='com.gigaspaces.azure.handler' version='0.0.0'/>
+      <provided namespace='java.package' name='com.gigaspaces.azure.views' version='0.0.0'/>
+      <provided namespace='java.package' name='com.gigaspaces.azure.wizards' version='0.0.0'/>
+      <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+    </provides>
+    <requires size='19'>
+      <required namespace='osgi.bundle' name='org.eclipse.ui' range='3.6.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.core.runtime' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.ui.ide' range='3.6.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.pde.ui' range='3.6.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.core.resources' range='3.6.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.wst.xml.core' range='1.1.503'/>
+      <required namespace='osgi.bundle' name='org.eclipse.jdt.core' range='3.6.2'/>
+      <required namespace='osgi.bundle' name='org.eclipse.jdt.launching' range='3.5.200'/>
+      <required namespace='osgi.bundle' name='org.eclipse.jdt.ui' range='3.6.2'/>
+      <required namespace='osgi.bundle' name='org.eclipse.jdt.debug.ui' range='3.5.2'/>
+      <required namespace='osgi.bundle' name='org.eclipse.debug.ui' range='3.6.3'/>
+      <required namespace='osgi.bundle' name='org.eclipse.core.expressions' range='3.4.200'/>
+      <required namespace='osgi.bundle' name='org.eclipse.jst.j2ee' range='1.1.404' optional='true' greedy='false'/>
+      <required namespace='osgi.bundle' name='org.eclipse.jst.j2ee.web' range='1.1.404' optional='true' greedy='false'/>
+      <required namespace='osgi.bundle' name='org.eclipse.wst.common.frameworks' range='1.2.0' optional='true' greedy='false'/>
+      <required namespace='osgi.bundle' name='org.eclipse.core.filesystem' range='1.3.1'/>
+      <required namespace='osgi.bundle' name='org.eclipse.ui.console' range='3.5.0'/>
+      <required namespace='osgi.bundle' name='com.microsoftopentechnologies.windowsazure.tools.sdk' range='0.4.6'/>
+      <required namespace='osgi.bundle' name='com.microsoftopentechnologies.wacommon' range='2.2.0'/>
+    </requires>
+    <artifacts size='1'>
+      <artifact classifier='osgi.bundle' id='com.persistent.winazure.eclipseplugin' version='2.2.0.201310221433'/>
+    </artifacts>
+    <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+    <touchpointData size='1'>
+      <instructions size='1'>
+        <instruction key='manifest'>
+          Bundle-SymbolicName: com.persistent.winazure.eclipseplugin;singleton:=true&#xA;Bundle-Version: 2.2.0.201310221433&#xA;
+        </instruction>
+      </instructions>
+    </touchpointData>
+  </unit>
+</units>

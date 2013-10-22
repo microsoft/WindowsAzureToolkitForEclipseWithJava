@@ -107,6 +107,7 @@ public class WAServerConfiguration extends PropertyPage {
 				JdkSrvConfig.setEnableJDK(true);
 				JdkSrvConfig.
 				getTxtJdk().setText(jdkSrcPath);
+				JdkSrvConfigListener.showThirdPartyJdkNames(true);
 				String jdkUrl = windowsAzureRole.getJDKCloudURL();
 				// JDK download group
 				if (jdkUrl != null && !jdkUrl.isEmpty()) {
@@ -517,7 +518,13 @@ public class WAServerConfiguration extends PropertyPage {
 
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				if (JdkSrvConfig.getThrdPrtJdkCmb().getText().isEmpty()) {
+				/*
+				 * Check if third party radio button
+				 * is already selected
+				 * and user is selecting same radio button again
+				 * then do not do any thing.
+				 */
+				if (!JdkSrvConfig.getThrdPrtJdkCmb().isEnabled()) {
 					JdkSrvConfigListener.thirdPartyJdkBtnSelected(
 							windowsAzureRole, Messages.dlNtLblDir);
 					jdkPrevName = JdkSrvConfig.

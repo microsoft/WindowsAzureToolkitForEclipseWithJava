@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.gigaspaces.azure.deploy.DeploymentManager;
 import com.gigaspaces.azure.model.AffinityGroups;
 import com.gigaspaces.azure.model.AvailabilityResponse;
 import com.gigaspaces.azure.model.CertificateFile;
@@ -40,7 +41,6 @@ import com.gigaspaces.azure.model.StorageServices;
 import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.model.UpdateDeploymentStatus;
 import com.gigaspaces.azure.util.CommandLineException;
-
 import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
@@ -399,8 +399,16 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		return getXRequestId(response);
 	}
 
-	public String createDeployment(String subscriptionId, String serviceName,
-			String slotName, CreateDeployment body, String mngUrl) throws WACommonException, RestAPIException , InterruptedException, CommandLineException{
+	public String createDeployment(String subscriptionId,
+			String serviceName,
+			String slotName,
+			CreateDeployment body,
+			String mngUrl,
+			String unpublish)
+					throws WACommonException,
+					RestAPIException,
+					InterruptedException,
+					CommandLineException{
 
 		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
 									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
@@ -419,6 +427,32 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 				headers, body, thumbprint, true); // pass a flag indicating we want the body to be saved to a file. instead of passing it as a string to the command line.
 
 		Response<?> response = ((Response<?>) deserialize(result));
+		/*
+		 * If delete deployment option is selected and
+		 * conflicting deployment exists then unpublish
+		 * deployment first and then again try to publish.
+		 */
+		if (unpublish.equalsIgnoreCase("true")
+				&& response.getStatus() == 409) {
+			HostedService hostedService = getHostedServiceWithProperties(
+					subscriptionId, serviceName, mngUrl);
+			List<Deployment> list = hostedService.
+					getDeployments().getDeployments();
+			String deploymentName = "";
+			for (int i = 0; i < list.size(); i++) {
+				Deployment deployment = list.get(i);
+				if (deployment.getDeploymentSlot().name().
+						equalsIgnoreCase(slotName)) {
+					deploymentName = deployment.getName();
+				}
+			}
+			int[] progressArr = new int[]{0, 0, 0};
+			DeploymentManager.getInstance().
+			unPublish(subscriptionId, serviceName, deploymentName, mngUrl, progressArr);
+			result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.POST, url,
+					headers, body, thumbprint, true);
+			response = ((Response<?>) deserialize(result));
+		}
 
 		validateResponse(response);
 
