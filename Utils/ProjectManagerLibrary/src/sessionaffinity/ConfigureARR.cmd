@@ -8,8 +8,10 @@ if "%EMULATED%"=="true" goto Exit
 SC Config W3SVC Start= Auto
 
 @rem calling session affinity agent 
-start %ROLEROOT%\approot\.sessionaffinity\SessionAffinityAgent.exe %1 %2
-%ROLEROOT%\approot\.sessionaffinity\SessionAffinityAgent.exe -blockstartup
+set d=%~dp0
+set d=%d:\=/%
+start %d%\SessionAffinityAgent.exe %1 %2 %3 %4
+%d%\SessionAffinityAgent.exe -blockstartup
 
 :Exit
 exit 0
