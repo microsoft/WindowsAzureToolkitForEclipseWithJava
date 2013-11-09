@@ -1,17 +1,14 @@
 ﻿/*
- Copyright 2013 Microsoft Open Technologies, Inc.
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Copyright 2013 Microsoft Open Technologies, Inc.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
@@ -24,6 +21,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
     using System.Net;
     using Microsoft.Web.Administration;
     using Microsoft.WindowsAzure.ServiceRuntime;
+    using System.Security.Cryptography.X509Certificates;
 
     /// <summary>
     /// Configures IIS to use ARR server farm.
@@ -37,7 +35,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
         /// Starts the ArrWorker agent.
         /// This method returns as soon as IIS is configured to forward http traffic to ARR farm.
         /// </summary>
-        internal static void Start(string arrEndpointName, string serverEndPointName, byte[] certHash, string certStoreName)
+        internal static void Start(string arrEndpointName, string serverEndPointName, string certHash, string certStoreName)
         {
             RoleInstanceEndpoint arrEndpoint;
 
@@ -67,7 +65,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
         /// <summary>
         /// Performs one-time configuration of IIS/ARR.
         /// </summary>
-        private static void ConfigureOnce(string serverEndpointName, IPEndPoint bindInfo, byte[] certHash, string certStoreName)
+        private static void ConfigureOnce(string serverEndpointName, IPEndPoint bindInfo, string certHash, string certStoreName)
         {
             using (ServerManager sm = new ServerManager())
             {
@@ -94,12 +92,20 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
                         "url",
                         string.Format(CultureInfo.InvariantCulture, @"http://{0}/{{R:0}}", serverEndpointName));
 
+                    // Add conditions
+                    var conditions = rule.GetChildElement("conditions");
+
+                    var condition = conditions.GetCollection().CreateElement("add");
+                    condition.SetAttributeValue("input", "{SERVER_PORT}");
+                    condition.SetAttributeValue("pattern", bindInfo.Port);
+                    conditions.GetCollection().Add(condition);
+
                     rules.GetCollection().Add(rule);
 
                     // Ensure that the default app pool is set to classic mode.
                     Debug.Assert(sm.ApplicationPools["DefaultAppPool"] != null, "DefaultAppPool is not present");
                     sm.ApplicationPools["DefaultAppPool"].ManagedPipelineMode =
-                        ManagedPipelineMode.Classic;                    
+                        ManagedPipelineMode.Classic;
 
                     // Make sure that we have a binging in the default web site, which listens on ARR port.
                     Debug.Assert(sm.Sites["Default Web Site"] != null, "Default Web Site is not present");
@@ -115,7 +121,8 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
 
                             if (certHash!=null)
                             {
-                                var httpsBinding = sm.Sites["Default Web Site"].Bindings.Add(bindingInformation, certHash, certStoreName);
+                                byte[] certHashInbytes = getCertHashInbytes(certHash, certStoreName);
+                                var httpsBinding = sm.Sites["Default Web Site"].Bindings.Add(bindingInformation, certHashInbytes, certStoreName);
                                 httpsBinding.Protocol = "https";
                                 sm.Sites["Default Web Site"].Bindings.Remove(binding);
                             }
@@ -130,6 +137,23 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
 
                 sm.CommitChanges();
             }
+        }
+
+        // Finds certHash in bytes , if exists returns hash in bytes else throws an exception.
+        private static byte[] getCertHashInbytes(String certHash, String storeName)
+        {
+            var store = new X509Store(storeName, StoreLocation.LocalMachine);
+            store.Open(OpenFlags.OpenExistingOnly);
+
+            var certificate = store.Certificates.Find(X509FindType.FindByThumbprint,
+                                                          certHash, false)
+                                                          .OfType<X509Certificate>().FirstOrDefault();
+            if (certificate != null)
+                return certificate.GetCertHash();
+            else
+                throw new InvalidOperationException("No Certificate is found with hash " + certHash);
+
+
         }
 
         /// <summary>

@@ -1,17 +1,14 @@
 ﻿/*
- Copyright 2013 Microsoft Open Technologies, Inc.
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Copyright 2013 Microsoft Open Technologies, Inc.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
@@ -27,7 +24,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
         private static bool blockStartup;
         private static string arrEndpoint;
         private static string certStoreName;
-        private static byte[] certHash;
+        private static string certHash;
         private static string serverEndpoint;
 
         /// <summary>
@@ -95,7 +92,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
                 serverEndpoint = args[1];
                 if (args.Length == 4)
                 {
-                    certHash = args[2].ConvertHexToBytes();
+                    certHash = args[2];
                     certStoreName = args[3];
                 }
             }
@@ -106,35 +103,5 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
                 }
             }
         }
-    }
-
-    static class HexExtention
-    {
-        private static int H2N(char c)
-        {
-            if (c >= '0' && c <= '9')
-                return c - '0';
-            if (c >= 'A' && c <= 'F')
-                return c - 'A' + 10;
-            if (c >= 'a' && c <= 'f')
-                return c - 'a' + 10;
-            throw new ArgumentException(String.Format("c:{0}", c));
-        }
-
-        public static byte[] ConvertHexToBytes(this string hex)
-        {
-            var chars = hex.ToCharArray();
-            if (chars.Length % 2 != 0)
-                throw new ArgumentException("not even length");
-            var ret = new byte[chars.Length / 2];
-            for (var i = 0; i < chars.Length; i += 2)
-            {
-                var h = H2N(chars[i]) << 4;
-                var l = H2N(chars[i + 1]);
-                ret[i / 2] = (byte)(h + l);
-            }
-            return ret;
-        }
-    }
-
+    }   
 }
