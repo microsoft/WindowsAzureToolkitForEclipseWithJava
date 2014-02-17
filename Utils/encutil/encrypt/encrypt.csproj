@@ -42,12 +42,12 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-	<SignAssembly>true</SignAssembly>
-	<DelaySign>true</DelaySign>
-	<AssemblyOriginatorKeyFile>..\..\Common\Keys\50_MicOpeTecInc_2012-05-23.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <DelaySign>true</DelaySign>
+    <AssemblyOriginatorKeyFile>..\..\Common\Keys\50_MicOpeTecInc_2012-05-23.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>50_MicOpeTecInc_2012-05-23.snk</AssemblyOriginatorKeyFile>
@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CertUtil.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Operation.cs" />
     <Compile Include="Option.cs" />
     <Compile Include="Program.cs" />

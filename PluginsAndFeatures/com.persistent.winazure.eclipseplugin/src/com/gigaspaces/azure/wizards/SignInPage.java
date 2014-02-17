@@ -18,6 +18,7 @@ package com.gigaspaces.azure.wizards;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.window.Window;
@@ -61,8 +62,10 @@ import com.gigaspaces.azure.runnable.LoadAccountWithProgressBar;
 import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
+import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
+import com.gigaspaces.azure.util.WizardCache;
 import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
@@ -154,8 +157,13 @@ public class SignInPage extends WindowsAzurePage {
 		createRemoteDesktopWidget(container);
 
 		setControl(container);
-		setComponentState((subscriptionCombo.
-				getData(subscriptionCombo.getText()) != null));
+		boolean isSubPresent = subscriptionCombo.
+				getData(subscriptionCombo.getText()) != null;
+		setComponentState(isSubPresent);
+		if (isSubPresent) {
+			// load cached subscription, cloud service & storage account
+			loadDefaultWizardValues();
+		}
 		loadDefaultRDPValues();
 		//Set current value for target OS
 		try {
@@ -235,6 +243,31 @@ public class SignInPage extends WindowsAzurePage {
 		}
 	}
 
+	private void loadDefaultWizardValues() {
+		WizardCache cacheObj = PreferenceUtilPubWizard.load(String.format("%s%s%s",
+				Activator.PLUGIN_ID,
+				com.persistent.util.Messages.proj,
+				selectedProject.getName()));
+		if (cacheObj != null
+				&& !cacheObj.getSubName().isEmpty()
+				&& !cacheObj.getServiceName().isEmpty()
+				&& !cacheObj.getStorageName().isEmpty()) {
+			UIUtils.selectByText(subscriptionCombo,
+					cacheObj.getSubName());
+			publishData = UIUtils.changeCurrentSubAsPerCombo(subscriptionCombo);
+			if (publishData != null) {
+				populateStorageAccounts();
+				populateHostedServices();
+				setComponentState((subscriptionCombo.
+						getData(subscriptionCombo.getText()) != null));
+				UIUtils.selectByText(hostedServiceCombo,
+						cacheObj.getServiceName());
+				UIUtils.selectByText(storageAccountCmb,
+						cacheObj.getStorageName());
+			}
+		}
+	}
+
 	/**
 	 * Enable or disable password fields.
 	 * @param status
@@ -301,6 +334,7 @@ public class SignInPage extends WindowsAzurePage {
 							populateSubscriptionCombo(subscriptionCombo);
 					if ((subscriptionCombo.
 							getData(subscriptionCombo.getText()) != null)) {
+						loadDefaultWizardValues();
 						unpublishChBox.setSelection(true);
 						setPageComplete(validatePageComplete());
 					}
@@ -373,6 +407,10 @@ public class SignInPage extends WindowsAzurePage {
 
 		fireConfigurationEvent(new ConfigurationEventArgs(this,
 				ConfigurationEventArgs.SUPSCRIPTION, publishData));
+		
+		fireConfigurationEvent(new ConfigurationEventArgs(this,
+				ConfigurationEventArgs.CONFIG_HTTPS_LINK, waProjManager.getSSLInfoIfUnique() != null? "true":"false"));
+
 
 		fireConfigurationEvent(new ConfigurationEventArgs(this,
 				ConfigurationEventArgs.STORAGE_ACCOUNT,
@@ -967,12 +1005,13 @@ public class SignInPage extends WindowsAzurePage {
 	public void createTargetOSWidget(Composite container) {
 		createLabel(container,
 				com.persistent.ui.propertypage.Messages.proPageTgtOSLbl);
-		String[] targetOSType =
-			{OSFamilyType.WINDOWS_SERVER_2008_R2.getName(),
-				OSFamilyType.WINDOWS_SERVER_2012.getName()};
+		List<String> osNames = new ArrayList<String>();
+		for (OSFamilyType osType : OSFamilyType.values()) {
+			osNames.add(osType.getName());
+		}
 		targetOS = createCombo(
 				container, SWT.READ_ONLY, 10, SWT.FILL, 300);
-		targetOS.setItems(targetOSType);
+		targetOS.setItems(osNames.toArray(new String[osNames.size()]));
 		new Link(container, SWT.NO);
 	}
 

@@ -14,7 +14,7 @@
  limitations under the License.
 */
 
-namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
+namespace MicrosoftOpenTechnologies.Tools.ARRAgent
 {
     using System.Threading;
 

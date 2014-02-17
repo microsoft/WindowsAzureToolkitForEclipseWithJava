@@ -26,6 +26,7 @@ namespace MicrosoftOpenTechnologies.Tools.EncUtil
         PfxFile,
         Password,
         Text,
-        ExpirationDate
+        ExpirationDate,
+        CN
     }
 }

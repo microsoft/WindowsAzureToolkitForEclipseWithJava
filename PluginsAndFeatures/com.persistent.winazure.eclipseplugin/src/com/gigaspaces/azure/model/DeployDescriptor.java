@@ -35,13 +35,16 @@ public class DeployDescriptor {
 	private final WindowsAzurePackageType deployMode;
 	private final String mngUrl;
 	private final String unpublish;
+	private final CertificateUploadList certList;
+	private final boolean displayHttpsLink;
 
 	public DeployDescriptor(WindowsAzurePackageType deployMode,
 			String subscriptionId, StorageService storageAcount,
 			KeyName accessKey, HostedService hostedService, String cspkgFile,
 			String cscfgFile, String deployState,
 			RemoteDesktopDescriptor remoteDesktopDescriptor, String mngUrl,
-			String unpublish) {
+			String unpublish,
+			CertificateUploadList certList, boolean displayHttpsLink) {
 		this.deployMode = deployMode;
 		this.startTime = new Date();
 		this.deploymentId = String.format(Messages.deploymentIdFormat,
@@ -56,6 +59,8 @@ public class DeployDescriptor {
 		this.deployState = deployState;
 		this.mngUrl = mngUrl;
 		this.unpublish = unpublish;
+		this.certList = certList;
+		this.displayHttpsLink=displayHttpsLink;
 	}
 
 	public WindowsAzurePackageType getDeployMode() {
@@ -138,5 +143,13 @@ public class DeployDescriptor {
 
 	public String getUnpublish() {
 		return unpublish;
+	}
+
+	public CertificateUploadList getCertList() {
+		return certList;
+	}
+	
+	public boolean getDisplayHttpsLink() {
+		return displayHttpsLink;
 	}
 }

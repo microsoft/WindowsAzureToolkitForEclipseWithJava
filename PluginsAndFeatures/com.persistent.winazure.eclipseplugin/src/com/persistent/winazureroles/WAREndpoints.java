@@ -1,17 +1,17 @@
 /**
-* Copyright 2013 Persistent Systems Ltd.
+* Copyright 2014 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
+*  you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
 *
-*   http://www.apache.org/licenses/LICENSE-2.0
+*	 http://www.apache.org/licenses/LICENSE-2.0
 *
 * Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
 */
 package com.persistent.winazureroles;
 
@@ -79,6 +79,7 @@ public class WAREndpoints extends PropertyPage {
      */
     private final static int RANGE_MAX = 65535;
     private boolean isPageDisplayed = false;
+    private static String auto = "(auto)";
 
     @Override
     public String getTitle() {
@@ -325,15 +326,16 @@ public class WAREndpoints extends PropertyPage {
         	try {
         		WindowsAzureEndpoint endpoint =
         				(WindowsAzureEndpoint) element;
+        		String type = endpoint.getEndPointType().toString();
         		switch (colIndex) {
         		case 0:
         			result = endpoint.getName();
         			break;
         		case 1:
-        			result = endpoint.getEndPointType().toString();
+        			result = type;
         			break;
         		case 2:
-        			if (endpoint.getEndPointType().toString()
+        			if (type
         					.equalsIgnoreCase(
         							WindowsAzureEndpointType.Input.toString())
         							|| endpoint.getEndPointType().toString()
@@ -347,6 +349,11 @@ public class WAREndpoints extends PropertyPage {
         			break;
         		case 3:
         			result = endpoint.getPrivatePort();
+        			if (result == null
+        					&& (type.equalsIgnoreCase(WindowsAzureEndpointType.Input.toString())
+        							|| type.equalsIgnoreCase(WindowsAzureEndpointType.Internal.toString()))) {
+        				result = auto;
+        			}
         			break;
         		default:
         			break;
@@ -457,6 +464,7 @@ public class WAREndpoints extends PropertyPage {
                     stcEndptName = stickyEndpt.getName();
                     stcIntEndptName = stickyIntEndpt.getName();
                 }
+                if (modifiedVal.toString().equals("1")) {
                 if (endpointName.equalsIgnoreCase(dbgEndptName)
                         && oldType.equals(
                         		WindowsAzureEndpointType.Input)
@@ -478,6 +486,10 @@ public class WAREndpoints extends PropertyPage {
                     StringBuffer msg = new StringBuffer(Messages.ssnAffTypMsg);
                     MessageDialog.openWarning(new Shell(),
                             Messages.dlgTypeTitle, msg.toString());
+                } else {
+                    endpoint.setEndPointType(WindowsAzureEndpointType
+                            .valueOf(arrType[1]));
+                }
                 } else if (modifiedVal.toString().equals("2")) {
                 	// User changed type to InstanceInput
                 	if (endpointName.equalsIgnoreCase(stcEndptName)
@@ -497,21 +509,33 @@ public class WAREndpoints extends PropertyPage {
                 		 * as a private port because private port
                 		 * range is not valid for Input endpoint.
                 		 */
+                		Boolean changeType = true;
                 		if (oldType.equals(WindowsAzureEndpointType.Internal)
                 				&& endpoint.getPrivatePort().contains("-")) {
                 			String[] portRange = endpoint.
                 					getPrivatePort().split("-");
                 			endpoint.setPrivatePort(portRange[0]);
+                		} else if (oldType.equals(WindowsAzureEndpointType.Input)
+                				&& endpoint.getPrivatePort() == null) {
+                			String pubPort = endpoint.getPort();
+                			if (windowsAzureRole.isValidEndpoint(
+                					endpointName,
+                					WindowsAzureEndpointType.InstanceInput,
+                					pubPort, pubPort)) {
+                				endpoint.setPrivatePort(pubPort);
+                			} else {
+                				changeType = false;
+                				MessageDialog.openWarning(new Shell(),
+                						Messages.dlgTypeTitle,
+                						String.format(Messages.inpInstTypeMsg, pubPort));
+                			}
                 		}
-                		endpoint.setEndPointType(WindowsAzureEndpointType
-                				.valueOf(arrType[2]));
+                		if (changeType) {
+                			endpoint.setEndPointType(WindowsAzureEndpointType
+                					.valueOf(arrType[2]));
+                		}
                 	}
                 }
-                else {
-                    endpoint.setEndPointType(WindowsAzureEndpointType
-                            .valueOf(arrType[1]));
-                }
-
             }
         }
 
@@ -690,24 +714,38 @@ public class WAREndpoints extends PropertyPage {
         					isPortValid = false;
         				}
         			} else {
+        				// no dash
+        				if (!((modifiedVal.toString().isEmpty()
+        						|| modifiedVal.toString().equalsIgnoreCase("*"))
+        						&& (endpoint.getEndPointType().
+        								equals(WindowsAzureEndpointType.Internal)
+        								|| endpoint.getEndPointType().
+        								equals(WindowsAzureEndpointType.Input)))) {
         				int port = Integer.
         						parseInt(modifiedVal.toString());
         				if (!(port >= RANGE_MIN
         						&& port <= RANGE_MAX)) {
         					isPortValid = false;
         				}
+        			  }
         			}
         		} catch (NumberFormatException e) {
         			isPortValid = false;
         		}
         		if (isPortValid) {
         			// Validate port
+        			String privatePort = modifiedVal.toString();
+        			if (privatePort.isEmpty()
+        					|| privatePort.equalsIgnoreCase("*")) {
+        				privatePort = null;
+        			}
         			boolean isValid = windowsAzureRole.isValidEndpoint(
         					endpoint.getName(),
         					endpoint.getEndPointType(),
-        					modifiedVal.toString(),
+        					privatePort,
         					endpoint.getPort());
         			if (isValid) {
+        				boolean canChange = true;
         				boolean isDebugEnabled = false;
         				boolean isSuspended = false;
         				WindowsAzureEndpoint endPt =
@@ -721,18 +759,27 @@ public class WAREndpoints extends PropertyPage {
         				if (endPt != null
         						&& endpoint.getName().equalsIgnoreCase(
         								endPt.getName())) {
-        					isSuspended = windowsAzureRole.
-        							getStartSuspended();
-        					windowsAzureRole.setDebuggingEndpoint(null);
-        					isDebugEnabled = true;
+        					if (privatePort == null) {
+        						PluginUtil.displayErrorDialog(
+        								getShell(),
+        								Messages.dlgInvldPort,
+        								Messages.dbgPort);
+        						canChange = false;
+        					} else {
+        						isSuspended = windowsAzureRole.
+        								getStartSuspended();
+        						windowsAzureRole.setDebuggingEndpoint(null);
+        						isDebugEnabled = true;
+        					}
         				}
-        				endpoint.setPrivatePort(
-        						modifiedVal.toString());
-        				if (isDebugEnabled) {
-        					windowsAzureRole.
-        					setDebuggingEndpoint(endpoint);
-        					windowsAzureRole.
-        					setStartSuspended(isSuspended);
+        				if (canChange) {
+        					endpoint.setPrivatePort(privatePort);
+        					if (isDebugEnabled) {
+        						windowsAzureRole.
+        						setDebuggingEndpoint(endpoint);
+        						windowsAzureRole.
+        						setStartSuspended(isSuspended);
+        					}
         				}
         			} else {
         				PluginUtil.displayErrorDialog(
@@ -780,6 +827,9 @@ public class WAREndpoints extends PropertyPage {
         	} else if (property.equals(
         			Messages.dlgColPrivatePort)) {
         		result = endpoint.getPrivatePort();
+        		if (result == null) {
+        			result = "";
+        		}
         	}
         	return result;
         }
@@ -796,24 +846,30 @@ public class WAREndpoints extends PropertyPage {
         	 * If end point selected for in place editing
         	 * is related to caching then don't allow.
         	 */
+        	try {
         	if (endpoint.getName().startsWith(Messages.cachEndPtName)
         			&& (property.equals(Messages.dlgColName)
         					|| property.equals(Messages.dlgColPrivatePort)
         					|| property.equals(Messages.dlgColType))) {
         		retVal = false;
+        	} else if (endpoint.isStickySessionEndpoint()
+        			|| endpoint.isSSLEndpoint()) {
+        		retVal = false;
         	} else {
-        		try {
         			if (endpoint.getEndPointType().toString().equalsIgnoreCase(
-        					WindowsAzureEndpointType.Internal.toString())
-        					&& property.equals(Messages.dlgColPubPort)) {
-        				retVal = false;
+        					WindowsAzureEndpointType.Internal.toString())) {
+        				if (property.equals(Messages.dlgColPubPort)
+        						|| (property.equals(Messages.dlgColType)
+        								&& endpoint.getPrivatePort() == null)) {
+        					retVal = false;
+        				}
         			}
-        		} catch (WindowsAzureInvalidProjectOperationException e) {
-        			PluginUtil.displayErrorDialog(getShell(),
-        					Messages.dlgDbgEndPtErrTtl,
-        					Messages.endPtTypeErr);
         		}
-        	}
+        	} catch (WindowsAzureInvalidProjectOperationException e) {
+    			PluginUtil.displayErrorDialog(getShell(),
+    					Messages.dlgDbgEndPtErrTtl,
+    					Messages.endPtTypeErr);
+    		}
         	return retVal;
         }
     }
@@ -828,19 +884,9 @@ public class WAREndpoints extends PropertyPage {
             try {
                 WindowsAzureEndpoint debugEndpt = windowsAzureRole
                                                     .getDebuggingEndpoint();
-                WindowsAzureEndpoint stickyEndpt = windowsAzureRole
-                        .getSessionAffinityInputEndpoint();
-                WindowsAzureEndpoint stickyIntEndpt = windowsAzureRole
-                        .getSessionAffinityInternalEndpoint();
                 String dbgEndptName = "";
-                String stcEndptName = "";
-                String stcIntEndptName = "";
                 if (debugEndpt != null) {
                     dbgEndptName = debugEndpt.getName();
-                }
-                if (stickyEndpt != null) {
-                    stcEndptName = stickyEndpt.getName();
-                    stcIntEndptName = stickyIntEndpt.getName();
                 }
                 // delete the selected endpoint
                 WindowsAzureEndpoint waEndpoint = listEndPoints
@@ -872,25 +918,63 @@ public class WAREndpoints extends PropertyPage {
                     }
                 }
                 /*
+                 * Endpoint associated with both SSL
+                 * and Session affinity
+                 */
+                else if (waEndpoint.isStickySessionEndpoint()
+                		&& waEndpoint.isSSLEndpoint()) {
+                	boolean choice = MessageDialog.openConfirm(new Shell(),
+                            Messages.dlgDelEndPt1, Messages.bothDelMsg);
+                    if (choice) {
+                    	if (waEndpoint.getEndPointType().
+                    			equals(WindowsAzureEndpointType.Input)) {
+                    		windowsAzureRole.
+                    		setSessionAffinityInputEndpoint(null);
+                    		windowsAzureRole.setSslOffloading(null, null);
+                    		waEndpoint.delete();
+                    	} else {
+                    		windowsAzureRole.
+                    		setSessionAffinityInputEndpoint(null);
+                    		windowsAzureRole.setSslOffloading(null, null);
+                    	}
+                    	tblViewer.refresh();
+                    }
+                }
+                /*
         		 * Check end point selected for removal
         		 * is associated with Load balancing
         		 * i.e (HTTP session affinity).
         		 */
-                else if (waEndpoint.getName().equalsIgnoreCase(stcEndptName)
-                        || waEndpoint.getName().
-                        equalsIgnoreCase(stcIntEndptName)) {
+                else if (waEndpoint.isStickySessionEndpoint()) {
                     StringBuffer msg = new StringBuffer(Messages.ssnAffDelMsg);
-                    boolean choice = MessageDialog.openQuestion(new Shell(),
+                    boolean choice = MessageDialog.openConfirm(new Shell(),
                             Messages.dlgDelEndPt1, msg.toString());
                     if (choice) {
                     	if (waEndpoint.getEndPointType().
-                    			equals(WindowsAzureEndpointType.Input)){
+                    			equals(WindowsAzureEndpointType.Input)) {
                     		windowsAzureRole.
                     		setSessionAffinityInputEndpoint(null);
                     		waEndpoint.delete();
                     	} else {
                     		windowsAzureRole.
                     		setSessionAffinityInputEndpoint(null);
+                    	}
+                    	tblViewer.refresh();
+                    }
+                }
+                /*
+                 * Endpoint associated with SSL
+                 */
+                else if (waEndpoint.isSSLEndpoint()) {
+                	boolean choice = MessageDialog.openConfirm(new Shell(),
+                            Messages.dlgDelEndPt1, Messages.sslDelMsg);
+                    if (choice) {
+                    	if (waEndpoint.getEndPointType().
+                    			equals(WindowsAzureEndpointType.Input)) {
+                    		windowsAzureRole.setSslOffloading(null, null);
+                    		waEndpoint.delete();
+                    	} else {
+                    		windowsAzureRole.setSslOffloading(null, null);
                     	}
                     	tblViewer.refresh();
                     }
@@ -946,8 +1030,20 @@ public class WAREndpoints extends PropertyPage {
     				PluginUtil.displayErrorDialog(getShell(),
     						Messages.cachDsblErTtl,
     						Messages.endPtEdtErMsg);
-    			} else {
-    				WAEndpointDialog dialog =
+    			} else if (waEndpoint.isStickySessionEndpoint()
+    					&& waEndpoint.isSSLEndpoint()) {
+    				PluginUtil.displayErrorDialog(getShell(),
+    						Messages.sslSesDsbl,
+    						Messages.sslSesAffMsg);
+    			} else if (waEndpoint.isStickySessionEndpoint()) {
+    				PluginUtil.displayErrorDialog(getShell(),
+    						Messages.sesAffDsblErTl,
+    						Messages.sesAffMsg);
+    			} else if(waEndpoint.isSSLEndpoint()) {
+    				PluginUtil.displayErrorDialog(getShell(),
+    						Messages.sslDsblErTl,
+    						Messages.sslMsg);
+    			} else {WAEndpointDialog dialog =
     						new WAEndpointDialog(
     								this.getShell(),
     						windowsAzureRole,
@@ -1013,5 +1109,4 @@ public class WAREndpoints extends PropertyPage {
         }
         return okToProceed;
     }
-
 }

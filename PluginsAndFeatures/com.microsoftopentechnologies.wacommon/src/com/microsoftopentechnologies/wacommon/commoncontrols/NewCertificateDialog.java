@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Microsoft Open Technologies Inc.
+ * Copyright 2014 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package com.microsoftopentechnologies.wacommon.commoncontrols;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,14 +37,17 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
+
 import com.microsoftopentechnologies.wacommon.Activator;
 import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.microsoftopentechnologies.wacommon.utils.Utils;
 
 public class NewCertificateDialog extends TitleAreaDialog {
 
     private Text txtPwd;
     private Text txtConfirmPwd;
+    private Text txtCNName;
     private Text txtCertFile;
     private Text txtPFXFile;
     private String errorTitle;
@@ -89,10 +94,19 @@ public class NewCertificateDialog extends TitleAreaDialog {
 
         txtPwd = new Text(container, SWT.BORDER | SWT.PASSWORD);
         txtPwd.setLayoutData(gridData);
+       
         Label confirmPwdLbl = new Label(container, SWT.LEFT);
         confirmPwdLbl.setText(Messages.newCertDlgCnfPwdLbl);
         txtConfirmPwd = new Text(container, SWT.BORDER | SWT.PASSWORD);
         txtConfirmPwd.setLayoutData(gridData);
+        
+        // For common name 
+        Label cnNameLabel = new Label(container, SWT.LEFT);
+        cnNameLabel.setText(Messages.newCertDlgCNNameLbl);
+        txtCNName = new Text(container, SWT.BORDER);
+        txtCNName.setLayoutData(gridData);
+        txtCNName.setText(Utils.getDefaultCNName());
+        
 
         Group group =  new Group(container, SWT.SHADOW_ETCHED_IN);
         GridLayout groupGridLayout = new GridLayout();
@@ -157,6 +171,12 @@ public class NewCertificateDialog extends TitleAreaDialog {
                         txtPFXFile.setText(stringBuffer.toString());
                     }
                 }
+                
+                // Set default value for cert text field
+                if ( (txtPFXFile.getText() != null  && 
+                		(txtCertFile.getText() == null || txtCertFile.getText().isEmpty()))) {
+                	txtCertFile.setText(Utils.replaceLastSubString(txtPFXFile.getText(), ".pfx", ".cer"));
+                }
             }
 
             @Override
@@ -208,6 +228,12 @@ public class NewCertificateDialog extends TitleAreaDialog {
                         txtCertFile.setText(strBfr.toString());
                     }
                 }
+                
+                // Set default value for pfx text field
+                if ( (txtCertFile.getText() != null  && 
+                		(txtPFXFile.getText() == null || txtPFXFile.getText().isEmpty()))) {
+                	txtPFXFile.setText(Utils.replaceLastSubString(txtCertFile.getText(), ".cer", ".pfx"));
+                }
             }
 
             @Override
@@ -227,8 +253,10 @@ public class NewCertificateDialog extends TitleAreaDialog {
         extensions[0] = ext;
         dialog.setOverwrite(true);
         selProject = PluginUtil.getSelectedProject();
-        String path = selProject.getLocation().toPortableString();
-        dialog.setFilterPath(path);
+        if (selProject != null) {
+        	String path = selProject.getLocation().toPortableString();
+        	dialog.setFilterPath(path);
+        }
         dialog.setText(Messages.newCertDlgBrwFldr);
         dialog.setFilterExtensions(extensions);
         return dialog.open();
@@ -281,6 +309,13 @@ public class NewCertificateDialog extends TitleAreaDialog {
                     errorTitle, errorMessage);
             return;
         }
+        if (txtCNName.getText() == null || txtCNName.getText().isEmpty()) {
+        	 errorTitle = Messages.newCertDlgCrtErTtl;
+             errorMessage = Messages.newCertDlgCNNull;
+             PluginUtil.displayErrorDialog(this.getShell(),
+                     errorTitle, errorMessage);
+             return;
+        }
         if (txtCertFile.getText() == null || txtCertFile.getText().isEmpty()) {
             errorTitle = Messages.newCertDlgCrtErTtl;
             errorMessage = Messages.newCertDlgCerNul;
@@ -330,13 +365,14 @@ public class NewCertificateDialog extends TitleAreaDialog {
             try {
                 String alias = Messages.newCertDlgAlias;
                 EncUtilHelper.createCertificate(txtCertFile.getText(),
-                        txtPFXFile.getText(), alias , txtPwd.getText());
+                        txtPFXFile.getText(), alias , txtPwd.getText(), txtCNName.getText());
                 
                 //At this point certificates are created , populate the values for caller
                 if(newCertificateDialogHolder != null ){
                 	newCertificateDialogHolder.setCerFilePath(txtCertFile.getText());
                 	newCertificateDialogHolder.setPfxFilePath(txtPFXFile.getText());
-                	newCertificateDialogHolder.setPassword(txtPFXFile.getText());                	
+                	newCertificateDialogHolder.setPassword(txtPFXFile.getText());     
+                	newCertificateDialogHolder.setCnName(txtCNName.getText());
                 }
             } catch (Exception e) {
                 Activator.getDefault().log(e.getMessage(), e);

@@ -53,6 +53,11 @@ public final class Messages extends NLS {
 	public static String xMsVersion3;
 	public static String dnsNameTaken;
 	public static String deserializtnErr;
+	public static String upExcpTrce;
+	public static String delExcpTrce;
+	public static String upErr;
+	public static String delErr;
+	public static String upTime;
 
 	static {
 		// initialize resource bundle

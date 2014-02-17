@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -48,6 +47,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.ui.wizards.IClasspathContainerPage;
 import org.eclipse.jdt.ui.wizards.IClasspathContainerPageExtension;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
@@ -66,12 +66,12 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.Bundle;
-import org.eclipse.jface.window.Window;
 
-import com.microsoftopentechnologies.wacommon.utils.Base64;
+import com.microsoftopentechnologies.acsfilter.ui.activator.Activator;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
-import com.microsoftopentechnologies.acsfilter.ui.activator.Activator;
+import com.microsoftopentechnologies.wacommon.utils.Base64;
+import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
 
 
 /**
@@ -692,40 +692,22 @@ public class ClasspathContainerPage extends WizardPage implements
     }
     
     private static String getCertInfo(String certURL) {
-    	InputStream inputStream = null;
-    	String url = certURL;
-    	try {
-    		url = getCertificatePath(url);
-    		if(url == null || url.isEmpty())
-    			return null;
-    		File file = new File(url);
-    		if(!file.exists())
-    			return null;
-    		
-	    	inputStream = new FileInputStream(url);
-			CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-			X509Certificate acsCert = (X509Certificate)certificateFactory.generateCertificate(inputStream);
-			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    	X509Certificate acsCert = CerPfxUtil.getCert(certURL, null);
+    	if (acsCert != null) {
+    	DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-			StringBuilder certInfo = new StringBuilder();
-			certInfo.append(String.format("%1$-10s", "Subject")).append(" : ").append(acsCert.getSubjectDN()).append("\n");
-			certInfo.append(String.format("%1$-11s", "Issuer")).append(" : ").append(acsCert.getIssuerDN()).append("\n");
-			certInfo.append(String.format("%1$-13s", "Valid")).append(" : ").append(dateFormat.format(acsCert.getNotBefore())).append(" to ")
-					.append(dateFormat.format(acsCert.getNotAfter()));
-			
-			inputStream.close();
-			return certInfo.toString();
-    	} catch(Exception e) {
-    		Activator.getDefault().log(e.getMessage(), e);
+    	StringBuilder certInfo = new StringBuilder();
+    	certInfo.append(String.format("%1$-10s", "Subject")).
+    	append(" : ").append(acsCert.getSubjectDN()).append("\n");
+    	certInfo.append(String.format("%1$-11s", "Issuer")).
+    	append(" : ").append(acsCert.getIssuerDN()).append("\n");
+    	certInfo.append(String.format("%1$-13s", "Valid")).
+    	append(" : ").append(dateFormat.format(acsCert.getNotBefore())).
+    	append(" to ").append(dateFormat.format(acsCert.getNotAfter()));
+    	return certInfo.toString();
+    	} else {
     		return null;
-    	}finally {
-    		try {
-    			if(inputStream != null)
-    				inputStream.close();
-    		}catch(Exception e ){
-    			//Die silently,no need to throw any error 
-    		}
-    	}   
+    	}
     }
 
     /**
@@ -757,7 +739,7 @@ public class ClasspathContainerPage extends WizardPage implements
         
         // For first time , if embedded cert option is selected , display error if file does not exist at source 
         if(!isEdit && !certTxt.getText().isEmpty() && embedCertCheck.getSelection() == true) {
-        	if(!new File(getCertificatePath(certTxt.getText())).exists()) {
+        	if(!new File(CerPfxUtil.getCertificatePath(certTxt.getText())).exists()) {
         		errorMessage.append(Messages.acsNoValidCert).append("\n");
         	}
         }
@@ -829,7 +811,7 @@ public class ClasspathContainerPage extends WizardPage implements
             		File   destination  = new File(certLoc);
             		if(!destination.getParentFile().exists())
             			destination.getParentFile().mkdir();
-            		copy(new File(getCertificatePath(certTxt.getText())),destination );
+            		copy(new File(CerPfxUtil.getCertificatePath(certTxt.getText())),destination );
             	}
             }
             handler.setAcsFilterParams(Messages.secretKeyAttr, generateKey());
@@ -846,7 +828,7 @@ public class ClasspathContainerPage extends WizardPage implements
             		File   destination  = new File(certLoc);
             		if(!destination.getParentFile().exists())
             			destination.getParentFile().mkdir();
-            		copy(new File(getCertificatePath(certTxt.getText())),destination );
+            		copy(new File(CerPfxUtil.getCertificatePath(certTxt.getText())),destination );
             	}
             	handler = new ACSFilterHandler(path);
             	handler.setAcsFilterParams(Messages.acsAttr, acsTxt.getText());
@@ -1042,33 +1024,4 @@ public class ClasspathContainerPage extends WizardPage implements
         return getWizard().getWindowTitle().
         		equals(Messages.edtLbrTtl);
     }
-    
-    /**
-     * This method resolves environment variables in path. Format of env variables is ${env.VAR_NAME}
-     * e.g. ${env.JAVA_HOME} 
-     * @param rawPath
-     * @return
-     */
-    private static String getCertificatePath(String rawPath) {
-		String certPath = null;
-		String pathToUse = rawPath;
-		if (pathToUse != null && pathToUse.length() > 0) {
-			pathToUse = pathToUse.replace('\\', '/');
-			String[] result = pathToUse.split("/");
-			StringBuilder  path = new StringBuilder();
-
-			for (int x = 0; x < result.length; x++) {
-				if (result[x].startsWith("${env")) {
-					String envValue = System.getenv(result[x].substring("${env.".length(), (result[x].length() - 1)));
-					path.append(envValue).append(File.separator);
-				} else {
-					path.append(result[x]).append(File.separator);
-				}
-			}
-			//Delete last trailing slash
-			path = path.deleteCharAt(path.length() - 1);
-			certPath = path.toString();
-		}
-		return certPath;
-	}
 }

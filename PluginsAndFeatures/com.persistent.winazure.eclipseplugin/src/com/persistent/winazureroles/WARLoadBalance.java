@@ -1,18 +1,18 @@
 /**
- * Copyright 2013 Persistent Systems Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.persistent.winazureroles;
 
 import java.net.URL;
@@ -60,7 +60,7 @@ public class WARLoadBalance extends PropertyPage {
     private WindowsAzureEndpoint stcSelEndpoint;
     private boolean isPageDisplayed = false;
     private final int HTTP_PRV_PORT = 8080;
-    private final String HTTP_PORT = "80";
+    private final int HTTP_PORT = 80;
 
     @Override
     public String getTitle() {
@@ -83,6 +83,7 @@ public class WARLoadBalance extends PropertyPage {
                             endPt.getName(),
                             endPt.getPort(),
                             endPt.getPrivatePort()));
+                    isEditableEndpointCombo(endPt);
                 }
             }
         } catch (Exception e) {
@@ -92,6 +93,15 @@ public class WARLoadBalance extends PropertyPage {
         			Messages.dlgDbgErr, e);
         }
         return super.getTitle();
+    }
+    
+    private void isEditableEndpointCombo(WindowsAzureEndpoint endPt)
+    		throws WindowsAzureInvalidProjectOperationException {
+    	if (endPt.equals(waRole.getSslOffloadingInputEndpoint())) {
+    		comboEndpt.setEnabled(false);
+    	} else {
+    		comboEndpt.setEnabled(true);
+    	}
     }
 
     @Override
@@ -125,6 +135,7 @@ public class WARLoadBalance extends PropertyPage {
                             ssnAffEndpt.getName(),
                             ssnAffEndpt.getPort(),
                             ssnAffEndpt.getPrivatePort()));
+                    isEditableEndpointCombo(ssnAffEndpt);
                 }
 
                 boolean enabled = btnSsnAffinity.getSelection();
@@ -293,6 +304,7 @@ public class WARLoadBalance extends PropertyPage {
                             newEndpt.getPort(),
                             newEndpt.getPrivatePort()));
                     waRole.setSessionAffinityInputEndpoint(newEndpt);
+                    isEditableEndpointCombo(newEndpt);
                 } else {
                     btnSsnAffinity.setSelection(false);
                     lblEndptToUse.setEnabled(false);
@@ -304,6 +316,7 @@ public class WARLoadBalance extends PropertyPage {
                         endpt.getPort(),
                         endpt.getPrivatePort()));
                 waRole.setSessionAffinityInputEndpoint(endpt);
+                isEditableEndpointCombo(endpt);
             }
         } catch (WindowsAzureInvalidProjectOperationException e) {
         	PluginUtil.displayErrorDialogAndLog(
@@ -324,21 +337,21 @@ public class WARLoadBalance extends PropertyPage {
         WindowsAzureEndpoint endpt = null;
         StringBuffer endptName = new StringBuffer(Messages.lbHttpEndpt);
         int index = 1;
-        int localPort = HTTP_PRV_PORT;
+        int httpPort = HTTP_PORT;
         while (!waRole.isAvailableEndpointName(
         		endptName.toString(),
         		WindowsAzureEndpointType.Input)) {
             endptName.insert(4, index++);
         }
 
-        while (!waProjManager.isValidPort(String.valueOf(localPort),
+        while (!waProjManager.isValidPort(String.valueOf(httpPort),
                 WindowsAzureEndpointType.Input)) {
-            localPort++;
+        	httpPort++;
         }
         endpt = waRole.addEndpoint(endptName.toString(),
                 WindowsAzureEndpointType.Input,
-                String.valueOf(localPort),
-                HTTP_PORT);
+                String.valueOf(HTTP_PRV_PORT),
+                String.valueOf(httpPort));
         return endpt;
     }
 
@@ -353,6 +366,7 @@ public class WARLoadBalance extends PropertyPage {
         for (WindowsAzureEndpoint endpoint : endpointsList) {
             if (endpoint.getEndPointType().
                     equals(WindowsAzureEndpointType.Input)
+                    && endpoint.getPrivatePort() != null
                     && !endpoint.equals(waRole.getDebuggingEndpoint())) {
                   comboEndpt.add(String.format(Messages.dbgEndPtStr,
                           endpoint.getName(),
@@ -372,19 +386,25 @@ public class WARLoadBalance extends PropertyPage {
     		throws WindowsAzureInvalidProjectOperationException {
         WindowsAzureEndpoint endpt = null;
         boolean isFirst = true;
+        WindowsAzureEndpoint sslEndPt = waRole.getSslOffloadingInputEndpoint();
+        if (sslEndPt != null) {
+        	endpt = sslEndPt;
+        } else {
         for (WindowsAzureEndpoint endpoint : endpointsList) {
             if (endpoint.getEndPointType().
                     equals(WindowsAzureEndpointType.Input)
+                    && endpoint.getPrivatePort() != null
                     && !endpoint.equals(waRole.getDebuggingEndpoint())) {
                 if (isFirst) {
                     endpt = endpoint;
                     isFirst = false;
                 }
-                if (endpoint.getPort().equalsIgnoreCase(HTTP_PORT)) {
+                if (endpoint.getPort().equalsIgnoreCase(String.valueOf(HTTP_PORT))) {
                     endpt = endpoint;
                     break;
                 }
             }
+        }
         }
         return endpt;
     }

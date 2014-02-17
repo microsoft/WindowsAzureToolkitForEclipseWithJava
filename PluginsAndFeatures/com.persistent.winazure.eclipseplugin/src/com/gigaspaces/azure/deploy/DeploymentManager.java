@@ -24,9 +24,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
@@ -59,6 +61,7 @@ import org.xml.sax.SAXException;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.model.CertificateFile;
+import com.gigaspaces.azure.model.CertificateUpload;
 import com.gigaspaces.azure.model.Container;
 import com.gigaspaces.azure.model.CreateDeployment;
 import com.gigaspaces.azure.model.CreateHostedService;
@@ -160,17 +163,31 @@ public final class DeploymentManager {
 
 			checkContainerExistance(deploymentDesc.getSubscriptionId(), service);
 
-			if (deploymentDesc.getRemoteDesktopDescriptor().isEnabled()) {
-
-				notifyProgress(deploymentDesc.getDeploymentId(), null, 0,RequestStatus.InProgress, Messages.deplUploadCert);
-				/*
-				 * If remote access enabled, still pfxPath and password empty
-				 * then we want to use already uploaded files.
-				 */
-				if (!deploymentDesc.getRemoteDesktopDescriptor().getPrivateKey().isEmpty()
-						&& !deploymentDesc.getRemoteDesktopDescriptor().getPfxPassword().isEmpty()) {
-					uploadCertificateIfNeeded(service, deploymentDesc);
+			// upload certificates
+			if (deploymentDesc.getCertList() != null) {
+			List<CertificateUpload> certList = deploymentDesc.getCertList().getList();
+			if (certList != null && certList.size() > 0) {
+				for (int i = 0; i < certList.size(); i++) {
+					CertificateUpload cert = certList.get(i);
+					uploadCertificateIfNeededGeneric(
+							service,
+							deploymentDesc,
+							cert.getPfxPath(),
+							cert.getPfxPwd());
+					notifyProgress(deploymentDesc.getDeploymentId(),
+							null, 0,RequestStatus.InProgress,
+							String.format("%s%s", Messages.deplUploadCert,
+									cert.getName()));
+					if (cert.getName().equalsIgnoreCase(Messages.remoteAccessPasswordEncryption)) {
+						WindowsAzureRestUtils.getInstance().installPublishSettings(
+								new File(deploymentDesc.getRemoteDesktopDescriptor().getPublicKey()),
+								null);
+					}
 				}
+			}
+			}
+
+			if (deploymentDesc.getRemoteDesktopDescriptor().isEnabled()) {
 
 				notifyProgress(deploymentDesc.getDeploymentId(), null, conditionalProgress,RequestStatus.InProgress, Messages.deplConfigRdp);
 
@@ -203,12 +220,24 @@ public final class DeploymentManager {
 
 			String cspkgUrl = String.format("%s%s/%s", storageAccountURL,
 					Messages.eclipseDeployContainer.toLowerCase(), targetCspckgName);
-
-			String deploymentName = hostedService.getServiceName() + deployState;
-
-			String requestId = createDeployment(deploymentDesc, service,cspkgUrl);
+			/*
+			 * To make deployment name unique attach time stamp
+			 * to the deployment name.
+			 */
+			DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+			String deploymentName = String.format("%s%s%s",
+					hostedService.getServiceName(),
+					deployState,
+					dateFormat.format(new Date()));
+			String requestId = createDeployment(deploymentDesc, service, cspkgUrl, deploymentName);
 			RequestStatus status = waitForStatus(deploymentDesc.getSubscriptionId(),
 					service, requestId, deploymentDesc.getMngUrl());
+
+			deletePackage(WizardCacheManager.createStorageServiceHelper(),
+					Messages.eclipseDeployContainer.toLowerCase(),
+					targetCspckgName, notifier);
+			notifyProgress(deploymentDesc.getDeploymentId(),
+					null, 0, RequestStatus.InProgress, Messages.deletePackage);
 
 			notifyProgress(deploymentDesc.getDeploymentId(), null, 20, RequestStatus.InProgress,Messages.waitingForDeployment);
 
@@ -219,8 +248,10 @@ public final class DeploymentManager {
 					deploymentName,
 					deploymentDesc.getMngUrl());
 
+			boolean displayHttpsLink = deploymentDesc.getDisplayHttpsLink();
+			
 			notifyProgress(deploymentDesc.getDeploymentId(),
-					deployment.getUrl(),
+					displayHttpsLink?deployment.getUrl().replaceAll("http://", "https://"):deployment.getUrl(),
 					20, status,
 					deployment.getStatus().toString());
 
@@ -353,7 +384,10 @@ public final class DeploymentManager {
 		return status;
 	}
 
-	private String createDeployment(DeployDescriptor deploymentDesc,WindowsAzureServiceManagement service, String cspkgUrl)
+	private String createDeployment(DeployDescriptor deploymentDesc,
+			WindowsAzureServiceManagement service,
+			String cspkgUrl,
+			String deploymentName)
 					throws WACommonException, UnsupportedEncodingException, IOException,
 					FileNotFoundException, RestAPIException, InterruptedException, CommandLineException {
 
@@ -383,9 +417,7 @@ public final class DeploymentManager {
 		}
 		String configuration = Base64.encode(cscfgBuff); //$NON-NLS-1$
 
-		String serviceName = deploymentDesc.getHostedService().getServiceName().toLowerCase();
 		String deployState = deploymentDesc.getDeployState().toLowerCase();
-		String deploymentName = serviceName + deployState;
 		CreateDeployment body = new CreateDeployment(deploymentName, cspkgUrl,label, configuration);
 
 		body.setStartDeployment(true);
@@ -405,6 +437,15 @@ public final class DeploymentManager {
 			CommandLineException, ExecutionException, IOException {
 		File file = new File(cspkg);
 		service.putBlob(container,cspckgTargetName, file, notifier);
+	}
+
+	private static void deletePackage(
+			final WindowsAzureStorageServices service,
+			final String container,
+			String cspckgTargetName,
+			Notifier notifier)
+					throws CommandLineException, FileNotFoundException {
+		service.deleteBlob(container, cspckgTargetName, notifier);
 	}
 
 	private String createCspckTargetName(DeployDescriptor deploymentDesc) {
@@ -636,20 +677,20 @@ public final class DeploymentManager {
 		}
 
 	}
-
-	private void uploadCertificateIfNeeded(WindowsAzureServiceManagement service,DeployDescriptor deploymentDesc) throws DeploymentException {
-
+	
+	private void uploadCertificateIfNeededGeneric(
+			WindowsAzureServiceManagement service,
+			DeployDescriptor deploymentDesc,
+			String pfxPath,
+			String pfxPwd)
+					throws DeploymentException {
 		try {
-
-			File rdpPfxFile = new File(deploymentDesc.getRemoteDesktopDescriptor().getPrivateKey());
-			String azureRemoteDesktopPfxFilePassword = deploymentDesc.getRemoteDesktopDescriptor().getPfxPassword();
-
-			byte[] buff = new byte[(int) rdpPfxFile.length()];
-
+			File pfxFile = new File(pfxPath);
+			byte[] buff = new byte[(int) pfxFile.length()];
 			FileInputStream fileInputStram = null;
 			DataInputStream dis = null;
 			try {
-				fileInputStram = new FileInputStream(rdpPfxFile);
+				fileInputStram = new FileInputStream(pfxFile);
 				dis = new DataInputStream(fileInputStram);
 				dis.readFully(buff);
 			}
@@ -662,13 +703,11 @@ public final class DeploymentManager {
 				}
 			}
 
-			CertificateFile certFile = new CertificateFile(buff,azureRemoteDesktopPfxFilePassword);
+			CertificateFile certFile = new CertificateFile(buff, pfxPwd);
 			service.addCertificate(
 					deploymentDesc.getSubscriptionId(),
 					deploymentDesc.getHostedService().getServiceName(),
 					certFile, deploymentDesc.getMngUrl());
-			WindowsAzureRestUtils.getInstance().installPublishSettings(new File(deploymentDesc.getRemoteDesktopDescriptor().getPublicKey()), null);
-
 		} catch (Exception e) {
 			Activator.getDefault().log(Messages.deplError, e);
 			throw new DeploymentException("Error uploading certificate", e);

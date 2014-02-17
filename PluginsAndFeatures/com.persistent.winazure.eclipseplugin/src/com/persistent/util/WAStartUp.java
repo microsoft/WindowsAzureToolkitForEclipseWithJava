@@ -1,18 +1,18 @@
 /**
- * Copyright 2013 Persistent Systems Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.persistent.util;
 
 import java.io.File;
@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -44,6 +45,7 @@ import org.eclipse.wst.xml.core.internal.catalog.provisional.INextCatalog;
 
 import waeclipseplugin.Activator;
 
+import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
 import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
@@ -64,7 +66,7 @@ public class WAStartUp implements IStartup {
     private static final int BUFF_SIZE = 1024;
     private static final String COMPONENTSETS_TYPE = "COMPONENTSETS";
     private static final String PREFERENCESETS_TYPE = "PREFERENCESETS";
-    private final static String auto = "auto";
+    private final static String AUTO = "auto";
     protected static File cmpntFile = new File(WAEclipseHelper.getTemplateFile(Messages.cmpntFileName));
     @Override
     public void earlyStartup() {
@@ -115,6 +117,8 @@ public class WAStartUp implements IStartup {
             PreferenceUtilStrg.save();
             //this code is for copying componentset.xml in plugins folder
             copyPluginComponents();
+            // remove unwanted preference entries
+            prefsCleanUp(projects);
             // refresh workspace as package.xml may have got changed.
             WAEclipseHelper.refreshWorkspace(Messages.resCLJobName,
             		Messages.resCLExWkspRfrsh);
@@ -123,6 +127,40 @@ public class WAStartUp implements IStartup {
                So user should not get any exception prompt.*/
             Activator.getDefault().log(Messages.expErlStrtUp, e);
         }
+    }
+
+    /**
+     * Publish wizard's subscription ID, storage account and cloud service
+     * is remembered using preference entry in preference file
+     * Where key will be as follows
+     * WAEclipsePlugin.project.<projectName>
+     * Method will compare windows azure project in
+     * workspace and corresponding key in file.
+     * If some extra keys are present then those will get removed.
+     * @param projects
+     */
+    private void prefsCleanUp(IProject[] projects) {
+    	try {
+    		List<String> winAzProjName = new ArrayList<String>();
+    		for (int i = 0; i < projects.length; i++) {
+    			IProject proj = projects[i];
+    			if (proj.isOpen()
+    					&& proj.hasNature(Messages.stUpProjNature)) {
+    				winAzProjName.add(proj.getName());
+    			}
+    		}
+    		List<String> keyList = PreferenceUtilPubWizard.getProjKeyList();
+    		for (int i = 0; i < keyList.size(); i++) {
+    			String key = keyList.get(i);
+    			String keyProjName = key.substring(
+    					key.lastIndexOf(".") + 1, key.length());
+    			if (!winAzProjName.contains(keyProjName)) {
+    				PreferenceUtilPubWizard.removePreference(key);
+    			}
+    		}
+    	} catch (Exception e) {
+    		Activator.getDefault().log(Messages.expClearPref, e);
+    	}
     }
 
     /**
@@ -253,7 +291,7 @@ public class WAStartUp implements IStartup {
     								com.persistent.winazureroles.Messages.typeSrvDply))
     								&& (key == null || key.isEmpty())
     								&& (url == null || url.isEmpty())) {
-    					component.setCloudDownloadURL(auto);
+    					component.setCloudDownloadURL(AUTO);
     					component.setCloudUploadMode(
     							WARoleComponentCloudUploadMode.AUTO);
     					component.setCloudMethod(

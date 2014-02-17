@@ -1,11 +1,11 @@
 /**
-* Copyright 2013 Persistent Systems Ltd.
+* Copyright 2014 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
 *
-*	http://www.apache.org/licenses/LICENSE-2.0
+*	 http://www.apache.org/licenses/LICENSE-2.0
 *
 * Unless required by applicable law or agreed to in writing, software
 *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,9 +24,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,6 +61,7 @@ import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.propertypage.SubscriptionPropertyPage;
 import com.interopbridges.tools.windowsazure.WindowsAzureConstants;
+import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
@@ -67,6 +71,7 @@ import com.persistent.ui.propertypage.WARemoteAccessPropertyPage;
 import com.persistent.ui.propertypage.WARolesPropertyPage;
 import com.persistent.ui.propertypage.WAWinAzurePropertyPage;
 import com.persistent.winazureroles.WARCaching;
+import com.persistent.winazureroles.WARCertificates;
 import com.persistent.winazureroles.WARComponents;
 import com.persistent.winazureroles.WARDebugging;
 import com.persistent.winazureroles.WAREndpoints;
@@ -74,6 +79,7 @@ import com.persistent.winazureroles.WAREnvVars;
 import com.persistent.winazureroles.WARGeneral;
 import com.persistent.winazureroles.WARLoadBalance;
 import com.persistent.winazureroles.WARLocalStorage;
+import com.persistent.winazureroles.WASSLOffloading;
 import com.persistent.winazureroles.WAServerConfiguration;
 
 /**
@@ -244,7 +250,7 @@ public class WAEclipseHelper {
 				// Wildcards present, so check pattern
 				} else {
 					String[] fileNames = basePathFile.list();
-					String pathPatternRegex = windowsPathToRegex(pathPart) + "$";
+					String pathPatternRegex = "^" + windowsPathToRegex(pathPart) + "$";
 					Pattern pathPattern = Pattern.compile(pathPatternRegex);
 					Matcher matcher = pathPattern.matcher("");
 					foundSoFar = false;
@@ -380,14 +386,17 @@ public class WAEclipseHelper {
 		}
 
 		// Find the first entry under Java that contains jdk
-		File[] files = file.listFiles();
-		for (File subFile : files) {
-			if (!subFile.isDirectory()) {
-				continue;
-			} else if (subFile.getName().contains("jdk")) {
-				return subFile.getAbsolutePath();
+		File[] jdkDirs = file.listFiles();
+		Arrays.sort(jdkDirs);
+		
+		TreeSet<File> sortedDirs = new TreeSet<File>(Arrays.asList(jdkDirs));
+		for (Iterator<File> iterator = sortedDirs.descendingIterator(); iterator.hasNext();) {
+			File latestSdkDir = iterator.next();
+			if (latestSdkDir.isDirectory() && latestSdkDir.getName().contains("jdk")) {
+				return latestSdkDir.getAbsolutePath();
 			}
 		}
+		
 		return "";
 	}
 
@@ -522,6 +531,13 @@ public class WAEclipseHelper {
 					null, WARCaching.class.toString());
 			nodeCache.setPage(new WARCaching());
 			nodeCache.getPage().setTitle(Messages.cmhLblCach);
+			
+			PreferenceNode nodeCert = new PreferenceNode(
+					Messages.cmhIdCert,
+					Messages.cmhLblCert,
+					null, WARCertificates.class.toString());
+			nodeCert.setPage(new WARCertificates());
+			nodeCert.getPage().setTitle(Messages.cmhLblCert);
 
 			PreferenceNode nodeCmpnts = new PreferenceNode(
 					Messages.cmhIdCmpnts,
@@ -572,12 +588,21 @@ public class WAEclipseHelper {
 			nodeSrvCnfg.setPage(new WAServerConfiguration());
 			nodeSrvCnfg.getPage().setTitle(Messages.cmhLblSrvCnfg);
 
+			PreferenceNode nodeSslOff = new PreferenceNode(
+					Messages.cmhIdSsl,
+					Messages.cmhLblSsl,
+					null,
+					WASSLOffloading.class.toString());
+			nodeSslOff.setPage(new WASSLOffloading());
+			nodeSslOff.getPage().setTitle(Messages.cmhLblSsl);
+
 			/*
 			 * Tree structure creation.
 			 * Don't change order while adding nodes.
 			 * Its the default alphabetical order given by eclipse.
 			 */
 			nodeGeneral.add(nodeCache);
+			nodeGeneral.add(nodeCert);
 			nodeGeneral.add(nodeCmpnts);
 			nodeGeneral.add(nodeDebugging);
 			nodeGeneral.add(nodeEndPts);
@@ -585,6 +610,7 @@ public class WAEclipseHelper {
 			nodeGeneral.add(nodeLdBlnc);
 			nodeGeneral.add(nodeLclStg);
 			nodeGeneral.add(nodeSrvCnfg);
+			nodeGeneral.add(nodeSslOff);
 
 			PreferenceManager mgr = new PreferenceManager();
 			mgr.addToRoot(nodeGeneral);
@@ -822,8 +848,15 @@ public class WAEclipseHelper {
     	
     	for (WindowsAzureRole role: rolesList) {
     		// Copy session affinity files if SA is enabled
-    		if (role.getSessionAffinityInputEndpoint() != null) {
-    			projMngr.copySAResources(role.getName());
+    		WindowsAzureEndpoint saEndPoint = null;
+    		if ((saEndPoint = role.getSessionAffinityInputEndpoint()) != null) {
+    			// Remove old files and disable first
+    			projMngr.removeOldSAResources(role.getName());
+    			role.setSessionAffinityInputEndpoint(null);
+    			
+    			// Get latest definition of endpoint and enable again
+    			saEndPoint = role.getEndpoint(saEndPoint.getName());
+    			role.setSessionAffinityInputEndpoint(saEndPoint);
     		}
     		
     		//Copy or rewrite .wash script
@@ -926,7 +959,7 @@ public class WAEclipseHelper {
 		Matcher m = blob.matcher(text);
 		return m.matches();
 	}
-	
+
 	/**
 	 * API to find the hostname. This API first checks OS type. If Windows then tries to get 
 	 * hostname from computername environment variable else uses environment variable hostname.

@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Microsoft Open Technologies Inc.
+ * Copyright 2014 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -77,13 +77,14 @@ public class EncUtilHelper {
      * @throws Exception
      * @throws IOException
      */
-    public static String createCertificate(String certPath, String pfxPath ,String alias, String password) throws Exception, IOException {
+    public static String createCertificate(String certPath, String pfxPath ,String alias, String password, String cnName) throws Exception, IOException {
     	
     	// we dont include cmd.exe /C in the command since we are not invoking .bat or .cmd files. when invoking .exe files the cmd.exe is not needed 
     	// and causes problems with file paths.
     	
         String newCertificate = "";
-        String[] commandArgs = {encPath + File.separator + "encutil", "-create" , "-cert" ,  '"' + certPath + '"' , "-pfx" , pfxPath , "-alias", alias , "-pwd" , password};
+        String[] commandArgs = {encPath + File.separator + "encutil", "-create" , "-cert" ,  '"' + certPath + '"' , "-pfx" , pfxPath , "-alias", 
+        		alias , "-pwd" , password, "-CN", cnName};
         newCertificate = encInvocation(commandArgs);
         return newCertificate;
     }

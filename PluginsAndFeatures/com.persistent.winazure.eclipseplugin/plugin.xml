@@ -11,7 +11,7 @@
          <wizard
             name="Windows Azure Deployment Project"
            category="com.persistent.ui.projwizard.category"
-           icon="icons/File menu.png"
+           icon="icons/small/newCloudService.png"
            project="true"
            class="com.persistent.ui.projwizard.WAProjectWizard"
            id="com.persistent.ui.projwizard.waprojectwizard">
@@ -100,6 +100,29 @@
             name="Caching"
             class="com.persistent.winazureroles.WARCaching"
             id="com.persistent.ui.rolepage.caching"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
+      
+      <!-- Certificates -->
+      <page
+            name="Certificates"
+            class="com.persistent.winazureroles.WARCertificates"
+            id="com.persistent.ui.rolepage.certificates"
             category="com.persistent.ui.rolepage.general">
          <enabledWhen>
          <or>
@@ -278,6 +301,29 @@
          </or>
          </enabledWhen>
       </page>
+      
+      <!-- SSL Offloading -->
+	  <page
+            name="SSL Offloading"
+            class="com.persistent.winazureroles.WASSLOffloading"
+            id="com.persistent.ui.rolepage.ssloffloading"
+            category="com.persistent.ui.rolepage.general">
+         <enabledWhen>
+         <or>
+          <test
+              property="com.persistent.ui.property.isRolePrefNode">
+          </test>
+          <and>
+              <instanceof
+                    value="org.eclipse.core.resources.IFolder">
+              </instanceof>
+              <test
+                  property="com.persistent.ui.property.isRoleFolder">
+              </test>
+          </and>
+         </or>
+         </enabledWhen>
+      </page>
    </extension>
 
  <!-- Property testers -->
@@ -347,7 +393,7 @@
          id="com.persistent.winazure.eclipseplugin.Builder"
          name="Windows Azure Dependency Builder"
          point="org.eclipse.core.resources.builders">
-      <builder>
+      <builder isConfigurable="true">
          <run class="com.persistent.builder.WADependencyBuilder">
             <parameter name="optimize" value="true"/>
             <parameter name="comment" value="Windows Azure Dependency Builder"/>
@@ -374,6 +420,10 @@
       <command
             id="com.persistent.ui.toolbar.WANewProject"
             name="New Windows Azure Deployment Project">
+      </command>
+      <command
+            id="com.persistent.ui.toolbar.WANewCertificate"
+            name="Self Signed Certificate">
       </command>
  	</extension>
 
@@ -409,7 +459,7 @@
 
 			<command
 				commandId="com.persistent.ui.toolbar.WANewProject"
-				icon="icons/File menu.png"
+				icon="icons/small/newCloudService.png"
                 label="New Windows Azure Deployment Project"
 				tooltip="New Windows Azure Deployment Project"
 				style="push">
@@ -429,7 +479,16 @@
                    label="Unpublish"
                    tooltip="Unpublish"
                    style="push">
-				</command>
+			</command>
+			
+			<command
+				commandId="com.persistent.ui.toolbar.WANewCertificate"
+				icon="icons/small/newCert.png"
+                label="New Self Signed Certificate"
+				tooltip="New Self Signed Certificate"
+				style="push">
+			</command>
+			
 		</toolbar>
 		</menuContribution>
 	</extension>
@@ -480,7 +539,12 @@
             class="com.persistent.ui.toolbar.WANewProject"
             commandId="com.persistent.ui.toolbar.WANewProject">
       </handler>
+	 <handler
+            class="com.persistent.ui.toolbar.WANewCertificate"
+            commandId="com.persistent.ui.toolbar.WANewCertificate">
+      </handler>
 
+     
       <handler
             class="com.persistent.ui.toolbar.WABuildCloud"
             commandId="com.persistent.ui.toolbar.WABuildCloudCmd">
@@ -529,8 +593,8 @@
    <extension point="org.eclipse.ui.menus">
   	<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
 	  	<menu 
-	         label="Windows Azure" icon="icons/File menu.png">
-		    	 <command icon="icons/File menu.png"
+	         label="Windows Azure" icon="icons/small/windowsAzure.png">
+		    	 <command icon="icons/small/newCloudService.png"
 		           commandId="com.persistent.ui.role.popup">
 			     </command>
 			    <visibleWhen checkEnabled="false">
@@ -583,6 +647,12 @@
 	  </command>
 	  
 	  <command
+	  		description="Worker Role Certificates"
+	        id="com.persistent.winazure.eclipseplugin.role.certificates"
+	        name="Certificates...">
+	  </command>
+	  
+	  <command
 	  		description="Worker Role Components"
 	        id="com.persistent.winazure.eclipseplugin.role.components"
 	        name="Components...">
@@ -623,19 +693,29 @@
 	        id="com.persistent.winazure.eclipseplugin.role.srvconf"
 	        name="Server Configuration...">
 	  </command>
+
+	  <command
+	  		description="Worker Role SSL Offloading"
+	        id="com.persistent.winazure.eclipseplugin.role.ssloff"
+	        name="SSL Offloading...">
+	  </command>
 	</extension>
 	
 	<!-- Context Menu entries for fly menu on Worker role -->
 	<extension point="org.eclipse.ui.menus">
   	<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
 	  	<menu 
-	         label="Windows Azure" icon="icons/File menu.png">
+	         label="Windows Azure" icon="icons/small/windowsAzure.png">
 		    	 <command
 		           commandId="com.persistent.winazure.eclipseplugin.role.general">
 			     </command>
 			     
 			     <command
 		           commandId="com.persistent.winazure.eclipseplugin.role.caching">
+			     </command>
+			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.certificates">
 			     </command>
 			     
 			     <command
@@ -666,6 +746,10 @@
 		           commandId="com.persistent.winazure.eclipseplugin.role.srvconf">
 			     </command>
 			     
+			     <command
+		           commandId="com.persistent.winazure.eclipseplugin.role.ssloff">
+			     </command>
+			     
 			     <visibleWhen checkEnabled="false">
 			    <with 
 				variable="selection"> 
@@ -690,6 +774,11 @@
        <handler
             class="com.persistent.contextmenu.CommonHandler"
             commandId="com.persistent.winazure.eclipseplugin.role.caching">
+      </handler>
+      
+      <handler
+            class="com.persistent.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.certificates">
       </handler>
       
        <handler
@@ -725,6 +814,11 @@
       <handler
             class="com.persistent.contextmenu.CommonHandler"
             commandId="com.persistent.winazure.eclipseplugin.role.srvconf">
+      </handler>
+      
+      <handler
+            class="com.persistent.contextmenu.CommonHandler"
+            commandId="com.persistent.winazure.eclipseplugin.role.ssloff">
       </handler>
     </extension>
    
@@ -873,7 +967,7 @@
 	<extension point="org.eclipse.ui.menus">
   	<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
 	  	<menu 
-	         label="Windows Azure" icon="icons/File menu.png">
+	         label="Windows Azure" icon="icons/small/windowsAzure.png">
 	    	
 		    	 <command icon="icons/publish.png"
 		           commandId="com.gigaspaces.azure.commands.deploy">
@@ -891,7 +985,7 @@
 
 				<separator name="separator_below" visible="true"/>
 
-			     <command icon="icons/projprop.png"
+			     <command icon="icons/small/cloudService.png"
 	        		commandId="com.persistent.winazure.eclipseplugin.project.general">
 	  			 </command>
 	  			 

@@ -63,6 +63,8 @@ public class WindowsAzureRole {
             new ArrayList<WindowsAzureRoleComponent>();
     protected Map<String, WindowsAzureNamedCache> cacheMap =
             new HashMap<String, WindowsAzureNamedCache>();
+    protected Map<String, WindowsAzureCertificate> certMap =
+    		new HashMap<String, WindowsAzureCertificate>();
 
     protected WindowsAzureProjectManager getWinProjMgr()
             throws WindowsAzureInvalidProjectOperationException {
@@ -399,10 +401,20 @@ public class WindowsAzureRole {
             winAzureEndpoint.setName(
                     endptEle.getAttribute(
                             WindowsAzureConstants.ATTR_NAME));
+            
+            System.out.println(endptEle
+					.getAttribute("=========>"+WindowsAzureConstants.ATTR_NAME));
             winAzureEndpoint.setLocalPort(
                     endptEle.getAttribute("localPort"));
             winAzureEndpoint.setPort(
                     endptEle.getAttribute("port"));
+            winAzureEndpoint.setProtocol(
+                    endptEle.getAttribute("protocol"));
+            
+            String cert = endptEle.getAttribute("certificate");
+            if (cert != null && !cert.isEmpty()) {
+            	winAzureEndpoint.setCertificate(cert);
+            }
             return winAzureEndpoint;
         } catch (Exception ex) {
             throw new WindowsAzureInvalidProjectOperationException(
@@ -462,6 +474,9 @@ public class WindowsAzureRole {
                 port = String.format("%s-%s", xPath.evaluate("./FixedPortRange/@min",
                         endptEle),xPath.evaluate("./FixedPortRange/@max",
                                 endptEle)) ;
+                if (port == null || port.isEmpty() || port.equals("-")) {
+                	port = null;
+                }
             }
 
             winAzureEndpoint.setPrivatePort(port);
@@ -473,7 +488,6 @@ public class WindowsAzureRole {
     }
 
     protected void setEndpoints(List<WindowsAzureEndpoint> winEndPList) {
-
         this.winEndPtList = winEndPList;
     }
 
@@ -510,9 +524,13 @@ public class WindowsAzureRole {
             String externPortNo)
                     throws WindowsAzureInvalidProjectOperationException {
 
-        if ((endpointName == null) || (endpointType == null)
-                || (localPortNumber == null) || (externPortNo == null)) {
+    	if ((endpointName == null) || (endpointType == null)
+        		|| (externPortNo == null)) {
             throw new IllegalArgumentException();
+        }
+        if (endpointType.equals(WindowsAzureEndpointType.InstanceInput)
+        		&& localPortNumber == null) {
+        	throw new IllegalArgumentException();
         }
 
         WindowsAzureEndpoint newEndPoint = new WindowsAzureEndpoint(
@@ -543,6 +561,9 @@ public class WindowsAzureRole {
             Node endPoint;
             endPoint = (Node) xPath.evaluate(expr, doc, XPathConstants.NODE);
             if (endpointType == WindowsAzureEndpointType.Input) {
+            	if (localPortNumber == null) {
+            		localPortNumber = "*";
+            	}
                 Element eleInputEndpoint = doc.createElement("InputEndpoint");
                 eleInputEndpoint.setAttribute(
                         WindowsAzureConstants.ATTR_NAME, endpointName);
@@ -561,6 +582,7 @@ public class WindowsAzureRole {
                         WindowsAzureConstants.ATTR_NAME, endpointName);
                 eleInternalEpt.setAttribute("protocol", "tcp");
                 Node node = endPoint.appendChild(eleInternalEpt);
+                if (localPortNumber != null) {
                 if(localPortNumber.contains("-")) {
                     String[] ports = localPortNumber.split("-");
                     String minPort = ports[0];
@@ -573,6 +595,7 @@ public class WindowsAzureRole {
                 	Element eleFixedport = doc.createElement("FixedPort");
                     eleFixedport.setAttribute("port", localPortNumber);
                     node.appendChild(eleFixedport);
+                }
                 }
                 newEndPoint.setName(endpointName);
                 newEndPoint.setPrivatePort(localPortNumber);
@@ -681,33 +704,36 @@ public class WindowsAzureRole {
         Boolean isValidEp = true;
         try {
             if ((endpointName == null) || (endpointType == null)
-                    || (localPortNumber == null) || (externPortNo == null)) {
+                    || (externPortNo == null)) {
                 isValidEp = false;
             }
-            //Check for number
-            try {
-                if (localPortNumber.contains("-")) {
-                    String[] str = localPortNumber.split("-");
-                    String min = str[0];
-                    String max = str[1];
-                    Integer.valueOf(min);
-                    Integer.valueOf(max);
-                } else {
-                    Integer.valueOf(localPortNumber);
-                }
-                if (externPortNo.contains("-")) {
-                    String[] str = externPortNo.split("-");
-                    String min = str[0];
-                    String max = str[1];
-                    Integer.valueOf(min);
-                    Integer.valueOf(max);
-                } else if (!externPortNo.isEmpty()){
-                    Integer.valueOf(externPortNo);
-                }
-            } catch (NumberFormatException ex) {
-                return false;
+            if (localPortNumber == null) {
+            	localPortNumber = "*";
+            } else {
+            	//Check for number
+            	try {
+            		if (localPortNumber.contains("-")) {
+            			String[] str = localPortNumber.split("-");
+            			String min = str[0];
+            			String max = str[1];
+            			Integer.valueOf(min);
+            			Integer.valueOf(max);
+            		} else {
+            			Integer.valueOf(localPortNumber);
+            		}
+            		if (externPortNo.contains("-")) {
+            			String[] str = externPortNo.split("-");
+            			String min = str[0];
+            			String max = str[1];
+            			Integer.valueOf(min);
+            			Integer.valueOf(max);
+            		} else if (!externPortNo.isEmpty()){
+            			Integer.valueOf(externPortNo);
+            		}
+            	} catch (NumberFormatException ex) {
+            		return false;
+            	}
             }
-
             if (endpointType == WindowsAzureEndpointType.Input) {
                 isValidEp = isValidInputEp(endpointName, localPortNumber, externPortNo);
             } else if (endpointType == WindowsAzureEndpointType.Internal) {
@@ -729,34 +755,36 @@ public class WindowsAzureRole {
      * @return
      */
     private boolean isValidInputEp(String endpointName, String localPort, String pubPort) {
-        try {
+    	try {
             boolean isValidEp = true;
             if(localPort.contains("-") || pubPort.contains("-") ||
                     localPort.isEmpty() || pubPort.isEmpty()) {
                 isValidEp = false;
             } else {
                 //check that localPort should be unique in role
-                List<WindowsAzureEndpoint> eps = getEndpoints();
-                for (WindowsAzureEndpoint ep : eps) {
-                    if(endpointName.equalsIgnoreCase(ep.getName())) {
-                        //edit case
-                        continue;
-                    }
+            	if (localPort != "*") {
+            		List<WindowsAzureEndpoint> eps = getEndpoints();
+            		for (WindowsAzureEndpoint ep : eps) {
+            			if(endpointName.equalsIgnoreCase(ep.getName())) {
+            				//edit case
+            				continue;
+            			}
 
-                    //Private port of instance endpoint  and input endpoint's private port can be same.
-                    if (!ep.getEndPointType().equals(WindowsAzureEndpointType.InstanceInput) &&
-                    		ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), localPort)) {
-                        isValidEp = false;
-                        break;
-                    }
+            			//Private port of instance endpoint  and input endpoint's private port can be same.
+            			if (!ep.getEndPointType().equals(WindowsAzureEndpointType.InstanceInput) &&
+            					ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePortWrapper(), localPort)) {
+            				isValidEp = false;
+            				break;
+            			}
 
-                    if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), localPort) ||
-                            (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), pubPort) ||
-                                    ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), pubPort))) {
-                        isValidEp = false;
-                        break;
-                    }
-                }
+            			if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), localPort) ||
+            					(ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), pubPort) ||
+            							ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePortWrapper(), pubPort))) {
+            				isValidEp = false;
+            				break;
+            			}
+            		}
+            	}
                 if(isValidEp) {
                     isValidEp = winProjMgr.isDupInputPubPort(pubPort, endpointName);
                 }
@@ -780,6 +808,8 @@ public class WindowsAzureRole {
             if(!pubPort.isEmpty()) {
                 //For internal endpoint public port must be empty.
                 isValid = false;
+            } else if(localPort == "*") {
+            	isValid = true;
             } else {
                 // check for max range should be greater than or equal to min
                 if(localPort.contains("-")) {
@@ -794,7 +824,7 @@ public class WindowsAzureRole {
                             continue;
                         }
                         if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), localPort) ||
-                                ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), localPort)) {
+                                ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePortWrapper(), localPort)) {
                             isValid = false;
                             break;
                         }
@@ -817,7 +847,7 @@ public class WindowsAzureRole {
     private boolean isValidInstanceEp(String endpointName, String localPort, String pubPort) {
         boolean isValid = true;
         try {
-            if(localPort.isEmpty() || pubPort.isEmpty() || localPort.contains("-")) {
+        	if(localPort.isEmpty() || pubPort.isEmpty() || localPort.contains("-") || localPort.equals("*")) {
                 isValid = false;
             } else {
                 // check for max range should be greater than or equal to min
@@ -834,7 +864,7 @@ public class WindowsAzureRole {
                         }
                         //Private port of instance endpoint  and input endpoint's private port can be same.
                         if (!ep.getEndPointType().equals(WindowsAzureEndpointType.Input) &&
-                        		ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), localPort)) {
+                        		ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePortWrapper(), localPort)) {
                             isValid = false;
                             break;
                         }
@@ -846,7 +876,7 @@ public class WindowsAzureRole {
                         } else {
                         	if (ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), localPort) ||
                         			ParserXMLUtility.isEpPortEqualOrInRange(ep.getPort(), pubPort) ||
-                        			ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePort(), pubPort)) {
+                        			ParserXMLUtility.isEpPortEqualOrInRange(ep.getPrivatePortWrapper(), pubPort)) {
                         		isValid = false;
                         		break;
                         	}
@@ -1110,26 +1140,45 @@ public class WindowsAzureRole {
      */
     protected void setThumbprint(String thumbprint)
             throws WindowsAzureInvalidProjectOperationException {
-        try {
-            XPath xPath = XPathFactory.newInstance().newXPath();
-            Document doc = getWinProjMgr().getConfigFileDoc();
+    	try {
+    		for (Iterator<Entry<String, WindowsAzureCertificate>> iterator =
+    				getCertificates().entrySet().iterator();
+    				iterator.hasNext();) {
+    			WindowsAzureCertificate cert = iterator.next().getValue();
+    			if (cert.getFingerPrint().equalsIgnoreCase(thumbprint)) {
+    				throw new WindowsAzureInvalidProjectOperationException(
+    						"The certificate with same fingerprint already exists");
+    			}
+    		}
+
+    		XPath xPath = XPathFactory.newInstance().newXPath();
+    		Document doc = getWinProjMgr().getConfigFileDoc();
             String expr = String.format(WindowsAzureConstants.RA_ROLE_FPRINT,
                     getName());
             Element eleCertificate = (Element) xPath.evaluate(expr, doc,
                     XPathConstants.NODE);
             if (eleCertificate == null) {
-                eleCertificate = doc.createElement("Certificate");
-                eleCertificate.setAttribute(WindowsAzureConstants.ATTR_NAME,
-                        WindowsAzureConstants.REMOTEACCESS_FINGERPRINT);
-                eleCertificate.setAttribute("thumbprint", thumbprint);
-                eleCertificate.setAttribute("thumbprintAlgorithm", "sha1");
-                expr = String.format(WindowsAzureConstants.CERT_ROLE,
-                        getName());
-                Element eleCertificates = (Element) xPath.evaluate(expr, doc,
-                        XPathConstants.NODE);
-                eleCertificates.appendChild(eleCertificate);
+            	eleCertificate = doc.createElement("Certificate");
+            	eleCertificate.setAttribute(WindowsAzureConstants.ATTR_NAME,
+            			WindowsAzureConstants.REMOTEACCESS_FINGERPRINT);
+            	eleCertificate.setAttribute("thumbprint", thumbprint);
+            	eleCertificate.setAttribute("thumbprintAlgorithm", "sha1");
+            	expr = String.format(WindowsAzureConstants.CERT_ROLE,
+            			getName());
+            	Element eleCertificates = (Element) xPath.evaluate(expr, doc,
+            			XPathConstants.NODE);
+            	eleCertificates.appendChild(eleCertificate);
+
+            	WindowsAzureCertificate certToInsert =
+            			new WindowsAzureCertificate(getWinProjMgr(),
+            					this,
+            					WindowsAzureConstants.REMOTEACCESS_FINGERPRINT, thumbprint);
+            	getCertificates();
+            	certMap.put(WindowsAzureConstants.REMOTEACCESS_FINGERPRINT, certToInsert);
             } else {
                 eleCertificate.setAttribute("thumbprint", thumbprint);
+                getCertificates().get(WindowsAzureConstants.REMOTEACCESS_FINGERPRINT).
+                setFingerPrint(thumbprint);
             }
             this.certThumbprint = thumbprint;
         } catch (Exception e) {
@@ -1156,7 +1205,7 @@ public class WindowsAzureRole {
         try {
             String existingStr = getRuntimeEnv(WindowsAzureConstants.JAVA_OPTIONS_ENV_VAR);
             String newDbg = getDebugStrWithPortAndSusMode(endpoint.
-                    getPrivatePort(), startSuspended);
+                    getPrivatePortWrapper(), startSuspended);
             String value = changeJavaOptionsVal(existingStr, newDbg);
             setRuntimeEnv(WindowsAzureConstants.JAVA_OPTIONS_ENV_VAR, value);
 
@@ -1294,7 +1343,7 @@ public class WindowsAzureRole {
                 // find endpoint with corresponding port
                 List<WindowsAzureEndpoint> epList = getEndpoints();
                 for (WindowsAzureEndpoint waEndpt : epList) {
-                    if (port.equals(waEndpt.getPrivatePort())) {
+                    if (port.equals(waEndpt.getPrivatePortWrapper())) {
                         endPt = waEndpt;
                         break;
                     }
@@ -1337,7 +1386,7 @@ public class WindowsAzureRole {
                     enableDebugging(endPoint, startSuspended);
                 }
 
-                String port = endPoint.getPrivatePort();
+                String port = endPoint.getPrivatePortWrapper();
                 String agentLib = "-agentlib:jdwp=";
                 XPath xPath = XPathFactory.newInstance().newXPath();
                 Document doc = getWinProjMgr().getPackageFileDoc();
@@ -1852,48 +1901,73 @@ public class WindowsAzureRole {
        }
 
     }
+    
+    /** This API is for enabling or disabling SSL configuration */
+    public void setSslOffloading(WindowsAzureEndpoint endpoint, WindowsAzureCertificate cert)
+    									throws WindowsAzureInvalidProjectOperationException {
+
+    	if(endpoint != null && cert != null) {
+    		configureSslOffloading(endpoint, cert);
+    	} else if(endpoint == null && cert == null) {
+    		disableSslOffloading();
+    	} else {
+    		throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_EMPTY_ENDPOINT_OR_CERT);
+    	}
+    
+    }
+    
     /** This API is for configuring  session affinity */
     private void configureSessionAffinity(WindowsAzureEndpoint windowsAzureEndpoint)
     throws WindowsAzureInvalidProjectOperationException {
+    	boolean enableLoadBalancing = true;
         // Check if end point is input end point or not
         if(windowsAzureEndpoint == null || (windowsAzureEndpoint.getEndPointType() != WindowsAzureEndpointType.Input)) {
             throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_EMPTY_OR_INVALID_ENDPOINT);
         }
 
-
-        // Check if sessionAffinity is already enabled, if yes then throw error
+        // Check if sessionAffinity is already enabled for endpoint, if yes then throw error
         WindowsAzureEndpoint saEndpt = getSessionAffinityInputEndpoint();
         if(saEndpt != null && saEndpt.getName().equalsIgnoreCase(windowsAzureEndpoint.getName())) {
             throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_SA_ENABLED);
+        } else if (saEndpt != null) {
+        	disableSessionAffinity(); // Disable existing session affinity and enable for new end point
         }
-        // Remove previous configuration except file copy
-        if(saEndpt != null ) {
-            removeSASettingsFromDefDoc();
-            removeSASettingsFromPkgDoc();
+        
+        // Check if SSL is already configured, if yes then just turn on load balancing option.
+        WindowsAzureEndpoint sslProxyEP = getSslOffloadingInputEndpoint();
+        WindowsAzureEndpoint sslInternalProxyEP = getSslOffloadingInternalEndpoint();
+        
+        if (sslProxyEP != null) {
+        	setLBInProxy(enableLoadBalancing);
+        
+        	//set properties in package.xml
+        	addPropertiesInPackage(WindowsAzureConstants.SA_INPUT_ENDPOINT, WindowsAzureConstants.SA_INPUT_ENDPOINT_NAME_PROP,
+        			windowsAzureEndpoint.getName());
+        	addPropertiesInPackage(WindowsAzureConstants.SA_INTERNAL_ENDPOINT, WindowsAzureConstants.SA_INTERNAL_ENDPOINT_NAME_PROP,
+        			sslInternalProxyEP.getName());       
+            
+        	return;
         }
-
+       
         // Generate port and name for SA internal end point.
-        int iisArrPort = getSessionAffinityPort();
-        String saInternalEndPointName = generateSAInternalEndPointName(windowsAzureEndpoint.getName());
+        int iisArrPort = getARRPort();
+        String saInternalEndPointName = generateInternalEndPointName(windowsAzureEndpoint.getName());
         int stepsCompleted = -1 ;
 
         try{
             // update or create properties in package.xml
-            addSAPropertiesInPackage(windowsAzureEndpoint.getName(),saInternalEndPointName);
+        	addPropertiesInPackage(WindowsAzureConstants.SA_INPUT_ENDPOINT, WindowsAzureConstants.SA_INPUT_ENDPOINT_NAME_PROP,
+        			windowsAzureEndpoint.getName());
+        	addPropertiesInPackage(WindowsAzureConstants.SA_INTERNAL_ENDPOINT, WindowsAzureConstants.SA_INTERNAL_ENDPOINT_NAME_PROP,
+        			saInternalEndPointName);        
             stepsCompleted = WindowsAzureConstants.PACKAGE_DOC_SA_PROPERTIES;
 
             // add SA settings in service definition file
             addSASettingsInSvcDef(windowsAzureEndpoint,saInternalEndPointName,iisArrPort);
             stepsCompleted = WindowsAzureConstants.DEFINITION_DOC_SA_CHANGES;
 
-            // create SA configuration files
-            Vector<String> saInfo = new Vector<String>();
-            saInfo.add(this.getName());
-            if(getWinProjMgr().mapActivity.get("addSAFilesForRole") != null)
-                getWinProjMgr().mapActivity.remove("addSAFilesForRole");
-            if(getWinProjMgr().mapActivity.get("delSAFilesForRole") != null)
-                getWinProjMgr().mapActivity.remove("delSAFilesForRole");
-            getWinProjMgr().mapActivity.put("addSAFilesForRole", saInfo);
+            // create Proxy configuration files
+            createProxyConfFiles();
             stepsCompleted = WindowsAzureConstants.SA_FILES_COPIED;
 
         }catch(Exception e) {
@@ -1902,32 +1976,101 @@ public class WindowsAzureRole {
          }
 
     }
-
-    /** Adds or updates properties in package.xml. */
-    private void addSAPropertiesInPackage(String inputEndPointName, String internalEndPointName)
+    
+    /** This API is for configuring  SSL Offloading */
+    private void configureSslOffloading(WindowsAzureEndpoint endPoint, WindowsAzureCertificate sslCert) 
     throws WindowsAzureInvalidProjectOperationException {
-        Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
+    	
+        String internalEndPointName = null;
+        String enableLoadBalancing = "false";
+        
+        // Check if inputs are not null and end point is input end point or not.
+        if(endPoint == null || sslCert == null || (endPoint.getEndPointType() != WindowsAzureEndpointType.Input)) {
+            throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_EMPTY_OR_INVALID_ENDPOINT);
+        }
+        
+        // Pre-check: Check if SSL offloading is already enabled for end-point
+    	WindowsAzureEndpoint proxyInputEP = getSslOffloadingInputEndpoint();
+    	if (proxyInputEP != null && proxyInputEP.getName().equalsIgnoreCase(endPoint.getName())) {
+    		throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_SSL_ENABLED);
+    	} else {
+    		disableSslOffloading(); // Disable existing ssl offloading and add it for new end point.
+    	}
+        
+       // Check if sessionAffinity is already enabled, if yes then update csdef and package.xml accordingly
+        WindowsAzureEndpoint saEndpt = getSessionAffinityInputEndpoint();
+    	
+        if(saEndpt != null) {
+        	enableLoadBalancing = "true";
+        	internalEndPointName = getSessionAffinityInternalEndpoint().getName();
+        	
+        	String startUpCmd = String.format(WindowsAzureConstants.SSL_TASK_CMD_VALUE, endPoint.getName(),
+        										internalEndPointName, enableLoadBalancing, sslCert.getFingerPrint(),
+        										WindowsAzureConstants.SSL_STORE_NAME);
+
+        	addOrUpdateStartUpCmdForProxy(startUpCmd, true);
+        	
+        	// Update protocol and certificate element
+        	saEndpt.setProtocol("https");
+        	saEndpt.setCertificate(sslCert.getName());
+        } else { // configure ssl offloading
+        	internalEndPointName = generateInternalEndPointName(endPoint.getName());
+        	
+        	 // create comment node
+        	 Document definitionFiledoc  = getWinProjMgr().getdefinitionFileDoc();
+             String   nodeExpr           = String.format(WindowsAzureConstants.STARTUP_WR_NAME,getName());
+        	 createCommentNode(definitionFiledoc, nodeExpr);
+        	
+        	 // Reconfigure endpoints for proxy
+        	 reConfigureEPForProxy(endPoint, internalEndPointName, getARRPort(), "https", sslCert.getName());
+        	
+        	 // Add webdeploy import module
+        	 addImportModule(WindowsAzureConstants.IMPORT_WEB_DEPLOY, "WebDeploy");
+        	 
+        	// create Proxy configuration files
+            createProxyConfFiles();
+            
+            // add startup command in service definition
+            String startUpCmd = String.format(WindowsAzureConstants.SSL_TASK_CMD_VALUE, endPoint.getName(),
+            									internalEndPointName, enableLoadBalancing, sslCert.getFingerPrint(),
+            									WindowsAzureConstants.SSL_STORE_NAME);
+
+            addOrUpdateStartUpCmdForProxy(startUpCmd, false);
+        }
+        
+    	// Add properties in package.xml
+        addPropertiesInPackage(WindowsAzureConstants.SSL_INPUT_ENDPOINT, WindowsAzureConstants.SSL_INPUT_ENDPOINT_NAME_PROP,
+        		endPoint.getName());
+    	addPropertiesInPackage(WindowsAzureConstants.SSL_INTERNAL_ENDPOINT, WindowsAzureConstants.SSL_INTERNAL_ENDPOINT_NAME_PROP,
+    			internalEndPointName);    
+    	addPropertiesInPackage(WindowsAzureConstants.SSL_CERT_NAME, WindowsAzureConstants.SSL_CERT_NAME_PROP,
+    			sslCert.getName());
+    	addPropertiesInPackage(WindowsAzureConstants.SSL_CERT_FINGERPRINT, WindowsAzureConstants.SSL_CERT_FINGERPRINT_PROP,
+    			sslCert.getFingerPrint());
+    }
+
+   	/** Adds or updates properties for session affinity and ssl offloading in package.xml. */
+    private void addPropertiesInPackage(String nodePath, String attrName, String attrValue)
+    throws WindowsAzureInvalidProjectOperationException {
+   
+    	Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
 
         if(packageFileDoc != null ){
-            String nodeExpr       =  String.format(WindowsAzureConstants.SA_INPUT_ENDPOINT,  this.getName());
+            String nodeExpr       =  String.format(nodePath,  this.getName());
             String parentNodeExpr =  WindowsAzureConstants.PROJ_PROPERTY;
 
             HashMap<String,String> nodeAttribites = new HashMap<String, String>();
-            nodeAttribites.put(WindowsAzureConstants.ATTR_NAME,String.format(WindowsAzureConstants.SA_INPUT_ENDPOINT_NAME_PROP,this.getName()));
-            nodeAttribites.put(WindowsAzureConstants.ATTR_VALUE, inputEndPointName);
-            updateOrCreateElement(packageFileDoc,nodeExpr,parentNodeExpr,WindowsAzureConstants.PROJ_PROPERTY_ELEMENT_NAME,false,nodeAttribites);
-
-            nodeExpr = String.format(WindowsAzureConstants.SA_INTERNAL_ENDPOINT,this.getName());
-            nodeAttribites.clear();
-            nodeAttribites.put(WindowsAzureConstants.ATTR_NAME, String.format(WindowsAzureConstants.SA_INTERNAL_ENDPOINT_NAME_PROP,this.getName()));
-            nodeAttribites.put(WindowsAzureConstants.ATTR_VALUE, internalEndPointName);
+            nodeAttribites.put(WindowsAzureConstants.ATTR_NAME,String.format(attrName,this.getName()));
+            nodeAttribites.put(WindowsAzureConstants.ATTR_VALUE, attrValue);
             updateOrCreateElement(packageFileDoc,nodeExpr,parentNodeExpr,WindowsAzureConstants.PROJ_PROPERTY_ELEMENT_NAME,false,nodeAttribites);
         }
     }
 
+
     /** This method adds Session Affinity settings in service definition */
     private void addSASettingsInSvcDef(WindowsAzureEndpoint inpEndPt,String intEndPt, int iisArrPort)
     throws WindowsAzureInvalidProjectOperationException {
+    	boolean enableLoadBalancing = true;
         // Add startup task entry
         Document definitionFiledoc  = getWinProjMgr().getdefinitionFileDoc();
         String   nodeExpr           = String.format(WindowsAzureConstants.STARTUP_WR_NAME,getName());
@@ -1937,7 +2080,7 @@ public class WindowsAzureRole {
         String taskNodeExpr     = String.format(WindowsAzureConstants.STARTUP_TASK_CMD,this.getName(),WindowsAzureConstants.TASK_CMD_VALUE
                                     ,inpEndPt.getName(),intEndPt);
         HashMap<String,String> nodeAttributes = new HashMap<String, String>();
-        nodeAttributes.put("commandLine", String.format(WindowsAzureConstants.TASK_CMD_VALUE, inpEndPt.getName(),intEndPt));
+        nodeAttributes.put("commandLine", String.format(WindowsAzureConstants.TASK_CMD_VALUE, inpEndPt.getName(), intEndPt, enableLoadBalancing));
         nodeAttributes.put("executionContext", "elevated");
         nodeAttributes.put("taskType", "simple");
         Element element = updateOrCreateElement(definitionFiledoc,taskNodeExpr,nodeExpr,WindowsAzureConstants.DEF_FILE_TASK_ELEMENT_NAME,true,nodeAttributes);
@@ -1960,7 +2103,7 @@ public class WindowsAzureRole {
         createCommentNode(definitionFiledoc, nodeExpr);
 
         // Add SA input end point and SA internal end point
-        String inputEndPointLocalPort = inpEndPt.getPrivatePort();
+        String inputEndPointLocalPort = inpEndPt.getPrivatePortWrapper();
         nodeExpr  = String.format(WindowsAzureConstants.INPUT_ENDPOINT, getName(), inpEndPt.getName());
         int index = winEndPtList.indexOf(inpEndPt);
         winEndPtList.get(index).setPrivatePort(String.valueOf(iisArrPort));
@@ -1974,6 +2117,92 @@ public class WindowsAzureRole {
         nodeAttributes.clear();
         nodeAttributes.put("moduleName", "WebDeploy");
         updateOrCreateElement(definitionFiledoc,nodeExpr,importsNode,WindowsAzureConstants.DEF_FILE_IMPORT_ELEMENT_NAME,true,nodeAttributes);
+    }
+    
+    private void createProxyConfFiles()
+    throws WindowsAzureInvalidProjectOperationException {
+    	// create SA configuration files
+        Vector<String> saInfo = new Vector<String>();
+        saInfo.add(this.getName());
+        if(getWinProjMgr().mapActivity.get("addProxyFilesForRole") != null)
+            getWinProjMgr().mapActivity.remove("addProxyFilesForRole");
+        if(getWinProjMgr().mapActivity.get("delProxyFilesForRole") != null)
+            getWinProjMgr().mapActivity.remove("delProxyFilesForRole");
+        getWinProjMgr().mapActivity.put("addProxyFilesForRole", saInfo);
+
+    }
+    
+    /** This method add import modules to service definition
+     * 
+     */
+    private void addImportModule(String expr, String moduleName) 
+    throws WindowsAzureInvalidProjectOperationException {
+    	 Document definitionFiledoc  = getWinProjMgr().getdefinitionFileDoc();
+         String   parentNodeExpr     = String.format(WindowsAzureConstants.WR_NAME, this.getName()) ;
+        
+    	 String importsNode = String.format(WindowsAzureConstants.IMPORT, this.getName());
+         updateOrCreateElement(definitionFiledoc,importsNode,parentNodeExpr,WindowsAzureConstants.DEF_FILE_IMPORTS_ELEMENT_NAME,false,null);
+
+         String nodeExpr = String.format(expr, this.getName());
+         HashMap<String,String> nodeAttributes = new HashMap<String, String>();
+         nodeAttributes.clear();
+         nodeAttributes.put("moduleName", moduleName);
+         updateOrCreateElement(definitionFiledoc,nodeExpr,importsNode,WindowsAzureConstants.DEF_FILE_IMPORT_ELEMENT_NAME,true,nodeAttributes);
+    }
+    /**
+     * This method adds startup task in csdef for both SA and/or SSL configuration.
+     */
+    private void addOrUpdateStartUpCmdForProxy(String commandLine, boolean updateOnly)
+    throws WindowsAzureInvalidProjectOperationException {
+    	
+    	String taskNodeExpr = String.format(WindowsAzureConstants.STARTUP_TASK_STARTS_WITH,this.getName(),
+                WindowsAzureConstants.TASK_CMD_ONLY);
+    	
+    	// Add startup task entry
+        Document definitionFiledoc  = getWinProjMgr().getdefinitionFileDoc();
+        String   nodeExpr           = String.format(WindowsAzureConstants.STARTUP_WR_NAME,getName());
+        String   parentNodeExpr     = String.format(WindowsAzureConstants.WR_NAME, this.getName()) ;
+        updateOrCreateElement(definitionFiledoc,nodeExpr,parentNodeExpr,WindowsAzureConstants.DEF_FILE_STARTUP_ELEMENT_NAME,true,null);
+
+        HashMap<String,String> nodeAttributes = new HashMap<String, String>();
+        nodeAttributes.put("commandLine", commandLine);
+        nodeAttributes.put("executionContext", "elevated");
+        nodeAttributes.put("taskType", "simple");
+        Element element = updateOrCreateElement(definitionFiledoc,taskNodeExpr,nodeExpr,WindowsAzureConstants.DEF_FILE_TASK_ELEMENT_NAME,true,nodeAttributes);
+        
+        if (!updateOnly) {
+	        //Add environment element
+	        element = createElement(definitionFiledoc,null,element,WindowsAzureConstants.DEF_FILE_ENV_NAME,false,null);
+	
+	        //Add variable element
+	        nodeAttributes.clear();
+	        nodeAttributes.put("name", "EMULATED");
+	        element = createElement(definitionFiledoc,null,element,WindowsAzureConstants.DEF_FILE_VAR_ELE_NAME,false,nodeAttributes);
+	
+	        //Add xpath expression role instance value
+	        nodeAttributes.clear();
+	        nodeAttributes.put("xpath", "/RoleEnvironment/Deployment/@emulated");
+	        element = createElement(definitionFiledoc,null,element,WindowsAzureConstants.DEF_FILE_ENV_RIV_NAME,false,nodeAttributes);
+        }
+    }
+    
+    /**
+     * This API reconfigures endpoints for proxy configurations.
+     * @param inpEndPt
+     * @param intEndPt
+     * @param iisArrPort
+     * @param certName 
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    private void reConfigureEPForProxy(WindowsAzureEndpoint inpEndPt, String intEndPt, int iisArrPort, String protocol, String certName)
+    throws WindowsAzureInvalidProjectOperationException {
+    	// Add SA input end point and SA internal end point
+        String inputEndPointLocalPort = inpEndPt.getPrivatePortWrapper();
+        int index = winEndPtList.indexOf(inpEndPt);
+        winEndPtList.get(index).setPrivatePort(String.valueOf(iisArrPort));
+        winEndPtList.get(index).setProtocol(protocol);
+        winEndPtList.get(index).setCertificate(certName);
+        addEndpoint(intEndPt, WindowsAzureEndpointType.Internal, inputEndPointLocalPort, "");
     }
 
     /** Adds comments as a first node */
@@ -1994,7 +2223,7 @@ public class WindowsAzureRole {
     }
 
     /** This method changes session affinity end point info in start up task if there is a name change */
-    private void changeEndPointInfoInStartupTask(String inputEndPointNAme, String internalEndPointName)
+    private void changeEndPointInfoInStartupTask(String inputEndPointNAme, String internalEndPointName, boolean enableAffinity)
     throws WindowsAzureInvalidProjectOperationException {
 
             String taskNodeExpr = String.format(WindowsAzureConstants.STARTUP_TASK_STARTS_WITH,this.getName(),
@@ -2003,30 +2232,36 @@ public class WindowsAzureRole {
             Document definitionFiledoc  = getWinProjMgr().getdefinitionFileDoc();
             HashMap<String,String> nodeAttributes = new HashMap<String, String>();
 
-            nodeAttributes.put("commandLine", String.format(WindowsAzureConstants.TASK_CMD_VALUE, inputEndPointNAme,internalEndPointName));
+            nodeAttributes.put("commandLine", String.format(WindowsAzureConstants.TASK_CMD_VALUE, inputEndPointNAme, internalEndPointName, enableAffinity ));
             nodeAttributes.put("executionContext", "elevated");
             nodeAttributes.put("taskType", "simple");
             updateOrCreateElement(definitionFiledoc,taskNodeExpr,parentNodeExpr,WindowsAzureConstants.DEF_FILE_TASK_ELEMENT_NAME,true,nodeAttributes);
 
     }
 
-    /** API to handle rollback logic. */
-    private void handleRollback(int stepsCompleted) {
+    /** API to handle rollback logic. 
+     * @throws WindowsAzureInvalidProjectOperationException */
+    private void handleRollback(int stepsCompleted) throws WindowsAzureInvalidProjectOperationException {
         switch (stepsCompleted) {
             case WindowsAzureConstants.PACKAGE_DOC_SA_PROPERTIES:
-               removeSASettingsFromPkgDoc();
-               break;
+            	removeProxySettingsFromDefDoc(getSessionAffinityInputEndpoint(), getSessionAffinityInternalEndpoint());
+            	break;
 
 
             case WindowsAzureConstants.DEFINITION_DOC_SA_CHANGES:
-                removeSASettingsFromDefDoc();
-                removeSASettingsFromPkgDoc();
+            	removeProxySettingsFromDefDoc(getSessionAffinityInputEndpoint(), getSessionAffinityInternalEndpoint());
+            	// remove properties from package.xml
+            	removeProxyProperties(WindowsAzureConstants.SA_INPUT_ENDPOINT);
+            	removeProxyProperties(WindowsAzureConstants.SA_INTERNAL_ENDPOINT);
+
                 break;
 
             case WindowsAzureConstants.SA_FILES_COPIED:
-                removeSAFilesFromPrj();
-                removeSASettingsFromDefDoc();
-                removeSASettingsFromPkgDoc();
+            	removeProxyFilesFromPrj();
+                removeProxySettingsFromDefDoc(getSessionAffinityInputEndpoint(), getSessionAffinityInternalEndpoint());
+                // remove properties from package.xml
+                removeProxyProperties(WindowsAzureConstants.SA_INPUT_ENDPOINT);
+            	removeProxyProperties(WindowsAzureConstants.SA_INTERNAL_ENDPOINT);
                 break;
 
             default:
@@ -2035,12 +2270,18 @@ public class WindowsAzureRole {
 
     }
     /** Remove SA settings from service definition file */
-    private void removeSASettingsFromDefDoc() {
+    private void removeProxySettingsFromDefDoc(WindowsAzureEndpoint inputEndPoint, WindowsAzureEndpoint intEndPoint) {
         try {
             Document definitionFiledoc = getWinProjMgr().getdefinitionFileDoc();
             String expr = String.format(WindowsAzureConstants.STARTUP_TASK_STARTS_WITH,this.getName(),
                           WindowsAzureConstants.TASK_CMD_ONLY);
             ParserXMLUtility.deleteElement(definitionFiledoc, expr);
+            
+            // Remove old SA settings if exists
+            expr = String.format(WindowsAzureConstants.STARTUP_TASK_STARTS_WITH,this.getName(),
+                    WindowsAzureConstants.OLD_TASK_CMD_ONLY);
+            ParserXMLUtility.deleteElement(definitionFiledoc, expr);
+     
 
             // remove web deploy import statement from definition file
             expr = String.format(WindowsAzureConstants.IMPORT_WEB_DEPLOY, this.getName());
@@ -2050,17 +2291,17 @@ public class WindowsAzureRole {
             String nodeExpr = String.format(WindowsAzureConstants.STARTUP_WR_NAME,getName());
             deleteCommentNode(WindowsAzureConstants.STARTUP_TASK_COMMENTS,definitionFiledoc,nodeExpr) ;
 
-            WindowsAzureEndpoint windowsAzureEndpoint = getSessionAffinityInternalEndpoint();
-            String port = windowsAzureEndpoint.getPrivatePort();
-            windowsAzureEndpoint.delete();
+            String port = intEndPoint.getPrivatePortWrapper();
+            intEndPoint.delete();
 
-            windowsAzureEndpoint = getSessionAffinityInputEndpoint() ;
-            windowsAzureEndpoint.setLocalPort(port);
+            inputEndPoint.setLocalPort(port);
+            
+            // reset protocol and remove certificate attribute
+            inputEndPoint.setProtocol("tcp");
+            inputEndPoint.removeAttribute("certificate");
         }catch (Exception e) {
                       // Don't throw error , ignore silently
         }
-
-
     }
 
     /** This API deletes comments node */
@@ -2086,49 +2327,95 @@ public class WindowsAzureRole {
         }
    }
 
-    /** Removes SA files from project */
-    private void removeSAFilesFromPrj() {
+    /** Removes proxy configuration files from project */
+    private void removeProxyFilesFromPrj() {
        try {
            Vector<String> saInfo = new Vector<String>();
            saInfo.add(this.getName());
-            if(getWinProjMgr().mapActivity.get("addSAFilesForRole") != null) {
-                getWinProjMgr().mapActivity.remove("addSAFilesForRole");
+            if(getWinProjMgr().mapActivity.get("addProxyFilesForRole") != null) {
+                getWinProjMgr().mapActivity.remove("addProxyFilesForRole");
             }
-            if(getWinProjMgr().mapActivity.get("delSAFilesForRole") != null) {
-                getWinProjMgr().mapActivity.remove("delSAFilesForRole");
+            if(getWinProjMgr().mapActivity.get("delProxyFilesForRole") != null) {
+                getWinProjMgr().mapActivity.remove("delProxyFilesForRole");
             }
-            getWinProjMgr().mapActivity.put("delSAFilesForRole", saInfo);
+            getWinProjMgr().mapActivity.put("delProxyFilesForRole", saInfo);
 
         }catch(Exception e) {
              //Ignore exceptions
         }
     }
     /** Removes SA settings from package.xml */
-    private void removeSASettingsFromPkgDoc() {
+    private void removeProxyProperties(String propName) {
         try {
             Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
             if(packageFileDoc != null ){
-                String inputEndPointExpr =  String.format(WindowsAzureConstants.SA_INPUT_ENDPOINT,this.getName());
+                String inputEndPointExpr =  String.format(propName, this.getName());
                 ParserXMLUtility.deleteElement(packageFileDoc,inputEndPointExpr);
-
-                String internalEndPointExpr = String.format(WindowsAzureConstants.SA_INTERNAL_ENDPOINT,this.getName());
-                ParserXMLUtility.deleteElement(packageFileDoc,internalEndPointExpr);
              }
          }catch(Exception e) {
              //Die silently , there is nothing much that can be done at this point
          }
     }
+    
+    // This method is used to enable load balancing in proxy when SSL is already configured.
+    private void setLBInProxy(boolean enableLB)
+    throws WindowsAzureInvalidProjectOperationException {
+    	WindowsAzureEndpoint endPoint = getSslOffloadingInputEndpoint();
+    	// Add startup command
+		String saInternalEndPointName = getSslOffloadingInternalEndpoint().getName(); 	
+    	String startUpCmd = String.format(WindowsAzureConstants.SSL_TASK_CMD_VALUE, endPoint.getName(),
+    			saInternalEndPointName, enableLB, getSslOffloadingCert().getFingerPrint(), WindowsAzureConstants.SSL_STORE_NAME);
+    	addOrUpdateStartUpCmdForProxy(startUpCmd, true);
+    }
 
     /** This API is for disabling session affinity */
     private void disableSessionAffinity() throws WindowsAzureInvalidProjectOperationException {
-        removeSAFilesFromPrj();
-        removeSASettingsFromDefDoc();
-        removeSASettingsFromPkgDoc();
+    	WindowsAzureEndpoint endPoint = getSslOffloadingInputEndpoint();
+    	if (endPoint != null ) {
+    		setLBInProxy(false); 	    		
+    	} else {
+    		removeProxyFilesFromPrj();
+            removeProxySettingsFromDefDoc(getSessionAffinityInputEndpoint(), getSessionAffinityInternalEndpoint());            
+    	}
+    	
+    	// Remove properties from package.xml
+    	removeProxyProperties(WindowsAzureConstants.SA_INPUT_ENDPOINT);
+    	removeProxyProperties(WindowsAzureConstants.SA_INTERNAL_ENDPOINT);    
+    }
+    
+    /** This API is for disabling ssl configuration */
+    private void disableSslOffloading() throws WindowsAzureInvalidProjectOperationException {
+    	WindowsAzureEndpoint proxyInputEP = getSessionAffinityInputEndpoint();
+    	if (proxyInputEP != null) {
+    		WindowsAzureEndpoint saInternalEP = getSessionAffinityInternalEndpoint();
+    		boolean enableLoadBalancing = true;
+    		
+    		String startUpCmd = String.format(WindowsAzureConstants.TASK_CMD_VALUE, proxyInputEP.getName(),
+    				saInternalEP.getName(), enableLoadBalancing);
+        	addOrUpdateStartUpCmdForProxy(startUpCmd, true);
+        	
+        	// update protocol and remove certificate
+        	proxyInputEP.setProtocol("tcp");
+        	proxyInputEP.removeAttribute("certificate");
+        	
+    	} else {
+    		proxyInputEP = getSslOffloadingInputEndpoint();
+    		
+    		removeProxyFilesFromPrj();
+    		removeProxySettingsFromDefDoc(proxyInputEP, getSslOffloadingInternalEndpoint());
+    	}
+    	
+    	// remove properties from package.xml
+    	removeProxyProperties(WindowsAzureConstants.SSL_INPUT_ENDPOINT);
+    	removeProxyProperties(WindowsAzureConstants.SSL_INTERNAL_ENDPOINT);
+    	removeProxyProperties(WindowsAzureConstants.SSL_CERT_NAME);
+    	removeProxyProperties(WindowsAzureConstants.SSL_CERT_FINGERPRINT);
+    	
     }
 
-    /** Get Session Affinity IIS port. By default this returns 31221 if not available then
+    /** Get ARR IIS port. By default this returns 31221 if not available then
         returns next available one */
-    private int  getSessionAffinityPort() throws WindowsAzureInvalidProjectOperationException {
+    private int  getARRPort() throws WindowsAzureInvalidProjectOperationException {
         int port = WindowsAzureConstants.IIS_ARR_PORT ;
 
         while(!winProjMgr.isValidPort(String.valueOf(port), WindowsAzureEndpointType.Input)){
@@ -2138,9 +2425,9 @@ public class WindowsAzureRole {
     }
 
     /** This method suffixes a string to the name and checks if that name is available for endpoint */
-    private String generateSAInternalEndPointName(String name) throws WindowsAzureInvalidProjectOperationException{
+    private String generateInternalEndPointName(String name) throws WindowsAzureInvalidProjectOperationException{
         StringBuilder saInternalEndPoint = new StringBuilder(name);
-        saInternalEndPoint.append(WindowsAzureConstants.SA_INTERNAL_ENDPOINT_SUFFIX);
+        saInternalEndPoint.append(WindowsAzureConstants.ARR_INTERNAL_ENDPOINT_SUFFIX);
 
         int sufIncrement = 1 ;
         while(!winProjMgr.isAvailableRoleName(saInternalEndPoint.toString())) {
@@ -2229,40 +2516,100 @@ public class WindowsAzureRole {
 
     /** Returns Session Affinity input endpoint */
     public WindowsAzureEndpoint getSessionAffinityInputEndpoint() throws WindowsAzureInvalidProjectOperationException {
-        return getSessionAffinityEndpoint(WindowsAzureEndpointType.Input);
+        return getProxyEndpoint(WindowsAzureConstants.SA_INPUT_ENDPOINT);
     }
 
     /** Returns session affinity internal endpoint */
     public WindowsAzureEndpoint getSessionAffinityInternalEndpoint() throws WindowsAzureInvalidProjectOperationException {
-        return getSessionAffinityEndpoint(WindowsAzureEndpointType.Internal);
+        return getProxyEndpoint(WindowsAzureConstants.SA_INTERNAL_ENDPOINT);
     }
-    /** Returns endpoint associated with session affinity */
-    private WindowsAzureEndpoint getSessionAffinityEndpoint(WindowsAzureEndpointType windowsAzureEndpointType)
+    
+    /** Returns SSL Offloading input endpoint */
+    public WindowsAzureEndpoint getSslOffloadingInputEndpoint() throws WindowsAzureInvalidProjectOperationException {
+        return getProxyEndpoint(WindowsAzureConstants.SSL_INPUT_ENDPOINT);
+    }
+
+    /** Returns SSL Offloading internal endpoint */
+    public WindowsAzureEndpoint getSslOffloadingInternalEndpoint() throws WindowsAzureInvalidProjectOperationException {
+        return getProxyEndpoint(WindowsAzureConstants.SSL_INTERNAL_ENDPOINT);
+    }
+    
+    /** Returns SSL certificate associated with SSL proxy configuration */
+    public WindowsAzureCertificate getSslOffloadingCert()
     throws WindowsAzureInvalidProjectOperationException {
 
-        WindowsAzureEndpoint windowsAzureEndpoint = null;
-        try{
-          Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
-          if (packageFileDoc != null) {
-              XPath xPath = XPathFactory.newInstance().newXPath();
-              String endPointExpr = null ;
-              if (windowsAzureEndpointType == WindowsAzureEndpointType.Input) {
-                  endPointExpr = String.format(WindowsAzureConstants.SA_INPUT_ENDPOINT, this.getName()) ;
-              } else {
-                  endPointExpr = String.format(WindowsAzureConstants.SA_INTERNAL_ENDPOINT, this.getName()) ;
-              }
-              Element propEndPoint = (Element) xPath.evaluate(endPointExpr, packageFileDoc,XPathConstants.NODE);
-              if (propEndPoint != null ) {
-                  windowsAzureEndpoint = getEndpoint(propEndPoint.getAttribute("value")) ;
-              }
-          }
-        }catch(Exception e ){
-            throw new WindowsAzureInvalidProjectOperationException("Internal error occured while fetching endpoint info from package.xml",e);
-        }
+    	// Get values from package.xml
+    	String fingerPrint = getPropertyAttrValue(WindowsAzureConstants.SSL_CERT_FINGERPRINT);
+    	String name        = getPropertyAttrValue(WindowsAzureConstants.SSL_CERT_NAME);
+    	
+    	if (fingerPrint != null && name != null)
+    	    	return new WindowsAzureCertificate(name,fingerPrint);
+    	else 
+    			return null;
+    }
+    
+    
+    /** Updates SSLOffloading certification information  */
+    public void setSslOffloadingCert(WindowsAzureCertificate sslCert)
+    throws WindowsAzureInvalidProjectOperationException {
 
-        return windowsAzureEndpoint ;
+    	WindowsAzureEndpoint sslInputEndpoint = getSslOffloadingInputEndpoint();
+    	WindowsAzureEndpoint sslInternalEndpoint = getSslOffloadingInternalEndpoint();
+    	boolean enableLoadBalancing = false;
+    	
+    	if (getSessionAffinityInputEndpoint() != null) {
+    		enableLoadBalancing = true;
+    	}
+    	
+    	addPropertiesInPackage(WindowsAzureConstants.SSL_CERT_NAME, WindowsAzureConstants.SSL_CERT_NAME_PROP,
+    			sslCert.getName());
+    	addPropertiesInPackage(WindowsAzureConstants.SSL_CERT_FINGERPRINT, WindowsAzureConstants.SSL_CERT_FINGERPRINT_PROP,
+    			sslCert.getFingerPrint());
+    	
+    	String startUpCmd = String.format(WindowsAzureConstants.SSL_TASK_CMD_VALUE, sslInputEndpoint.getName(),
+    			sslInternalEndpoint.getName(), enableLoadBalancing, sslCert.getFingerPrint(),
+    										WindowsAzureConstants.SSL_STORE_NAME);
+
+    	addOrUpdateStartUpCmdForProxy(startUpCmd, true);
 
     }
+    
+    /** Returns endpoint associated with session affinity or ssl configuration
+     *  Can be used in a generic manner as well.
+     *  */
+    private WindowsAzureEndpoint getProxyEndpoint(String endPointProp)
+    throws WindowsAzureInvalidProjectOperationException {
+    	return getEndpoint(getPropertyAttrValue(endPointProp));
+    }
+    
+    /**
+     * This API fetches property element information from package.xml
+     * @param attrName
+     * @return
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    private String getPropertyAttrValue(String attrName) 
+    throws WindowsAzureInvalidProjectOperationException {
+    	String propertyValue = null;
+    	try {
+	        Document packageFileDoc = getWinProjMgr().getPackageFileDoc();
+	        if (packageFileDoc != null) {
+	            XPath xPath = XPathFactory.newInstance().newXPath();
+	            String endPointExpr = null ;
+	            endPointExpr = String.format(attrName, this.getName()) ;
+	
+	            Element propEndPoint = (Element) xPath.evaluate(endPointExpr, packageFileDoc,XPathConstants.NODE);
+	            if (propEndPoint != null ) {
+	            	propertyValue = propEndPoint.getAttribute("value") ;
+	            }
+	        }
+    	} catch(Exception e) {
+    		throw new WindowsAzureInvalidProjectOperationException("Internal error occured while fetching property info from package.xml",e);
+    	}
+    	
+    	return propertyValue;
+    }
+
 
     /** This API changes session affinity settings in startup task and package.xml if session affinity end point changes */
     protected void reconfigureSessionAffinity(WindowsAzureEndpoint value,String newName) throws WindowsAzureInvalidProjectOperationException {
@@ -2285,10 +2632,10 @@ public class WindowsAzureRole {
                 // Change in startup task
                 if (value.getEndPointType() == WindowsAzureEndpointType.Input) {
                     endPointExpr = String.format(WindowsAzureConstants.SA_INPUT_ENDPOINT, this.getName()) ;
-                    changeEndPointInfoInStartupTask(newName,endPointName);
+                    changeEndPointInfoInStartupTask(newName,endPointName, true);
                 } else if(value.getEndPointType() == WindowsAzureEndpointType.Internal) {
                     endPointExpr = String.format(WindowsAzureConstants.SA_INTERNAL_ENDPOINT, this.getName()) ;
-                    changeEndPointInfoInStartupTask(endPointName,newName);
+                    changeEndPointInfoInStartupTask(endPointName,newName, true);
                 }
                 // Change in package.xml
                 Element propEndPoint = (Element) xPath.evaluate(endPointExpr, packageFileDoc,XPathConstants.NODE);
@@ -4475,5 +4822,145 @@ public class WindowsAzureRole {
 	  } catch (Exception ex) {
 		  throw new WindowsAzureInvalidProjectOperationException("", ex);
 	  }
+  }
+  
+  public Map<String, WindowsAzureCertificate> getCertificates()
+  		throws WindowsAzureInvalidProjectOperationException {
+  	try {
+  		if (certMap.isEmpty()) {
+  			XPath xPath = XPathFactory.newInstance().newXPath();
+  			Document doc = getWinProjMgr().getConfigFileDoc();
+  			String expr = String.format(WindowsAzureConstants.CERT_LIST,
+  					getName());
+  			NodeList certList = (NodeList) xPath.evaluate(expr, doc,
+  					XPathConstants.NODESET);
+  			for (int i = 0; i < certList.getLength(); i++) {
+  				Element ele =  (Element) certList.item(i);
+  				String name = ele.getAttribute(
+  						WindowsAzureConstants.ATTR_NAME);
+  				String thumb = ele.getAttribute(
+  						WindowsAzureConstants.ATTR_THUMB);
+  				WindowsAzureCertificate certObj =
+  						new WindowsAzureCertificate(winProjMgr, this, name, thumb);
+  				certMap.put(name, certObj);
+  			}
+  		}
+  	} catch (Exception ex) {
+  		throw new WindowsAzureInvalidProjectOperationException(
+  				"Exception while getting certificates", ex);
+  	}
+  	return certMap;
+  }
+  
+  public WindowsAzureCertificate addCertificate(String name, String fingerprint)
+  		throws WindowsAzureInvalidProjectOperationException {
+  	if (name == null || name.isEmpty()
+  			|| fingerprint == null || fingerprint.isEmpty()) {
+  		throw new IllegalArgumentException();
+  	}
+
+  	WindowsAzureCertificate certToInsert =
+  			new WindowsAzureCertificate(getWinProjMgr(), this, name, fingerprint);
+
+  	for (Iterator<Entry<String, WindowsAzureCertificate>> iterator =
+  			getCertificates().entrySet().iterator();
+  			iterator.hasNext();) {
+  		WindowsAzureCertificate cert = iterator.next().getValue();
+  		if (cert.getName().equalsIgnoreCase(name)
+  				|| cert.getFingerPrint().equalsIgnoreCase(fingerprint)) {
+  			throw new WindowsAzureInvalidProjectOperationException(
+  					"This certificate with same name or fingerprint already exists");
+  		}
+  	}
+
+  	try {
+  		// add entry in cscfg
+          Document doc = getWinProjMgr().getConfigFileDoc();
+          XPath xPath = XPathFactory.newInstance().newXPath();
+
+          String expr1 = String.format(WindowsAzureConstants.ROLE_NAME,
+                  getName());
+          Node role;
+          role = (Node) xPath.evaluate(expr1, doc, XPathConstants.NODE);
+          boolean flag = false;
+          for (Node child = role.getFirstChild(); child != null; child = child
+                  .getNextSibling()) {
+              if (child.getNodeName().equalsIgnoreCase("Certificates")) {
+                  flag = true;
+              }
+          }
+          // if Certificates tag doesn't exist, create new tag
+          if (!flag) {
+              Element eleCerts = doc.createElement("Certificates");
+              role.appendChild(eleCerts);
+          }
+          // traverse to Certificates
+          String expr = String.format(WindowsAzureConstants.CERT_ROLE,
+          		getName());
+          Node certs;
+          certs = (Node) xPath.evaluate(expr, doc, XPathConstants.NODE);
+          // create Certificate tag
+          Element cert = doc.createElement("Certificate");
+          cert.setAttribute(
+          		WindowsAzureConstants.ATTR_NAME, name);
+          cert.setAttribute(WindowsAzureConstants.ATTR_THUMB, fingerprint);
+          cert.setAttribute("thumbprintAlgorithm", "sha1");
+          // append Certificate tag
+          certs.appendChild(cert);
+          
+          // add entry in csdef
+          Document defDoc = getWinProjMgr().getdefinitionFileDoc();
+          String expr_workRole = String.format(WindowsAzureConstants.WR_NAME,
+          		getName());
+          Node workRole;
+          workRole = (Node) xPath.evaluate(expr_workRole, defDoc, XPathConstants.NODE);
+          boolean flag1 = false;
+          for (Node child = workRole.getFirstChild(); child != null; child = child
+          		.getNextSibling()) {
+          	if (child.getNodeName().equalsIgnoreCase("Certificates")) {
+          		flag1 = true;
+          	}
+          }
+          // if endpoint tag doesn't exist, create new endpoint tag
+          if (!flag1) {
+          	Element eleCerts = defDoc.createElement("Certificates");
+          	workRole.appendChild(eleCerts);
+          }
+          String exprCerts = String.format(WindowsAzureConstants.WR_CERTS,
+          		getName());
+          Node work_certs;
+          work_certs = (Node) xPath.evaluate(exprCerts, defDoc, XPathConstants.NODE);
+          // create Certificate tag
+          Element work_cert = defDoc.createElement("Certificate");
+          work_cert.setAttribute(
+          		WindowsAzureConstants.ATTR_NAME, name);
+          work_cert.setAttribute("storeLocation", "LocalMachine");
+          work_cert.setAttribute("storeName", "My");
+          // append Certificate tag
+          work_certs.appendChild(work_cert);
+          getCertificates();
+          certMap.put(name, certToInsert);
+  	} catch (Exception ex) {
+  		throw new WindowsAzureInvalidProjectOperationException(
+                  WindowsAzureConstants.EXCP_ADD_ENDPOINT, ex);
+  	}
+  	return certToInsert;
+  }
+
+  public WindowsAzureCertificate getCertificate(String certName)
+		  throws WindowsAzureInvalidProjectOperationException {
+	  WindowsAzureCertificate cert =  null;
+	  Map<String, WindowsAzureCertificate> certList =  this.getCertificates();
+	  if (certList != null) {
+		  for (Iterator<Entry<String, WindowsAzureCertificate>> iterator =
+				  certList.entrySet().iterator();
+				  iterator.hasNext();) {
+			  WindowsAzureCertificate certTemp = iterator.next().getValue();
+			  if (certTemp.getName().equalsIgnoreCase(certName)) {
+				  cert = certTemp;
+			  }
+		  }
+	  }
+	  return cert;
   }
 }

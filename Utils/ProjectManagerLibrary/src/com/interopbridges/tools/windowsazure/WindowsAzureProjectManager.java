@@ -69,8 +69,9 @@ public class WindowsAzureProjectManager {
     protected Map<String, Vector<String>> mapActivity = new HashMap<String, Vector<String>>();
     private static final int BUFF_SIZE = 1024;
 
-    private static enum WAvmSize {EXTRASMALL, SMALL, MEDIUM, LARGE, EXTRALARGE, A6, A7 };
-    private static String[] vmSize = {"extrasmall", "small", "medium", "large", "extralarge", "a6", "a7"};
+    private static enum WAvmSize {EXTRASMALL, SMALL, MEDIUM, LARGE, EXTRALARGE, A5, A6, A7};
+    private static String[] vmSize = {"extrasmall", "small", "medium", "large", "extralarge",
+    	"a5", "a6", "a7"};
     private static Set<String> waVmSize = new HashSet<String>(Arrays.asList(vmSize));
     private static final String ENV_PROGRAMFILES_WOW64 = "ProgramW6432";
     private static final String ENV_PROGRAMFILES = "ProgramFiles";
@@ -294,7 +295,7 @@ public class WindowsAzureProjectManager {
                     nEndpoint++) {
                         if (endPoints.get(nEndpoint).getPort()
                                 .equalsIgnoreCase(port)
-                                || endPoints.get(nEndpoint).getPrivatePort()
+                                || endPoints.get(nEndpoint).getPrivatePortWrapper()
                                 .equalsIgnoreCase(port)) {
                             isValidPort = false;
                             break;
@@ -394,16 +395,63 @@ public class WindowsAzureProjectManager {
             }
         }
 
-        copyResourceFile("/sessionaffinity/ConfigureARR.cmd", destPath + "ConfigureARR.cmd");
-        copyResourceFile("/sessionaffinity/SessionAffinityAgent.exe", destPath + "SessionAffinityAgent.exe");
-        copyResourceFile("/sessionaffinity/SessionAffinityAgent.exe.config", destPath + "SessionAffinityAgent.exe.config");
-
+        copyResourceFile("/arrconfig/ConfigureARR.cmd", destPath + "ConfigureARR.cmd");
+        copyResourceFile("/arrconfig/ARRAgent.exe", destPath + "ARRAgent.exe");
+        copyResourceFile("/arrconfig/ARRAgent.exe.config", destPath + "ARRAgent.exe.config");
+        
         /* Uncomment this code if we need to distribute webpicmd instead of downloading
         copyResourceFile("/sessionaffinity/Microsoft.Web.PlatformInstaller.UI.dll", destPath + "Microsoft.Web.PlatformInstaller.UI.dll");
         copyResourceFile("/sessionaffinity/WebpiCmdLine.exe", destPath + "WebpiCmdLine.exe"); */
     }
+    
+    //Copy SA related files to project directory
+    public void removeOldSAResources(String roleName) throws IOException,WindowsAzureInvalidProjectOperationException {
+        String destPath = String.format("%s%s%s%s%s%s%s%s", projDirPath,File.separator,roleName,File.separator,
+                          WindowsAzureConstants.APPROOT_NAME,File.separator,WindowsAzureConstants.OLD_SA_FOLDER_NAME,File.separator);
+
+        File file = new File(destPath);
+        if (file.exists()) {
+        	deleteDir(file);
+        }
+    }
+
 
     /**
+     * This API can be used as a single point of contact to update any project configuration for SA files.
+     * As of now updating sdk version in session affinity files but in future can be extended
+     * @throws WindowsAzureInvalidProjectOperationException 
+     */
+    public void performRoleUpdatesForSA() throws WindowsAzureInvalidProjectOperationException  {
+    	try {
+    		// get latest sdk version
+    		String sdkVersion = getLatestAzureVersionForSA();
+    		
+    		//Iterate through roles and update configuration files as needed
+            List<WindowsAzureRole> listRoles = getRoles();
+            for (Iterator<WindowsAzureRole> iterator = listRoles.iterator();
+            iterator.hasNext();) {
+                WindowsAzureRole windowsAzureRole = iterator.next();
+                
+              //If Session affinity is enabled
+                if (sdkVersion != null && 
+                		( windowsAzureRole.getSessionAffinityInputEndpoint() != null || windowsAzureRole.getSslOffloadingInputEndpoint() != null)) { 
+                	String destPath = String.format("%s%s%s%s%s%s%s%s%s", projDirPath,File.separator,windowsAzureRole.getName(),File.separator,
+                            WindowsAzureConstants.APPROOT_NAME,File.separator,WindowsAzureConstants.SA_FOLDER_NAME,File.separator,
+                            WindowsAzureConstants.SA_CONFIG_FILE);
+                	
+                	Document saConfigDoc = ParserXMLUtility.parseXMLResource(this.getClass().
+                						   getResourceAsStream("/arrconfig/ARRAgent.exe.config"));
+            		ParserXMLUtility.setExpressionValue(saConfigDoc, WindowsAzureConstants.SA_NEW_VERSION_ATTR,sdkVersion);
+            		ParserXMLUtility.saveXMLFile(destPath, saConfigDoc);
+                }
+            }
+        } catch (Exception e) {
+            throw new WindowsAzureInvalidProjectOperationException(
+                    WindowsAzureConstants.EXCP_ROLE_UPDATES, e);
+        }
+	}
+
+	/**
      * Serializes and saves WindowsAzureProjectManager to disk.
      *
      * @throws WindowsAzureInvalidProjectOperationException
@@ -484,23 +532,27 @@ public class WindowsAzureProjectManager {
                 }
                 mapActivity.remove("delete");
             }
-            if (mapActivity.containsKey("addSAFilesForRole")) {
-                Vector<String> value = mapActivity.get("addSAFilesForRole");
+            if (mapActivity.containsKey("addProxyFilesForRole")) {
+                Vector<String> value = mapActivity.get("addProxyFilesForRole");
                 copySAResources(value.get(0));
 
-              mapActivity.remove("addSAFilesForRole");
+                mapActivity.remove("addProxyFilesForRole");
 
             }
-            if (mapActivity.containsKey("delSAFilesForRole")) {
-                Vector<String> value = mapActivity.get("delSAFilesForRole");
+            if (mapActivity.containsKey("delProxyFilesForRole")) {
+                Vector<String> value = mapActivity.get("delProxyFilesForRole");
                 String dirPath= String.format("%s%s%s%s%s%s%s", projDirPath,File.separator,value.get(0),File.separator,
                         WindowsAzureConstants.APPROOT_NAME,File.separator,WindowsAzureConstants.SA_FOLDER_NAME);
                 File file = new File(dirPath);
                 WindowsAzureProjectManager.deleteDir(file);
-                mapActivity.remove("delSAFilesForRole");
+                mapActivity.remove("delProxyFilesForRole");
             }
+            
+            // Method which updates role configurations
+            performRoleUpdatesForSA();
         } catch (Exception ex) {
-            throw new WindowsAzureInvalidProjectOperationException(
+        	ex.printStackTrace();
+        	throw new WindowsAzureInvalidProjectOperationException(
                     WindowsAzureConstants.EXCP_SAVE, ex);
         }
     }
@@ -560,25 +612,21 @@ public class WindowsAzureProjectManager {
      * @throws WindowsAzureInvalidProjectOperationException
      */
     public OSFamilyType getOSFamily() throws WindowsAzureInvalidProjectOperationException {
-        try {
-        	String value = ParserXMLUtility.getExpressionValue(getConfigFileDoc(), WindowsAzureConstants.CONFIG_OSFAMILY);
-        	if(value != null && !value.isEmpty()) {
-        		if(value.equals(WindowsAzureConstants.OSFAMILY_WINDOWS_SERVER_2008_R2)) {
-        				return OSFamilyType.WINDOWS_SERVER_2008_R2;
-        		}
-        		else if(value.equals(WindowsAzureConstants.OSFAMILY_WINDOWS_SERVER_2012)) {
-        				return OSFamilyType.WINDOWS_SERVER_2012;
-        		}
-        		else {
-        			throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_TARGET_OS_NAME);
-        		}
-        	}else{
-        		throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_TARGET_OS_NAME);
-        	}
-        } catch (Exception ex) {
-        	ex.printStackTrace();
-        	throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_TARGET_OS_NAME, ex);
-        }
+    	try {
+    		String value = ParserXMLUtility.getExpressionValue(getConfigFileDoc(), WindowsAzureConstants.CONFIG_OSFAMILY);
+    		if(value != null && !value.isEmpty()) {
+
+    			for (OSFamilyType osType : OSFamilyType.values()) {
+    				if (osType.getValue() == Integer.parseInt(value)) {
+    					return osType;
+    				}
+    			}
+    		}
+    		throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_TARGET_OS_NAME);
+    	} catch (Exception ex) {
+    		ex.printStackTrace();
+    		throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_TARGET_OS_NAME, ex);
+    	}
     }
 
     /**
@@ -1197,17 +1245,29 @@ public class WindowsAzureProjectManager {
      * @throws WindowsAzureInvalidProjectOperationException
      */
     private void removeCertificatesFromConfigFile()
-    throws XPathExpressionException,
-    WindowsAzureInvalidProjectOperationException {
-        Document doc = getConfigFileDoc();
-        XPath xPath = XPathFactory.newInstance().newXPath();
-        String expr = WindowsAzureConstants.FPRINT_ALL;
-        NodeList listCertificates = (NodeList) xPath.evaluate(expr, doc,
-                XPathConstants.NODESET);
-        for (int i = 0; i < listCertificates.getLength(); i++) {
-            Element ele = (Element) listCertificates.item(i);
-            ele.getParentNode().removeChild(ele);
-        }
+    		throws XPathExpressionException,
+    		WindowsAzureInvalidProjectOperationException {
+    	// Remove from cscfg
+    	Document doc = getConfigFileDoc();
+    	XPath xPath = XPathFactory.newInstance().newXPath();
+    	String expr = WindowsAzureConstants.FPRINT_ALL;
+    	NodeList listCertificates = (NodeList) xPath.evaluate(expr, doc,
+    			XPathConstants.NODESET);
+    	for (int i = 0; i < listCertificates.getLength(); i++) {
+    		Element ele = (Element) listCertificates.item(i);
+    		ele.getParentNode().removeChild(ele);
+    	}
+    	List<WindowsAzureRole> listRoles = getRoles();
+    	for (Iterator<WindowsAzureRole> iterator = listRoles.iterator();
+    			iterator.hasNext();) {
+    		WindowsAzureRole windowsAzureRole = iterator.next();
+    		/*
+    		 * When we disable remote access from wizard,
+    		 * need to initialize certificate map
+    		 */
+    		windowsAzureRole.getCertificates();
+    		windowsAzureRole.certMap.remove(WindowsAzureConstants.REMOTEACCESS_FINGERPRINT);
+    	}
     }
 
     /**
@@ -2013,6 +2073,9 @@ public class WindowsAzureProjectManager {
         case EXTRALARGE:
             maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_EXTRALARGE;
             break;
+        case A5:
+            maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A5;
+            break;
         case A6:
             maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A6;
             break;
@@ -2073,7 +2136,26 @@ public class WindowsAzureProjectManager {
 
         return String.format("%s%sbin", latestVersionSdkDir, File.separatorChar);
     }
-
+    
+    /**
+     * This method returns numerical version of Azure SDK
+     * @return
+     * @throws IOException
+     */
+    public static String getLatestAzureVersionForSA() {
+    	String sdkVersion = null;
+    	
+    	try {
+    		// TODO: See if there is better and reliable way to find out this, for now this is good to go.
+    		sdkVersion = new File(getLatestAzureSdkDir()).getParentFile().getName().substring(1) +".0.0";
+    	} catch (Exception e) {
+    		// Incase of any exception just return null string. so need to handle any case here.    		
+    	}
+    	
+    	return sdkVersion;
+    }
+       
+   
     /**
      * Discovers the path of the emulator installation directory
      * @return The emulator installation directory
@@ -2469,7 +2551,7 @@ public class WindowsAzureProjectManager {
 		}
     	return value;
     }
-    
+
     /**
      * Returns the preferencesets.xml version in plugins folder.
      * @param templateFile
@@ -2556,5 +2638,49 @@ public class WindowsAzureProjectManager {
            status = dir.delete();
         }
         return status;
+    }
+    
+    /**
+     * This method returns SSL endpoint when SSL configured endpoint is the only one that is configured i.e. no other input 
+     * endpoints exists.
+   	 *
+     * @return
+     */
+    public WindowsAzureEndpoint getSSLEndPointIfUnique() {
+    	WindowsAzureEndpoint sslUnqEndPoint = null;
+    	
+        try {
+            List<WindowsAzureRole> roles;
+            roles = getRoles();
+            // Get SSL configured end point
+            for (WindowsAzureRole winAzureRole : roles) {
+            	sslUnqEndPoint =  winAzureRole.getSslOffloadingInputEndpoint();
+                if (sslUnqEndPoint != null) {
+                    break;
+                }
+            }
+            
+            // Check if there are any other input endpoints
+            if (sslUnqEndPoint != null) {
+            	for (WindowsAzureRole winAzureRole : roles) {
+            		List<WindowsAzureEndpoint> roleEndPoints = winAzureRole.getEndpoints();
+            		
+            		for (WindowsAzureEndpoint ep : roleEndPoints) {
+            			if (ep.getEndPointType().equals(WindowsAzureEndpointType.Input) 
+            					&& !sslUnqEndPoint.getName().equals(ep.getName())) {
+            				// Other endpoints exists , so SSL endpoint is not the only one
+            				sslUnqEndPoint = null;
+            				break;
+            			}
+            		}
+            	}
+            }
+            
+            return sslUnqEndPoint;
+        } catch (WindowsAzureInvalidProjectOperationException e) {
+        	e.printStackTrace();
+        	return null;
+        }
+    	
     }
 }

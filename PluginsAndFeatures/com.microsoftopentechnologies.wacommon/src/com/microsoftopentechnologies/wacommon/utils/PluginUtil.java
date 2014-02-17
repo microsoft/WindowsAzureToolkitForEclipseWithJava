@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Microsoft Open Technologies Inc.
+ * Copyright 2014 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.microsoftopentechnologies.wacommon.utils;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.Platform;
@@ -25,8 +26,10 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.Version;
@@ -55,11 +58,21 @@ public class PluginUtil {
             element = structuredSel.getFirstElement();
         }
         if (element instanceof IProject) {
-            resource = (IResource) element;
-            selProject = resource.getProject();
+        	resource = (IResource) element;
+        	selProject = resource.getProject();
         } else if (element instanceof IJavaProject) {
-            IJavaProject proj = ((IJavaElement) element).getJavaProject();
-            selProject = proj.getProject();
+        	IJavaProject proj = ((IJavaElement) element).getJavaProject();
+        	selProject = proj.getProject();
+        } else if (element instanceof IResource) {
+        	resource = (IResource) element;
+        	selProject = resource.getProject();
+        } else {
+        	IWorkbenchPage page = window.getActivePage();
+        	IEditorPart editorPart = page.getActiveEditor();
+        	if (editorPart != null) {
+        		IFile file = (IFile) editorPart.getEditorInput().getAdapter(IFile.class);
+        		selProject = file.getProject();
+        	}
         }
         return selProject;
     }

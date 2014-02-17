@@ -31,6 +31,8 @@ public class ConfigurationEventArgs extends EventObject {
 	public static final String STORAGE_ACCESS_KEY = Messages.credentialConfig;
 	public static final String DEPLOY_MODE = Messages.deployModeConfig;
 	public static final String UN_PUBLISH = Messages.unpubchk;
+	public static final String CERTIFICATES = Messages.cert;
+	public static final String CONFIG_HTTPS_LINK = Messages.displayHttpsLink;
 	
 	private final String key;
 	private final Object value;

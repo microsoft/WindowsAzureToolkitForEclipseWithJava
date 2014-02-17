@@ -1,5 +1,5 @@
 /**
-* Copyright 2013 Persistent Systems Ltd.
+* Copyright 2014 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -100,6 +100,7 @@ public final class Messages extends NLS {
     public static String certDlgPwNtMatch;
     public static String proPageTgtOSLbl;
     public static String waProjNature;
+    public static String usedBySSL;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

@@ -1,17 +1,17 @@
 /**
-* Copyright 2013 Persistent Systems Ltd.
+* Copyright 2014 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
+*  you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
 *
-*   http://www.apache.org/licenses/LICENSE-2.0
+*	 http://www.apache.org/licenses/LICENSE-2.0
 *
 * Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
 */
 package com.persistent.winazureroles;
 
@@ -52,8 +52,9 @@ public class WARGeneral extends PropertyPage {
     private Text txtRoleName;
     private Combo comboVMSize;
     private Text txtNoOfInstances;
-    private String[] arrVMSize = {"ExtraLarge", "Large",
-    		"Medium", "Small", "ExtraSmall", "A6", "A7"};
+    private String[] arrVMSize = {"A7", "A6", "A5",
+    		"ExtraLarge", "Large",
+    		"Medium", "Small", "ExtraSmall"};
     private boolean isValidRoleName = false;
     private boolean isValidinstances = true;
     private WindowsAzureProjectManager waProjManager;
@@ -159,7 +160,7 @@ public class WARGeneral extends PropertyPage {
         gridData.grabExcessHorizontalSpace = true;
         comboVMSize.setLayoutData(gridData);
         comboVMSize.setItems(arrVMSize);
-        comboVMSize.setText(arrVMSize[3]);
+        comboVMSize.setText(arrVMSize[6]);
         comboVMSize.addSelectionListener(new SelectionListener() {
 
             @Override
@@ -341,7 +342,7 @@ public class WARGeneral extends PropertyPage {
     	String vmSize = "";
 
     	 vmSize = windowsAzureRole.getVMSize();
-         int index = 3;
+         int index = 6;
          for (int i = 0; i < arrVMSize.length; i++) {
              if (vmSize.equalsIgnoreCase(arrVMSize[i])) {
                  index = i;

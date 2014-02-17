@@ -1,5 +1,5 @@
 /**
-* Copyright 2013 Persistent Systems Ltd.
+* Copyright 2014 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -65,9 +65,10 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
     private boolean isEditEndpt = false;
 
     private final static int DIALOG_WIDTH = 250;
-    private final static int DIALOG_LEFT_MARGIN = 10;
+    private final static int DIALOG_LEFT_MARGIN = 5;
     private final static int RANGE_MIN = 1;
     private final static int RANGE_MAX = 65535;
+    private static String auto = "(auto)";
 
     /**
      * Constructor to be called while adding an endpoint.
@@ -139,29 +140,46 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
         // Private port controls
         createPrivatePortComponent(container);
 
+        // Edit Endpoint scenario
         if (isEditEndpt) {
-            txtName.setText(waEndpt.getName());
+        	txtName.setText(waEndpt.getName());
+        	// type
+        	WindowsAzureEndpointType type = null;
+        	try {
+        		type = waEndpt.getEndPointType();
+        		comboType.setText(type.toString());
+        	} catch (WindowsAzureInvalidProjectOperationException e) {
+        		PluginUtil.displayErrorDialog(
+        				this.getShell(),
+        				Messages.dlgDbgEndPtErrTtl,
+        				Messages.endPtTypeErr);
+        	}
             // private port
-            String[] prvPortRange = waEndpt.getPrivatePort().split("-");
-            txtPrivatePort.setText(prvPortRange[0]);
-            if (prvPortRange.length > 1) {
-            	txtPrivatePortRangeEnd.setText(prvPortRange[1]);
+            String prvPort = waEndpt.getPrivatePort();
+            if (prvPort == null
+            		&& !type.equals(
+            				WindowsAzureEndpointType.InstanceInput)) {
+            	txtPrivatePort.setText(auto);
+            } else {
+            	String[] prvPortRange = prvPort.split("-");
+            	txtPrivatePort.setText(prvPortRange[0]);
+            	if (prvPortRange.length > 1) {
+            		txtPrivatePortRangeEnd.setText(prvPortRange[1]);
+            	}
             }
-            // type
-            try {
-            	comboType.setText(waEndpt.getEndPointType().toString());
-            } catch (WindowsAzureInvalidProjectOperationException e) {
-            	PluginUtil.displayErrorDialog(
-            			this.getShell(),
-            			Messages.dlgDbgEndPtErrTtl,
-            			Messages.endPtTypeErr);
-            }
+            
             // Public port
             String[] portRange = waEndpt.getPort().split("-");
             txtPublicPort.setText(portRange[0]);
             if (portRange.length > 1) {
             	txtPublicPortRangeEnd.setText(portRange[1]);
             }
+        } else {
+        	/*
+        	 * Add Endpoint scenario.
+        	 * Endpoint type is Internal for the first time.
+        	 */
+        	txtPrivatePort.setText(auto);
         }
 
         enableControlsDependingOnEnpointType(comboType.getText());
@@ -243,9 +261,31 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
         final Combo comboTemp = comboType;
 
         comboType.addSelectionListener(new SelectionAdapter() {
-            public void widgetSelected(SelectionEvent event) {
-            	enableControlsDependingOnEnpointType(comboTemp.getText());
-            }
+        	public void widgetSelected(SelectionEvent event) {
+        		String comboTxt = comboTemp.getText();
+        		String portTxt = txtPrivatePort.getText();
+        		enableControlsDependingOnEnpointType(comboTxt);
+        		/*
+        		 * auto not allowed for InstanceInput endpoint,
+        		 * hence clear it.
+        		 */
+        		if (comboTxt.equalsIgnoreCase(
+        				WindowsAzureEndpointType.InstanceInput.toString())
+        				&& portTxt.equalsIgnoreCase(auto)) {
+        			txtPrivatePort.setText("");
+        		} else if (comboTxt.equalsIgnoreCase(
+        				WindowsAzureEndpointType.Input.toString())
+        				&& (portTxt.isEmpty()
+        						|| portTxt.equalsIgnoreCase("*"))) {
+        			txtPrivatePort.setText(auto);
+        		} else if (comboTxt.equalsIgnoreCase(
+        				WindowsAzureEndpointType.Internal.toString())
+        				&& (portTxt.isEmpty()
+        						|| portTxt.equalsIgnoreCase("*"))
+        				&& txtPrivatePortRangeEnd.getText().isEmpty()) {
+        			txtPrivatePort.setText(auto);
+        		}
+        	}
         });
     }
 
@@ -378,6 +418,46 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
         gridData.grabExcessHorizontalSpace = true;
         gridData.widthHint = DIALOG_WIDTH / 4;
         txtPrivatePortRangeEnd.setLayoutData(gridData);
+
+        txtPrivatePort.addFocusListener(new FocusListener() {
+        	@Override
+        	public void focusLost(FocusEvent arg0) {
+        		focusLostMethod();
+        	}
+
+        	@Override
+        	public void focusGained(FocusEvent arg0) {
+        		if (txtPrivatePort.getText().equalsIgnoreCase(auto)) {
+        			txtPrivatePort.setText("");
+        		}
+        	}
+        });
+
+        txtPrivatePortRangeEnd.addFocusListener(new FocusListener() {
+        	@Override
+        	public void focusLost(FocusEvent arg0) {
+        		focusLostMethod();
+        	}
+
+        	@Override
+        	public void focusGained(FocusEvent arg0) {
+        		if (txtPrivatePort.getText().equalsIgnoreCase(auto)) {
+        			txtPrivatePort.setText("");
+        		}
+        	}
+        });
+    }
+
+    private void focusLostMethod() {
+    	String text = txtPrivatePort.getText();
+    	if ((text.isEmpty()
+    			|| text.equalsIgnoreCase("*"))
+    			&& txtPrivatePortRangeEnd.getText().isEmpty()
+    			&& !comboType.getText().equalsIgnoreCase(
+    					WindowsAzureEndpointType.
+    					InstanceInput.toString())) {
+    		txtPrivatePort.setText(auto);
+    	}
     }
 
     /**
@@ -483,7 +563,9 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
             					// Combine port range
             					String publicPort = combinePublicPortRange();
             					String privatePort = combinePrivatePortRange();
-
+            					if (privatePort.equalsIgnoreCase(auto)) {
+            						privatePort = null;
+            					}
             					// Validate and commit endpoint addition
             					if (windowsAzureRole.isValidEndpoint(
             							endPtName,
@@ -631,6 +713,9 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
         		//validate ports
         		String publicPort = combinePublicPortRange();
         		String privatePort = combinePrivatePortRange();
+        		if (privatePort.equalsIgnoreCase(auto)) {
+        			privatePort = null;
+        		}
 
         		boolean isValidendpoint = windowsAzureRole.isValidEndpoint(
         				oldEndptName,
@@ -638,7 +723,7 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
         				privatePort, publicPort);
         		if (isValidendpoint) {
         			if (oldEndptName.equalsIgnoreCase(dbgEndptName)) {
-        				retVal = handleChangeForDebugEndpt(oldType);
+        				retVal = handleChangeForDebugEndpt(oldType, privatePort);
         			}
         			if (oldEndptName.equalsIgnoreCase(stcEndptName)) {
         				retVal = handleChangeForStickyEndpt(oldType);
@@ -694,7 +779,7 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
      * @throws WindowsAzureInvalidProjectOperationException
      */
     private boolean handleChangeForDebugEndpt(
-    		WindowsAzureEndpointType oldType)
+    		WindowsAzureEndpointType oldType, String privatePort)
             throws WindowsAzureInvalidProjectOperationException {
         boolean retVal = true;
         if (oldType.equals(WindowsAzureEndpointType.Input)
@@ -715,13 +800,19 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
             } else {
                 retVal = false;
             }
+        } else if (privatePort == null) {
+        	PluginUtil.displayErrorDialog(
+    				getShell(),
+    				Messages.dlgInvldPort,
+    				Messages.dbgPort);
+        	retVal = false;
         } else if (!waEndpt.getPrivatePort().
-        		equalsIgnoreCase(txtPrivatePort.getText())) {
-            boolean isSuspended = windowsAzureRole.getStartSuspended();
-            windowsAzureRole.setDebuggingEndpoint(null);
-            waEndpt.setPrivatePort(txtPrivatePort.getText());
-            windowsAzureRole.setDebuggingEndpoint(waEndpt);
-            windowsAzureRole.setStartSuspended(isSuspended);
+        		equalsIgnoreCase(privatePort)) {
+        	boolean isSuspended = windowsAzureRole.getStartSuspended();
+        	windowsAzureRole.setDebuggingEndpoint(null);
+        	waEndpt.setPrivatePort(privatePort);
+        	windowsAzureRole.setDebuggingEndpoint(waEndpt);
+        	windowsAzureRole.setStartSuspended(isSuspended);
         }
         return retVal;
     }
@@ -777,6 +868,12 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
     	boolean isValid = true;
     	try {
     		if (type.equals(WindowsAzureEndpointType.Internal)) {
+    			if (txtPrivatePort.getText().equalsIgnoreCase(auto)) {
+    				if (!txtPrivatePortRangeEnd.getText().isEmpty()) {
+    					isValid = false;
+    				}
+    			} else {
+    				// (auto) is not given
     			int rngStart = Integer.
     					parseInt(txtPrivatePort.getText());
     			if (rngStart >= RANGE_MIN
@@ -793,14 +890,26 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
     			} else {
     				isValid = false;
     			}
+    		  }
     		} else if (type.equals(WindowsAzureEndpointType.Input)) {
     			int pubPort = Integer.parseInt(txtPublicPort.getText());
-    			int priPort = Integer.parseInt(txtPrivatePort.getText());
-    			if (!(pubPort >= RANGE_MIN
-    					&& pubPort <= RANGE_MAX
-    					&& priPort >= RANGE_MIN
-    					&& priPort <= RANGE_MAX)) {
-    				isValid = false;
+    			/*
+    			 * If private port is auto then check for public port validity
+    			 * else both
+    			 */
+    			if (txtPrivatePort.getText().equalsIgnoreCase(auto)) {
+    				if (!(pubPort >= RANGE_MIN
+    						&& pubPort <= RANGE_MAX)) {
+    					isValid = false;
+    				}
+    			} else {
+    				int priPort = Integer.parseInt(txtPrivatePort.getText());
+    				if (!(pubPort >= RANGE_MIN
+    						&& pubPort <= RANGE_MAX
+    						&& priPort >= RANGE_MIN
+    						&& priPort <= RANGE_MAX)) {
+    					isValid = false;
+    				}
     			}
     		} else if (type.equals(WindowsAzureEndpointType.InstanceInput)) {
     			int priPort = Integer.parseInt(txtPrivatePort.getText());

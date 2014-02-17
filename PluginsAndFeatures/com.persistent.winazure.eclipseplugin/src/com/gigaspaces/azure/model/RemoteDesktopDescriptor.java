@@ -26,20 +26,16 @@ public class RemoteDesktopDescriptor implements Serializable {
 	private final String password;
 	private final Date expirationDate;
 	private final String publicKey;
-	private final String privateKey;
-	private final String pfxPassword;
 	private final boolean startRemoteRDP;
 	private final boolean enabled;
 	
 	public RemoteDesktopDescriptor(String userName, String password,
-			Date expirationDate, String publicKey, String privateKey,
-			String pfxPassword, boolean startRemoteRDP, boolean enabled) {
+			Date expirationDate, String publicKey,
+			boolean startRemoteRDP, boolean enabled) {
 		this.userName = userName;
 		this.password = password;
 		this.expirationDate = expirationDate;
 		this.publicKey = publicKey;
-		this.privateKey = privateKey;
-		this.pfxPassword = pfxPassword;
 		this.startRemoteRDP = startRemoteRDP;
 		this.enabled = enabled;
 	}
@@ -72,24 +68,10 @@ public class RemoteDesktopDescriptor implements Serializable {
 		return publicKey;
 	}
 
-	/**
-	 * @return the privateKey
-	 */
-	public String getPrivateKey() {
-		return privateKey;
-	}
-
-	/**
-	 * @return the pfxPassword
-	 */
-	public String getPfxPassword() {
-		return pfxPassword;
-	}
-
 	public boolean isStartRemoteRDP() {
 		return startRemoteRDP;
 	}
-	
+
 	public boolean isEnabled() {
 		return enabled;
 	}

@@ -31,8 +31,6 @@ public final class WindowsAzureConstants {
     public static final String PORTAL_URL = WINAZURE_PACKAGE + "/@portalurl";
 
     public static final String CONFIG_OSFAMILY = "/ServiceConfiguration/@osFamily";
-    public static final String OSFAMILY_WINDOWS_SERVER_2008_R2 = "2";
-    public static final String OSFAMILY_WINDOWS_SERVER_2012 = "3";
 
     public static final String ROLE = "/ServiceConfiguration/Role";
     public static final String ROLE_NAME = ROLE + "[@name='%s']";
@@ -70,7 +68,7 @@ public final class WindowsAzureConstants {
             + "/Variable[@name='_JAVA_OPTIONS']";
     public static final String ENDPOINT_WR_NAME = WR_NAME + "/Endpoints";
     public static final String STARTUP_TASK_COMMENTS = "Do not delete this startup task or insert tasks before it. "+
-     "It was created by Windows Azure Plugin for Eclipse with Java to enable session affinity. ";
+     "It was created by Windows Azure Plugin for Eclipse with Java to enable proxy configuration. ";
     public static final String DEF_FILE_STARTUP_ELEMENT_NAME = "Startup" ;
     public static final String DEF_FILE_IMPORTS_ELEMENT_NAME = "Imports" ;
     public static final String DEF_FILE_IMPORT_ELEMENT_NAME = "Import" ;
@@ -80,8 +78,11 @@ public final class WindowsAzureConstants {
     public static final String STARTUP_TASK_WR = STARTUP_WR_NAME + "/Task";
     public static final String STARTUP_TASK_CMD = STARTUP_WR_NAME + "/Task[@commandLine='%s %s %s']";
     public static final String STARTUP_TASK_STARTS_WITH = STARTUP_WR_NAME + "/Task[starts-with(@commandLine,'%s')]";
-    public static final String TASK_CMD_VALUE = ".sessionaffinity\\ConfigureARR.cmd %s %s";
-    public static final String TASK_CMD_ONLY = ".sessionaffinity\\ConfigureARR.cmd";
+    public static final String TASK_CMD_VALUE = ".arrconfig\\ConfigureARR.cmd %s %s %s";
+    public static final String SSL_TASK_CMD_VALUE = ".arrconfig\\ConfigureARR.cmd %s %s %s %s %s";
+    public static final String SSL_STORE_NAME = "My";
+    public static final String TASK_CMD_ONLY = ".arrconfig\\ConfigureARR.cmd";
+    public static final String OLD_TASK_CMD_ONLY = ".sessionaffinity\\ConfigureARR.cmd";
     public static final String DEF_FILE_TASK_ELEMENT_NAME = "Task" ;
     public static final String DEF_FILE_ENV_NAME = "Environment" ;
     public static final String DEF_FILE_VAR_ELE_NAME = "Variable" ;
@@ -139,13 +140,24 @@ public final class WindowsAzureConstants {
     public static final String CREATOR_VER = PROJ_PROPERTY
             + "/property[@name='creator.version']";
     public static final String V17_VERSION = "1.7.0";
-    public static final String VERSION = "2.2.0";
+    public static final String VERSION = "2.2.1";
     public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.inputendpoint']";
     public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.internalendpoint']";
-    public static final String SA_INTERNAL_ENDPOINT_SUFFIX = "_SESSION_AFFINITY" ;
+    public static final String ARR_INTERNAL_ENDPOINT_SUFFIX = "_ARR_PROXY" ;
 
     public static final String SA_INPUT_ENDPOINT_NAME_PROP = "project.%s.sessionaffinity.inputendpoint";
     public static final String SA_INTERNAL_ENDPOINT_NAME_PROP = "project.%s.sessionaffinity.internalendpoint";
+    
+    public static final String SSL_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.ssloffloading.inputendpoint']";
+    public static final String SSL_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.ssloffloading.internalendpoint']";
+    public static final String SSL_CERT_NAME = PROJ_PROPERTY + "/property[@name='project.%s.ssloffloading.cert.name']";
+    public static final String SSL_CERT_FINGERPRINT = PROJ_PROPERTY + "/property[@name='project.%s.ssloffloading.cert.fingerprint']";
+
+    public static final String SSL_INPUT_ENDPOINT_NAME_PROP = "project.%s.ssloffloading.inputendpoint";
+    public static final String SSL_INTERNAL_ENDPOINT_NAME_PROP = "project.%s.ssloffloading.internalendpoint";
+    public static final String SSL_CERT_NAME_PROP = "project.%s.ssloffloading.cert.name";
+    public static final String SSL_CERT_FINGERPRINT_PROP = "project.%s.ssloffloading.cert.fingerprint";
+
 
     public static final String SDK_VERSION = "v1.5";
     public static final String BLANK_RNAME = "Role name is blank in Definition file";
@@ -201,6 +213,7 @@ public final class WindowsAzureConstants {
     public static final int MAX_LS_SIZE_MEDIUM = 501760;
     public static final int MAX_LS_SIZE_LARGE = 1024000;
     public static final int MAX_LS_SIZE_EXTRALARGE = 2088960;
+    public static final int MAX_LS_SIZE_A5 = 500736;
     public static final int MAX_LS_SIZE_A6 = 1024000;
     public static final int MAX_LS_SIZE_A7 = 2088960;
 
@@ -237,6 +250,7 @@ public final class WindowsAzureConstants {
     public static final String DIR_NOT_DELETED = "Directory not deleted : ";
     public static final String EXCP_RETRIEVE_DATA = "Exception occured while retrieving data from ";
     public static final String EXCP_SAVE = "Exception occured while saving ";
+    public static final String EXCP_ROLE_UPDATES = "Exception occured while doing role updates";
     public static final String EXCP_EMPTY_ROLENAME = "Setting empty role name";
     public static final String EXCP_SET_ROLENAME = "Exception occured while setting role name";
     public static final String EXCP_GET_INSTANCES = "Exception occured while getting instance count";
@@ -252,9 +266,13 @@ public final class WindowsAzureConstants {
     public static final String EXCP_EMPTY_INTERNAL_NAME = "internal endPoint name is empty";
     public static final String EXCP_SET_INTERNAL_ENDPOINT_NAME = "Exception occured while setting internal endpoint name";
     public static final String EXCP_EMPTY_PORT = "endPoint port is empty";
+    public static final String EXCP_EMPTY_PROTOCOL = "endPoint protocol is empty";
+    public static final String EXCP_EMPTY_CERT = "endPoint certificate is empty";
     public static final String EXCP_EMPTY_ENDPOINT_NAME = "input endPoint port is empty";
     public static final String EXCP_EMPTY_OR_INVALID_ENDPOINT = "EndPoint is empty or not a valid end point";
+    public static final String EXCP_EMPTY_ENDPOINT_OR_CERT = "Invalid Input: Either endpoint value is null or cert value is null";
     public static final String EXCP_SA_ENABLED = "Duplicate request : Session Affinity exists already for the endpoint ";
+    public static final String EXCP_SSL_ENABLED = "Duplicate request : SSL configuration exists already for the endpoint ";
     public static final String EXCP_SA_INVALID_PACKAGE = "Session affinity is supported only for package type# Cloud";
     public static final String EXCP_SA_ENDPOINT_TYPE_CHANGE = "Changing the type of endpoint associated with session affinity is not allowed";
     public static final String EXCP_SET_INPUT_PORT = "Exception occured while setting input port";
@@ -343,7 +361,9 @@ public final class WindowsAzureConstants {
     public static final int DEFINITION_DOC_SA_CHANGES = 3 ;
 
     public static final String APPROOT_NAME = "approot";
-    public static final String SA_FOLDER_NAME = ".sessionaffinity";
+    public static final String SA_FOLDER_NAME = ".arrconfig";
+    public static final String OLD_SA_FOLDER_NAME = ".sessionaffinity";
+    public static final String SA_CONFIG_FILE = "ARRAgent.exe.config";
 
     public static final String TEMP_COMPONENTSET = "/componentsets/componentset[@type='%s']";
     public static final String TEMP_COMPONENT = "/componentsets/componentset[@type='%s']/component";
@@ -389,8 +409,20 @@ public final class WindowsAzureConstants {
     public static final String JDK_LOCAL_HOME = "project.%s.jdk.home.local";
     public static final String SRV_CLOUD_HOME = "project.%s.server.home.cloud";
     public static final String SRV_LOCAL_HOME = "project.%s.server.home.local";
-    
+
     public static final String THRD_PARTY_JDK_NAME = "project.%s.jdk.name";
 
     public static final String MIN_SDK_VERSION="v2.1";
+    public static final String SA_NEW_VERSION_ATTR = "/configuration/runtime/assemblyBinding/dependentAssembly/bindingRedirect/@newVersion";
+    
+    public static final String WR_CERTS = WORKER_ROLE + "[@name='%s']/Certificates";
+    public static final String WR_CERT = WR_CERTS + "/Certificate[@name='%s']";
+    public static final String CERT_ROLE_NAME = CERT_ROLE + "/Certificate[@name='%s']";
+    public static final String CERT_LIST = CERT_ROLE + "/Certificate";
+    public static final String ATTR_THUMB = "thumbprint";
+    public static final String DEF_FPRINT_ALL = WORKER_ROLE
+    		+ "/Certificates/Certificate"
+    		+ "[@name='"
+            + WindowsAzureConstants.REMOTEACCESS_FINGERPRINT
+            + "']";
 }

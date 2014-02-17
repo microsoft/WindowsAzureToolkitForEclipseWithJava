@@ -68,6 +68,31 @@ final class ParserXMLUtility {
         }
 
     }
+    
+    
+    /** Parses Input Stream and returns XML document.
+     * @param fileName .
+     * @return XML document or <B>null</B> if error occured
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    protected static Document parseXMLResource(final InputStream inputStream)
+    throws WindowsAzureInvalidProjectOperationException {
+        try {
+            DocumentBuilder docBuilder;
+            Document doc = null;
+            DocumentBuilderFactory docBuilderFactory =
+                DocumentBuilderFactory.newInstance();
+            docBuilderFactory.setIgnoringElementContentWhitespace(true);
+            docBuilder = docBuilderFactory.newDocumentBuilder();
+            doc = docBuilder.parse(inputStream);
+            return doc;
+        } catch (Exception e) {
+            throw new WindowsAzureInvalidProjectOperationException(
+                    WindowsAzureConstants.EXCP_RETRIEVE_DATA, e);
+        }
+
+    }
+
 
     /** save XML file and saves XML document.
      * @param fileName

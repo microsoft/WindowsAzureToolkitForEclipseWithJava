@@ -1,21 +1,23 @@
 /**
- * Copyright 2013 Persistent Systems Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *	 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.persistent.ui.propertypage;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
@@ -48,9 +50,6 @@ public class WAWinAzurePropertyPage extends PropertyPage {
     private Combo targetOSComboType;
     private static String[] arrType = {Messages.proPageBFEmul,
         Messages.proPageBFCloud };
-    private static String[] targetOSType =
-    	{OSFamilyType.WINDOWS_SERVER_2008_R2.getName(),
-    	OSFamilyType.WINDOWS_SERVER_2012.getName()};
     /**
      * Draw controls for property page.
      *
@@ -107,7 +106,13 @@ public class WAWinAzurePropertyPage extends PropertyPage {
         gridData.widthHint = 150;
         gridData.grabExcessHorizontalSpace = true;
         targetOSComboType.setLayoutData(gridData);
-        targetOSComboType.setItems(targetOSType);
+
+        List<String> osNames = new ArrayList<String>();
+		for (OSFamilyType osType : OSFamilyType.values()) {
+			osNames.add(osType.getName());
+		}
+
+        targetOSComboType.setItems(osNames.toArray(new String[osNames.size()]));
 
         WindowsAzurePackageType type;
         try {
@@ -165,14 +170,12 @@ public class WAWinAzurePropertyPage extends PropertyPage {
                 waProjManager.setPackageType(WindowsAzurePackageType.CLOUD);
             }
 
-            if (targetOSComboType.getText().
-            		equals(OSFamilyType.WINDOWS_SERVER_2008_R2.getName())) {
-            	waProjManager.setOSFamily(OSFamilyType.WINDOWS_SERVER_2008_R2);
-            }
-            else if (targetOSComboType.getText().
-            		equals(OSFamilyType.WINDOWS_SERVER_2012.getName())) {
-            	waProjManager.setOSFamily(OSFamilyType.WINDOWS_SERVER_2012);
-            }
+            for (OSFamilyType osType : OSFamilyType.values()) {
+            	if (osType.getName().equalsIgnoreCase(targetOSComboType.getText())) {
+            		waProjManager.setOSFamily(osType);
+            	}
+			}
+
             waProjManager.save();
             WAEclipseHelper.refreshWorkspace(
             		Messages.proPageRefWarn, Messages.proPageRefMsg);

@@ -71,6 +71,7 @@ public class UIUtils {
 	public static Combo populateSubscriptionCombo(Combo combo) {
 		Collection<PublishData> publishes =
 				WizardCacheManager.getPublishDatas();
+		if (publishes.size() > 0) {
 		Map<String, PublishData> map = new HashMap<String, PublishData>();
 		for (PublishData pd : publishes) {
 			for (Subscription sub : pd.getPublishProfile().getSubscriptions()) {
@@ -86,6 +87,7 @@ public class UIUtils {
 		}
 		combo = selectByText(
 				combo, currentSelection);
+		}
 		return combo;
 	}
 
@@ -124,7 +126,7 @@ public class UIUtils {
 		GridData gridData = new GridData();
 		gridData.horizontalIndent = 3;
 		gridData.horizontalSpan = horiSpan;
-		gridData.widthHint = 230;
+		gridData.widthHint = 260;
 		importBtn.setText(Messages.impFrmPubSetLbl);
 		importBtn.setLayoutData(gridData);
 		return importBtn;

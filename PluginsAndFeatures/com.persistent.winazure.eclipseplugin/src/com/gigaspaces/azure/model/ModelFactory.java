@@ -33,6 +33,8 @@ public class ModelFactory {
 		CLASSES.add(BlockList.class);
 		CLASSES.add(CertificateFile.class);
 		CLASSES.add(CertificateFileV2.class);
+		CLASSES.add(Certificates.class);
+		CLASSES.add(Certificate.class);
 		CLASSES.add(Code.class);
 		CLASSES.add(Container.class);
 		CLASSES.add(Containers.class);

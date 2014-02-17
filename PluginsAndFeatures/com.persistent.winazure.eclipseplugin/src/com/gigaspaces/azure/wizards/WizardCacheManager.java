@@ -47,6 +47,9 @@ import org.eclipse.ui.PlatformUI;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.deploy.RequestStatus;
+import com.gigaspaces.azure.model.CertificateUpload;
+import com.gigaspaces.azure.model.CertificateUploadList;
+import com.gigaspaces.azure.model.Certificates;
 import com.gigaspaces.azure.model.CreateHostedService;
 import com.gigaspaces.azure.model.CreateStorageServiceInput;
 import com.gigaspaces.azure.model.DeployDescriptor;
@@ -93,11 +96,16 @@ public final class WizardCacheManager {
 	private static String deployState;
 	private static WindowsAzurePackageType deployMode;
 	private static String unpublish;
-
 	private static RemoteDesktopDescriptor remoteDesktopDescriptor;
+	private static CertificateUploadList certList;
+	private static boolean displayHttpsLink = false;
 
 	public static WizardCacheManager getInstrance() {
 		return INSTANCE;
+	}
+
+	public static List<CertificateUpload> getList() {
+		return certList.getList();
 	}
 
 	private WizardCacheManager() {
@@ -122,7 +130,7 @@ public final class WizardCacheManager {
 				getCurrentStorageAcount(), currentAccessKey,
 				getCurentHostedService(), deployFile, deployConfigFile,
 				deployState, remoteDesktopDescriptor,
-				currentPublishData.getPublishProfile().getUrl(), unpublish);
+				currentPublishData.getPublishProfile().getUrl(), unpublish, certList, displayHttpsLink);
 
 		remoteDesktopDescriptor = null;
 
@@ -178,6 +186,11 @@ public final class WizardCacheManager {
 	public static String getCurrentDeplyFile() {
 		return deployFile;
 	}
+	
+	public static boolean getDisplayHttpsLink() {
+		return displayHttpsLink;
+	}
+
 
 	public static String getCurrentDeployConfigFile() {
 		return deployConfigFile;
@@ -330,6 +343,29 @@ public final class WizardCacheManager {
 
 		return null;
 
+	}
+
+	/**
+	 * Method uses REST API and returns already uploaded certificates
+	 * from currently selected cloud service on wizard.
+	 * @return
+	 */
+	public static Certificates fetchUploadedCertificates() {
+		WindowsAzureServiceManagement service;
+		Subscription subscription = currentPublishData.getCurrentSubscription();
+		Certificates certsInService = null;
+		try {
+			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
+			String subscriptionId = subscription.getId();
+			String mngUrl = currentPublishData.getPublishProfile().getUrl();
+			certsInService = service.listCertificates(
+					subscriptionId,
+					getCurentHostedService().getServiceName(),
+					mngUrl);
+		} catch (Exception e) {
+			Activator.getDefault().log(Messages.certUploadEr, e);
+		}
+		return certsInService;
 	}
 
 	public static HostedService createHostedService(CreateHostedService body)
@@ -551,7 +587,10 @@ public final class WizardCacheManager {
 		} 
 		else if (ConfigurationEventArgs.REMOTE_DESKTOP .equals(config.getKey())) {
 			remoteDesktopDescriptor = (RemoteDesktopDescriptor) config.getValue();
-		} 
+		}
+		else if (ConfigurationEventArgs.CERTIFICATES.equals(config.getKey())) {
+			certList = (CertificateUploadList) config.getValue();
+		}
 		else if (ConfigurationEventArgs.DEPLOY_MODE.equals(config.getKey())) {
 			deployMode = (WindowsAzurePackageType) config.getValue();
 		}
@@ -565,6 +604,13 @@ public final class WizardCacheManager {
 				currentAccessKey = KeyName.valueOf(value);
 			} else {
 				currentAccessKey = KeyName.Primary;
+			}
+		}
+		else if (ConfigurationEventArgs.CONFIG_HTTPS_LINK.equals(config.getKey())) {
+			String value = config.getValue().toString();
+			
+			if (value != null && !value.isEmpty()) {
+				displayHttpsLink = Boolean.parseBoolean(value.trim());
 			}
 		}
 	}

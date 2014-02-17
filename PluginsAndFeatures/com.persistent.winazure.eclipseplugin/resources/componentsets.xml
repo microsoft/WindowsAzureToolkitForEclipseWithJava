@@ -1,5 +1,5 @@
 <!--
-Copyright 2013 Microsoft Open Technologies, Inc.
+Copyright 2014 Microsoft Open Technologies, Inc.
  
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@ limitations under the License.
 
 -->
 
-<componentsets version="2.2.0">
+<componentsets version="2.2.1">
 <!-- 
 *******************************************************************************
 HOW TO CREATE A NEW JDK PACKAGE DEPLOYMENT TEMPLATE:
@@ -47,10 +47,16 @@ of order will likely produce faulty logic.
 		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 	</componentset>
 
+	<componentset name="Azul Zulu, OpenJDK 1.7.0_u45" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_45-7.2.1.5-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_45-7.2.1.5-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
 	<componentset name="Azul Zulu, OpenJDK 1.7.0_u40" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_40-7.1.0.0-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
-        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_40-7.1.0.0-win64.zip" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_40-7.1.0.0-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
 	</componentset>
 	
 	<componentset name="Azul Zulu, OpenJDK 1.7.0_u25" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
@@ -189,7 +195,7 @@ them out of order will likely produce faulty logic.
 		<component deploymethod="exec" deploydir="%JBOSS_HOME%\bin" importas="standalone.bat -b 0.0.0.0 -bmanagement 0.0.0.0" type="server.start"/>
 	</componentset>
 
-	<componentset name="GlassFish OSE 3" type="server" detectpath="glassfish\bin\asadmin.bat">
+	<componentset name="GlassFish OSE 3" type="server" detectpath=".org.opensolaris,pkg\pkg\glassfish-appclient\3*">
 		<startupenv name="GLASSFISH_HOME" value="${placeholder}\glassfish" type="server.home" />
 		<startupenv name="SERVER_APPS_LOCATION" value="%GLASSFISH_HOME%\domains\domain1\autodeploy" type="server.app.loc"/>
 		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
@@ -197,4 +203,11 @@ them out of order will likely produce faulty logic.
 		<component deploymethod="exec" deploydir="%GLASSFISH_HOME%\bin" importas="asadmin.bat start-domain" type="server.start"/>
 	</componentset>
 
+	<componentset name="GlassFish OSE 4" type="server" detectpath=".org.opensolaris,pkg\pkg\glassfish-appclient\4*">
+		<startupenv name="GLASSFISH_HOME" value="${placeholder}\glassfish" type="server.home" />
+		<startupenv name="SERVER_APPS_LOCATION" value="%GLASSFISH_HOME%\domains\domain1\autodeploy" type="server.app.loc"/>
+		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
+		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
+		<component deploymethod="exec" deploydir="%GLASSFISH_HOME%\bin" importas="asadmin.bat start-domain" type="server.start"/>
+	</componentset>
 </componentsets>

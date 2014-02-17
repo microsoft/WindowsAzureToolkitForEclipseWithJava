@@ -33,7 +33,7 @@ namespace MicrosoftOpenTechnologies.Tools.EncUtil
     internal class Program
     {
         private static readonly string[] OperationNames = new[] { "-encrypt", "-thumbprint", "-create" };
-        private static readonly string[] OptionNames = new[] { "-alias", "-cert", "-pfx", "-pwd", "-text", "-exp" };
+        private static readonly string[] OptionNames = new[] { "-alias", "-cert", "-pfx", "-pwd", "-text", "-exp", "-CN" };
         private const string CommandName = "encutil";
         private const string HelpText =
 @"Usage:
@@ -59,6 +59,7 @@ Options:
         private static string certFileName;
         private static string pfxFileName;
         private static string keyAlias;
+        private static string commonName = "CN=Windows Azure Tools";
         private static SecureString password;
         private static SecureString contentToEncrypt;
         private static DateTime expirationDate = DateTime.MaxValue;
@@ -196,6 +197,11 @@ Options:
                         SetSecureString(value, ref contentToEncrypt);
                         value = null;
                         break;
+                    
+                    case Option.CN:
+                        // Common name of cert
+                        commonName = "CN=" + value;
+                        break;
                 }
             }
 
@@ -274,7 +280,7 @@ Options:
         {
             // Create a self-signed cert
             byte[] pfxBytes = CertUtil.CreateSelfSignedCert(
-                new X500DistinguishedName("CN=Windows Azure Tools"),
+                new X500DistinguishedName(commonName),
                 keyAlias,
                 DateTime.Now,
                 expirationDate,

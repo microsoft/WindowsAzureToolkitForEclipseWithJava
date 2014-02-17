@@ -24,6 +24,7 @@ import com.gigaspaces.azure.deploy.DeploymentManager;
 import com.gigaspaces.azure.model.AffinityGroups;
 import com.gigaspaces.azure.model.AvailabilityResponse;
 import com.gigaspaces.azure.model.CertificateFile;
+import com.gigaspaces.azure.model.Certificates;
 import com.gigaspaces.azure.model.CreateDeployment;
 import com.gigaspaces.azure.model.CreateHostedService;
 import com.gigaspaces.azure.model.CreateStorageServiceInput;
@@ -286,6 +287,27 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
 		return (HostedServices) response.getBody();
 	}
+	
+	public synchronized Certificates listCertificates(String subscriptionId, String serviceName, String mngUrl) throws
+	WACommonException, InterruptedException, CommandLineException {
+
+		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
+				  	.concat(LIST_HOST_SERV).concat(ADD_CERT)
+				  	.replace(SERVICE_NAME, serviceName);
+
+
+		HashMap<String, String> headers = new HashMap<String, String>();
+
+		addXMsVer2012(headers);
+
+		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
+				headers, null, thumbprint);
+
+		Response<?> response = ((Response<?>) deserialize(result));
+
+		return (Certificates) response.getBody();
+	}
+
 
 	public String createHostedService(String subscriptionId, CreateHostedService body, String mngUrl) throws
 	WACommonException, RestAPIException, InterruptedException, CommandLineException {

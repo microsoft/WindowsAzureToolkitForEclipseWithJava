@@ -22,7 +22,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -41,11 +44,18 @@ import org.eclipse.swt.widgets.Display;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.model.AutoUpldCmpnts;
+import com.gigaspaces.azure.model.Certificate;
+import com.gigaspaces.azure.model.CertificateUpload;
+import com.gigaspaces.azure.model.CertificateUploadList;
 import com.gigaspaces.azure.model.CreateStorageServiceInput;
+import com.gigaspaces.azure.model.HostedService;
 import com.gigaspaces.azure.model.RemoteDesktopDescriptor;
 import com.gigaspaces.azure.model.StorageService;
+import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
+import com.gigaspaces.azure.util.WizardCache;
 import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
+import com.interopbridges.tools.windowsazure.WindowsAzureCertificate;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
@@ -133,6 +143,60 @@ public class DeployWizard extends Wizard {
 			if (!status) {
 				return false;
 			}
+			// certificate upload configuration
+			List<WindowsAzureCertificate> certToUpload = handleCertUpload(waProjManager);
+			if (certToUpload != null && certToUpload.size() > 0) {
+				List<CertificateUpload> certUploadList = new ArrayList<CertificateUpload>();
+				for (int i = 0; i < certToUpload.size(); i++) {
+					WindowsAzureCertificate cert = certToUpload.get(i);
+					String name = cert.getName();
+					Boolean invokePfxDlg = true;
+					/*
+					 * If Remote access is enabled and
+					 * using sample certificate, then don't ask PFX file path
+					 * and password. Just assign default values.
+					 */
+					if (name.equalsIgnoreCase(
+							com.gigaspaces.azure.deploy.Messages.remoteAccessPasswordEncryption)
+							&& checkRDPUsesSampleCert(waProjManager)) {
+						invokePfxDlg = false;
+						String defaultPfxPath = String.format("%s%s",
+								selectedProject.getLocation().toOSString(),
+								Messages.pfxPath);
+						CertificateUpload object = new CertificateUpload(
+								name,
+								cert.getFingerPrint(),
+								defaultPfxPath,
+								Messages.defPfxPwd);
+						certUploadList.add(object);
+					}
+					if (invokePfxDlg) {
+						// open dialog to accept pfx password
+						PfxPwdDialog inputDlg = new PfxPwdDialog(
+								getShell(), cert);
+						int btnId = inputDlg.open();
+						if (btnId == Window.OK) {
+							CertificateUpload object = new CertificateUpload(
+									name,
+									cert.getFingerPrint(),
+									inputDlg.getPfxPath(),
+									inputDlg.getPwd());
+							certUploadList.add(object);
+						} else {
+							/*
+							 * Just return to publish wizard.
+							 * No need to save any information.
+							 */
+							return false;
+						}
+					}
+				}
+				signInPage.fireConfigurationEvent(new ConfigurationEventArgs(
+						this,
+						ConfigurationEventArgs.CERTIFICATES,
+						new CertificateUploadList(certUploadList)));
+			}
+
 			// clear new service array
 			signInPage.getNewServices().clear();
 
@@ -140,11 +204,11 @@ public class DeployWizard extends Wizard {
 			String wizTargetOS = signInPage.getTargetOSName();
 			if (!waProjManager.getOSFamily().getName().
 					equalsIgnoreCase(wizTargetOS)) {
-				if (wizTargetOS.equals(OSFamilyType.
-						WINDOWS_SERVER_2008_R2.getName())) {
-					waProjManager.setOSFamily(OSFamilyType.WINDOWS_SERVER_2008_R2);
-				} else {
-					waProjManager.setOSFamily(OSFamilyType.WINDOWS_SERVER_2012);
+
+				for (OSFamilyType osType : OSFamilyType.values()) {
+	            	if (osType.getName().equalsIgnoreCase(wizTargetOS)) {
+	            		waProjManager.setOSFamily(osType);
+	            	}
 				}
 			}
 			// WORKITEM: China Support customizable portal URL in the plugin
@@ -170,7 +234,18 @@ public class DeployWizard extends Wizard {
 
 			waProjManager = WindowsAzureProjectManager.
 					load(new File(selectedProject.getLocation().toOSString()));
-			
+
+			// Cache selected subscription, cloud service & storage account
+			WizardCache cacheObj = new WizardCache(
+					WizardCacheManager.getCurrentPublishData().getCurrentSubscription().getName(),
+					WizardCacheManager.getCurentHostedService().getServiceName(),
+					WizardCacheManager.getCurrentStorageAcount().getServiceName());
+			PreferenceUtilPubWizard.save(String.format("%s%s%s",
+					Activator.PLUGIN_ID,
+					com.persistent.util.Messages.proj,
+					selectedProject.getName()),
+					cacheObj);
+
 			WAAutoStorageConfJob autoStorageConfJob = new WAAutoStorageConfJob(Messages.confStorageAccount);
 			autoStorageConfJob.setManager(waProjManager);
 			autoStorageConfJob.schedule();
@@ -180,7 +255,7 @@ public class DeployWizard extends Wizard {
 						try {
 							WindowsAzureProjectManager waProjManager = WindowsAzureProjectManager.
 									load(new File(selectedProject.getLocation().toOSString()));
-							
+
 							WindowsAzureBuildProjectJob buildProjectJob = new
 									WindowsAzureBuildProjectJob(Messages.buildProj);
 							buildProjectJob.setManager(waProjManager);
@@ -214,7 +289,13 @@ public class DeployWizard extends Wizard {
 													com.persistent.winazureroles.Messages.rfrshErrTtl,
 													com.persistent.winazureroles.Messages.rfrshErrMsg);
 										} catch (WindowsAzureInvalidProjectOperationException e) {
-											Activator.getDefault().log(Messages.error, e);
+											Display.getDefault().syncExec(new Runnable() {
+												public void run() {
+													MessageDialog.openError(null,
+															Messages.error,
+															Messages.autoUploadEr);
+												}
+											});
 										}
 										Job job = new WindowsAzureDeploymentJob(
 												Messages.deployingToAzure,selectedProject);
@@ -241,15 +322,25 @@ public class DeployWizard extends Wizard {
 								}
 							});
 						} catch (WindowsAzureInvalidProjectOperationException e) {
-							Activator.getDefault().log(Messages.error, e);
+							Display.getDefault().syncExec(new Runnable() {
+								public void run() {
+									MessageDialog.openError(null,
+											Messages.error,
+											Messages.deployErr);
+								}
+							});
 						}
 					}
 				}
 			});
 		} catch (WindowsAzureInvalidProjectOperationException e) {
-			MessageUtil.displayErrorDialog(getShell(),
-					Messages.buildFail,
-					Messages.projLoadErr);
+			Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openError(null,
+							Messages.buildFail,
+							Messages.projLoadErr);
+				}
+			});
 			return false;
 		}
 		return true;
@@ -318,7 +409,7 @@ public class DeployWizard extends Wizard {
 
 		@Override
 		protected IStatus run(IProgressMonitor monitor) {
-			monitor.beginTask(Messages.confStorageAccount,				
+			monitor.beginTask(Messages.confStorageAccount,
 					IProgressMonitor.UNKNOWN);
 			try {
 				// Create storage account if it does not exists
@@ -346,7 +437,7 @@ public class DeployWizard extends Wizard {
 
 	private void createStorageAccountIfNotExists() throws InterruptedException, Exception {
 		StorageService storageAccount = WizardCacheManager.getCurrentStorageAcount();
-		
+
 		if (storageAccount.getUrl() == null || storageAccount.getUrl().isEmpty()) {
 			CreateStorageServiceInput body = new CreateStorageServiceInput(storageAccount.getServiceName(),
 			storageAccount.getServiceName(),
@@ -368,6 +459,143 @@ public class DeployWizard extends Wizard {
 	}
 
 	/**
+	 * Prepares list of certificates which needs to be
+	 * uploaded to cloud service by comparing
+	 * certificates present in particular cloud service
+	 * with the certificates configured in selected project.
+	 * @param projMngr
+	 * @return
+	 */
+	private List<WindowsAzureCertificate> handleCertUpload(WindowsAzureProjectManager projMngr) {
+		List<WindowsAzureCertificate> certToUpload =
+				new ArrayList<WindowsAzureCertificate>();
+		List<Certificate> cloudCertList = null;
+		try {
+			HostedService service = WizardCacheManager.getCurentHostedService();
+			if (service.getUrl() != null
+					&& !service.getUrl().isEmpty()) {
+				cloudCertList = WizardCacheManager.
+						fetchUploadedCertificates().getCertificates();
+			}
+			List<WindowsAzureRole> roleList = projMngr.getRoles();
+			// iterate over roles
+			for (int i = 0; i < roleList.size(); i++) {
+				WindowsAzureRole role = roleList.get(i);
+				Map<String, WindowsAzureCertificate> pmlCertList = role.getCertificates();
+				for (Iterator<Entry<String, WindowsAzureCertificate>> iterator =
+						pmlCertList.entrySet().iterator();
+						iterator.hasNext();) {
+					WindowsAzureCertificate pmlCert = iterator.next().getValue();
+					/*
+					 * No certificate present on cloud as REST API returned null
+					 * Need to upload each certificate
+					 */
+					if (cloudCertList == null
+							|| cloudCertList.isEmpty()) {
+						if (!isDuplicateThumbprintCert(certToUpload, pmlCert)) {
+							certToUpload.add(pmlCert);
+						}
+					} else {
+						/*
+						 * Check certificate is present on cloud
+						 * or not.
+						 */
+						boolean isPresent = false;
+						for (int j = 0; j < cloudCertList.size(); j++) {
+							Certificate cloudCert = cloudCertList.get(j);
+							if (cloudCert.getThumbprint().
+									equalsIgnoreCase(pmlCert.getFingerPrint())) {
+								isPresent = true;
+								break;
+							}
+						}
+						if (!isPresent
+								&& !isDuplicateThumbprintCert(certToUpload, pmlCert)) {
+							certToUpload.add(pmlCert);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openError(null,
+							Messages.error,
+							Messages.certUploadEr);
+				}
+			});
+			Activator.getDefault().log(Messages.certUploadEr, e);
+		}
+		return certToUpload;
+	}
+
+	/**
+	 * Certificate is not present on cloud
+	 * but check whether its already
+	 * been added to certToUpload list.
+	 * To avoid unnecessary PFX password prompt
+	 * invocation.
+	 * @param certToUpload
+	 * @param pmlCert
+	 * @return
+	 */
+	private boolean isDuplicateThumbprintCert(
+			List<WindowsAzureCertificate> certToUpload,
+			WindowsAzureCertificate pmlCert) {
+		boolean alreadyAdded = false;
+		for (int j = 0; j < certToUpload.size(); j++) {
+			WindowsAzureCertificate certObj = certToUpload.get(j);
+			if (certObj.getFingerPrint().
+					equalsIgnoreCase(pmlCert.getFingerPrint())) {
+				alreadyAdded = true;
+				break;
+			}
+		}
+		return alreadyAdded;
+	}
+
+	/**
+	 * If remote desktop is enabled
+	 * then method checks whether
+	 * its using sample certificate or not.
+	 * @param waProjManager
+	 * @return
+	 */
+	private boolean checkRDPUsesSampleCert(WindowsAzureProjectManager waProjManager) {
+		Boolean usesSampleCert = false;
+		try {
+			if (waProjManager.getRemoteAccessAllRoles()) {
+				/*
+				 * Check if sample certificate is used or
+				 * custom one.
+				 */
+				String certPath = waProjManager.getRemoteAccessCertificatePath();
+				if (certPath.startsWith(BASE_PATH)) {
+					certPath = certPath.substring(certPath.indexOf("}") + 1
+							, certPath.length());
+					certPath = String.format("%s%s",
+							selectedProject.getLocation().toOSString(),
+							certPath);
+				}
+				String thumbprint = EncUtilHelper.getThumbPrint(certPath);
+				if (thumbprint.equals(Messages.dfltThmbprnt)) {
+					usesSampleCert = true;
+				}
+			}
+		} catch (Exception e) {
+			Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openError(null,
+							Messages.error,
+							Messages.certUploadEr);
+				}
+			});
+			Activator.getDefault().log(Messages.certUploadEr, e);
+		}
+		return usesSampleCert;
+	}
+
+	/**
 	 * Configure or remove remote access settings
 	 * according to user name provided by user.
 	 * @param waProjManager
@@ -375,20 +603,10 @@ public class DeployWizard extends Wizard {
 	private boolean handleRDPSettings(
 			WindowsAzureProjectManager waProjManager) {
 		try {
-			/*
-			 * Check if service is new.
-			 */
-			boolean isNewService = false;
-			if (signInPage.getNewServices().
-					contains(signInPage.getCurrentService())) {
-				isNewService = true;
-			}
 			String userName = null;
 			String pwd = null;
 			Date expDate = null;
 			String certPath = "";
-			String pfxPath = "";
-			String pfxPassword = null;
 			boolean remoteEnabled = false;
 			if (signInPage.getRdpUname().isEmpty()) {
 				// disable remote access
@@ -397,20 +615,8 @@ public class DeployWizard extends Wizard {
 				remoteEnabled = true;
 				userName = signInPage.getRdpUname();
 				pwd = signInPage.getRdpPwd();
-				String defaultCertPath = String.format("%s%s",
-						selectedProject.getLocation().toOSString(),
-						Messages.cerPath);
-				String defaultPfxPath = String.format("%s%s",
-						selectedProject.getLocation().toOSString(),
-						Messages.pfxPath);
-				String defaultThumbprint =
-						EncUtilHelper.getThumbPrint(defaultCertPath);
 				// already enabled
 				if (waProjManager.getRemoteAccessAllRoles()) {
-					/*
-					 * Check if sample certificate is used or
-					 * custom one.
-					 */
 					certPath = waProjManager.getRemoteAccessCertificatePath();
 					if (certPath.startsWith(BASE_PATH)) {
 						certPath = certPath.substring(certPath.indexOf("}") + 1
@@ -418,28 +624,6 @@ public class DeployWizard extends Wizard {
 						certPath = String.format("%s%s",
 								selectedProject.getLocation().toOSString(),
 								certPath);
-					}
-					String thumbprint = EncUtilHelper.getThumbPrint(certPath);
-					if (thumbprint.equals(defaultThumbprint)) {
-						// sample certificate
-						pfxPath = defaultPfxPath;
-						pfxPassword = Messages.defPfxPwd;
-					} else {
-						// custom certificate
-						// open dialog to accept pfx password
-						PfxPwdDialog inputDlg = new PfxPwdDialog(
-								getShell(), certPath, isNewService);
-						int btnId = inputDlg.open();
-						if (btnId == Window.OK) {
-							pfxPath = inputDlg.getPfxPath();
-							pfxPassword = inputDlg.getPwd();
-						} else {
-							/*
-							 * Just return to publish wizard.
-							 * No need to save any information.
-							 */
-							return false;
-						}
 					}
 					// if user name has been changed by user
 					if (!userName.
@@ -460,30 +644,63 @@ public class DeployWizard extends Wizard {
 					expDate = waProjManager.getRemoteAccessAccountExpiration();
 				} else {
 					// enabling for the first time, so use all default entries
-					waProjManager.setRemoteAccessAllRoles(true);
-					waProjManager.setRemoteAccessUsername(
-							userName);
-					// save certificate path
-					certPath = defaultCertPath;
-					waProjManager.setRemoteAccessCertificatePath(certPath);
-					// save thumb print
-					waProjManager.
-					setRemoteAccessCertificateFingerprint(defaultThumbprint);
-					// save password, encrypt always as storing for the first time
-					String encryptedPwd =
-							EncUtilHelper.encryptPassword(pwd,
-									certPath);
-					waProjManager.
-					setRemoteAccessEncryptedPassword(encryptedPwd);
-					// save expiration date
-					GregorianCalendar currentCal = new GregorianCalendar();
-					currentCal.add(Calendar.YEAR, 1);
-					expDate = currentCal.getTime();
-					waProjManager.setRemoteAccessAccountExpiration(expDate);
-					// save pfx path
-					pfxPath = defaultPfxPath;
-					// save pfx password
-					pfxPassword = Messages.defPfxPwd;
+					String defaultCertPath = String.format("%s%s",
+							selectedProject.getLocation().toOSString(),
+							Messages.cerPath);
+					File certFile = new File(defaultCertPath);
+					if (certFile.exists()) {
+						String defaultThumbprint =
+								EncUtilHelper.getThumbPrint(defaultCertPath);
+						if (defaultThumbprint.equals(Messages.dfltThmbprnt)) {
+							waProjManager.setRemoteAccessAllRoles(true);
+							waProjManager.setRemoteAccessUsername(
+									userName);
+							certPath = defaultCertPath;
+							// save certificate path in package.xml in the format of
+							// ${basedir}\cert\SampleRemoteAccessPublic.cer
+							waProjManager.setRemoteAccessCertificatePath(
+									String.format("%s%s", BASE_PATH, Messages.cerPath));
+							// save thumb print
+							try {
+								if (waProjManager.
+										isRemoteAccessTryingToUseSSLCert(defaultThumbprint)) {
+									MessageUtil.displayErrorDialog(getShell(),
+											com.persistent.ui.propertypage.Messages.remAccSyntaxErr,
+											com.persistent.ui.propertypage.Messages.usedBySSL);
+									return false;
+								} else {
+									waProjManager.
+									setRemoteAccessCertificateFingerprint(defaultThumbprint);
+								}
+							} catch (Exception e) {
+								MessageUtil.displayErrorDialog(getShell(),
+										Messages.error,
+										Messages.dfltImprted);
+								return false;
+							}
+							// save password, encrypt always as storing for the first time
+							String encryptedPwd =
+									EncUtilHelper.encryptPassword(pwd,
+											certPath);
+							waProjManager.
+							setRemoteAccessEncryptedPassword(encryptedPwd);
+							// save expiration date
+							GregorianCalendar currentCal = new GregorianCalendar();
+							currentCal.add(Calendar.YEAR, 1);
+							expDate = currentCal.getTime();
+							waProjManager.setRemoteAccessAccountExpiration(expDate);
+						} else {
+							MessageUtil.displayErrorDialog(getShell(),
+									Messages.error,
+									Messages.dfltErrThumb);
+							return false;
+						}
+					} else {
+						MessageUtil.displayErrorDialog(getShell(),
+								Messages.error,
+								Messages.dfltErr);
+						return false;
+					}
 				}
 			}
 			signInPage.fireConfigurationEvent(new ConfigurationEventArgs(
@@ -492,12 +709,14 @@ public class DeployWizard extends Wizard {
 							pwd,
 							expDate,
 							certPath,
-							pfxPath,
-							pfxPassword,
 							signInPage.getConToDplyChkStatus(),
 							remoteEnabled)));
 		} catch (Exception e) {
-			Activator.getDefault().log(Messages.rdpError, e);
+			MessageUtil.displayErrorDialogAndLog(
+					getShell(),
+					Messages.error,
+					Messages.rdpError,
+					e);
 			return false;
 		}
 		return true;
@@ -615,6 +834,13 @@ public class DeployWizard extends Wizard {
 				}
 			}
 		} catch (Exception e) {
+			Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openError(null,
+							Messages.error,
+							Messages.autoUploadEr);
+				}
+			});
 			Activator.getDefault().log(Messages.autoUploadEr, e);
 		}
 		return projMngr;
@@ -655,6 +881,13 @@ public class DeployWizard extends Wizard {
 				}
 			}
 		} catch (Exception e) {
+			Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openError(null,
+							Messages.error,
+							Messages.autoUploadEr);
+				}
+			});
 			Activator.getDefault().log(Messages.autoUploadEr, e);
 		}
 		return projMngr;
@@ -681,6 +914,13 @@ public class DeployWizard extends Wizard {
 				}
 			}
 		} catch (Exception e) {
+			Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openError(null,
+							Messages.error,
+							Messages.autoUploadEr);
+				}
+			});
 			Activator.getDefault().log(Messages.autoUploadEr, e);
 		}
 		return projMngr;

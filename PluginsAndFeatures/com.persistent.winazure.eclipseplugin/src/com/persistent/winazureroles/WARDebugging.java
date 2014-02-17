@@ -1,17 +1,17 @@
 /**
-* Copyright 2013 Persistent Systems Ltd.
+* Copyright 2014 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
+*  you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
 *
-*   http://www.apache.org/licenses/LICENSE-2.0
+*	 http://www.apache.org/licenses/LICENSE-2.0
 *
 * Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
 */
 package com.persistent.winazureroles;
 
@@ -278,22 +278,7 @@ public class WARDebugging extends PropertyPage {
         gridData.horizontalAlignment = GridData.END;
         comboEndPoint.setLayoutData(gridData);
         try {
-            List<WindowsAzureEndpoint> endpointsList =
-            		new ArrayList<WindowsAzureEndpoint>(
-                    windowsAzureRole.getEndpoints());
-            for (WindowsAzureEndpoint endpoint : endpointsList) {
-                if ((endpoint.getEndPointType().equals(
-                		WindowsAzureEndpointType.Input)
-                		|| endpoint.getEndPointType().equals(
-                				WindowsAzureEndpointType.InstanceInput))
-                        && !endpoint.equals(windowsAzureRole.
-                        		getSessionAffinityInputEndpoint())) {
-                comboEndPoint.add(String.format(Messages.dbgEndPtStr,
-                        endpoint.getName(),
-                        endpoint.getPort(),
-                        endpoint.getPrivatePort()));
-                }
-            }
+        	populateEndPointList();
         } catch (WindowsAzureInvalidProjectOperationException e1) {
         	PluginUtil.displayErrorDialogAndLog(
         			getShell(),
@@ -576,12 +561,15 @@ public class WARDebugging extends PropertyPage {
                 windowsAzureRole.getEndpoints());
         comboEndPoint.removeAll();
         for (WindowsAzureEndpoint endpoint : endpointsList) {
-            if ((endpoint.getEndPointType().
+            if (((endpoint.getEndPointType().
                     equals(WindowsAzureEndpointType.Input)
+                    && endpoint.getPrivatePort() != null)
                     || endpoint.getEndPointType().equals(
                     		WindowsAzureEndpointType.InstanceInput))
                     && !endpoint.equals(windowsAzureRole.
-                    		getSessionAffinityInputEndpoint())) {
+                    		getSessionAffinityInputEndpoint())
+                    && !endpoint.equals(windowsAzureRole.
+                    		getSslOffloadingInputEndpoint())) {
                   comboEndPoint.add(String.format(Messages.dbgEndPtStr,
                           endpoint.getName(),
                           endpoint.getPort(),

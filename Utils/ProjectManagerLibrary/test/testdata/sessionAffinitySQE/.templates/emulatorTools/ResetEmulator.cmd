@@ -1,1 +1,0 @@
-"${SDKDir}\bin\csrun.exe" /removeAll /devFabric:clean

@@ -11,9 +11,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
+namespace MicrosoftOpenTechnologies.Tools.ARRAgent
 {
     using System;
+    using System.Globalization;
     using System.Threading;
 
     /// <summary>
@@ -26,6 +27,8 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
         private static string certStoreName;
         private static string certHash;
         private static string serverEndpoint;
+        private static bool enableAffinity = false;
+        private static string httpRedirectEndpoint;
 
         /// <summary>
         /// Entrypoint method
@@ -47,7 +50,7 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
                     bool succeeded = false;
                     try
                     {
-                        ArrWorker.Start(arrEndpoint, serverEndpoint, certHash, certStoreName);
+                        ArrWorker.Start(arrEndpoint, serverEndpoint, enableAffinity, certHash, certStoreName, httpRedirectEndpoint);
                         succeeded = true;
                     }
                     finally
@@ -81,19 +84,21 @@ namespace MicrosoftOpenTechnologies.Tools.SessionAffinityAgent
             {
                 throw new InvalidOperationException("Incorrect arguments specified");
             }
-
+         
             if (args[0].Equals("-blockstartup", StringComparison.OrdinalIgnoreCase))
             {
                 blockStartup = true;
             }
-            else if (args.Length == 2 || args.Length == 4)
+            else if (args.Length == 3 || args.Length == 6)
             {
                 arrEndpoint = args[0];
                 serverEndpoint = args[1];
-                if (args.Length == 4)
+                enableAffinity = Convert.ToBoolean(args[2], CultureInfo.InvariantCulture);
+                if (args.Length == 6)
                 {
-                    certHash = args[2];
-                    certStoreName = args[3];
+                    certHash = args[3];
+                    certStoreName = args[4];
+                    httpRedirectEndpoint = args[5];
                 }
             }
             else

@@ -126,6 +126,7 @@ public final class Messages extends NLS {
 	public static String creatingDeployment;
 
 	public static String waitingForDeployment;
+	public static String deletePackage;
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

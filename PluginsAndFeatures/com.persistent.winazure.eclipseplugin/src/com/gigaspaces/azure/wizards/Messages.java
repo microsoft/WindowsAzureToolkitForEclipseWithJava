@@ -131,8 +131,6 @@ public final class Messages extends NLS {
 	public static String pfxPath;
 	public static String defPfxPwd;
 	public static String pfxInputMsg;
-	public static String pfxInptQueMsg;
-	public static String pfxRadioNo;
 	public static String pfxRadioYes;
 	public static String certPwdLbl;
 	public static String pfxInputTtl;
@@ -153,6 +151,15 @@ public final class Messages extends NLS {
 	public static String confStorageAccount;
 	public static String unpubPrvDply;
 	public static String unpubchk;
+	public static String cert;
+	public static String certUploadEr;
+	public static String dfltThmbprnt;
+	public static String dfltErr;
+	public static String dfltErrThumb;
+	public static String displayHttpsLink;
+	public static String unMatchMsg;
+	public static String deployErr;
+	public static String dfltImprted;
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

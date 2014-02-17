@@ -1,18 +1,18 @@
 /**
- * Copyright 2013 Persistent Systems Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.persistent.winazureroles;
 
 import org.eclipse.osgi.util.NLS;
@@ -373,7 +373,46 @@ public final class Messages extends NLS {
 	public static String dlgAutoDlJDKUrlErrMsg;
 	public static String dlgAutoDlSrvUrlErrMsg;
 	public static String setAccUrlErrMsg;
-
+	public static String colThumb;
+	public static String inpInstTypeMsg;
+	public static String dbgPort;
+	public static String sesAffMsg;
+	public static String sesAffDsblErTl;
+	public static String certAddTtl;
+	public static String certErrTtl;
+	public static String certErrMsg;
+	public static String certAddErrMsg;
+	public static String certRegMsg;
+	public static String certInvMsg;
+	public static String certRmTtl;
+	public static String certRmMsg;
+	public static String importBtn;
+	public static String newBtn;
+	public static String enterPfxPwd;
+	public static String certPwd;
+	public static String certImpEr;
+	public static String lbEnblSslOff;
+	public static String lbSslCert;
+	public static String linkLblCert;
+	public static String linkLblEndpt;
+	public static String lbSslNote;
+	public static String sslTtl;
+	public static String sslWarnMsg;
+	public static String sslOtherRole;
+	public static String sslhttp;
+	public static String sslNoHttp;
+	public static String noEndPtMsg;
+	public static String eptNmEndPtMsg;
+	public static String httpsPresent;
+	public static String sslDsblErTl;
+	public static String sslMsg;
+	public static String sslDelMsg;
+	public static String bothDelMsg;
+	public static String sslSesDsbl;
+	public static String sslSesAffMsg;
+	public static String certComMsg;
+	public static String httpsPresentSt;
+	public static String usedByRemAcc;
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

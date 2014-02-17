@@ -1,1 +1,0 @@
-"${SDKDir}\bin\csrun.exe" "${PackageDir}\${PackageFileName}" "${PackageDir}\${ConfigurationFileName}"

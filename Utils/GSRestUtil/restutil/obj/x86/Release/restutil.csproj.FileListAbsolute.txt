@@ -1,6 +1,0 @@
-C:\git-build-new\wap4ej\Utils\GSRestUtil\restutil\bin\Release\restutil.exe.config
-C:\git-build-new\wap4ej\Utils\GSRestUtil\restutil\bin\Release\restutil.exe
-C:\git-build-new\wap4ej\Utils\GSRestUtil\restutil\bin\Release\restutil.pdb
-C:\git-build-new\wap4ej\Utils\GSRestUtil\restutil\obj\x86\Release\ResolveAssemblyReference.cache
-C:\git-build-new\wap4ej\Utils\GSRestUtil\restutil\obj\x86\Release\restutil.exe
-C:\git-build-new\wap4ej\Utils\GSRestUtil\restutil\obj\x86\Release\restutil.pdb

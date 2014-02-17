@@ -1,5 +1,5 @@
 /**
-* Copyright 2013 Persistent Systems Ltd.
+* Copyright 2014 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -43,6 +43,8 @@ public final class Messages extends NLS {
 	 public static String wzrdCrtErMsg;
 	 public static String errTtl;
 	 public static String getPrefUrlErMsg;
+	 public static String newCertMsg;
+	 public static String newCertErrTtl;
 
 	 static {
 	        // initialize resource bundle

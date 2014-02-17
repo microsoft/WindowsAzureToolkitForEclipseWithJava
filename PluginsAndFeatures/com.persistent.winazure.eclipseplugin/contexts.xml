@@ -71,6 +71,13 @@ This dialog enables you to configure co-located caching on a Windows Azure Role.
  <topic label="Co-located caching in Windows Azure" href="http://go.microsoft.com/fwlink/?LinkId=264792"/>
    </context>
    
+    <context id="windows_azure_certificates_page" >
+  <description>
+This dialog enables you to manage your certificates.
+ </description>
+ <topic label="Certificates" href=""/>
+   </context>
+   
    <context id="windows_azure_cache_dialog" >
   <description>
 This dialog enables you to configure a named cache.
@@ -111,6 +118,12 @@ This dialog allows you to configure temporary named local storage resources of t
 This dialog allows you to enable HTTP session affinity (“sticky sessions”) for this Windows Azure role, for the selected input end point.
  </description>
  <topic label="Load Balancing (Session Affinity)" href="http://go.microsoft.com/fwlink/?LinkId=235088"/>
+  </context>
+  
+  <context id="windows_azure_ssl_offloading_page" >
+  <description>
+This dialog allows you to enable SSL offloading (HTTPS) for your Windows Azure cloud service.
+ </description>
   </context>
   
   <context id="windows_azure_importexport_dialog" >
@@ -168,7 +181,7 @@ This dialog allows you to add a Java application to your server deployment.
   
   
   <context id="credentials_property_page" title="Credentials Configurations">
-    <description>This dialog allows you to customize the credentials for all your Winows Azure subscriptions.
+    <description>This dialog allows you to manage the credentials for your Windows Azure subscriptions.
 	</description>
   </context>
   
