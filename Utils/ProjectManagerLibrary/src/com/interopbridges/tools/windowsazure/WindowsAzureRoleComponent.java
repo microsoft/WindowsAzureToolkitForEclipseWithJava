@@ -45,13 +45,12 @@ public class WindowsAzureRoleComponent {
      * in Component tag in package.xml.
      */
     private WindowsAzureRoleComponentImportMethod importMethod = null;
-    
+    private String cloudAltSrc = null;
     /**
      * cloudUploadMode variable represents cloudUpload attribute
      * in Component tag in package.xml.
      */
     private WARoleComponentCloudUploadMode cloudUploadMode = null;
-    private String cloudAltSrc = null;
     /**
      * importPath variable represents importPath attribute
      * in Component tag in package.xml.

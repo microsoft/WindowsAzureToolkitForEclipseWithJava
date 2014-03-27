@@ -25,7 +25,7 @@ import org.w3c.dom.Node;
 
 
 /**
- * Class representing Windows Azure endpoint.
+ * Class representing Azure endpoint.
  */
 public class WindowsAzureEndpoint {
     private WindowsAzureProjectManager winProjMgr;
@@ -644,7 +644,7 @@ public class WindowsAzureEndpoint {
     }
 
     /**
-     * This API will return true if this endpoint is associated with windows azure cache.
+     * This API will return true if this endpoint is associated with azure cache.
      * @return
      * @throws WindowsAzureInvalidProjectOperationException
      */
@@ -714,5 +714,19 @@ public class WindowsAzureEndpoint {
     				WindowsAzureConstants.EXCP);
     	}
     	return isSSLAssociated;
+    }
+    
+    public boolean isSSLRedirectEndPoint() throws WindowsAzureInvalidProjectOperationException {
+    	boolean isSSLRedirectEP = false;
+    	try {
+    		WindowsAzureEndpoint sslRedirectEndpt = wRole.getSslOffloadingRedirectionEndpoint();
+    		if (sslRedirectEndpt != null && (getName().equalsIgnoreCase(sslRedirectEndpt.getName()))) {
+    			isSSLRedirectEP = true;
+    		}
+    	} catch(Exception ex) {
+    		throw new WindowsAzureInvalidProjectOperationException(
+    				WindowsAzureConstants.EXCP);
+    	}
+    	return isSSLRedirectEP;
     }
 }

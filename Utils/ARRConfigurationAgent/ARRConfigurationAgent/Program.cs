@@ -28,7 +28,6 @@ namespace MicrosoftOpenTechnologies.Tools.ARRAgent
         private static string certHash;
         private static string serverEndpoint;
         private static bool enableAffinity = false;
-        private static string httpRedirectEndpoint;
 
         /// <summary>
         /// Entrypoint method
@@ -50,7 +49,7 @@ namespace MicrosoftOpenTechnologies.Tools.ARRAgent
                     bool succeeded = false;
                     try
                     {
-                        ArrWorker.Start(arrEndpoint, serverEndpoint, enableAffinity, certHash, certStoreName, httpRedirectEndpoint);
+                        ArrWorker.Start(arrEndpoint, serverEndpoint, enableAffinity, certHash, certStoreName);
                         succeeded = true;
                     }
                     finally
@@ -89,16 +88,15 @@ namespace MicrosoftOpenTechnologies.Tools.ARRAgent
             {
                 blockStartup = true;
             }
-            else if (args.Length == 3 || args.Length == 6)
+            else if (args.Length == 3 || args.Length == 5)
             {
                 arrEndpoint = args[0];
                 serverEndpoint = args[1];
                 enableAffinity = Convert.ToBoolean(args[2], CultureInfo.InvariantCulture);
-                if (args.Length == 6)
+                if (args.Length == 5)
                 {
                     certHash = args[3];
                     certStoreName = args[4];
-                    httpRedirectEndpoint = args[5];
                 }
             }
             else

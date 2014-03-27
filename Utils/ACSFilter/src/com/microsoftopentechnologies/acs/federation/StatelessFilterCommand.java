@@ -89,8 +89,12 @@ public class StatelessFilterCommand {
 					// Validate assertion
 					assertion.checkAssertionValidity(this.fedAuthFilter.trustParams,true);
 
+					// Check if SSL offloading is configured
+					String sslOffloadingProtocol = httpRequest.getHeader("X-FORWARDED-PROTO");
+					
 					// Put the assertion in cookie(s)..
-					if(httpRequest.isSecure() ||  this.fedAuthFilter.trustParams.getAllowHttp())
+					if(httpRequest.isSecure() ||  this.fedAuthFilter.trustParams.getAllowHttp() 
+							|| (sslOffloadingProtocol != null && sslOffloadingProtocol.equalsIgnoreCase("https")))
 						putAssertionInCookie(assertion, httpResponse,this.fedAuthFilter.trustParams);
 					else {
 						Utils.logInfo("Protocol is not secure. Consider using AllowHttp flag in web.xml for unsecured protocols",LOG);

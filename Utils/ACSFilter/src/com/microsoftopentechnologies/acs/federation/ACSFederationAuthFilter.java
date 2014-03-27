@@ -191,7 +191,14 @@ public class ACSFederationAuthFilter implements Filter {
 		if (queryString != null && !queryString.isEmpty()) {
 			completeRequestURL.append('?').append(queryString);
 		}
-		return completeRequestURL.toString();
+		
+		String sslOffloadingProtocol = httpRequest.getHeader("X-FORWARDED-PROTO");
+		
+		if (sslOffloadingProtocol != null && sslOffloadingProtocol.equalsIgnoreCase("https")) {
+			return completeRequestURL.toString().replace("http://", "https://");
+		} else {
+			return completeRequestURL.toString();
+		}
 	}
 
 	private static Key getPublicKey(String certificatePath, FilterConfig filterConfig) throws ServletException {
@@ -215,6 +222,14 @@ public class ACSFederationAuthFilter implements Filter {
 			throw new ServletException("File not found "+certificatePath);			
 		} catch (Throwable t)	{
 			throw new ServletException("Error while retrieving public key from certificate");
+		} finally {
+			if (is != null) {
+				try {
+					is.close();
+				} catch (Exception e) {
+					// Ignore exception silently here
+				}
+			}
 		}
 		return certificate.getPublicKey();
 	}
