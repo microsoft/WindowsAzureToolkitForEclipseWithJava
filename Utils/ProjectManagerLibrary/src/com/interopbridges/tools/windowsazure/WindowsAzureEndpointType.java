@@ -16,7 +16,7 @@
 package com.interopbridges.tools.windowsazure;
 
 /**
- * Enum representing Azure endpoint type.
+ * Enum representing Windows Azure endpoint type.
  */
 public enum WindowsAzureEndpointType {
     Internal,

@@ -16,7 +16,7 @@
 package com.interopbridges.tools.windowsazure;
 
 /**
- * Enum representing Azure package type.
+ * Enum representing Windows Azure package type.
  */
 public enum WindowsAzurePackageType {
     CLOUD, LOCAL
