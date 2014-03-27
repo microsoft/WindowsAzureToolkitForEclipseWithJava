@@ -68,7 +68,7 @@ public final class WindowsAzureConstants {
             + "/Variable[@name='_JAVA_OPTIONS']";
     public static final String ENDPOINT_WR_NAME = WR_NAME + "/Endpoints";
     public static final String STARTUP_TASK_COMMENTS = "Do not delete this startup task or insert tasks before it. "+
-     "It was created by Azure Plugin for Eclipse with Java to enable proxy configuration. ";
+     "It was created by Windows Azure Plugin for Eclipse with Java to enable proxy configuration. ";
     public static final String DEF_FILE_STARTUP_ELEMENT_NAME = "Startup" ;
     public static final String DEF_FILE_IMPORTS_ELEMENT_NAME = "Imports" ;
     public static final String DEF_FILE_IMPORT_ELEMENT_NAME = "Import" ;
@@ -108,14 +108,11 @@ public final class WindowsAzureConstants {
     public static final String INSTANCE_ENDPOINT = ENDPOINT
             + "/InstanceInputEndpoint[@name='%s']";
 
-    public static final String PROJ_PROPERTY_DESC = "Stores properties used by Azure project";
+    public static final String PROJ_PROPERTY_DESC = "Stores properties used by Windows Azure project";
     public static final String PROJ_PROPERTY = "/project/target[@name='waprojectproperties']";
-    public static final String ROOT_ELEMENT = "/project";
-    public static final String PROJ_GLOBAL_PROPERTY = "/project/property[@name='%s']";
     public static final String PROJ_PROPERTY_ELEMENT_NAME = "property" ;
     public static final String PROJ_PROPERTIES = PROJ_PROPERTY + "/" + PROJ_PROPERTY_ELEMENT_NAME;
     public static final String CREATE_PKG_TARGET = "/project/target[@name='createwapackage']";
-    public static final String AZURE_PKG_TASK_DEF = "/project/target[@name='createwapackage']/taskdef[@name='windowsazurepackage']";
     public static final String WA_PACK_ROLE = CREATE_PKG_TARGET + "/parallel/windowsazurepackage/workerrole[@name='%s']" ;
     public static final String WA_PACK_STARTUPENV = WA_PACK_ROLE + "/startupenv";
     public static final String WA_PACK_SENV_NAME = WA_PACK_ROLE + "/startupenv[@name='%s']";
@@ -143,24 +140,21 @@ public final class WindowsAzureConstants {
     public static final String CREATOR_VER = PROJ_PROPERTY
             + "/property[@name='creator.version']";
     public static final String V17_VERSION = "1.7.0";
-    public static final String VERSION = "2.3.0";
+    public static final String VERSION = "2.2.1";
     public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.inputendpoint']";
     public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.sessionaffinity.internalendpoint']";
     public static final String ARR_INTERNAL_ENDPOINT_SUFFIX = "_ARR_PROXY" ;
-    public static final String ARR_SSL_REDIRECT_ENDPOINT_SUFFIX = "_ARR_PROXY_REDIRECT" ;
 
     public static final String SA_INPUT_ENDPOINT_NAME_PROP = "project.%s.sessionaffinity.inputendpoint";
     public static final String SA_INTERNAL_ENDPOINT_NAME_PROP = "project.%s.sessionaffinity.internalendpoint";
 
     public static final String SSL_INPUT_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.ssloffloading.inputendpoint']";
     public static final String SSL_INTERNAL_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.ssloffloading.internalendpoint']";
-    public static final String SSL_REDIRECTION_ENDPOINT = PROJ_PROPERTY + "/property[@name='project.%s.ssloffloading.redirectendpoint']";
     public static final String SSL_CERT_NAME = PROJ_PROPERTY + "/property[@name='project.%s.ssloffloading.cert.name']";
     public static final String SSL_CERT_FINGERPRINT = PROJ_PROPERTY + "/property[@name='project.%s.ssloffloading.cert.fingerprint']";
 
     public static final String SSL_INPUT_ENDPOINT_NAME_PROP = "project.%s.ssloffloading.inputendpoint";
     public static final String SSL_INTERNAL_ENDPOINT_NAME_PROP = "project.%s.ssloffloading.internalendpoint";
-    public static final String SSL_REDIRECT_ENDPOINT_NAME_PROP = "project.%s.ssloffloading.redirectendpoint";
     public static final String SSL_CERT_NAME_PROP = "project.%s.ssloffloading.cert.name";
     public static final String SSL_CERT_FINGERPRINT_PROP = "project.%s.ssloffloading.cert.fingerprint";
 
@@ -222,7 +216,6 @@ public final class WindowsAzureConstants {
     public static final int MAX_LS_SIZE_A5 = 500736;
     public static final int MAX_LS_SIZE_A6 = 1024000;
     public static final int MAX_LS_SIZE_A7 = 2088960;
-    public static final int MAX_LS_SIZE_A8_A9 = 1855980;
 
     public static final String COMPONENT = WA_PACK_NAME + "/component";
 
@@ -239,7 +232,6 @@ public final class WindowsAzureConstants {
     public static final String ATTR_CMTHD = "cloudmethod";
     public static final String ATTR_CLD_VAL = "cloudvalue";
     public static final String ATTR_LCNS_VAL = "licenseurl";
-    public static final String ATTR_HTTP_PORT = "httpport";
 
     public static final String COMPONENT_IMPORTAS = COMPONENT + "[@"  + ATTR_IMPORTAS + "='%s']";
     public static final String COMPONENT_IPATH = COMPONENT + "[@"  + ATTR_IPATH + "='%s']";
@@ -421,7 +413,7 @@ public final class WindowsAzureConstants {
 
     public static final String THRD_PARTY_JDK_NAME = "project.%s.jdk.name";
 
-    public static final String MIN_SDK_VERSION="v2.3";
+    public static final String MIN_SDK_VERSION="v2.1";
     public static final String SA_NEW_VERSION_ATTR = "/configuration/runtime/assemblyBinding/dependentAssembly/bindingRedirect/@newVersion";
 
     public static final String WR_CERTS = WORKER_ROLE + "[@name='%s']/Certificates";

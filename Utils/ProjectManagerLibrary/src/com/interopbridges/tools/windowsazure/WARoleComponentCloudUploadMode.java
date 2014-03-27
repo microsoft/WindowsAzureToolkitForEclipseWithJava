@@ -18,8 +18,8 @@ package com.interopbridges.tools.windowsazure;
  */
 
 public enum WARoleComponentCloudUploadMode {
-	never,
-	always,
-	auto
+	NEVER,
+	ALWAYS,
+	AUTO
 }
 
