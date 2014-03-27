@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -285,5 +286,80 @@ final class ParserXMLUtility {
         }
         return isValid;
     }
+    
+    /** Generic API to update or create DOM elements */
+    public static Element updateOrCreateElement(Document doc ,String expr,String parentNodeExpr,String elementName,boolean firstChild,
+                                        Map<String,String> attributes )
+    throws WindowsAzureInvalidProjectOperationException {
+
+        if(doc == null ) {
+            throw new IllegalArgumentException(WindowsAzureConstants.INVALID_ARG);
+        } else {
+            try {
+                XPath xPath = XPathFactory.newInstance().newXPath();
+                Element element = null ;
+                if(expr != null)
+                    element = (Element) xPath.evaluate(expr, doc,XPathConstants.NODE);
+
+                //If element doesn't exist create one
+                if(element == null ){
+                    element = doc.createElement(elementName);
+                    Element parentElement = (Element) xPath.evaluate(parentNodeExpr, doc,XPathConstants.NODE);
+                    if(firstChild) {
+                        parentElement.insertBefore(element, parentElement != null? parentElement.getFirstChild():null);
+                    } else {
+                        parentElement.appendChild(element) ;
+                    }
+                }
+
+                if (attributes != null && !attributes.isEmpty()) {
+                    for (Map.Entry<String, String> attribute : attributes.entrySet()) {
+                        element.setAttribute(attribute.getKey(), attribute.getValue());
+                     }
+                }
+                return element ;
+            }catch(Exception e ){
+                throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_UPDATE_OR_CREATE_ELEMENT, e);
+            }
+        }
+    }
+
+
+    /** Generic API to update or create DOM elements */
+    public static Element createElement(Document doc ,String expr,Element parentElement,String elementName,boolean firstChild,
+                                        Map<String,String> attributes )
+    throws WindowsAzureInvalidProjectOperationException {
+
+        if(doc == null ) {
+            throw new IllegalArgumentException(WindowsAzureConstants.INVALID_ARG);
+        } else {
+            try {
+                XPath xPath = XPathFactory.newInstance().newXPath();
+                Element element = null ;
+                if(expr != null)
+                    element = (Element) xPath.evaluate(expr, doc,XPathConstants.NODE);
+
+                //If element doesn't exist create one
+                if(element == null ){
+                    element = doc.createElement(elementName);
+                    if(firstChild) {
+                        parentElement.insertBefore(element, parentElement != null? parentElement.getFirstChild():null);
+                    } else {
+                        parentElement.appendChild(element) ;
+                    }
+                }
+
+                if (attributes != null && !attributes.isEmpty()) {
+                    for (Map.Entry<String, String> attribute : attributes.entrySet()) {
+                        element.setAttribute(attribute.getKey(), attribute.getValue());
+                     }
+                }
+                return element ;
+            }catch(Exception e ){
+                throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_UPDATE_OR_CREATE_ELEMENT, e);
+            }
+        }
+    }
+
 
 }

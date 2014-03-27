@@ -35,10 +35,9 @@ namespace MicrosoftOpenTechnologies.Tools.ARRAgent
         /// Starts the ArrWorker agent.
         /// This method returns as soon as IIS is configured to forward http traffic to ARR farm.
         /// </summary>
-        internal static void Start(string arrEndpointName, string serverEndPointName, bool enableAffinity, string certHash, string certStoreName, string httpRedirectEndPointName)
+        internal static void Start(string arrEndpointName, string serverEndPointName, bool enableAffinity, string certHash, string certStoreName)
         {
             RoleInstanceEndpoint arrEndpoint;
-            RoleInstanceEndpoint httpRedirectEndPoint = null;
 
             // Get the arr endpoint on which we expect to see http traffic.
             if (!RoleEnvironment.CurrentRoleInstance.InstanceEndpoints.TryGetValue(arrEndpointName, out arrEndpoint))
@@ -46,17 +45,8 @@ namespace MicrosoftOpenTechnologies.Tools.ARRAgent
                 throw new InvalidOperationException("Invalid ARR endpoint name");
             }
 
-           
-
-
             // Do one-time IIS/ARR setup.
             ConfigureOnce(serverEndPointName, arrEndpoint.IPEndpoint, certHash, certStoreName);
-
-            // Do one-time configuration of HTTP redirect
-            if (certHash != null)
-            {
-                ConfigureHTTPRedirectForARR(httpRedirectEndPointName, httpRedirectEndPoint.IPEndpoint);
-            }
 
             // Update the server farm based on the discovered server endpoint instances.
             UpdateFarm(serverEndPointName, enableAffinity);
@@ -81,7 +71,7 @@ namespace MicrosoftOpenTechnologies.Tools.ARRAgent
             {
                 Configuration config = sm.GetApplicationHostConfiguration();
                 ConfigurationSection rules = config.GetSection("system.webServer/rewrite/rules");
-
+                ConfigurationSection allowedServerVariables = config.GetSection("system.webServer/rewrite/allowedServerVariables");
 
                 // Check if we already have a rewrite rule for this farm.
                 bool ruleFound = rules.GetCollection().Any(e =>
@@ -111,23 +101,27 @@ namespace MicrosoftOpenTechnologies.Tools.ARRAgent
                     condition.SetAttributeValue("pattern", bindInfo.Port);
                     conditions.GetCollection().Add(condition);
 
+                    rules.GetCollection().Add(rule);
+
                     // Add server variables
                     if (certHash != null)
                     {
-                       
                         // Add server variables
-                        var serverVariables = rule.GetCollection().CreateElement("serverVariables");
-                                                
+                        var serverVariables = rule.GetChildElement("serverVariables");
+
                         var serverVariable = serverVariables.GetCollection().CreateElement("set");
                         serverVariable.SetAttributeValue("name", "HTTP_X_FORWARDED_PROTO");
                         serverVariable.SetAttributeValue("value", "https");
+                        serverVariable.SetAttributeValue("replace", "false");
                         serverVariables.GetCollection().Add(serverVariable);
 
-                        rule.GetCollection().Add(serverVariables);
+                        // Make an entry in allowed server variables
+                        var allowedServerVariable = allowedServerVariables.GetCollection().CreateElement("add");
+                        allowedServerVariable.SetAttributeValue("name", "HTTP_X_FORWARDED_PROTO");
+                        allowedServerVariables.GetCollection().Add(allowedServerVariable);
                     }
 
 
-                    rules.GetCollection().Add(rule);
 
                     // Ensure that the default app pool is set to classic mode.
                     Debug.Assert(sm.ApplicationPools["DefaultAppPool"] != null, "DefaultAppPool is not present");
@@ -165,76 +159,6 @@ namespace MicrosoftOpenTechnologies.Tools.ARRAgent
                 sm.CommitChanges();
             }
         }
-
-        // Performs one-time configuration of IIS/ARR.
-        private static void ConfigureHTTPRedirectForARR(String httpRedirectEndPointName, IPEndPoint redirectBindInfo)
-        {
-            using (ServerManager sm = new ServerManager())
-            {
-                Configuration config = sm.GetApplicationHostConfiguration();
-                ConfigurationSection rules = config.GetSection("system.webServer/rewrite/rules");
-
-                // Check if we already have a rewrite rule for this farm.
-                bool ruleFound = rules.GetCollection().Any(e =>
-                {
-                    ConfigurationAttribute name = e.Attributes["name"];
-                    return name != null && name.Value.ToString().Equals(
-                        httpRedirectEndPointName,
-                        StringComparison.OrdinalIgnoreCase);
-                });
-
-                if (!ruleFound)
-                {
-                    ConfigurationElement rule = rules.GetCollection().CreateElement("rule");
-                    rule.SetAttributeValue("name", httpRedirectEndPointName);
-                    rule.SetAttributeValue("stopProcessing", true);
-                    rule.GetChildElement("match").SetAttributeValue("url", ".*");
-                    rule.GetChildElement("action").SetAttributeValue("type", "Redirect");
-                    rule.GetChildElement("action").SetAttributeValue(
-                        "url",
-                        string.Format(CultureInfo.InvariantCulture, @"https://{0}/{{R:0}}", "{HTTP_HOST}"));
-
-                    // Add conditions
-                    var conditions = rule.GetChildElement("conditions");
-
-                    var condition = conditions.GetCollection().CreateElement("add");
-                    condition.SetAttributeValue("input", "{HTTPS}");
-                    condition.SetAttributeValue("pattern", "off");
-                    conditions.GetCollection().Add(condition);
-
-                    rules.GetCollection().Add(rule);
-
-                    // Ensure that the default app pool is set to classic mode.
-                    Debug.Assert(sm.ApplicationPools["DefaultAppPool"] != null, "DefaultAppPool is not present");
-                    sm.ApplicationPools["DefaultAppPool"].ManagedPipelineMode =
-                        ManagedPipelineMode.Classic;
-
-                    // Make sure that we have a binding in the default web site, which listens on ARR port for http redirect
-                    Debug.Assert(sm.Sites["Default Web Site"] != null, "Default Web Site is not present");
-
-                    BindingCollection bindingCollection = sm.Sites["Default Web Site"].Bindings;
-
-                    Binding binding = sm.Sites["Default Web Site"].Bindings.CreateElement("binding");
-
-                    binding["protocol"] = "http";
-
-                    var bindingInformation = string.Format(
-                                CultureInfo.InvariantCulture,
-                                "{0}:{1}:",
-                                redirectBindInfo.Address.ToString(),
-                                redirectBindInfo.Port);
-                    binding["bindingInformation"] = bindingInformation;
-
-
-                    bindingCollection.Add(binding);
-
-                   
-                }
-
-                sm.CommitChanges();
-            }
-        }
-
 
         // Finds certHash in bytes , if exists returns hash in bytes else throws an exception.
         private static byte[] getCertHashInbytes(String certHash, String storeName)
