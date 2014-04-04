@@ -15,9 +15,11 @@
 */
 package com.persistent.ui.preference;
 
+import java.io.FileInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.window.Window;
@@ -28,6 +30,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -78,6 +81,20 @@ public class StorageAccountDialog extends TitleAreaDialog {
 			title = Messages.edtStrTtl;
 		}
 		newShell.setText(title);
+		Image image;
+		try {
+			URL imgUrl = Activator.getDefault().
+					getBundle().getEntry(Messages.strAccDlgImg);
+			URL imgFileURL = FileLocator.toFileURL(imgUrl);
+			URL path = FileLocator.resolve(imgFileURL);
+			String imgpath = path.getFile();
+			image = new Image(null, new FileInputStream(imgpath));
+			setTitleImage(image);
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialogAndLog(getShell(),
+					Messages.errTtl,
+					com.persistent.winazureroles.Messages.lclDlgImgErr, e);
+		}
 	}
 
 	@Override

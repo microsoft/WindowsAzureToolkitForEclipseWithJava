@@ -295,6 +295,11 @@ public class WAREnvVars extends PropertyPage {
                         windowsAzureRole.
                         renameRuntimeEnv(mapEntry.getKey(), "");
                         tblViewer.refresh();
+                        if (tblEnvVariables.getItemCount() == 0) {
+                        	// table is empty i.e. number of rows = 0
+                        	btnRemove.setEnabled(false);
+                        	btnEdit.setEnabled(false);
+                        }
                     }
                 }
             } catch (Exception ex) {

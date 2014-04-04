@@ -302,7 +302,7 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 				correctProjectName(project, projMngr);
 			}
 			projMngr = WAStartUp.initializeStorageAccountRegistry(projMngr);
-			projMngr = WAStartUp.changeLocalToAuto(projMngr);
+			projMngr = WAStartUp.changeLocalToAuto(projMngr, project.getName());
 			// save object so that access key will get saved in PML.
 			projMngr.save();
 		} catch (Exception e) {

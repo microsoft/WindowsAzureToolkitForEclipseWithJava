@@ -107,7 +107,7 @@ public class WAStartUp implements IStartup {
                         	correctProjectName(iProject, projMngr);
                         }
                         projMngr = initializeStorageAccountRegistry(projMngr);
-                        projMngr = changeLocalToAuto(projMngr);
+                        projMngr = changeLocalToAuto(projMngr, iProject.getName());
                         // save object so that access key will get saved in PML.
                         projMngr.save();
                     }
@@ -134,7 +134,7 @@ public class WAStartUp implements IStartup {
      * is remembered using preference entry in preference file
      * Where key will be as follows
      * WAEclipsePlugin.project.<projectName>
-     * Method will compare windows azure project in
+     * Method will compare azure project in
      * workspace and corresponding key in file.
      * If some extra keys are present then those will get removed.
      * @param projects
@@ -265,7 +265,7 @@ public class WAStartUp implements IStartup {
      * @return
      */
     public static WindowsAzureProjectManager changeLocalToAuto(
-    		WindowsAzureProjectManager projMngr) {
+    		WindowsAzureProjectManager projMngr, String projName) {
     	try {
     		// get number of roles in one project
     		List<WindowsAzureRole> roleList = projMngr.getRoles();
@@ -293,7 +293,7 @@ public class WAStartUp implements IStartup {
     								&& (url == null || url.isEmpty())) {
     					component.setCloudDownloadURL(AUTO);
     					component.setCloudUploadMode(
-    							WARoleComponentCloudUploadMode.AUTO);
+    							WARoleComponentCloudUploadMode.auto);
     					component.setCloudMethod(
     							WindowsAzureRoleComponentCloudMethod.unzip);
     					// store home properties
@@ -331,6 +331,22 @@ public class WAStartUp implements IStartup {
     									role.constructServerHome(role.getServerName(),
     											component.getImportPath(), cmpntFile));
     						}
+    					}
+    				} else if (type.equals(
+    						com.persistent.winazureroles.Messages.typeSrvApp)) {
+    					String approotPathSubStr = String.format("%s%s%s%s",
+    							projName,
+    							File.separator,
+    							role.getName(),
+    							com.persistent.winazureroles.Messages.approot);
+    					String impSrc = component.getImportPath();
+    					if (impSrc != null
+    							&& !impSrc.isEmpty()
+    							&& !impSrc.contains(approotPathSubStr)) {
+    						component.setCloudUploadMode(WARoleComponentCloudUploadMode.always);
+    						component.setCloudDownloadURL(AUTO);
+    						component.setCloudMethod(
+    								WindowsAzureRoleComponentCloudMethod.copy);
     					}
     				}
     			}
@@ -426,7 +442,7 @@ public class WAStartUp implements IStartup {
     }
 
     /**
-     * Copies all Eclipse plugin for Windows Azure
+     * Copies all Eclipse plugin for Azure
      * related files in eclipse plugins folder at startup.
      */
     private void copyPluginComponents() {
@@ -444,6 +460,8 @@ public class WAStartUp implements IStartup {
             		File.separator, Messages.starterKitFileName);
             String restFile = String.format("%s%s%s", pluginInstLoc,
             		File.separator, Messages.restFileName);
+			String restConfigFile = String.format("%s%s%s", pluginInstLoc,
+            		File.separator, Messages.restConfigFileName);
             String prefFile = String.format("%s%s%s", pluginInstLoc,
             		File.separator, Messages.prefFileName);
 
@@ -468,6 +486,7 @@ public class WAStartUp implements IStartup {
             	new File(restFile).delete();
             }
             copyResourceFile(Messages.restFileEntry, restFile);
+			copyResourceFile(Messages.restConfigFileEntry, restConfigFile);
         } catch (Exception e) {
             Activator.getDefault().log(e.getMessage(), e);
         }

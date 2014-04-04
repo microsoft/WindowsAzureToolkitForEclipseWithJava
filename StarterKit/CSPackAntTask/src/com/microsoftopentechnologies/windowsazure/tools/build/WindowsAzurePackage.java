@@ -69,12 +69,14 @@ public class WindowsAzurePackage extends Task {
 	private static final String DEV_PORTAL_SUBDIR = "devPortal";
 	private static final String DEV_PORTAL_FILE = "WindowsAzurePortal.url";
 	private static final String ENV_PROGRAMFILES_WOW64 = "ProgramW6432";
+	private static final String ENV_X86_PROGRAMFILES_WOW64 = "ProgramFiles(x86)";
 	private static final String ENV_PROGRAMFILES = "ProgramFiles";
 	public static final String STORAGEDLL_SUBDIR = "..\\ref"; // relative to sdk\bin dir
 	public static final String STORAGEDLL_FILENAME = "Microsoft.WindowsAzure.StorageClient.dll";
 	private static final String TEMPLATES_SUBDIR = ".templates";
 	private static final String TEMPLATE_TOKEN_SDKDIR = "${SDKDir}";
 	private static final String TEMPLATE_TOKEN_EMULATORDIR = "${EmulatorDir}";
+	private static final String TEMPLATE_TOKEN_STORAGE_EMULATORDIR = "${StorageEmulatorDir}";
 	private static final String TEMPLATE_TOKEN_PROJECTDIR = "${ProjectDir}";
 	private static final String TEMPLATE_TOKEN_PACKAGEDIR = "${PackageDir}";
 	private static final String TEMPLATE_TOKEN_PACKAGEFILENAME = "${PackageFileName}";
@@ -94,6 +96,7 @@ public class WindowsAzurePackage extends Task {
 	private PackageType packageType;
 	private String sdkDir;
 	private String emulatorDir;
+	private String storageEmulatorDir;
 	private String projectDir;
 	private String packageDir;
 	private String packageFileName;
@@ -120,7 +123,7 @@ public class WindowsAzurePackage extends Task {
 	}
 
 	/**
-	 * Sets the Windows Azure portal URL
+	 * Sets the Azure portal URL
 	 * @param portalURL
 	 */
 	public void setPortalURL(String portalURL) {
@@ -186,6 +189,14 @@ public class WindowsAzurePackage extends Task {
 	 */
 	public void setEmulatorDir(String emulatorDir) {
 		this.emulatorDir = emulatorDir;
+	}
+	
+	/**
+	 * Sets storage emulatordir attribute
+	 * @param emulatorDir
+	 */
+	public void setStorageEmulatorDir(String storageEmulatorDir) {
+		this.storageEmulatorDir = storageEmulatorDir;
 	}
 
 	/**
@@ -347,7 +358,7 @@ public class WindowsAzurePackage extends Task {
 	private void initialize() {
 		// Verify that we have at least one role defined
 		if (this.roles.size() == 0) {
-			throw new BuildException("At least one Windows Azure role must be specified");
+			throw new BuildException("At least one Azure role must be specified");
 		}
 
 		// Ensure that we know where to find the SDK
@@ -363,6 +374,15 @@ public class WindowsAzurePackage extends Task {
 		if (this.emulatorDir == null || !new File(this.emulatorDir).exists()) {
 			try {
 				this.emulatorDir = findEmulatorDir();
+			} catch (IOException e) {
+				throw new BuildException(e.getMessage());
+			}
+		}
+		
+		// Check for storage emulator
+		if (this.storageEmulatorDir == null || !new File(this.storageEmulatorDir).exists()) {
+			try {
+				this.storageEmulatorDir = findStorageEmulatorDir();
 			} catch (IOException e) {
 				throw new BuildException(e.getMessage());
 			}
@@ -403,7 +423,7 @@ public class WindowsAzurePackage extends Task {
 		// Initialize templateDir
 		this.templatesDir = String.format("%s%s%s", this.projectDir, File.separator, TEMPLATES_SUBDIR);
 		
-		// Validate Windows Azure Project Configuration
+		// Validate Azure Project Configuration
 		checkProjectConfiguration();
 		this.log("Verified attributes.");
 		
@@ -724,6 +744,7 @@ public class WindowsAzurePackage extends Task {
 		text = text.replace(TEMPLATE_TOKEN_PROJECTDIR, this.projectDir);
 		text = text.replace(TEMPLATE_TOKEN_SDKDIR, this.sdkDir);
 		text = text.replace(TEMPLATE_TOKEN_EMULATORDIR, this.emulatorDir);
+		text = text.replace(TEMPLATE_TOKEN_STORAGE_EMULATORDIR, this.storageEmulatorDir);
 		
 		if(this.portalURL != null) {
 			text = text.replace(TEMPLATE_TOKEN_PORTALURL, this.portalURL);
@@ -806,9 +827,32 @@ public class WindowsAzurePackage extends Task {
 		if (emulatorDir.exists()) {
 			return emulatorDir.toString();
 		} else {
-			throw new IOException("Windows Azure SDK v1.7 or later is not installed.");			
+			throw new IOException("Azure SDK v2.3 or later is not installed.");			
 		}
 	}
+	
+	/**
+	 * Discovers the path of the storage emulator installation directory
+	 * @return The storage emulator installation directory
+	 */
+	private static String findStorageEmulatorDir() throws IOException {
+		// Make sure that we use 64bit Program File even if we're running inside WOW64 process
+		String programFilesDir = System.getenv(ENV_X86_PROGRAMFILES_WOW64);
+		
+		if (programFilesDir == null) {
+			programFilesDir = System.getenv(ENV_PROGRAMFILES);
+		}
+
+		File storageEmulatorDir = new File(String.format("%s%sMicrosoft SDKs%sWindows Azure%sStorage Emulator", programFilesDir, File.separatorChar, File.separatorChar, File.separatorChar));
+
+		// Check if the storage Emulator folder exists
+		if (storageEmulatorDir.exists()) {
+			return storageEmulatorDir.toString();
+		} else {
+			throw new IOException("Microsoft Azure Storage Emulator is not installed.");			
+		}
+	}
+
 
 	/**
 	 * Discovers the path of the latest version of Windows Azure SDK
@@ -826,7 +870,7 @@ public class WindowsAzurePackage extends Task {
 
 		// Check if the SDK folder exists
 		if (!sdkDir.exists()) {
-			throw new IOException("Windows Azure SDK v1.7 or later is not installed.");
+			throw new IOException("Azure SDK v2.3 or later is not installed.");
 		}
 		
 		String[] versionedSDKDirs = sdkDir.list();
@@ -848,7 +892,7 @@ public class WindowsAzurePackage extends Task {
 		}
 
 		if (latestVersionSdkDir == null) {
-			throw new IOException("Windows Azure SDK v1.7 or later is not installed.");
+			throw new IOException("Azure SDK v2.3 or later is not installed.");
 		}
 
 		return String.format("%s%sbin", latestVersionSdkDir, File.separatorChar);
@@ -938,8 +982,6 @@ public class WindowsAzurePackage extends Task {
 		public DownloadManager(WindowsAzurePackage windowsAzurePackage) {
 			this.windowsAzurePackage = windowsAzurePackage;
 			windowsAzureManager = new WindowsAzureManager();
-			final File washUtilPath = new File(new File(roles.firstElement().getAppRootDir(), WindowsAzurePackage.DEFAULT_UTIL_SUBDIR), WindowsAzurePackage.UTIL_WASH_FILENAME);
-			windowsAzureManager.start(washUtilPath);
 		}
 		
 	    public void run() {
@@ -952,16 +994,12 @@ public class WindowsAzurePackage extends Task {
 				}
 			} catch(BuildException e) {
 				exception = e;
-			} finally {
-				if(windowsAzureManager != null) {
-					windowsAzureManager.stop();
-				}
 			}
 	    }
 	}
 
 	/**
-	 * Validates Windows Azure Project configuration
+	 * Validates Azure Project configuration
 	 * @return a map with enum ErrorType as key and list of error messages as value.  
 	 */
 	public Map<ErrorType, List<String>> verifyConfiguration() {
@@ -988,7 +1026,7 @@ public class WindowsAzurePackage extends Task {
 					errorMap.put(ErrorType.CACHE_CONFIG, errorMessages);
 				}
 			} catch(Exception e) {
-				throw new BuildException("Error Occured while validating Windows Azure Cache config settings");
+				throw new BuildException("Error Occured while validating Azure Cache config settings");
 			}
 		}
 		

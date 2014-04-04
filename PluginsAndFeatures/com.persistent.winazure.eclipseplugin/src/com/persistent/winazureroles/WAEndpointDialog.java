@@ -785,13 +785,13 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
         if (oldType.equals(WindowsAzureEndpointType.Input)
                 && comboType.getText().equalsIgnoreCase(
                 WindowsAzureEndpointType.Internal.toString())) {
-            StringBuffer msg = new StringBuffer(Messages.dlgEPDel);
-            msg.append(Messages.dlgEPChangeType);
-            msg.append(Messages.dlgEPDel2);
-            boolean choice = MessageDialog.
-            		openQuestion(new Shell(),
-            				Messages.dlgTypeTitle,
-            				msg.toString());
+        	boolean choice = MessageDialog.
+        			openQuestion(new Shell(),
+        					Messages.dlgTypeTitle,
+        					String.format("%s%s%s",
+        							Messages.dlgEPDel,
+        							Messages.dlgEPChangeType,
+        							Messages.dlgEPDel2));
             if (choice) {
                 waEndpt.setEndPointType(
                 		WindowsAzureEndpointType.

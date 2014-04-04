@@ -58,7 +58,7 @@ import com.persistent.ui.projwizard.WAProjectWizard;
 /**
  * Class creates all the UI components
  * required on JDK, Server and Application tabs
- * for windows azure deployment project creation wizard
+ * for azure deployment project creation wizard
  * and server configuration property page.
  */
 public class JdkSrvConfig {
@@ -1205,6 +1205,26 @@ public class JdkSrvConfig {
 	}
 
 	/**
+	 * This API appends eclipse container name and filename to url
+	 * in order to construct blob url.
+	 * @param asName
+	 * @param url
+	 * @return
+	 */
+	public static String prepareUrlForApp(String asName,
+			String url) {
+		if ((asName == null || asName.length() == 0)
+				|| (url == null || url.length() == 0)) {
+			return "";
+		}
+
+		return new StringBuilder(url)
+		.append(Messages.eclipseDeployContainer)
+		.append(FWD_SLASH)
+		.append(asName).toString();
+	}
+
+	/**
 	 * Method prepares third party JDK URL
 	 * by appending eclipse container name and
 	 * filename from third party URL.
@@ -1609,7 +1629,7 @@ public class JdkSrvConfig {
 		WARoleComponentCloudUploadMode uploadMode =
 				role.getJDKCloudUploadMode();
 		if (uploadMode != null
-				&& uploadMode.equals(WARoleComponentCloudUploadMode.AUTO)) {
+				&& uploadMode.equals(WARoleComponentCloudUploadMode.auto)) {
 			return true;
 		}
 		return false;
@@ -1625,7 +1645,7 @@ public class JdkSrvConfig {
 		WARoleComponentCloudUploadMode uploadMode =
 				role.getServerCloudUploadMode();
 		if (uploadMode != null
-				&& uploadMode.equals(WARoleComponentCloudUploadMode.AUTO)) {
+				&& uploadMode.equals(WARoleComponentCloudUploadMode.auto)) {
 			return true;
 		}
 		return false;

@@ -745,7 +745,7 @@ public class WARCaching extends PropertyPage {
 	}
 
 	/**
-	 * Method sets windows azure role's
+	 * Method sets azure role's
 	 * cache storage account key.
 	 * @param key
 	 */
@@ -762,7 +762,7 @@ public class WARCaching extends PropertyPage {
 	}
 
 	/**
-	 * Method sets windows azure role's
+	 * Method sets azure role's
 	 * cache storage account name.
 	 * @param name
 	 */
@@ -779,7 +779,7 @@ public class WARCaching extends PropertyPage {
 	}
 
 	/**
-	 * Method sets windows azure role's
+	 * Method sets azure role's
 	 * cache storage account blob endpoint url.
 	 * @param url
 	 */

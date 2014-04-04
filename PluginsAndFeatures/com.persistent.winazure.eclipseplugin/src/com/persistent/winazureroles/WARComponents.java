@@ -590,7 +590,7 @@ public class WARComponents extends PropertyPage {
                         String cmpntPath = String.format("%s%s%s%s%s",
                                 root.getProject(waProjManager.
                                 		getProjectName()).getLocation(),
-                                "\\", windowsAzureRole.getName(),
+                                File.separator, windowsAzureRole.getName(),
                                 Messages.approot,
                                 component.getDeployName());
                         File file = new File(cmpntPath);
@@ -631,6 +631,11 @@ public class WARComponents extends PropertyPage {
                         }
                     }
                 }
+        		if (tblComponents.getItemCount() == 0) {
+        			// table is empty i.e. number of rows = 0
+        			btnRemove.setEnabled(false);
+        			btnEdit.setEnabled(false);
+        		}
             } catch (WindowsAzureInvalidProjectOperationException e) {
                 PluginUtil.displayErrorDialogAndLog(
                 		getShell(),

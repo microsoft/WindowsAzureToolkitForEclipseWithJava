@@ -52,6 +52,8 @@ import org.eclipse.ui.dialogs.PropertyPage;
 import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
+import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
+import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
@@ -89,6 +91,7 @@ public class WAServerConfiguration extends PropertyPage {
 	private int prevTabIndex;
 	private static boolean accepted = false;
 	private String jdkPrevName;
+	private final int HTTP_PORT = 80;
 
 	@Override
 	public String getTitle() {
@@ -897,16 +900,20 @@ public class WAServerConfiguration extends PropertyPage {
 			String oldName = windowsAzureRole.getServerName();
 			String oldPath = windowsAzureRole.getServerSourcePath();
 			String path = newPath;
-
+			/*
+			 * Trying to set server to same value,
+			 * then don't do anything.
+			 */
 			if (newName != null
 					&& path != null
 					&& newName.equalsIgnoreCase(oldName)
 					&& path.equalsIgnoreCase(oldPath)) {
+				handleEndpointSettings(newName);
 				return;
 			}
 
 			// Remove old server from approot
-			if (windowsAzureRole.getServerName() != null
+			if (oldName != null
 					&&  !fileToDel.contains("srv")) {
 				fileToDel.add("srv");
 				WindowsAzureRoleComponent cmp =
@@ -917,7 +924,12 @@ public class WAServerConfiguration extends PropertyPage {
 					finalAsName = cmp.getDeployName();
 				}
 			}
-
+			/*
+			 * Trying to set server with name only.
+			 * Consider scenario where user selected server type using combo box
+			 * without selecting server directory path
+			 * i.e. server path text box is empty.
+			 */
 			if (path == null
 					|| path.isEmpty()) {
 				path = Messages.dummySrvPath;
@@ -929,8 +941,14 @@ public class WAServerConfiguration extends PropertyPage {
 					componentFile);
 
 			// Add the new server if desired
+			/*
+			 * If both name and path are null
+			 * that means we don't want to set server
+			 * and old server gets removed in previous step only.
+			 */
 			if (newName != null
 					&& path != null) {
+				handleEndpointSettings(newName);
 				windowsAzureRole.setServer(newName,
 						path, componentFile);
 			}
@@ -940,6 +958,96 @@ public class WAServerConfiguration extends PropertyPage {
 					Messages.srvErrTtl,
 					Messages.setSrvNmErrMsg, e);
 		}
+	}
+
+	private void handleEndpointSettings(String srvName) {
+		try {
+			String srvPriPort = WindowsAzureProjectManager.
+					getHttpPort(srvName, cmpntFile);
+			// Check server's private port already used on role
+			int count = 0;
+			WindowsAzureEndpoint endptWithPort = null;
+			for (WindowsAzureEndpoint endpoint : windowsAzureRole.getEndpoints()) {
+				String priPort = endpoint.getPrivatePort();
+				if (priPort != null
+						&& priPort.equalsIgnoreCase(srvPriPort)) {
+					count++;
+					endptWithPort = endpoint;
+				}
+			}
+
+			if (count == 0) {
+				// server's private port is not used
+				WindowsAzureEndpoint sslEndpt =
+						windowsAzureRole.getSslOffloadingInternalEndpoint();
+				WindowsAzureEndpoint stickyEndpt = windowsAzureRole.
+						getSessionAffinityInternalEndpoint();
+				if (sslEndpt != null) {
+					sslEndpt.setPrivatePort(srvPriPort);
+				} else if (stickyEndpt != null) {
+					stickyEndpt.setPrivatePort(srvPriPort);
+				} else {
+					checkForHttpElseAddEndpt(srvPriPort);
+				}
+			} else if (count == 1
+					&& endptWithPort.getEndPointType().
+					equals(WindowsAzureEndpointType.InstanceInput)) {
+				// one endpoint is using server's private port
+				checkForHttpElseAddEndpt(srvPriPort);
+			}
+			/*
+			 * If two endpoints of type Input and InstanceInput
+			 * are using server's private port then don't do anything
+			 */
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			PluginUtil.displayErrorDialogAndLog(
+					getShell(),
+					Messages.srvErrTtl,
+					Messages.errSrvPort, e);
+		}
+	}
+
+	private void checkForHttpElseAddEndpt(String srvPriPort) {
+		try {
+			WindowsAzureEndpoint httpEndpt = WAEclipseHelper.
+					findEndpointWithPubPortWithAuto(HTTP_PORT, windowsAzureRole);
+			if (httpEndpt != null) {
+				httpEndpt.setPrivatePort(srvPriPort);
+			} else {
+				WindowsAzureRole httpRole = WAEclipseHelper.
+						findRoleWithEndpntPubPort(HTTP_PORT, waProjManager);
+				if (httpRole != null) {
+					MessageDialog.openWarning(this.getShell(),
+							com.persistent.util.Messages.cmhLblSrvCnfg,
+							String.format(Messages.srvPortWarn,
+									httpRole.getName()));
+				} else {
+					// create an endpoint
+					addEndpt(srvPriPort);
+				}
+			}
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			PluginUtil.displayErrorDialogAndLog(
+					getShell(),
+					Messages.srvErrTtl,
+					Messages.errSrvPort, e);
+		}
+	}
+
+	private void addEndpt(String srvPriPort)
+			throws WindowsAzureInvalidProjectOperationException {
+		StringBuffer endptName = new StringBuffer(Messages.lbHttpEndpt);
+		int index = 1;
+		// find suitable name
+		while (!windowsAzureRole.isAvailableEndpointName(
+				endptName.toString(),
+				WindowsAzureEndpointType.Input)) {
+			endptName.insert(4, index++);
+		}
+		windowsAzureRole.addEndpoint(endptName.toString(),
+				WindowsAzureEndpointType.Input,
+				srvPriPort,
+				String.valueOf(HTTP_PORT));
 	}
 
 	/**
@@ -1055,7 +1163,7 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		});
 
-		/* Enable edit and remove button only when
+		/* Enable remove button only when
 		 * entry from table is selected.
 		 */
 		JdkSrvConfig.getTblApp().
@@ -1513,7 +1621,7 @@ public class WAServerConfiguration extends PropertyPage {
 			 */
 			if (JdkSrvConfig.getThrdPrtJdkBtn().getSelection()) {
 				windowsAzureRole.setJDKCloudUploadMode(
-						WARoleComponentCloudUploadMode.AUTO);
+						WARoleComponentCloudUploadMode.auto);
 				/*
 				 * Create JDK name property.
 				 * Set cloudvalue in environment variable
@@ -1532,7 +1640,7 @@ public class WAServerConfiguration extends PropertyPage {
 				windowsAzureRole.setJdkCldAltSrc(null);
 				if (JdkSrvConfig.getAutoDlRdCldBtn().getSelection()) {
 					windowsAzureRole.setJDKCloudUploadMode(
-							WARoleComponentCloudUploadMode.AUTO);
+							WARoleComponentCloudUploadMode.auto);
 				} else {
 					windowsAzureRole.setJDKCloudUploadMode(null);
 				}
@@ -1564,7 +1672,7 @@ public class WAServerConfiguration extends PropertyPage {
 					getAccessKey(srvCmb));
 			if (JdkSrvConfig.getAutoDlRdCldBtnSrv().getSelection()) {
 				windowsAzureRole.setServerCloudUploadMode(
-						WARoleComponentCloudUploadMode.AUTO);
+						WARoleComponentCloudUploadMode.auto);
 			} else {
 				windowsAzureRole.setServerCloudUploadMode(null);
 			}
@@ -1670,9 +1778,18 @@ public class WAServerConfiguration extends PropertyPage {
 							Messages.srvErrTtl,
 							Messages.getSrvAppErrMsg, e);
 				}
+				String approotPathSubStr = String.format("%s%s%s%s",
+						WAEclipseHelper.getSelectedProject().getName(),
+						File.separator,
+						windowsAzureRole.getName(),
+						Messages.approot);
+				boolean needCldAttr = true;
+				if (impSrc.contains(approotPathSubStr)) {
+					needCldAttr = false;
+				}
 				if (srvApp.size() == 0) {
 					windowsAzureRole.addServerApplication(impSrc, impAs,
-							app.getImpMethod(), cmpntFile);
+							app.getImpMethod(), cmpntFile, needCldAttr);
 				} else {
 				    boolean isExist = false;
 					for (int i = 0; i < srvApp.size(); i++) {
@@ -1685,7 +1802,7 @@ public class WAServerConfiguration extends PropertyPage {
 					}
 					if (!isExist) {
                         windowsAzureRole.addServerApplication(impSrc, impAs,
-                                app.getImpMethod(), cmpntFile);
+                                app.getImpMethod(), cmpntFile, needCldAttr);
 					}
 				}
 			}
@@ -1715,13 +1832,14 @@ public class WAServerConfiguration extends PropertyPage {
 					String cmpntPath = String.format("%s%s%s%s%s",
 							root.getProject(waProjManager.
 									getProjectName()).getLocation(),
-							"\\", windowsAzureRole.getName(),
-							Messages.approot, cmpntName);
+									File.separator, windowsAzureRole.getName(),
+									Messages.approot, cmpntName);
 					windowsAzureRole.removeServerApplication(cmpntName);
 					if (!fileToDel.contains(cmpntPath)) {
 						fileToDel.add(cmpntPath);
 					}
 					JdkSrvConfig.getTableViewer().refresh();
+					JdkSrvConfigListener.disableRemoveButton();
 				}
 			} catch (Exception e) {
 				PluginUtil.displayErrorDialogAndLog(
@@ -1743,7 +1861,7 @@ public class WAServerConfiguration extends PropertyPage {
 			jdkPath = String.format("%s%s%s%s%s",
 					root.getProject(waProjManager.
 							getProjectName()).getLocation(),
-					"\\", windowsAzureRole.getName(),
+					File.separator, windowsAzureRole.getName(),
 					Messages.approot, jdkDirName);
 		} catch (WindowsAzureInvalidProjectOperationException e1) {
 			PluginUtil.displayErrorDialogAndLog(
@@ -1771,7 +1889,7 @@ public class WAServerConfiguration extends PropertyPage {
 			srvFile = new File(String.format("%s%s%s%s%s",
 					root.getProject(waProjManager.
 							getProjectName()).getLocation(),
-					"\\", windowsAzureRole.getName(),
+					File.separator, windowsAzureRole.getName(),
 					Messages.approot, ProjectNatureHelper.
 					getAsName(finalSrvPath, finalImpMethod, finalAsName)));
 		} catch (WindowsAzureInvalidProjectOperationException e) {

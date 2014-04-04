@@ -15,6 +15,8 @@
 */
 package com.persistent.winazureroles;
 
+import java.io.FileInputStream;
+import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -22,14 +24,16 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -38,6 +42,9 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.PlatformUI;
+
+import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureCertificate;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
@@ -48,7 +55,7 @@ import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
-public class CertificateDialog extends Dialog {
+public class CertificateDialog extends TitleAreaDialog {
 	private Text txtName;
 	private Text txtThumb;
 	private Map<String, WindowsAzureCertificate> mapCert;
@@ -67,27 +74,27 @@ public class CertificateDialog extends Dialog {
 	@Override
 	protected void configureShell(Shell newShell) {
 		super.configureShell(newShell);
-		newShell.setText(Messages.certAddTtl);
+		newShell.setText(Messages.certTtl);
+		Image image;
+		try {
+			URL imgUrl = Activator.getDefault().
+					getBundle().getEntry(Messages.certDlgImg);
+			URL imgFileURL = FileLocator.toFileURL(imgUrl);
+			URL path = FileLocator.resolve(imgFileURL);
+			String imgpath = path.getFile();
+			image = new Image(null, new FileInputStream(imgpath));
+			setTitleImage(image);
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialogAndLog(getShell(),
+					Messages.genErrTitle,
+					Messages.lclDlgImgErr, e);
+		}
 	}
 
 	@Override
-	protected Control createButtonBar(Composite parent) {
-		GridData gridData = new GridData();
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 5;
-		gridData.verticalAlignment = SWT.FILL;
-		gridData.horizontalAlignment = SWT.LEFT_TO_RIGHT;
-		gridData.horizontalIndent = 0;
-		gridData.verticalIndent = 10;
-		parent.setLayout(gridLayout);
-		parent.setLayoutData(gridData);
-
-		Button btnImport = new Button(parent, SWT.PUSH | SWT.CENTER);
-		btnImport.setText(Messages.importBtn);
-		gridData = new GridData();
-		gridData.widthHint = 75;
-		gridData.horizontalAlignment = SWT.BEGINNING;
-		btnImport.setLayoutData(gridData);
+	protected void createButtonsForButtonBar(Composite parent) {
+		Button btnImport = createButton(parent, 2,
+				Messages.importBtn, false);
 		btnImport.addSelectionListener(new SelectionListener() {
 
 			@Override
@@ -100,9 +107,8 @@ public class CertificateDialog extends Dialog {
 			}
 		});
 
-		Button btnCreate = new Button(parent, SWT.PUSH | SWT.CENTER);
-		btnCreate.setText(Messages.newBtn);
-		btnCreate.setLayoutData(gridData);
+		Button btnCreate = createButton(parent, 3,
+				Messages.newBtn, false);
 		btnCreate.addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
@@ -114,11 +120,9 @@ public class CertificateDialog extends Dialog {
 			}
 		});
 
-		Button btnNo = new Button(parent, SWT.PUSH | SWT.CENTER);
+		Button btnNo = createButton(parent, 4,
+				Messages.importBtn, false);
 		btnNo.setVisible(false);
-		gridData = new GridData();
-		gridData.widthHint = 25;
-		btnNo.setLayoutData(gridData);
 
 		createButton(parent, IDialogConstants.OK_ID,
 				IDialogConstants.OK_LABEL, true);
@@ -126,21 +130,32 @@ public class CertificateDialog extends Dialog {
 				IDialogConstants.CANCEL_LABEL, false);
 		okButton = getButton(IDialogConstants.OK_ID);
 		okButton.setEnabled(false);
-		return parent;
 	}
 
-	protected Control createContents(Composite parent) {
+	@Override
+	protected Control createDialogArea(Composite parent) {
+		setTitle(Messages.certAddTtl);
+		setMessage(Messages.certMsg);
+		// Display help contents
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,
+				"com.persistent.winazure.eclipseplugin."
+						+ "windows_azure_certificates_page");
+		Activator.getDefault().setSaved(false);
+
 		Composite container = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout(2, false);
-		container.setLayout(gridLayout);
+		GridLayout gridLayout = new GridLayout();
+		gridLayout.numColumns = 2;
+		gridLayout.marginBottom = 25;
 		GridData gridData = new GridData();
-		gridData.widthHint = 400;
+		gridData.horizontalAlignment = SWT.FILL;
+        gridData.grabExcessHorizontalSpace = true;
+		container.setLayout(gridLayout);
 		container.setLayoutData(gridData);
 
 		createNameComponent(container);
 		createThumbprintComponent(container);
 
-		return super.createContents(parent);
+		return super.createDialogArea(parent);
 	}
 
 	/**
@@ -158,10 +173,10 @@ public class CertificateDialog extends Dialog {
 
 		txtName = new Text(container, SWT.SINGLE | SWT.BORDER);
 		gridData = new GridData();
-		gridData.horizontalAlignment = GridData.END;
-		gridData.verticalIndent = 10;
+		gridData.horizontalAlignment = SWT.FILL;
 		gridData.grabExcessHorizontalSpace = true;
-		gridData.widthHint = 300;
+		gridData.verticalIndent = 10;
+		gridData.widthHint = 350;
 		txtName.setLayoutData(gridData);
 		txtName.addModifyListener(new ModifyListener() {
 
@@ -176,16 +191,16 @@ public class CertificateDialog extends Dialog {
 		Label lblValue = new Label(container, SWT.LEFT);
 		GridData gridData = new GridData();
 		gridData.horizontalIndent = 5;
-		gridData.verticalIndent = 5;
+		gridData.verticalIndent = 10;
 		lblValue.setLayoutData(gridData);
 		lblValue.setText(String.format("%s%s", Messages.colThumb, ":"));
 
 		txtThumb = new Text(container, SWT.SINGLE | SWT.BORDER);
 		gridData = new GridData();
-		gridData.horizontalAlignment = GridData.END;
-		gridData.verticalIndent = 5;
+		gridData.horizontalAlignment = SWT.FILL;
 		gridData.grabExcessHorizontalSpace = true;
-		gridData.widthHint = 300;
+		gridData.verticalIndent = 10;
+		gridData.widthHint = 350;
 		txtThumb.setLayoutData(gridData);
 
 		txtThumb.addModifyListener(new ModifyListener() {

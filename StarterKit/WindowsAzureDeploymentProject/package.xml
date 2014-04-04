@@ -13,22 +13,37 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
--->
-<project basedir="." default="createwapackage" name="WindowsAzureDeploymentProject">
+--><project basedir="." default="createwapackage" name="WindowsAzureDeploymentProject">
+	<property location="." name="cspack.dir"/>
+	<property location="Replace with Azure SDK Java libraries path" name="azure.lib.dir"/>
+		
+	<path id="build.classpath">
+		<!-- Setting cspack.jar in classpath -->
+		<fileset dir="${cspack.dir}">
+			<include name="**/*.jar"/>
+		</fileset>
+			
+		<!-- Setting azure libraries in classpath -->
+			<fileset dir="${azure.lib.dir}">
+				<include name="*.jar"/>			
+				<include name="dependencies/*.jar"/>
+			</fileset>
+	</path>
 
-  <!-- This task is used for storing properties specific to Windows Azure cloud service project -->
-  <target description="Stores properties used by Windows Azure project" name="waprojectproperties">
+
+  <!-- This task is used for storing properties specific to Azure cloud service project -->
+  <target description="Stores properties used by Azure project" name="waprojectproperties">
     <property name="project.enableremoteaccess" value="true"/>
 
     <!-- NOTE: The certificate with the thumbprint 875F1656A34D93B266E71BF19C116C39F16B6987 refers to 
-		the SampleRemoteDesktopPrivate.pfx/.cer certificate files included with the Windows Azure Starter Kit for Java. 
-		When you upload the .pfx certificate to Windows Azure, you need to provide the following password: Password1
+		the SampleRemoteDesktopPrivate.pfx/.cer certificate files included with the Azure Starter Kit for Java. 
+		When you upload the .pfx certificate to Azure, you need to provide the following password: Password1
 		Note this certificate password is *publicly known* so you should not use this sample certificate for anything 
 		other than educational purposes only. To generate your own self-signed certificate (.pfx and .cer) you can use 
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
     <property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-    <property name="creator.version" value="2.2.1"/>
+    <property name="creator.version" value="2.3.0"/>
   </target>
 
   <!-- Force emulator reset to ensure no locks on deploy directory -->
@@ -39,11 +54,11 @@
     <exec executable="${basedir}\emulatorTools\ResetEmulator.cmd" failifexecutionfails="false"/>
   </target>
 
-  <!-- This task creates a Windows Azure cloud service package -->
-  <target depends="resetEmulator" description="Creates a Windows Azure package" name="createwapackage">
-    <taskdef classname="com.microsoftopentechnologies.windowsazure.tools.build.WindowsAzurePackage" classpath="${basedir}\.cspack.jar" name="windowsazurepackage"/>
+  <!-- This task creates a Azure cloud service package -->
+  <target depends="resetEmulator" description="Creates an Azure package" name="createwapackage">
+    <taskdef classname="com.microsoftopentechnologies.windowsazure.tools.build.WindowsAzurePackage" classpathref="build.classpath" name="windowsazurepackage"/>
 
-    <!-- This is the directory where the Windows Azure deployment package or folder will be saved -->
+    <!-- This is the directory where the Azure deployment package or folder will be saved -->
     <property location="${basedir}\deploy" name="wapackagedir"/>
 
     <move failonerror="false" file="${wapackagedir}" overwrite="true" tofile="${wapackagedir}.old"/>
@@ -52,7 +67,7 @@
     <parallel failonany="true">
       <delete dir="${wapackagedir}.old" includeemptydirs="true"/>
 
-      <!-- Create a Windows Azure deployment package
+      <!-- Create a Azure deployment package
 		    
 			Attributes:
 
@@ -82,9 +97,9 @@
 					If not specified, "<projectdir>/deploy" will be used.
 
 			[packagetype = {cloud | local}]
-					cloud:	(default) Builds a package file for deployment to the Windows Azure cloud, for example via the Windows 
+					cloud:	(default) Builds a package file for deployment to the Azure cloud, for example via the Windows 
 							Azure management portal.
-					local:	Creates a package directory layout for local testing in the Windows Azure Compute 
+					local:	Creates a package directory layout for local testing in the Azure Compute 
 							Emulator and a command script (csrun.cmd) for you to start your cloud service in the development 
 							fabric more easily.
 
@@ -97,36 +112,28 @@
 					The directory of the cspack.exe tool. If not specified, an attempt will be made to find it automatically.
 			
 			[emulatordir]:
-					The directory of the Windows Azure Emulator installation. If not specified, an attempt will be made to find it automatically.
+					The directory of the Azure Emulator installation. If not specified, an attempt will be made to find it automatically.
 
 			[usectppackageformat]:
-					If set to true and packagetype=cloud, then the package is built in OPC file format, supported by Windows Azure SDK v1.7 and later.
+					If set to true and packagetype=cloud, then the package is built in OPC file format, supported by Azure SDK v1.7 and later.
 
 			[rolepropertiesfilename]:
 					The file name of a properties file in the project to associate with each role.
 			
 			[portalurl]:
-					The URL of the Windows Azure portal used to generate the shortcut link
+					The URL of the Azure portal used to generate the shortcut link
 
 			[verifydownloads = {true | false}]
 					true:	(default) Verifies the download URLs of components that have cloudsrc specified when building for the cloud
 					false:	Disables download URL verification					
 			-->
-      <windowsazurepackage 
-      	configurationfilename="ServiceConfiguration.cscfg" 
-      	definitionfilename="ServiceDefinition.csdef" 
-      	packagedir="${wapackagedir}" 
-      	packagefilename="WindowsAzurePackage.cspkg" 
-      	packagetype="local" 
-      	projectdir="${basedir}"
-      	portalurl="http://windows.azure.com"
-      	rolepropertiesfilename=".rolePropertiesOS3">
+      <windowsazurepackage configurationfilename="ServiceConfiguration.cscfg" definitionfilename="ServiceDefinition.csdef" packagedir="${wapackagedir}" packagefilename="WindowsAzurePackage.cspkg" packagetype="local" portalurl="http://windows.azure.com" projectdir="${basedir}" rolepropertiesfilename=".rolePropertiesOS3">
 
         <!-- Create a sample role -->
         <workerrole approotdir="${basedir}\WorkerRole1\approot" name="WorkerRole1">
 
-          <!-- Define a Windows Azure role component. i.e. a file or directory to be included in the approot and deployed in 
-					Windows Azure based on the specified settings. A component can also represent a commandline when used with deploymethod='exec'	    
+          <!-- Define an Azure role component. i.e. a file or directory to be included in the approot and deployed in 
+					Azure based on the specified settings. A component can also represent a commandline when used with deploymethod='exec'	    
 				
 					Attributes:
 	
@@ -158,7 +165,7 @@
 							This will prevent the component from getting included in the package.
 					
 					[cloudkey]:
-							An access key for the storage account the blob is in, if cloudsrc points to a private Windows Azure Blob
+							An access key for the storage account the blob is in, if cloudsrc points to a private Azure Blob
 							If not specified, the cloudsrc URL is assumed to be publicly available.
 					
 					[cloudmethod = {none | copy | unzip | exec}]
@@ -174,16 +181,16 @@
 							auto:	The component specified by importsrc will not be included in the package. The following deployment logic will be followed:
 							        - if the component is available at the location specified by cloudsrc, it will be deployed from there. 
 							        - else, if cloudaltsrc is provided and the download is available there, it will be deployed from there and also copied 
-							          into the Windows Azure Blob storage location specified by cloudsrc for future deployments. 
+							          into the Azure Blob storage location specified by cloudsrc for future deployments. 
 							        - else, the component will be uploaded by the build process into blob specified by cloudsrc.
 							always:	The component specified by importsrc will not be included in the package, but will always be uploaded by the build process
-									into the Windows Azure Blob storage location specified by cloudsrc and cloudkey, regardless of whether it already exists at
+									into the Azure Blob storage location specified by cloudsrc and cloudkey, regardless of whether it already exists at
 									that location or not.
 									
 					[cloudaltsrc]:
 							If a download from the URL in cloudsrc fails, a download from this alternative URL will be attempted.
 			-->
-          <component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importas="HelloWorld.war" type="server.app" />
+          <component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importas="HelloWorld.war" type="server.app"/>
         </workerrole>
 
         <!-- $TODO: To add more roles, copy and paste the workerrole element for each new role 

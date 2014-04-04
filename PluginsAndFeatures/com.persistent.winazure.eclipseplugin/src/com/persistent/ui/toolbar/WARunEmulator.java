@@ -36,8 +36,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.persistent.util.WAEclipseHelper;
 /**
- * This class runs selected Windows Azure project.
- * in the Windows Azure Emulator
+ * This class runs selected Azure project.
+ * in the Azure Emulator
  */
 public class WARunEmulator extends AbstractHandler {
 
@@ -46,16 +46,17 @@ public class WARunEmulator extends AbstractHandler {
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		// Get selected WA project
+		// Get selected WA project 
 		IProject selProject = WAEclipseHelper.getSelectedProject();
 
 		try {
 			 WindowsAzureProjectManager waProjManager = WindowsAzureProjectManager.
 					load(new File(selProject.getLocation().toOSString()));
+			 
 			if (waProjManager.getPackageType().equals(WindowsAzurePackageType.CLOUD)) {
-				waProjManager.setPackageType(WindowsAzurePackageType.LOCAL);
-				waProjManager.save();
+				waProjManager.setPackageType(WindowsAzurePackageType.LOCAL);				
 			}
+			waProjManager.save();
 			final IProject selProj = selProject;
 			Job job = new Job(Messages.runJobTtl) {
 			    @Override
@@ -102,7 +103,7 @@ public class WARunEmulator extends AbstractHandler {
 			    }
 			};
 			job.schedule();
-		} catch (WindowsAzureInvalidProjectOperationException e) {
+		} catch (Exception e) {
 			errorTitle = String.format("%s%s%s", Messages.waEmulator,
 					" ", Messages.runEmltrErrTtl);
 			errorMessage = String.format("%s %s%s%s", Messages.runEmltrErrMsg,

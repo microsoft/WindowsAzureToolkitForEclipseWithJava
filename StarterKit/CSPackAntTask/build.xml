@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="AzureService" default="package" basedir=".">
+<project name="AzureService" default="package">
+
+   	<property file="build.properties"/>
+		
+	<path id="build.classpath">
+		<!-- Setting azure libraries in classpath -->
+		<fileset dir="${azure.lib.dir}">
+			<include name="*.jar"/>			
+			<include name="dependencies/*.jar"/>
+		</fileset>
+	</path>
 	
 	<target name="clean">
         <delete dir="${basedir}\build"/>
@@ -9,7 +19,7 @@
 	<target name="package" description="Package JARs" depends="clean">
 		<mkdir dir="${basedir}\build" />
 		<mkdir dir="${basedir}\jar" />
-		<javac srcdir="src" destdir="build" source="1.6" target="1.6" />
+		<javac srcdir="src" destdir="build" source="1.6" target="1.6" classpathref="build.classpath" />
 		<jar destfile="${basedir}\jar\.cspack.jar" basedir="${basedir}\build" />
 		<copy file="${basedir}\jar\.cspack.jar" tofile="${basedir}\..\WindowsAzureDeploymentProject\.cspack.jar" overwrite="true" />
 	</target>

@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 /**
- * Class creates windows azure preference page. 
+ * Class creates azure preference page. 
  */
 public class WindowsAzurePreferencePage
 extends PreferencePage implements IWorkbenchPreferencePage {

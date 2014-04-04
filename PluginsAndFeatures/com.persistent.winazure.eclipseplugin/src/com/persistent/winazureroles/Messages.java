@@ -71,7 +71,6 @@ public final class Messages extends NLS {
 	public static String dlgWorkerRole1;
 	public static String dlgRoleTxt;
 	public static String dlgPortInUse;
-	public static String dlgProjDlgImg;
 	public static String dlgDbgGrp;
 	public static String dlgDbgChkBoxTxt;
 	public static String dlgDbgEndPtTxt;
@@ -176,7 +175,6 @@ public final class Messages extends NLS {
 	public static String lclStgRmvMsg;
 	public static String lclStgEnvVarMsg;
 	public static String ssnAffDelMsg;
-	public static String ssnAffTypMsg;
 	public static String cmpntsImprt;
 	public static String cmpntsFrm;
 	public static String cmpntsAs;
@@ -191,7 +189,6 @@ public final class Messages extends NLS {
 	public static String dlgImpEdtShlTtl;
 	public static String dlgImpTtl;
 	public static String dlgImpMsg;
-	public static String dlgImpImg;
 	public static String dlgImpImpGrp;
 	public static String dlgImpDplGrp;
 	public static String dlgImpFrmPtLbl;
@@ -215,7 +212,6 @@ public final class Messages extends NLS {
 	public static String dlgImpInvDplTtl;
 	public static String dlgImpAutoDplMsg;
 	public static String dlgImpInvDplMsg;
-	public static String imgImpDlg;
 	public static String dplDlgSerTxt;
 	public static String dplDlgBtnTxt;
 	public static String dplDlgJDKGrp;
@@ -413,6 +409,13 @@ public final class Messages extends NLS {
 	public static String certComMsg;
 	public static String httpsPresentSt;
 	public static String usedByRemAcc;
+	public static String certTtl;
+	public static String certDlgImg;
+	public static String certMsg;
+	public static String srvPortWarn;
+	public static String errSrvPort;
+	public static String sslRedirectDelMsg;
+	public static String changeErr;
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

@@ -237,7 +237,7 @@ public class WorkerRole {
 			return;
 		} else if(!storageClientSrcFile.exists() || !storageClientSrcFile.isFile()) {
 			// Library cannot be found in SDK
-			throw new BuildException("The required StorageClient.dll cannot be found. Make sure you have installed the latest Windows Azure SDK for .NET");
+			throw new BuildException("The required StorageClient.dll cannot be found. Make sure you have installed the latest Azure SDK for .NET");
 		} else {
 			wapackage.copyFile(storageClientSrcFile, storageClientDestFile);
 		}

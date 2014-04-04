@@ -30,7 +30,6 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -166,7 +165,7 @@ public class WARCertificates extends PropertyPage{
 	protected void addBtnListener(){
 		CertificateDialog dialog =
 				new CertificateDialog(this.getShell(), mapCert, windowsAzureRole);
-		if (Window.OK == dialog.open()) {
+		if (dialog.open() == 0) {
 			tblViewer.refresh(true);
 			String name = CertificateDialog.getNewlyAddedCert();
 			TableItem[] items = tblCertificates.getItems();
@@ -242,6 +241,10 @@ public class WARCertificates extends PropertyPage{
 					if (choice) {
 						delCert.delete();
 						tblViewer.refresh();
+						if (tblCertificates.getItemCount() == 0) {
+							// table is empty i.e. number of rows = 0
+							btnRemove.setEnabled(false);
+						}
 						certSelected = "";
 					}
 				}

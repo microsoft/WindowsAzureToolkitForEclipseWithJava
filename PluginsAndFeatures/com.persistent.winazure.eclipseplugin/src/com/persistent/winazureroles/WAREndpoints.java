@@ -412,131 +412,102 @@ public class WAREndpoints extends PropertyPage {
          * @throws WindowsAzureInvalidProjectOperationException .
          */
         private void modifyType(WindowsAzureEndpoint endpoint,
-                Object modifiedVal)
-                        throws WindowsAzureInvalidProjectOperationException {
+        		Object modifiedVal)
+        				throws WindowsAzureInvalidProjectOperationException {
         	WindowsAzureEndpointType oldType = endpoint.getEndPointType();
-        	// User changed type to Input
-            if (modifiedVal.toString().equals("0")) {
-                 WindowsAzureEndpoint stickyIntEndpt = windowsAzureRole
-                         .getSessionAffinityInternalEndpoint();
-                 String stcIntEndptName = "";
-                 if (stickyIntEndpt != null) {
-                       stcIntEndptName = stickyIntEndpt.getName();
-                 }
-                if (endpoint.getName().equalsIgnoreCase(stcIntEndptName)) {
-                    StringBuffer msg = new StringBuffer(Messages.ssnAffTypMsg);
-                    MessageDialog.openWarning(new Shell(),
-                            Messages.dlgTypeTitle, msg.toString());
-                } else {
-                	/*
-                	 * While changing type from Internal to Input
-                	 * if private port is in the form of range,
-                	 * then assign minimum of that range
-                	 * as a private port because private port
-                	 * range is not valid for Input endpoint.
-                	 */
-                	if (oldType.equals(WindowsAzureEndpointType.Internal)
-                			&& endpoint.getPrivatePort().contains("-")) {
-                		String[] portRange = endpoint.getPrivatePort().split("-");
-                		endpoint.setPrivatePort(portRange[0]);
-                	}
-                	endpoint.setEndPointType(WindowsAzureEndpointType
-                			.valueOf(arrType[0]));
-                }
-            } else {
-            	// User changed type to Internal
-                String endpointName = endpoint.getName();
-                WindowsAzureEndpoint debugEndpt = windowsAzureRole
-                        .getDebuggingEndpoint();
-                WindowsAzureEndpoint stickyEndpt = windowsAzureRole
-                        .getSessionAffinityInputEndpoint();
-                WindowsAzureEndpoint stickyIntEndpt = windowsAzureRole
-                        .getSessionAffinityInternalEndpoint();
+        	String endpointName = endpoint.getName();
+        	String prvPort = endpoint.getPrivatePort();
+        	String pubPort = endpoint.getPort();
+        	String modifiedValStr = modifiedVal.toString();
 
-                String dbgEndptName = "";
-                String stcEndptName = "";
-                String stcIntEndptName = "";
+        	if (modifiedValStr.equals("0")) {
+        		// User changed type to Input
+        		/*
+        		 * While changing type from Internal
+        		 * if private port is in the form of range,
+        		 * then assign minimum of that range
+        		 * as a private port because private port
+        		 * range is not valid for other types of endpoints.
+        		 */
+        		if (oldType.equals(WindowsAzureEndpointType.Internal)) {
+        			if (prvPort.contains("-")) {
+        				String[] portRange = prvPort.split("-");
+        				prvPort = portRange[0];
+        			}
+        			pubPort = prvPort;
+        		} else if (oldType.equals(WindowsAzureEndpointType.InstanceInput)
+        				&& pubPort.contains("-")) {
+        			String[] portRange = pubPort.split("-");
+        			pubPort = portRange[0];
+        		}
+        		setEndpointType(endpoint, WindowsAzureEndpointType.Input, prvPort, pubPort);
+        	} else if (modifiedValStr.equals("1")) {
+        		// User changed type to Internal
+        		WindowsAzureEndpoint debugEndpt = windowsAzureRole
+        				.getDebuggingEndpoint();
+        		String dbgEndptName = "";
+        		if (debugEndpt != null) {
+        			dbgEndptName = debugEndpt.getName();
+        		}
+        		Boolean disableDebug = false;
+        		if (endpointName.equalsIgnoreCase(dbgEndptName)) {
+        			boolean choice = MessageDialog.openQuestion(new Shell(),
+        					Messages.dlgTypeTitle,
+        					String.format("%s%s%s",
+        							Messages.dlgEPDel,
+        							Messages.dlgEPChangeType,
+        							Messages.dlgEPDel2));
+        			if (choice) {
+        				disableDebug = true;
+        			}
+        		}
+        		setEndpointType(endpoint, WindowsAzureEndpointType.Internal, prvPort, "");
+        		if (disableDebug) {
+        			windowsAzureRole.setDebuggingEndpoint(null);
+        		}
+        	} else if (modifiedValStr.equals("2")) {
+        		// User changed type to InstanceInput
+        		Boolean changeType = true;
+        		if (oldType.equals(WindowsAzureEndpointType.Internal)) {
+        			if (prvPort.contains("-")) {
+        				String[] portRange = prvPort.split("-");
+        				prvPort = portRange[0];
+        			}
+        			pubPort = prvPort;
+        		} else if (oldType.equals(WindowsAzureEndpointType.Input)
+        				&& prvPort == null) {
+        			if (windowsAzureRole.isValidEndpoint(
+        					endpointName,
+        					WindowsAzureEndpointType.InstanceInput,
+        					pubPort, pubPort)) {
+        				prvPort = pubPort;
+        			} else {
+        				changeType = false;
+        				MessageDialog.openWarning(new Shell(),
+        						Messages.dlgTypeTitle,
+        						String.format(Messages.inpInstTypeMsg, pubPort));
+        			}
+        		}
+        		if (changeType) {
+        			setEndpointType(endpoint, WindowsAzureEndpointType.InstanceInput, prvPort, pubPort);
+        		}
+        	}
+        }
 
-                if (debugEndpt != null) {
-                    dbgEndptName = debugEndpt.getName();
-                }
-                if (stickyEndpt != null) {
-                    stcEndptName = stickyEndpt.getName();
-                    stcIntEndptName = stickyIntEndpt.getName();
-                }
-                if (modifiedVal.toString().equals("1")) {
-                if (endpointName.equalsIgnoreCase(dbgEndptName)
-                        && oldType.equals(
-                        		WindowsAzureEndpointType.Input)
-                        || endpointName.equalsIgnoreCase(dbgEndptName)
-                        && oldType.equals(
-                        		WindowsAzureEndpointType.InstanceInput)) {
-                    StringBuffer msg = new StringBuffer(Messages.dlgEPDel);
-                    msg.append(Messages.dlgEPChangeType);
-                    msg.append(Messages.dlgEPDel2);
-                    boolean choice = MessageDialog.openQuestion(new Shell(),
-                            Messages.dlgTypeTitle, msg.toString());
-                    if (choice) {
-                        endpoint.setEndPointType(WindowsAzureEndpointType
-                                .valueOf(arrType[1]));
-                        windowsAzureRole.setDebuggingEndpoint(null);
-                    }
-                } else if (endpointName.equalsIgnoreCase(stcEndptName)
-                        && oldType.equals(WindowsAzureEndpointType.Input)) {
-                    StringBuffer msg = new StringBuffer(Messages.ssnAffTypMsg);
-                    MessageDialog.openWarning(new Shell(),
-                            Messages.dlgTypeTitle, msg.toString());
-                } else {
-                    endpoint.setEndPointType(WindowsAzureEndpointType
-                            .valueOf(arrType[1]));
-                }
-                } else if (modifiedVal.toString().equals("2")) {
-                	// User changed type to InstanceInput
-                	if (endpointName.equalsIgnoreCase(stcEndptName)
-                            && oldType.equals(WindowsAzureEndpointType.Input)
-                            || (endpointName.equalsIgnoreCase(stcIntEndptName)
-                            		&& oldType.equals(WindowsAzureEndpointType.
-                            				Internal))) {
-                        StringBuffer msg = new StringBuffer(
-                        		Messages.ssnAffTypMsg);
-                        MessageDialog.openWarning(new Shell(),
-                                Messages.dlgTypeTitle, msg.toString());
-                	} else {
-                		/*
-                		 * While changing type from Internal to Input
-                		 * if private port is in the form of range,
-                		 * then assign minimum of that range
-                		 * as a private port because private port
-                		 * range is not valid for Input endpoint.
-                		 */
-                		Boolean changeType = true;
-                		if (oldType.equals(WindowsAzureEndpointType.Internal)
-                				&& endpoint.getPrivatePort().contains("-")) {
-                			String[] portRange = endpoint.
-                					getPrivatePort().split("-");
-                			endpoint.setPrivatePort(portRange[0]);
-                		} else if (oldType.equals(WindowsAzureEndpointType.Input)
-                				&& endpoint.getPrivatePort() == null) {
-                			String pubPort = endpoint.getPort();
-                			if (windowsAzureRole.isValidEndpoint(
-                					endpointName,
-                					WindowsAzureEndpointType.InstanceInput,
-                					pubPort, pubPort)) {
-                				endpoint.setPrivatePort(pubPort);
-                			} else {
-                				changeType = false;
-                				MessageDialog.openWarning(new Shell(),
-                						Messages.dlgTypeTitle,
-                						String.format(Messages.inpInstTypeMsg, pubPort));
-                			}
-                		}
-                		if (changeType) {
-                			endpoint.setEndPointType(WindowsAzureEndpointType
-                					.valueOf(arrType[2]));
-                		}
-                	}
-                }
-            }
+        private void setEndpointType(WindowsAzureEndpoint endpoint,
+        		WindowsAzureEndpointType type, String prvPort, String pubPort)
+        				throws WindowsAzureInvalidProjectOperationException {
+        	if (windowsAzureRole.isValidEndpoint(
+        			endpoint.getName(),
+        			type,
+        			prvPort,
+        			pubPort)) {
+        		endpoint.setPrivatePort(prvPort);
+        		endpoint.setEndPointType(type);
+        	} else {
+        		MessageDialog.openInformation(new Shell(),
+        				Messages.dlgTypeTitle, Messages.changeErr);
+        	}
         }
 
         /**
@@ -853,7 +824,8 @@ public class WAREndpoints extends PropertyPage {
         					|| property.equals(Messages.dlgColType))) {
         		retVal = false;
         	} else if (endpoint.isStickySessionEndpoint()
-        			|| endpoint.isSSLEndpoint()) {
+        			|| endpoint.isSSLEndpoint()
+        			|| endpoint.isSSLRedirectEndPoint()) {
         		retVal = false;
         	} else {
         			if (endpoint.getEndPointType().toString().equalsIgnoreCase(
@@ -914,7 +886,6 @@ public class WAREndpoints extends PropertyPage {
                     if (choice) {
                         waEndpoint.delete();
                         windowsAzureRole.setDebuggingEndpoint(null);
-                        tblViewer.refresh();
                     }
                 }
                 /*
@@ -937,7 +908,6 @@ public class WAREndpoints extends PropertyPage {
                     		setSessionAffinityInputEndpoint(null);
                     		windowsAzureRole.setSslOffloading(null, null);
                     	}
-                    	tblViewer.refresh();
                     }
                 }
                 /*
@@ -959,7 +929,6 @@ public class WAREndpoints extends PropertyPage {
                     		windowsAzureRole.
                     		setSessionAffinityInputEndpoint(null);
                     	}
-                    	tblViewer.refresh();
                     }
                 }
                 /*
@@ -976,7 +945,16 @@ public class WAREndpoints extends PropertyPage {
                     	} else {
                     		windowsAzureRole.setSslOffloading(null, null);
                     	}
-                    	tblViewer.refresh();
+                    }
+                }
+                /*
+                 * Endpoint associated with SSL redirection.
+                 */
+                else if (waEndpoint.isSSLRedirectEndPoint()) {
+                	boolean choice = MessageDialog.openConfirm(new Shell(),
+                            Messages.dlgDelEndPt1, Messages.sslRedirectDelMsg);
+                    if (choice) {
+                    	windowsAzureRole.deleteSslOffloadingRedirectionEndpoint();
                     }
                 }
                 /*
@@ -987,8 +965,13 @@ public class WAREndpoints extends PropertyPage {
                             Messages.dlgDelEndPt1, Messages.dlgDelEndPt2);
                     if (choice) {
                         waEndpoint.delete();
-                        tblViewer.refresh();
                     }
+                }
+                tblViewer.refresh();
+                if (tblEndpoints.getItemCount() == 0) {
+                	// table is empty i.e. number of rows = 0
+                	btnRemove.setEnabled(false);
+                	btnEdit.setEnabled(false);
                 }
             } catch (WindowsAzureInvalidProjectOperationException e) {
             	PluginUtil.displayErrorDialogAndLog(
@@ -1043,7 +1026,11 @@ public class WAREndpoints extends PropertyPage {
     				PluginUtil.displayErrorDialog(getShell(),
     						Messages.sslDsblErTl,
     						Messages.sslMsg);
-    			} else {WAEndpointDialog dialog =
+    			} else if(waEndpoint.isSSLRedirectEndPoint()) { 
+    				PluginUtil.displayErrorDialog(getShell(),
+    						Messages.sslDsblErTl,
+    						Messages.sslMsg);
+    			}else {WAEndpointDialog dialog =
     						new WAEndpointDialog(
     								this.getShell(),
     						windowsAzureRole,

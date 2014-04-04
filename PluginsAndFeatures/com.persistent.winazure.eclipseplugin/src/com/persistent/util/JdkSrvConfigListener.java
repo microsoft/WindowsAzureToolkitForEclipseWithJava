@@ -29,7 +29,7 @@ import com.persistent.winazureroles.Messages;
  * Class has utility methods
  * required for UI components listeners of
  * JDK, Server and Application tabs
- * for windows azure deployment project creation wizard
+ * for azure deployment project creation wizard
  * and server configuration property page.
  */
 public class JdkSrvConfigListener extends JdkSrvConfig {
@@ -341,6 +341,13 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 							cmpntFile));
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			Activator.getDefault().log(e.getMessage());
+		}
+	}
+
+	public static void disableRemoveButton() {
+		if (JdkSrvConfig.getTblApp().getItemCount() == 0) {
+			// table is empty i.e. number of rows = 0
+			JdkSrvConfig.getBtnRemove().setEnabled(false);
 		}
 	}
 }

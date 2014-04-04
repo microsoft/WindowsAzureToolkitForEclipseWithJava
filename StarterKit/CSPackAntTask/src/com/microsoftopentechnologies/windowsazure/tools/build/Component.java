@@ -328,7 +328,7 @@ public class Component {
 	}
 
 	/**
-	 * Returns the container name based on the URL, if this is a private Windows Azure Blob 
+	 * Returns the container name based on the URL, if this is a private Azure Blob 
 	 * @return
 	 */
 	private String getCloudContainer() {
@@ -357,7 +357,7 @@ public class Component {
 	}
 	
 	/**
-	 * Returns the blob name based on the URL, if this is a private Windows Azure Blob
+	 * Returns the blob name based on the URL, if this is a private Azure Blob
 	 * @return
 	 */
 	private String getCloudBlob() {
@@ -382,7 +382,7 @@ public class Component {
 		}
 	}
 	
-	/** Returns the name of the storage account based on the URL, if this is a private Windows Azure Blob
+	/** Returns the name of the storage account based on the URL, if this is a private Azure Blob
 	 * @return
 	 */
 	private String getCloudStorage() {
@@ -403,7 +403,7 @@ public class Component {
 		}
 	}
 	
-	/** Returns the base URL of the storage service based on the URL, if this is a private Windows Azure Blob
+	/** Returns the base URL of the storage service based on the URL, if this is a private Azure Blob
 	 * @return
 	 */
 	private String getCloudStorageEndpoint() {
@@ -471,21 +471,19 @@ public class Component {
 		if(null == waManager) {
 			waPackage.log("warning: Failed to verify blob availability (" + cloudSrc.toExternalForm() + ") due to an internal error", 1);
 		} else if(null == (containerName = getCloudContainer()) || null == (blobName = getCloudBlob()) || null == (storageName = getCloudStorage())) {
-			waPackage.log("warning: Failed to verify blob availability (" + cloudSrc.toExternalForm() + ") because the URL does not appear to point to a Windows Azure blob", 1);
-		} else if(null == waManager.execute(new WindowsAzureManager.Commands.Container.Create(
-				containerName, 
-				storageName, 
-				this.getCloudKey(), 
-				this.getCloudStorageEndpoint()))) {
-			waPackage.log("warning: Failed to ensure the blob's availability because the specified container could not be created (" + containerName + ")", 1);
+			waPackage.log("warning: Failed to verify blob availability (" + cloudSrc.toExternalForm() + ") because the URL does not appear to point to a Azure blob", 1);
+        } else if(null == waManager.createContainer(containerName,
+                storageName,
+                this.getCloudKey(),
+                waPackage)) {
+            waPackage.log("warning: Failed to ensure the blob's availability because the specified container could not be created (" + containerName + ")", 1);
 		} else if(getCloudUpload() == CloudUpload.ALWAYS) {
 			uploadBlob(waManager, blobName, containerName, storageName, this.getCloudKey());
-		} else if(null != waManager.execute(new WindowsAzureManager.Commands.Blob.Use(
-				blobName, 
-				containerName, 
-				storageName, 
-				this.getCloudKey(), 
-				this.getCloudStorageEndpoint()))) {
+        } else if(null != waManager.useBlob(blobName,
+                containerName,
+                storageName,
+                this.getCloudKey(),
+                waPackage)) {
 			; // Blob existence confirmed, nothing else to do
 		} else if(WindowsAzurePackage.verifyURLAvailable(cloudAltSrc)) {
 			; // Alt download existence confirmed, nothing else to do
@@ -502,18 +500,32 @@ public class Component {
 	private void uploadBlob(WindowsAzureManager waManager, String blobName, String containerName, String storageName, String accessKey) {
 		final WindowsAzurePackage waPackage = role.getPackage();
 		final File approotDir = role.getAppRootDir();
-		File srcFile;
+		File srcFile = null;
 		
-		// Figure out where to get the source component, the source location or approot
-		if(getImportSrc() != null) {
+		// Figure out where to get the source component
+		switch(getImportMethod()) {
+		case NONE:
+			// Require importsrc to point at the content to upload
 			srcFile = new File(getImportSrc());
-		} else if(getImportAs() != null) {
+			break;
+		case AUTO:
+			// Require importAs to point at the content to upload
 			srcFile = new File(getImportAs());
-		} else {
-			waPackage.log("warning: Skipping a component that cannot be uploaded to blob storage automatically", 1);
-			return;
+			break;
+		default:
+			// First try importsrc, else importas
+			if(getImportSrc() != null) {
+				srcFile = new File(getImportSrc());
+			} else if(getImportAs() != null) {
+				srcFile = new File(getImportAs());				
+			} else {
+				waPackage.log("warning: Skipping a component that cannot be uploaded to blob storage automatically", 1);
+				return;
+			}			
+			break;
 		}
 		
+		// If src file path not absolute, assume approot
 		if (!srcFile.isAbsolute()) {
 			srcFile = new File(approotDir, srcFile.getPath());
 		}
@@ -535,14 +547,13 @@ public class Component {
 		waPackage.log("Please wait for blob upload to complete (" + this.getCloudSrc() + ")...");
 		if(waManager == null) {
 			return;
-		} else if(null == (waManager.execute(new WindowsAzureManager.Commands.Blob.Upload(
-				uploadedFile.getAbsolutePath(), 
-				blobName, 
-				containerName, 
-				storageName, 
-				this.getCloudKey(), 
-				this.getCloudStorageEndpoint())))) {
-			waPackage.log("warning: Failed to upload blob " + this.getCloudSrc() + ". The deployment might not work correctly in the cloud", 1);
+        } else if(null == (waManager.uploadBlob(uploadedFile.getAbsolutePath(),
+                blobName,
+                containerName,
+                storageName,
+                this.getCloudKey(),
+                waPackage))) {
+            waPackage.log("warning: Failed to upload blob " + this.getCloudSrc() + ". The deployment might not work correctly in the cloud", 1);
 		} else {
 			waPackage.log("Uploaded blob " + this.getCloudSrc());			
 		}
@@ -605,7 +616,7 @@ public class Component {
 				
 			case EXEC:
 				// Support for deploy method: exec
-				StringBuilder s = new StringBuilder("start \"Windows Azure\" ");
+				StringBuilder s = new StringBuilder("start \"Azure\" ");
 				
 				// If deploy dir specified, treat it as a change directory request
 				if(deployPath != null) {
@@ -630,7 +641,7 @@ public class Component {
 	private String createPublicDownloadCommandLine() {
 		if(getCloudSrc() == null) {
 			return null;
-		} 
+		}
 
 		final StringBuilder cmd = new StringBuilder();
 		cmd.append(String.format("cmd /c %s file download \"%s\" \"%s\"", 
@@ -913,15 +924,21 @@ public class Component {
         
 		final File destFile = new File(approotDir, fileName);
         
-		// When building for the cloud if cloud source is specified, delete the component if it exists and import method isn't none; and don't import
-		if(getCloudSrc() != null && wapackage.getPackageType() == PackageType.cloud && getImportMethod() != ImportMethod.NONE) {
+		// When building for the cloud and cloud source is specified, delete the component if it exists and import method isn't none nor auto; and don't import
+		if(getCloudSrc() != null && wapackage.getPackageType() == PackageType.cloud && getImportMethod() != ImportMethod.NONE && getImportMethod() != ImportMethod.AUTO) {
 			if(destFile.exists()) {
 				WindowsAzurePackage.deleteDirectory(destFile);
 			}
 			return;
 		}
 		
-		File srcFile = new File(getImportSrc());
+		// If import method is auto then assume destination already created by external process
+		File srcFile;
+		if(getImportMethod() == ImportMethod.AUTO) {
+			srcFile = destFile;
+		} else {
+			srcFile = new File(getImportSrc());
+		}
 
 		// If relative path, make it relative to approot
 		if (!srcFile.isAbsolute()) {

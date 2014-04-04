@@ -1,2 +1,2 @@
-start "Windows Azure Startup" /WAIT "%1"
+start "Azure Startup" /WAIT "%1"
 exit %ERRORLEVEL%

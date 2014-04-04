@@ -47,6 +47,8 @@ public final class Messages extends NLS {
     public static String newCerDlgInvdFlExt;
     public static String newCertDlgAlias;
     public static String newCerDlgCrtCerEr;
+    public static String newCertDlgImg;
+    public static String imgErr;
     /* New Certificate Dialog messages - end*/
     public static String impSubDlgTtl;
     public static String dwnlPubSetFile;

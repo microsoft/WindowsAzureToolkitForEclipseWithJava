@@ -157,7 +157,7 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 	}
 
 	/**
-	 * Returns reference of Windows Azure cloud blob container.
+	 * Returns reference of Azure cloud blob container.
 	 * @param strAccName 	storage account name
 	 * @param key     		storage account primary access key
 	 * @param containerName name of the container

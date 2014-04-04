@@ -32,7 +32,7 @@ import com.persistent.util.WAEclipseHelper;
 /**
  * Add Worker Role class will be invoked
  * when sub menu "Add Role..." of fly out menu
- * of windows azure deployment project
+ * of azure deployment project
  * is clicked.
  * Dialog to add worker role will be opened.
  */

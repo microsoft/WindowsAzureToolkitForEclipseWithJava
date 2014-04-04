@@ -15,9 +15,15 @@
  */
 package com.microsoftopentechnologies.wacommon.utils;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jdt.core.IJavaElement;
@@ -32,6 +38,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 import org.osgi.service.prefs.Preferences;
 
@@ -124,4 +131,40 @@ public class PluginUtil {
     	}
     	return false;
     }
+    
+    /**
+	 * Gets location of Azure Libraries
+     * @throws WACommonException 
+	 */
+	public static String getAzureLibLocation() throws WACommonException {
+		String libLocation = null;
+		
+		try {
+			//get bundle for the sdk
+	        Bundle bundle = Platform.getBundle(Messages.sdkLibBundleName);
+	        
+	        if (bundle == null) {
+	        	throw new WACommonException(Messages.SDKLocErrMsg);
+	        } else {
+	            //locate sdk jar in bundle
+	            URL url = FileLocator.find(bundle,new Path(Messages.sdkLibBaseJar), null);
+	            if (url == null) {
+	            	throw new WACommonException(Messages.SDKLocErrMsg);
+	            } else {
+	                //if jar is found then resolve url and get the location
+	                url = FileLocator.resolve(url);
+	                File loc = new File(url.getPath());
+	                libLocation = loc.getParentFile().getAbsolutePath();
+	            }
+	        }
+		} catch (WACommonException e) {
+	    	e.printStackTrace(); 
+			throw e;	    	 
+	     } catch (IOException e) {
+	    	 e.printStackTrace();
+	    	 throw new WACommonException(Messages.SDKLocErrMsg);
+		}
+       
+        return libLocation;
+	}
 }

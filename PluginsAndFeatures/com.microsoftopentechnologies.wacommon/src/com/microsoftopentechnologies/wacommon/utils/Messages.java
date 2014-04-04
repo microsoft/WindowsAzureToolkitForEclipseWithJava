@@ -52,7 +52,9 @@ public final class Messages extends NLS {
 	public static String bundleName;
 	public static String nameSetErMsg;
 	public static String saveErMsg;
-	
+	public static String sdkLibBundleName;
+	public static String SDKLocErrMsg;
+	public static String sdkLibBaseJar;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

@@ -42,7 +42,7 @@ import com.persistent.util.ProjectNatureHelper.ProjExportType;
  *                     role related node.
  *                    
  * 3) isProjFile : to determine if file opened in editor is
- * 					is of Windows Azure Deployment project.
+ * 					is of  Azure Deployment project.
  */
 public class WAPropertyTester extends PropertyTester {
 
@@ -138,7 +138,7 @@ public class WAPropertyTester extends PropertyTester {
     /**
      * Method checks and returns true,
      * if the file which is opened in editor
-     * is of Windows Azure Deployment project.
+     * is of  Azure Deployment project.
      * @param obj
      * @return
      * @throws CoreException

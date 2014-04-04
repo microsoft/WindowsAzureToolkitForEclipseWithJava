@@ -16,16 +16,18 @@
 package com.microsoftopentechnologies.wacommon.commoncontrols;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.io.FileInputStream;
+import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -64,6 +66,20 @@ public class NewCertificateDialog extends TitleAreaDialog {
         super.configureShell(newShell);
         newShell.setText(Messages.newCertDlgCertTxt);
         newShell.setLocation(200, 200);
+        Image image;
+        try {
+        	URL imgUrl = Activator.getDefault().
+        			getBundle().getEntry(Messages.newCertDlgImg);
+        	URL imgFileURL = FileLocator.toFileURL(imgUrl);
+        	URL path = FileLocator.resolve(imgFileURL);
+        	String imgpath = path.getFile();
+        	image = new Image(null, new FileInputStream(imgpath));
+        	setTitleImage(image);
+        } catch (Exception e) {
+        	PluginUtil.displayErrorDialogAndLog(getShell(),
+        			com.microsoftopentechnologies.wacommon.utils.Messages.err,
+        			Messages.imgErr, e);
+        }
     }
 
     protected Control createDialogArea(Composite parent) {

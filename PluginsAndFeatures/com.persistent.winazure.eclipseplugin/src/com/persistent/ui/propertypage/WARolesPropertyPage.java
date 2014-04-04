@@ -27,7 +27,7 @@ import com.persistent.winazureroles.WARoles;
 
 /**
  *
- * This class creates property page for Roles under Windows Azure in properties
+ * This class creates property page for Roles under Azure in properties
  */
 public class WARolesPropertyPage extends PropertyPage {
 

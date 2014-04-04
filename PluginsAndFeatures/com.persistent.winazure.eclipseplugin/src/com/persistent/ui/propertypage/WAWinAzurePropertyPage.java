@@ -39,7 +39,7 @@ import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
 /**
- * This class creates Windows Azure Property Page.
+ * This class creates Azure Property Page.
  */
 public class WAWinAzurePropertyPage extends PropertyPage {
     private Text txtServiceName;

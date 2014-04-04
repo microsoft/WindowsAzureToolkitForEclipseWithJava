@@ -23,7 +23,7 @@ import com.persistent.util.WAEclipseHelper;
 
 /**
  * Project Properties Handler class will be invoked
- * when sub menu of fly out menu of windows azure deployment project
+ * when sub menu of fly out menu of azure deployment project
  * is clicked.
  * Property dialog of project will be opened.
  */

@@ -90,7 +90,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 	private WindowsAzureRole windowsAzureRole;
 	private WindowsAzureRoleComponent winAzureRoleCmpnt;
 	private WindowsAzureProjectManager winAzureProjMgr;
-	private static final String BASE_PATH = "${basedir}\\..";
+	private static final String BASE_PATH = "${basedir}" + File.separator + "..";
 	public ArrayList<String> cmpList = new ArrayList<String>();
 	private String[] cloudMethods = {"same", "unzip",
 	"copy"};
@@ -139,7 +139,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 		Image image;
 		try {
 			URL imgUrl = Activator.getDefault().getBundle()
-					.getEntry(Messages.imgImpDlg);
+					.getEntry(Messages.lclDlgImg);
 			URL imgFileURL = FileLocator.toFileURL(imgUrl);
 			URL path = FileLocator.resolve(imgFileURL);
 			String imgpath = path.getFile();
@@ -466,7 +466,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 							|| !txtFromPath.getText().equalsIgnoreCase(oldPath)) {
 						String cmpntPath = String.format("%s%s%s%s%s",
 								root.getProject(winAzureProjMgr.getProjectName()).getLocation(),
-								"\\", windowsAzureRole.getName(),
+								File.separator, windowsAzureRole.getName(),
 								Messages.approot, oldAsName);
 						File file = new File(cmpntPath);
 						if (file.exists()) {
@@ -484,13 +484,13 @@ public class ImportExportDialog extends TitleAreaDialog {
 					if (!txtName.getText().equalsIgnoreCase(winAzureRoleCmpnt.getDeployName())) {
 						String cmpntPath = String.format("%s%s%s%s%s",
 								root.getProject(winAzureProjMgr.getProjectName()).getLocation(),
-								"\\", windowsAzureRole.getName(),
+								File.separator, windowsAzureRole.getName(),
 								Messages.approot, oldAsName);
 						File file = new File(cmpntPath);
 						if (file.exists()) {
 							String dest = String.format("%s%s%s%s%s",
 									root.getProject(winAzureProjMgr.getProjectName()).getLocation(),
-									"\\", windowsAzureRole.getName(),
+									File.separator, windowsAzureRole.getName(),
 									Messages.approot, txtName.getText());
 							file.renameTo(new File(dest));
 						}

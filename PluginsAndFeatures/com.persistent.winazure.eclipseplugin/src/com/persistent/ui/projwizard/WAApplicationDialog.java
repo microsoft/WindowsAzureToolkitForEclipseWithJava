@@ -350,7 +350,7 @@ public class WAApplicationDialog extends TitleAreaDialog {
 
     /**
      * Method returns array of project names
-     * which are open and has windows azure nature.
+     * which are open and has azure nature.
      * @return String[]
      */
     private String[] getProjects() {

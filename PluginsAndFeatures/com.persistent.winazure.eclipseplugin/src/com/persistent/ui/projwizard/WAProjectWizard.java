@@ -18,7 +18,6 @@ package com.persistent.ui.projwizard;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +29,6 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
@@ -38,7 +36,6 @@ import org.eclipse.jface.dialogs.IPageChangedListener;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.PageChangedEvent;
 import org.eclipse.jface.operation.IRunnableWithProgress;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.IWizardContainer;
@@ -61,7 +58,6 @@ import waeclipseplugin.Activator;
 import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
-import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
@@ -75,7 +71,7 @@ import com.persistent.util.ParseXML;
 import com.persistent.util.WAEclipseHelper;
 
 /**
- * This class creates a wizard for new Windows Azure Cloud Project.
+ * This class creates a wizard for new Azure Cloud Project.
  */
 public class WAProjectWizard extends Wizard
 implements INewWizard, IPageChangedListener {
@@ -89,6 +85,8 @@ implements INewWizard, IPageChangedListener {
 	private WindowsAzureRole waRole;
 	private final int CACH_DFLTVAL = 30;
 	private final String DEBUG_PORT = "8090";
+	private final String HTTP_PRV_PORT = "8080";
+	private final String HTTP_PORT = "80";
 	private final String auto = "auto";
 	private final String dashAuto = "-auto";
     private static final String LAUNCH_FILE_PATH = File.separator
@@ -117,18 +115,21 @@ implements INewWizard, IPageChangedListener {
         	//	By deafult - disabling remote access
         	//  when creating new project
         	waProjMgr.setRemoteAccessAllRoles(false);
+        	waProjMgr.setClassPathInPackage("azure.lib.dir", PluginUtil.getAzureLibLocation());
         	waRole = waProjMgr.getRoles().get(0);
-        } catch (WindowsAzureInvalidProjectOperationException e) {
+        	// remove http endpoint
+        	waRole.getEndpoint(Messages.httpEp).delete();
+        } catch (IOException e) {
+        	PluginUtil.displayErrorDialogAndLog(this.getShell(),
+        			Messages.pWizErrTitle, Messages.pWizErrMsg, e);
+        } catch (Exception e) {
         	errorTitle = Messages.adRolErrTitle;
         	errorMessage = Messages.pWizErrMsgBox1
         			+ Messages.pWizErrMsgBox2;
         	PluginUtil.displayErrorDialogAndLog(this.getShell(),
         			errorTitle,
         			errorMessage, e);
-        } catch (IOException e) {
-        	PluginUtil.displayErrorDialogAndLog(this.getShell(),
-        			Messages.pWizErrTitle, Messages.pWizErrMsg, e);
-        }
+        } 
     }
 
     /**
@@ -244,6 +245,7 @@ implements INewWizard, IPageChangedListener {
             WindowsAzureRole role = waProjMgr.getRoles().get(0);
             //logic for handling deploy page components and their values.
             if (!depMap.isEmpty()) {
+            	File templateFile = new File(depMap.get("tempFile"));
             	// JDK
             	if (depMap.get("jdkChecked").equalsIgnoreCase("true")
             			&& !depMap.get("jdkLoc").isEmpty()) {
@@ -251,12 +253,12 @@ implements INewWizard, IPageChangedListener {
             		if (depMap.get("jdkThrdPartyChecked").equalsIgnoreCase("true")) {
             			String jdkName = depMap.get("jdkName");
             			role.setJDKSourcePath(depMap.get("jdkLoc"),
-                				new File(depMap.get("tempFile")),
+            					templateFile,
                 				jdkName);
             			role.setJDKCloudName(jdkName);
             		} else {
             			role.setJDKSourcePath(depMap.get("jdkLoc"),
-                				new File(depMap.get("tempFile")), "");
+            					templateFile, "");
             		}
 
             		// JDK download group
@@ -269,7 +271,7 @@ implements INewWizard, IPageChangedListener {
             					equalsIgnoreCase(JdkSrvConfig.AUTO_TXT)) {
             				jdkTabUrl = auto;
             			}
-            			role.setJDKCloudUploadMode(WARoleComponentCloudUploadMode.AUTO);
+            			role.setJDKCloudUploadMode(WARoleComponentCloudUploadMode.auto);
             		}
             		role.setJDKCloudURL(jdkTabUrl);
             		role.setJDKCloudKey(depMap.get("jdkKey"));
@@ -284,9 +286,19 @@ implements INewWizard, IPageChangedListener {
                 if (depMap.get("serChecked").equalsIgnoreCase("true")
                 		&& !depMap.get("serLoc").isEmpty()
                 		&& !depMap.get("servername").isEmpty()) {
-                	role.setServer(depMap.get("servername"),
+                	String srvName = depMap.get("servername");
+                	String srvPriPort = WindowsAzureProjectManager.
+                			getHttpPort(srvName, templateFile);
+                	if (role.isValidEndpoint(Messages.httpEp,
+                			WindowsAzureEndpointType.Input,
+                			srvPriPort, HTTP_PORT)) {
+                		role.addEndpoint(Messages.httpEp,
+                				WindowsAzureEndpointType.Input,
+                				srvPriPort, HTTP_PORT);
+                	}
+                	role.setServer(srvName,
                 			depMap.get("serLoc"),
-                			new File(depMap.get("tempFile")));
+                			templateFile);
 
                 	// Server download group
                 	// Add only if Server component added
@@ -307,7 +319,7 @@ implements INewWizard, IPageChangedListener {
                 		 */
                 		role.setServerCloudHome(depMap.get("srvHome"));
                 		if (depMap.get("srvAutoDwnldChecked").equalsIgnoreCase("true")) {
-                			role.setServerCloudUploadMode(WARoleComponentCloudUploadMode.AUTO);
+                			role.setServerCloudUploadMode(WARoleComponentCloudUploadMode.auto);
                 		}
                 	}
                 }
@@ -315,6 +327,10 @@ implements INewWizard, IPageChangedListener {
                 /*
                  * Handling adding server application
                  * without configuring server/JDK.
+                 * Always add cloud attributes as
+                 * approot directory is not created yet
+                 * hence all applications are
+                 * imported from outside of the Azure project
                  */
                 if (!tabPg.getAppsAsNames().isEmpty()) {
                     for (int i = 0; i < tabPg.getAppsList().size(); i++) {
@@ -323,7 +339,7 @@ implements INewWizard, IPageChangedListener {
                         		equalsIgnoreCase(Messages.helloWorld)) {
                             role.addServerApplication(app.getImpSrc(),
                             		app.getImpAs(), app.getImpMethod(),
-                            		new File(depMap.get("tempFile")));
+                            		templateFile, true);
                         }
                     }
                 }
@@ -352,6 +368,20 @@ implements INewWizard, IPageChangedListener {
             if (ftrMap.get("ssnAffChecked")) {
             	WindowsAzureEndpoint httpEndPt =
             			role.getEndpoint(Messages.httpEp);
+            	if (httpEndPt == null) {
+            		/*
+            		 * server is not enabled.
+            		 * hence create new endpoint
+            		 * for session affinity.
+            		 */
+            		if (role.isValidEndpoint(Messages.httpEp,
+            				WindowsAzureEndpointType.Input,
+            				HTTP_PRV_PORT, HTTP_PORT)) {
+            			httpEndPt = role.addEndpoint(Messages.httpEp,
+            					WindowsAzureEndpointType.Input,
+            					HTTP_PRV_PORT, HTTP_PORT);
+            		}
+            	}
             	if (httpEndPt != null) {
             		role.
             		setSessionAffinityInputEndpoint(httpEndPt);

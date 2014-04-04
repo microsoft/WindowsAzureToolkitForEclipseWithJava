@@ -39,7 +39,10 @@ import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 
 import waeclipseplugin.Activator;
 
@@ -72,7 +75,7 @@ import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
 
 /**
- * Class responsible for deploying windows azure project
+ * Class responsible for deploying Azure project
  * to cloud.
  */
 public class DeployWizard extends Wizard {
@@ -134,10 +137,11 @@ public class DeployWizard extends Wizard {
 	@Override
 	public boolean performFinish() {
 		try {
+			showBusy(true);
 			WindowsAzureProjectManager waProjManager =
 					WindowsAzureProjectManager.load(
 							new File(selectedProject.getLocation().toOSString()));
-
+			
 			// Configure or remove remote access settings
 			boolean status = handleRDPSettings(waProjManager);
 			if (!status) {
@@ -145,6 +149,7 @@ public class DeployWizard extends Wizard {
 			}
 			// certificate upload configuration
 			List<WindowsAzureCertificate> certToUpload = handleCertUpload(waProjManager);
+			showBusy(false);
 			if (certToUpload != null && certToUpload.size() > 0) {
 				List<CertificateUpload> certUploadList = new ArrayList<CertificateUpload>();
 				for (int i = 0; i < certToUpload.size(); i++) {
@@ -196,7 +201,7 @@ public class DeployWizard extends Wizard {
 						ConfigurationEventArgs.CERTIFICATES,
 						new CertificateUploadList(certUploadList)));
 			}
-
+			showBusy(true);
 			// clear new service array
 			signInPage.getNewServices().clear();
 
@@ -333,7 +338,7 @@ public class DeployWizard extends Wizard {
 					}
 				}
 			});
-		} catch (WindowsAzureInvalidProjectOperationException e) {
+		} catch (Exception e) {
 			Display.getDefault().syncExec(new Runnable() {
 				public void run() {
 					MessageDialog.openError(null,
@@ -423,6 +428,7 @@ public class DeployWizard extends Wizard {
 				 */
 				waProjManager = removeAutoCloudUrl(waProjManager);
 				waProjManager.save();
+				showBusy(false);
 			} catch (Exception e) {
 				Activator.getDefault().log(Messages.error, e);
 				super.setName("");
@@ -768,17 +774,24 @@ public class DeployWizard extends Wizard {
 				for (int j = 0; j < cmpnntsList.size(); j++) {
 					WindowsAzureRoleComponent component =
 							cmpnntsList.get(j);
+					String cmpntType = component.getType();
+					WARoleComponentCloudUploadMode mode =
+							component.getCloudUploadMode();
 					/*
 					 * Check component is of JDK or server
 					 * and auto upload is enabled.
 					 */
-					if ((component.getType().equals(
+					if (((cmpntType.equals(
 							com.persistent.winazureroles.Messages.typeJdkDply)
-							|| component.getType().equals(
+							|| cmpntType.equals(
 									com.persistent.winazureroles.Messages.typeSrvDply))
-									&& component.getCloudUploadMode() != null
-									&& component.getCloudUploadMode().
-									equals(WARoleComponentCloudUploadMode.AUTO)) {
+									&& mode != null
+									&& mode.
+									equals(WARoleComponentCloudUploadMode.auto))
+									|| (cmpntType.equals(
+											com.persistent.winazureroles.Messages.typeSrvApp)
+											&& mode != null
+											&& mode.equals(WARoleComponentCloudUploadMode.always))) {
 						/*
 						 * Check storage account is not specified,
 						 * i.e URL is auto
@@ -789,7 +802,7 @@ public class DeployWizard extends Wizard {
 							 * If component is JDK, then check if its
 							 * third party JDK.
 							 */
-							if (component.getType().equals(
+							if (cmpntType.equals(
 									com.persistent.winazureroles.Messages.typeJdkDply)) {
 								String jdkName = role.getJDKCloudName();
 								if (jdkName == null || jdkName.isEmpty()) {
@@ -803,10 +816,16 @@ public class DeployWizard extends Wizard {
 													jdkName,
 													accUrl));
 								}
-							} else {
+							} else if (cmpntType.equals(
+									com.persistent.winazureroles.Messages.typeSrvDply)){
 								component.setCloudDownloadURL(JdkSrvConfig.
 										prepareCloudBlobURL(
 												component.getImportPath(),
+												accUrl));
+							} else {
+								component.setCloudDownloadURL(JdkSrvConfig.
+										prepareUrlForApp(
+												component.getDeployName(),
 												accUrl));
 							}
 							component.setCloudKey(curKey);
@@ -924,5 +943,28 @@ public class DeployWizard extends Wizard {
 			Activator.getDefault().log(Messages.autoUploadEr, e);
 		}
 		return projMngr;
+	}
+
+	/**
+	 * Method will change cursor type whenever required.
+	 * @param busy
+	 * true : Wait cursor
+	 * false : Normal arrow cursor
+	 */
+	private void showBusy(final boolean busy) {
+		Display.getDefault().syncExec(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				Shell shell = Display.getDefault().getActiveShell();
+				if (busy) { //show Busy Cursor
+					Cursor cursor = Display.getDefault().getSystemCursor(SWT.CURSOR_WAIT);          
+					shell.setCursor(cursor);
+				} else {
+					shell.setCursor(null);
+				}
+			}
+		});
 	}
 }

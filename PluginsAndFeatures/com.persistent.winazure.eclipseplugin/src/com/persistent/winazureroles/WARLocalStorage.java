@@ -621,6 +621,11 @@ public class WARLocalStorage extends PropertyPage {
     				if (choice) {
     					delRes.delete();
     					tblViewer.refresh();
+    					if (tblResources.getItemCount() == 0) {
+    						// table is empty i.e. number of rows = 0
+    						btnRemove.setEnabled(false);
+    						btnEdit.setEnabled(false);
+    					}
     				}
     			}
     		} catch (WindowsAzureInvalidProjectOperationException e) {

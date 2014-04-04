@@ -32,7 +32,6 @@ import org.eclipse.swt.widgets.Display;
 
 import waeclipseplugin.Activator;
 
-import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
@@ -55,6 +54,7 @@ public class WABuildCloud extends AbstractHandler {
 		try {
 			WindowsAzureProjectManager waProjManager = WindowsAzureProjectManager.
 					load(new File(selProject.getLocation().toOSString()));
+			
 			if (waProjManager.getPackageType().equals(WindowsAzurePackageType.LOCAL)) {
 				waProjManager.setPackageType(WindowsAzurePackageType.CLOUD);
 			}
@@ -64,7 +64,7 @@ public class WABuildCloud extends AbstractHandler {
 				/*
 				 * Don't check if URL is empty or null.
 				 * As if it is then we remove "portalurl" attribute
-				 * from package.xml.
+				 * from package.xml. 
 				 */
 				waProjManager.setPortalURL(prefSetUrl);
 			} catch (WACommonException e1) {
@@ -97,7 +97,7 @@ public class WABuildCloud extends AbstractHandler {
 								getDeployFolderPath(waProjMngr, selProj);
 						String bldFlFilePath = String.format("%s%s%s",
 								dplyFolderPath,
-								"\\",
+								File.separator,
 								com.persistent.util.Messages.bldErFileName);
 						File buildFailFile = new File(bldFlFilePath);
 						File deployFile = new File(dplyFolderPath);
@@ -134,7 +134,7 @@ public class WABuildCloud extends AbstractHandler {
 				}
 			};
             job.schedule();
-		} catch (WindowsAzureInvalidProjectOperationException e) {
+		} catch (Exception e) {
 			errorTitle = Messages.bldCldErrTtl;
 			errorMessage = String.format("%s %s", Messages.bldCldErrMsg, selProject.getName());
 			Activator.getDefault().log(errorMessage, e);

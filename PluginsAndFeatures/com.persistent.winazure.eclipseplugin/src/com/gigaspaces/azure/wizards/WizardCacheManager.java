@@ -492,7 +492,7 @@ public final class WizardCacheManager {
 			status = RequestStatus.valueOf(op.getStatus());
 
 			if (op.getError() != null) {
-				throw new RestAPIException(op.getError().getCode().toString(), op.getError().getMessage());
+				throw new RestAPIException(op.getError().getMessage());
 			}
 
 			Thread.sleep(5000);

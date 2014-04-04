@@ -17,7 +17,6 @@ package com.persistent.builder;
 
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -35,28 +34,25 @@ import org.eclipse.debug.internal.ui.actions.OpenRunConfigurations;
 
 import waeclipseplugin.Activator;
 
-import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 import com.persistent.util.ProjectNatureHelper;
 import com.persistent.util.ProjectNatureHelper.ProjExportType;
 /**
- * This class add a custom Windows Azure project's dependency builder.
+ * This class add a custom Azure project's dependency builder.
  * Calls export methods (JAR, WAR, EAR) according to nature of project.
  */
 @SuppressWarnings("restriction")
 public class WADependencyBuilder extends IncrementalProjectBuilder {
     private String errorMessage;
-    private static List<WindowsAzureRole> waRoles;
-    private static List<WindowsAzureRoleComponent> listComponents;
 
     @SuppressWarnings("rawtypes")
 	@Override
-    public IProject[] build(int arg0, Map arg1,
-            IProgressMonitor arg2) throws CoreException {
+    public IProject[] build(int arg0, Map arg1, IProgressMonitor arg2) throws CoreException {
         try {
             OpenRunConfigurations con = new OpenRunConfigurations();
             con.run();
@@ -70,79 +66,64 @@ public class WADependencyBuilder extends IncrementalProjectBuilder {
         IWorkspaceRoot root = workspace.getRoot();
         IProject[] iProjArr = root.getProjects();
         try {
-            waProjManager = WindowsAzureProjectManager.
-                    load(new File(getProject().getLocation().toOSString()));
+            waProjManager = WindowsAzureProjectManager.load(new File(getProject().getLocation().toOSString()));
+            waProjManager.setClassPathInPackage("azure.lib.dir", PluginUtil.getAzureLibLocation());
+            waProjManager.save();
+            
 
-            // Get existing Windows Azure roles from WA project
-            waRoles  = waProjManager.getRoles();
-            for (Iterator<WindowsAzureRole> iterator =
-            		waRoles.iterator(); iterator.hasNext();) {
-                WindowsAzureRole windowsAzureRole =
-                		(WindowsAzureRole) iterator.next();
+            // Get existing Azure roles from WA project
+            for (WindowsAzureRole windowsAzureRole : waProjManager.getRoles()) {
+            	String approotPath = String.format("%s%s%s%s%s",
+            			root.getProject(waProjManager.getProjectName()).getLocation(),
+            			File.separator, windowsAzureRole.getName(),
+            			File.separator, "approot");
 
-                String approotPath = String.format("%s%s%s%s",
-                        root.getProject(waProjManager.getProjectName()).getLocation(),
-                        "\\", windowsAzureRole.getName(), "\\approot");
-
-                // Get existing components from Windows Azure role if any
-                listComponents = windowsAzureRole.getComponents();
+                // Get existing components from Azure role if any
+                List<WindowsAzureRoleComponent> listComponents = windowsAzureRole.getComponents();
                 if (listComponents != null && !listComponents.isEmpty()) {
-                    for (Iterator<WindowsAzureRoleComponent> it =
-                            listComponents.iterator(); it.hasNext();) {
-                        WindowsAzureRoleComponent waRoleCmpnt =
-                                (WindowsAzureRoleComponent) it.next();
-
+                	for (WindowsAzureRoleComponent waRoleCmpnt : listComponents) {
                         String impDestPath = null;
                         // Check if import method is auto
-                        if (waRoleCmpnt.getImportMethod() != null
-                        && waRoleCmpnt.getImportMethod().
-                        equals(WindowsAzureRoleComponentImportMethod.auto)) {
+                        if (waRoleCmpnt.getImportMethod() == WindowsAzureRoleComponentImportMethod.auto) {
 
                             String frmPath = waRoleCmpnt.getImportPath();
                             String asName = waRoleCmpnt.getDeployName();
 
                             if (frmPath.isEmpty()) {
                                 errorMessage = Messages.pathErrMsg;
-                                Activator.getDefault().log(errorMessage,
-                                		new Exception());
+                                Activator.getDefault().log(errorMessage, new Exception());
                             } else if (asName.isEmpty()) {
                                 asName = new File(frmPath).getName();
                             }
 
-                            String projName = frmPath.substring(
-                            		frmPath.lastIndexOf('\\') + 1);
+                            String projName = frmPath.substring(frmPath.lastIndexOf('\\') + 1);
                             IProject iProj = root.getProject(projName);
-                            ProjExportType type = ProjectNatureHelper.
-                            		getProjectNature(iProj);
+                            ProjExportType type = ProjectNatureHelper.getProjectNature(iProj);
+                            String basePath = Messages.basePath + File.separator + "..";
 
                             // Calculate destination path for exporting project
                             if (asName.endsWith(type.name().toLowerCase())) {
-                                impDestPath = String.format("%s%s%s",
-                                		approotPath, "\\", asName);
+                                impDestPath = String.format("%s%s%s", approotPath, File.separator, asName);
                             }
                             else {
                                 impDestPath = String.format("%s%s%s%s%s",
-                                        approotPath, "\\", asName, ".",
+                                		approotPath, File.separator, asName, ".",
                                         type.name().toLowerCase());
                             }
                             try {
                                 switch(type) {
                                 case WAR :
-                                    WAExportWarEar.exportWarComponent(projName,
-                                    		impDestPath);
+                                    WAExportWarEar.exportWarComponent(projName, impDestPath);
                                     break;
 
                                 case EAR :
-                                    WAExportWarEar.exportWarComponent(projName,
-                                    		impDestPath);
+                                    WAExportWarEar.exportWarComponent(projName, impDestPath);
                                     break;
 
                                 case JAR :
-                                    if (frmPath.startsWith(Messages.basePath)) {
-                                        frmPath = frmPath.substring(frmPath.indexOf('}') + 4,
-                                                frmPath.length());
-                                        frmPath = String.format("%s%s", root.getLocation().toOSString(),
-                                                frmPath);
+                                    if (frmPath.startsWith(basePath)) {
+                                        frmPath = frmPath.substring(frmPath.indexOf('}') + 4, frmPath.length());
+                                        frmPath = String.format("%s%s", root.getLocation().toOSString(), frmPath);
                                 }
                                 File[] tobeJared = new File[1];
                                 tobeJared[0] = new File(frmPath);
@@ -162,13 +143,12 @@ public class WADependencyBuilder extends IncrementalProjectBuilder {
                                         " of project: ", projName);
                                 Activator.getDefault().log(errorMessage, e);
                             }
-                            WAEclipseHelper.refreshWorkspace(
-                            		Messages.rfrshErrTtl, Messages.rfrshErrMsg);
+                            WAEclipseHelper.refreshWorkspace(Messages.rfrshErrTtl, Messages.rfrshErrMsg);
                         }
                     }
                 }
             }
-        } catch (WindowsAzureInvalidProjectOperationException e) {
+        } catch (Exception e) {
             errorMessage = Messages.bldErrMsg;
             Activator.getDefault().log(errorMessage, e);
         }
@@ -177,7 +157,7 @@ public class WADependencyBuilder extends IncrementalProjectBuilder {
 
     /**
      * This method adds an entry of WADependency builder
-     * to Windows Azure Projects.
+     * to Azure Projects.
      * @param project
      * @param builderId
      */

@@ -15,6 +15,8 @@
 */
 package com.persistent.util;
 
+import java.io.File;
+
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -26,7 +28,7 @@ public class AppCmpntParam {
     private String impSrc;
     private String impAs;
     private String impMethod;
-    private static final String BASE_PATH = "${basedir}\\..";
+    private static final String BASE_PATH = "${basedir}" + File.separator + "..";
 
     /**
      * Method returns import source of application.

@@ -403,7 +403,7 @@ public class WARoles {
     }
 
     /**
-     * Method returns list of windows azure roles.
+     * Method returns list of azure roles.
      * @return List<WindowsAzureRole>
      */
     public static List<WindowsAzureRole> getRoles() {

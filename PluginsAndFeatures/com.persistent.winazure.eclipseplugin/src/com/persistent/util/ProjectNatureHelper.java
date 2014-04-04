@@ -38,7 +38,7 @@ import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
  */
 public class ProjectNatureHelper {
     public enum ProjExportType { WAR, EAR, JAR };
-    private static final String BASE_PATH = "${basedir}\\..";
+    private static final String BASE_PATH = "${basedir}" + File.separator + "..";
 
     /**
      * Method returns nature of project.

@@ -11,14 +11,14 @@ exit
 :: Deploy the package to emulator
 :Deploy
 SET _ELEVATED=
-"${EmulatorDir}\csrun.exe" /devstore
+"${StorageEmulatorDir}\WAStorageEmulator.exe" start
 "${EmulatorDir}\csrun.exe" "${PackageDir}\${PackageFileName}" "${PackageDir}\${ConfigurationFileName}"
 
 :: Ensure that emulator UI is running
 for /f %%G in ('tasklist ^| find /I /C "dfui.exe"') do set _PROCCOUNT=%%G
 if NOT %_PROCCOUNT%==0 goto:Bye
 cd /d "${EmulatorDir}"
-start dfui.exe
+start dfui.exe -singleInstance
 
 :Bye
 choice /d y /t 5 /c Y /N

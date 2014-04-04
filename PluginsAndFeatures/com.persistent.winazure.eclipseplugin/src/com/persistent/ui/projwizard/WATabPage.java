@@ -978,6 +978,7 @@ public class WATabPage extends WizardPage {
 				appList.remove(selIndex);
 				JdkSrvConfig.getTableViewer().
 				refresh();
+				JdkSrvConfigListener.disableRemoveButton();
 			} catch (Exception e) {
 				Activator.getDefault().log(e.getMessage(), e);
 			}

@@ -45,6 +45,7 @@ public final class Messages extends NLS {
 	 public static String getPrefUrlErMsg;
 	 public static String newCertMsg;
 	 public static String newCertErrTtl;
+	 public static String azureLibPropName;
 
 	 static {
 	        // initialize resource bundle

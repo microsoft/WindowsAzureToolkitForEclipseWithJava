@@ -57,6 +57,7 @@ public final class Messages extends NLS {
 	public static String edtPrefTtl;
 	public static String getPrefErMsg;
 	public static String setPrefErMsg;
+	public static String strAccDlgImg;
 
 	static {
 		// initialize resource bundle

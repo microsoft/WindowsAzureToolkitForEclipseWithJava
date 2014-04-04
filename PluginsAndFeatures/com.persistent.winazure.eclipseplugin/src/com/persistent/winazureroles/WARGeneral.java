@@ -45,14 +45,15 @@ import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
 /**
- * Property page for windows azure role.
+ * Property page for azure role.
  */
 public class WARGeneral extends PropertyPage {
 
     private Text txtRoleName;
     private Combo comboVMSize;
     private Text txtNoOfInstances;
-    private String[] arrVMSize = {"A7", "A6", "A5",
+    private String[] arrVMSize = {"A9", "A8",
+    		"A7", "A6", "A5",
     		"ExtraLarge", "Large",
     		"Medium", "Small", "ExtraSmall"};
     private boolean isValidRoleName = false;
@@ -160,7 +161,7 @@ public class WARGeneral extends PropertyPage {
         gridData.grabExcessHorizontalSpace = true;
         comboVMSize.setLayoutData(gridData);
         comboVMSize.setItems(arrVMSize);
-        comboVMSize.setText(arrVMSize[6]);
+        comboVMSize.setText(arrVMSize[8]);
         comboVMSize.addSelectionListener(new SelectionListener() {
 
             @Override
@@ -342,7 +343,7 @@ public class WARGeneral extends PropertyPage {
     	String vmSize = "";
 
     	 vmSize = windowsAzureRole.getVMSize();
-         int index = 6;
+         int index = 8;
          for (int i = 0; i < arrVMSize.length; i++) {
              if (vmSize.equalsIgnoreCase(arrVMSize[i])) {
                  index = i;

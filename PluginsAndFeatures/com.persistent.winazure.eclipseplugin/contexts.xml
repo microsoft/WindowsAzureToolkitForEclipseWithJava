@@ -3,7 +3,7 @@
 <contexts>
    <context id="windows_azure_project" >
   <description>
-This dialog allows you to create and configure a new Windows Azure Deployment Project for deploying your Java applications, runtime and server to the Windows Azure cloud.
+This dialog allows you to create and configure a new Azure Deployment Project for deploying your Java applications, runtime and server to the Azure cloud.
   </description>
         <topic label="Creating a Hello World application..." href="http://go.microsoft.com/fwlink/?LinkID=234493"/>
     </context>
@@ -11,14 +11,14 @@ This dialog allows you to create and configure a new Windows Azure Deployment Pr
 
    <context id="windows_azure_project_roles" >
         <description>
-This dialog allows you to configure a Windows Azure role.
+This dialog allows you to configure a Azure role.
        </description>
         <topic label="Miscellaneous Role Configuration Settings" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
    </context>
 
    <context id="windows_azure_project_project_property" >
         <description>
-This dialog allows you to edit the properties of your Windows Azure Deployment Project.
+This dialog allows you to edit the properties of your Azure Deployment Project.
  		</description>
         <topic label="Creating a Hello World application..." href="http://go.microsoft.com/fwlink/?LinkID=234493"/>
    </context>
@@ -28,7 +28,7 @@ This dialog allows you to edit the properties of your Windows Azure Deployment P
         <description>
 This dialog allows you to configure remote access for all the roles in your project at the same time.
   		</description>
-        <topic label="Enabling Remote Access in Windows Azure Using Eclipse" href="http://go.microsoft.com/fwlink/?LinkId=235085"/>
+        <topic label="Enabling Remote Access in Azure Using Eclipse" href="http://go.microsoft.com/fwlink/?LinkId=235085"/>
    </context>
 
 
@@ -42,33 +42,33 @@ Two files will be generated: a certificate file with the public key only (*.CER)
    
      <context id="storage_account_dialog" >
         <description>
-This dialog allows you to register an existing Windows Azure storage account in the list of storage accounts known to Eclipse.
+This dialog allows you to register an existing Azure storage account in the list of storage accounts known to Eclipse.
   		</description>
    </context>
 
  <context id="windows_azure_debug_config" >
   <description>
-This dialog enables you to automatically create remote debug configurations for your applications deployed to Windows Azure:
+This dialog enables you to automatically create remote debug configurations for your applications deployed to Azure:
 
 1. Select the project containing the Java code that you wish to debug
 
 2. Specify the types of debug configurations to create (emulator and/or cloud)
 
-If creating a cloud configuration, you need to upload your deployment to Windows Azure first, to obtain the host address assigned to your deployment. Then enter it here.
+If creating a cloud configuration, you need to upload your deployment to Azure first, to obtain the host address assigned to your deployment. Then enter it here.
 
 When done, you will see the new debug configuration(s) created for your workspace under the “Remote Java Application” category.
 
 <b>Note: </b>Encryption support for debugging connections is not enabled yet, therefore using remote debugging for applications deployed to the public cloud is discouraged.
  </description>
- <topic label="Debugging Windows Azure Applications in Eclipse" href="http://go.microsoft.com/fwlink/?LinkId=235086"/>
+ <topic label="Debugging Azure Applications in Eclipse" href="http://go.microsoft.com/fwlink/?LinkId=235086"/>
   </context>
   
    
    <context id="windows_azure_caching_page" >
   <description>
-This dialog enables you to configure co-located caching on a Windows Azure Role.
+This dialog enables you to configure co-located caching on a Azure Role.
  </description>
- <topic label="Co-located caching in Windows Azure" href="http://go.microsoft.com/fwlink/?LinkId=264792"/>
+ <topic label="Co-located caching in Azure" href="http://go.microsoft.com/fwlink/?LinkId=264792"/>
    </context>
    
     <context id="windows_azure_certificates_page" >
@@ -82,14 +82,14 @@ This dialog enables you to manage your certificates.
   <description>
 This dialog enables you to configure a named cache.
  </description>
- <topic label="Co-located caching in Windows Azure" href="http://go.microsoft.com/fwlink/?LinkId=264792"/>
+ <topic label="Co-located caching in Azure" href="http://go.microsoft.com/fwlink/?LinkId=264792"/>
    </context>
    
   <context id="windows_azure_debug_page" >
   <description>
-This dialog allows you to configure the selected Windows Azure role to accept remote debugging connections for your Java application and to automatically create the relevant debug configurations for the emulator and the cloud.
+This dialog allows you to configure the selected Azure role to accept remote debugging connections for your Java application and to automatically create the relevant debug configurations for the emulator and the cloud.
  </description>
- <topic label="Debugging in Windows Azure Using Eclipse" href="http://go.microsoft.com/fwlink/?LinkId=235086"/>
+ <topic label="Debugging in Azure Using Eclipse" href="http://go.microsoft.com/fwlink/?LinkId=235086"/>
   </context>
   
   <context id="windows_azure_endpoint_page" >
@@ -101,7 +101,7 @@ This dialog allows you to configure the fire wall and port routing settings for 
 
   <context id="windows_azure_envvar_page" >
   <description>
-This dialog allows you to specify the environment variables that you want to be set at the time the startup task for the selected Windows Azure role is executed.
+This dialog allows you to specify the environment variables that you want to be set at the time the startup task for the selected Azure role is executed.
  </description>
  <topic label="Configuration Settings and Environment Variables" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
   </context>
@@ -115,20 +115,20 @@ This dialog allows you to configure temporary named local storage resources of t
 
   <context id="windows_azure_loadbalance_page" >
   <description>
-This dialog allows you to enable HTTP session affinity (“sticky sessions”) for this Windows Azure role, for the selected input end point.
+This dialog allows you to enable HTTP session affinity (“sticky sessions”) for this Azure role, for the selected input end point.
  </description>
  <topic label="Load Balancing (Session Affinity)" href="http://go.microsoft.com/fwlink/?LinkId=235088"/>
   </context>
   
   <context id="windows_azure_ssl_offloading_page" >
   <description>
-This dialog allows you to enable SSL offloading (HTTPS) for your Windows Azure cloud service.
+This dialog allows you to enable SSL offloading (HTTPS) for your Azure cloud service.
  </description>
   </context>
   
   <context id="windows_azure_importexport_dialog" >
   <description>
-This dialog enables you to describe how to import and deploy a component into the selected Windows Azure role.
+This dialog enables you to describe how to import and deploy a component into the selected Azure role.
  </description>
  <topic label="Miscellaneous Role Configuration Settings" href="http://go.microsoft.com/fwlink/?LinkId=235087"/>
   </context>
@@ -155,8 +155,8 @@ This dialog allows you to add a Java application to your server deployment.
   </context>
   
   
-  <context id="publish_project_command" title="Publish to Windows Azure from Eclipse">
-     <description>This dialog allows you to publish your deployment to the Windows Azure cloud.
+  <context id="publish_project_command" title="Publish to Azure from Eclipse">
+     <description>This dialog allows you to publish your deployment to the Azure cloud.
   </description>
   <topic label="Creating a Hello World Application..." href="http://go.microsoft.com/fwlink/?LinkID=234493"/>  
   </context>
@@ -169,19 +169,19 @@ This dialog allows you to add a Java application to your server deployment.
   
   
   <context id="new_storage_account" title="Create a New Storage Account">
-    <description>This dialog allows you to create a new storage account needed for uploading your deployment to the Windows Azure cloud.
+    <description>This dialog allows you to create a new storage account needed for uploading your deployment to the Azure cloud.
 	</description>
   </context>
   
   
-  <context id="unpublish_project_command" title="Unpublish a Deployment from Windows Azure Cloud">
-    <description>This dialog allows you to remove a previously published deployment from the Windows Azure cloud.
+  <context id="unpublish_project_command" title="Unpublish a Deployment from Azure Cloud">
+    <description>This dialog allows you to remove a previously published deployment from the Azure cloud.
 	</description>
   </context>
   
   
   <context id="credentials_property_page" title="Credentials Configurations">
-    <description>This dialog allows you to manage the credentials for your Windows Azure subscriptions.
+    <description>This dialog allows you to manage the credentials for your Azure subscriptions.
 	</description>
   </context>
   

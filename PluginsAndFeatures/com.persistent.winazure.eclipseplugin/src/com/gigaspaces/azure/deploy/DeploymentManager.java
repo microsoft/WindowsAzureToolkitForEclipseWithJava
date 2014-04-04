@@ -260,14 +260,18 @@ public final class DeploymentManager {
 			}
 		}
 		catch (Throwable t) {
+			String msg = (t != null ? t.getMessage() : "");
+			if (!msg.startsWith(RequestStatus.Failed.getStatus())) {
+				msg = RequestStatus.Failed.getStatus() + " : " + msg;
+			}
 			notifyProgress(deploymentDesc.getDeploymentId(), null, 100,
-					RequestStatus.Failed, t.getMessage(),
+					RequestStatus.Failed, msg,
 					deploymentDesc.getDeploymentId(),
 					deployState);
 			if (t instanceof DeploymentException) {
 				throw (DeploymentException)t;
 			}
-			throw new DeploymentException(t.getMessage(), t);
+			throw new DeploymentException(msg, t);
 		}
 	}
 
@@ -372,9 +376,8 @@ public final class DeploymentManager {
 			Activator.getDefault().log(Messages.deplStatus + op.getStatus());
 			Activator.getDefault().log(Messages.deplHttpStatus + op.getHttpStatusCode());
 			if (op.getError() != null) {
-				Activator.getDefault().log(Messages.deplErrorCode + op.getError().getCode());
 				Activator.getDefault().log(Messages.deplErrorMessage + op.getError().getMessage());
-				throw new RestAPIException(op.getError().getCode().toString(), op.getError().getMessage());
+				throw new RestAPIException(op.getError().getMessage());
 			}
 
 			Thread.sleep(5000);

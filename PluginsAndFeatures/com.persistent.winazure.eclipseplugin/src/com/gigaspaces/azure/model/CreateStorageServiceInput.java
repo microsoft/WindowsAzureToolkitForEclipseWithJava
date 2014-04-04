@@ -44,7 +44,7 @@ public class CreateStorageServiceInput {
 	/**
 	 * @param serviceName
 	 *            the serviceName to set Required. A name for the hosted service
-	 *            that is unique within Windows Azure. This name is the DNS
+	 *            that is unique within Azure. This name is the DNS
 	 *            prefix name and can be used to access the hosted service.
 	 * @param label
 	 *            the label to set Required. A name for the hosted service that

@@ -228,7 +228,8 @@ public class WASSLOffloading extends PropertyPage {
 			String stSesPubPort = sessionAffEndPt.getPort();
 			if (stSesPubPort.equalsIgnoreCase(String.valueOf(HTTP_PORT))) {
 				// check 443 is already available on same role (input enpoint)
-				WindowsAzureEndpoint httpsEndPt = findEndpointWithPubPort(HTTPS_PORT);
+				WindowsAzureEndpoint httpsEndPt = WAEclipseHelper.
+						findEndpointWithPubPort(HTTPS_PORT, waRole);
 				if (httpsEndPt != null) {
 					/*
 					 * If HTTPS endpoint with public port 443,
@@ -247,7 +248,7 @@ public class WASSLOffloading extends PropertyPage {
 					 * if yes then consider 8443.
 					 */
 					int portToUse = HTTPS_PORT;
-					if (findRoleWithEndpntPubPort443() != null) {
+					if (WAEclipseHelper.findRoleWithEndpntPubPort(HTTPS_PORT, waProjManager) != null) {
 						// need to use 8443
 						int pubPort = HTTPS_NXT_PORT;
 						while (!waProjManager.isValidPort(
@@ -277,17 +278,18 @@ public class WASSLOffloading extends PropertyPage {
 			}
 		} else {
 			// check this role uses public port 443
-			endpt = findEndpointWithPubPort(HTTPS_PORT);
+			endpt = WAEclipseHelper.findEndpointWithPubPort(HTTPS_PORT, waRole);
 			if (endpt != null) {
 				// endpoint on this role uses public port 443
 				MessageDialog.openWarning(this.getShell(), Messages.sslTtl, Messages.sslWarnMsg);
 			} else {
 				// check if another role uses 443 as a public port
-				WindowsAzureRole roleWithHTTPS = findRoleWithEndpntPubPort443();
+				WindowsAzureRole roleWithHTTPS = WAEclipseHelper.
+						findRoleWithEndpntPubPort(HTTPS_PORT, waProjManager);
 				if (roleWithHTTPS != null) {
 					// another role uses 443 as a public port
 					// 1. If this role uses public port 80
-					endpt = findEndpointWithPubPort(HTTP_PORT);
+					endpt = WAEclipseHelper.findEndpointWithPubPort(HTTP_PORT, waRole);
 					if (endpt != null) {
 						/*
 						 * endpoint on this role uses public port 80
@@ -334,7 +336,7 @@ public class WASSLOffloading extends PropertyPage {
 				} else {
 					// no public port 443 on this role, nor on other any role
 					// 1. If this role uses public port 80
-					endpt = findEndpointWithPubPort(HTTP_PORT);
+					endpt = WAEclipseHelper.findEndpointWithPubPort(HTTP_PORT, waRole);
 					if (endpt != null) {
 						// endpoint on this role uses public port 80
 						boolean yes = MessageDialog.openQuestion(this.getShell(),
@@ -406,51 +408,6 @@ public class WASSLOffloading extends PropertyPage {
 		endPtData.add(2, String.valueOf(priPort));
 	}
 
-	private WindowsAzureEndpoint findEndpointWithPubPort(int pubPort)
-			throws WindowsAzureInvalidProjectOperationException {
-		WindowsAzureEndpoint endpt = null;
-		for (WindowsAzureEndpoint endpoint : endpointsList) {
-			if (endpoint.getEndPointType().
-					equals(WindowsAzureEndpointType.Input)
-					&& endpoint.getPort().equalsIgnoreCase(String.valueOf(pubPort))
-					&& endpoint.getPrivatePort() != null
-					&& !endpoint.equals(waRole.getDebuggingEndpoint())) {
-				endpt = endpoint;
-				break;
-			}
-		}
-		return endpt;
-	}
-
-	private WindowsAzureRole findRoleWithEndpntPubPort443()
-			throws WindowsAzureInvalidProjectOperationException {
-		WindowsAzureRole roleWithHTTPS = null;
-		for (WindowsAzureRole role : waProjManager.getRoles()) {
-			for (WindowsAzureEndpoint endpoint : role.getEndpoints()) {
-				if (endpoint.getEndPointType().equals(WindowsAzureEndpointType.Input)
-						|| endpoint.getEndPointType().equals(WindowsAzureEndpointType.InstanceInput)) {
-					String pubPort = endpoint.getPort();
-					if (pubPort.contains("-")) {
-						String[] rang = pubPort.split("-");
-						Integer min  = Integer.valueOf(rang[0]);
-						Integer max = Integer.valueOf(rang[1]);
-						if (min == HTTPS_PORT
-								|| max == HTTPS_PORT
-								|| (min < HTTPS_PORT && max > HTTPS_PORT)) {
-							roleWithHTTPS = role;
-							break;
-						}
-					} else if (pubPort.equalsIgnoreCase(String.valueOf(HTTPS_PORT))) {
-						roleWithHTTPS = role;
-						break;
-					}
-				}
-			}
-		}
-		return roleWithHTTPS;
-	}
-
-
 	private void createEndpointComponents(Composite container) {
 		lblEndptToUse = createLabel(container, Messages.lbEndptToUse, false);
 
@@ -486,7 +443,7 @@ public class WASSLOffloading extends PropertyPage {
 				// user trying to set endpoint with public port 443
 				MessageDialog.openWarning(this.getShell(), Messages.sslTtl, Messages.sslWarnMsg);
 			} else if (port == HTTP_PORT) {
-				WindowsAzureEndpoint httpsEndPt = findEndpointWithPubPort(HTTPS_PORT);
+				WindowsAzureEndpoint httpsEndPt = WAEclipseHelper.findEndpointWithPubPort(HTTPS_PORT, waRole);
 				if (httpsEndPt != null) {
 					/*
 					 * If HTTPS endpoint with public port 443,
@@ -499,8 +456,9 @@ public class WASSLOffloading extends PropertyPage {
 									httpsEndPt.getPort()));
 					comboEndpt.deselectAll();
 				} else {
-					WindowsAzureRole role = findRoleWithEndpntPubPort443();
-					WindowsAzureEndpoint httpEndPt = findEndpointWithPubPort(HTTP_PORT);
+					WindowsAzureRole role = WAEclipseHelper.
+							findRoleWithEndpntPubPort(HTTPS_PORT, waProjManager);
+					WindowsAzureEndpoint httpEndPt = WAEclipseHelper.findEndpointWithPubPort(HTTP_PORT, waRole);
 					int pubPort = HTTPS_NXT_PORT;
 					if (role != null) {
 						/*
