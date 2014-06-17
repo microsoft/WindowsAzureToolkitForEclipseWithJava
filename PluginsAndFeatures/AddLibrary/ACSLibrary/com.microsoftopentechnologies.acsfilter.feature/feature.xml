@@ -3,8 +3,7 @@
       id="com.microsoftopentechnologies.acsfilter.feature"
       label="Azure Access Control Services Filter (by MS Open Tech)"
       version="0.2.0.qualifier"
-      provider-name="Microsoft Open Technologies Inc."
-      os="win32">
+      provider-name="Microsoft Open Technologies Inc.">
 
    <description url="http://www.example.com/description">
       Provides support for authenticating application users with Azure ACS, enabling single sign-on scenarios and externalizing identity logic from the application.

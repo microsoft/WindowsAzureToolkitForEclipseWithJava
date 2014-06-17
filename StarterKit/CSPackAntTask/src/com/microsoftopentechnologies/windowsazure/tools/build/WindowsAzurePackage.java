@@ -1,5 +1,5 @@
 /*
- Copyright 2013 Microsoft Open Technologies, Inc.
+ Copyright 2014 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -16,28 +16,16 @@
 
 package com.microsoftopentechnologies.windowsazure.tools.build;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-import java.util.Vector;
-import java.util.Arrays;
+import java.util.*;
 
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.taskdefs.Zip;
@@ -61,7 +49,8 @@ public class WindowsAzurePackage extends Task {
 	public static final String UTIL_UNZIP_FILENAME = "unzip.vbs";
 	public static final String UTIL_DOWNLOAD_FILENAME = "download.vbs";
 	public static final String UTIL_WASH_FILENAME = "wash.cmd";
-	public static final String UTIL_WASH_PATH = DEFAULT_UTIL_SUBDIR + File.separator + UTIL_WASH_FILENAME;
+	public static final String UTIL_WASH_PATH = DEFAULT_UTIL_SUBDIR + "\\" + UTIL_WASH_FILENAME;
+    private static final String SDK_PROPERTIES = "sdk.properties";
 	
 	public static final String INTERNAL_STARTUP_FILE_NAME = ".startup.cmd";
 	private static final String INTERNAL_STARTUP_SUBDIR = "startup";
@@ -89,12 +78,14 @@ public class WindowsAzurePackage extends Task {
 	// Xpath expression to get names of workerroles whose cache config is referring to development storage
 	private static final String DEV_CACHE_CONFIG = "/ServiceConfiguration/Role[ConfigurationSettings/Setting[" +
 			"@name='Microsoft.WindowsAzure.Plugins.Caching.ConfigStoreConnectionString' and @value='UseDevelopmentStorage=true']]/@name";
+    public static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
 
 	public static String newline = System.getProperty("line.separator");
 
 	private Vector<WorkerRole> roles;
 	private PackageType packageType;
 	private String sdkDir;
+    private String sdkKit;
 	private String emulatorDir;
 	private String storageEmulatorDir;
 	private String projectDir;
@@ -106,7 +97,7 @@ public class WindowsAzurePackage extends Task {
 	private String templatesDir;
 	private String portalURL;
 	private String rolePropertiesFileName = null;
-	private boolean useCtpPackageFormat = false;
+	private UseCTPFormat useCtpPackageFormat = UseCTPFormat.AUTO;
 	private boolean verifyDownloads = true;
 	private Thread downloadManagerThread = null;
 	
@@ -142,12 +133,8 @@ public class WindowsAzurePackage extends Task {
 	 * Specifies whether the v1.7 package format shouold be used
 	 * @param value
 	 */
-	public void setUseCtpPackageFormat(boolean value) {
-		useCtpPackageFormat = value;
-	}
-	
-	public boolean getUseCtpPackageFormat() {
-		return useCtpPackageFormat;
+	public void setUseCtpPackageFormat(String value) {
+        useCtpPackageFormat = UseCTPFormat.valueOf(value.toUpperCase());
 	}
 	
 	/**
@@ -169,6 +156,9 @@ public class WindowsAzurePackage extends Task {
 		this.sdkDir = sdkDir;
 	}
 	public File getSdkDir() {
+        if (!IS_WINDOWS) {
+            return null;
+        }
 		if(this.sdkDir != null) {
 			return new File(this.sdkDir);
 		} else
@@ -218,7 +208,15 @@ public class WindowsAzurePackage extends Task {
 		return new File(this.packageDir);
 	}
 
-	/**
+    public void setSdkKit(String sdkKit) {
+        this.sdkKit = sdkKit;
+    }
+
+    public String getSdkKit() {
+        return sdkKit;
+    }
+
+    /**
 	 * Sets packagefilename attribute
 	 * @param packageFileName
 	 */
@@ -268,9 +266,6 @@ public class WindowsAzurePackage extends Task {
 		// Initialize and verify attributes
 		this.initialize();
 
-		// Get cspack.exe cmd-line
-		List<String> csPackCmdLine = this.createCSPackCommandLine();
-
 		// Ensure that all approot directories are correctly setup
 		try {
 			this.verifyAppRoots();
@@ -296,14 +291,19 @@ public class WindowsAzurePackage extends Task {
 
 		// Run cspack.exe
 		this.log("Starting package generation...");
+        try {
+            if (getSdkDir() != null) {
+                // Get cspack.exe cmd-line
+                List<String> csPackCmdLine = this.createCSPackCommandLine();
+                this.runCommandLine(csPackCmdLine);
+            } else {
+                throw new IllegalArgumentException("Azure SDK not found, cannot build non-CTP package");
+            }
+        } catch (Exception e) {
+            reportBuildError(e);
+        }
 
-		try {
-			this.runCommandLine(csPackCmdLine);
-		} catch (Exception e) {
-			reportBuildError(e);
-		}
-		
-		this.log("Completed package generation.");
+        this.log("Completed package generation.");
 
 		// Prepare any additional deploy files
 		try {
@@ -361,33 +361,34 @@ public class WindowsAzurePackage extends Task {
 			throw new BuildException("At least one Azure role must be specified");
 		}
 
-		// Ensure that we know where to find the SDK
-		if (this.sdkDir == null || !new File(this.sdkDir).exists()) {
-			try {
-				this.sdkDir = findLatestAzureSdkDir();
-			} catch (IOException e) {
-				throw new BuildException(e.getMessage());
-			}
-		}
+        if (IS_WINDOWS) {
+            // Ensure that we know where to find the SDK
+            if (this.sdkDir == null || !new File(this.sdkDir).exists()) {
+                try {
+                    this.sdkDir = findLatestAzureSdkDir();
+                } catch (IOException e) {
+                    throw new BuildException(e.getMessage());
+                }
+            }
 
-		// Ensure that we know where to find the emulator software
-		if (this.emulatorDir == null || !new File(this.emulatorDir).exists()) {
-			try {
-				this.emulatorDir = findEmulatorDir();
-			} catch (IOException e) {
-				throw new BuildException(e.getMessage());
-			}
-		}
-		
-		// Check for storage emulator
-		if (this.storageEmulatorDir == null || !new File(this.storageEmulatorDir).exists()) {
-			try {
-				this.storageEmulatorDir = findStorageEmulatorDir();
-			} catch (IOException e) {
-				throw new BuildException(e.getMessage());
-			}
-		}
+            // Ensure that we know where to find the emulator software
+            if (this.emulatorDir == null || !new File(this.emulatorDir).exists()) {
+                try {
+                    this.emulatorDir = findEmulatorDir();
+                } catch (IOException e) {
+                    throw new BuildException(e.getMessage());
+                }
+            }
 
+            // Check for storage emulator
+            if (this.storageEmulatorDir == null || !new File(this.storageEmulatorDir).exists()) {
+                try {
+                    this.storageEmulatorDir = findStorageEmulatorDir();
+                } catch (IOException e) {
+                    throw new BuildException(e.getMessage());
+                }
+            }
+        }
 		// Verify that packagefilename is set
 		if (this.packageFileName == null) {
 			throw new BuildException("The required packagefilename setting is missing");
@@ -469,8 +470,8 @@ public class WindowsAzurePackage extends Task {
 
 		if (this.packageType == PackageType.local) {
 			commandArgs.add("/copyOnly");
-		} else if(this.useCtpPackageFormat) {
-			commandArgs.add("/useCtpPackageFormat");
+        } else if (this.useCtpPackageFormat == UseCTPFormat.TRUE) {
+            commandArgs.add("/useCtpPackageFormat");
 		}
 		
 		// Create cmd-line for roles
@@ -736,16 +737,17 @@ public class WindowsAzurePackage extends Task {
 	 * Replaces template tokens in text with corresponding values
 	 * @param text Text to replace tokens in
 	 */
-	private String replaceTemplateTokens(String text) {		
-		text = text.replace(TEMPLATE_TOKEN_CONFIGURATIONFILENAME, this.configurationFileName);
-		text = text.replace(TEMPLATE_TOKEN_DEFINITIONFILENAME, this.definitionFileName);
-		text = text.replace(TEMPLATE_TOKEN_PACKAGEDIR, this.packageDir);
-		text = text.replace(TEMPLATE_TOKEN_PACKAGEFILENAME, this.packageFileName);
-		text = text.replace(TEMPLATE_TOKEN_PROJECTDIR, this.projectDir);
-		text = text.replace(TEMPLATE_TOKEN_SDKDIR, this.sdkDir);
-		text = text.replace(TEMPLATE_TOKEN_EMULATORDIR, this.emulatorDir);
-		text = text.replace(TEMPLATE_TOKEN_STORAGE_EMULATORDIR, this.storageEmulatorDir);
-		
+	private String replaceTemplateTokens(String text) {
+        text = text.replace(TEMPLATE_TOKEN_CONFIGURATIONFILENAME, this.configurationFileName);
+        text = text.replace(TEMPLATE_TOKEN_DEFINITIONFILENAME, this.definitionFileName);
+        text = text.replace(TEMPLATE_TOKEN_PACKAGEDIR, this.packageDir);
+        text = text.replace(TEMPLATE_TOKEN_PACKAGEFILENAME, this.packageFileName);
+        text = text.replace(TEMPLATE_TOKEN_PROJECTDIR, this.projectDir);
+        if (IS_WINDOWS) {
+            text = text.replace(TEMPLATE_TOKEN_SDKDIR, this.sdkDir);
+		    text = text.replace(TEMPLATE_TOKEN_EMULATORDIR, this.emulatorDir);
+            text = text.replace(TEMPLATE_TOKEN_STORAGE_EMULATORDIR, this.storageEmulatorDir);
+        }
 		if(this.portalURL != null) {
 			text = text.replace(TEMPLATE_TOKEN_PORTALURL, this.portalURL);
 		}
@@ -827,7 +829,7 @@ public class WindowsAzurePackage extends Task {
 		if (emulatorDir.exists()) {
 			return emulatorDir.toString();
 		} else {
-			throw new IOException("Azure SDK v2.3 or later is not installed.");			
+			throw new IOException("Microsoft Azure Storage Emulator is not installed.");			
 		}
 	}
 	
@@ -849,7 +851,7 @@ public class WindowsAzurePackage extends Task {
 		if (storageEmulatorDir.exists()) {
 			return storageEmulatorDir.toString();
 		} else {
-			throw new IOException("Microsoft Azure Storage Emulator is not installed.");			
+			throw new IOException("Azure SDK v2.3 or later is not installed.");			
 		}
 	}
 
@@ -902,31 +904,35 @@ public class WindowsAzurePackage extends Task {
 	 * @return
 	 */
 	public static boolean isNetworkAvailable() {
-		Enumeration<NetworkInterface> networkInterfaces;
-		InetAddress inetAddress;
-		
-		try {
-			if(null == (networkInterfaces = NetworkInterface.getNetworkInterfaces())) {
-				return false;
-			}
+        if (IS_WINDOWS) {
+            Enumeration<NetworkInterface> networkInterfaces;
+            InetAddress inetAddress;
 
-			while(networkInterfaces.hasMoreElements()) {
-				Enumeration<InetAddress> internetAddresses = networkInterfaces.nextElement().getInetAddresses();
-				while(internetAddresses.hasMoreElements()) {
-					if(null == (inetAddress = internetAddresses.nextElement())) {
-						return false;
-					} else if (inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress()) {
-						continue;
-					} else if (!inetAddress.getHostName().equals(inetAddress.getHostAddress())) {
-						return true;
-					}
-				}
-			}
-		} catch(SocketException e) {
-			return false;
-		}
-		
-		return false;
+            try {
+                if (null == (networkInterfaces = NetworkInterface.getNetworkInterfaces())) {
+                    return false;
+                }
+
+                while (networkInterfaces.hasMoreElements()) {
+                    Enumeration<InetAddress> internetAddresses = networkInterfaces.nextElement().getInetAddresses();
+                    while (internetAddresses.hasMoreElements()) {
+                        if (null == (inetAddress = internetAddresses.nextElement())) {
+                            return false;
+                        } else if (inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress()) {
+                            continue;
+                        } else if (!inetAddress.getHostName().equals(inetAddress.getHostAddress())) {
+                            return true;
+                        }
+                    }
+                }
+            } catch (SocketException e) {
+                return false;
+            }
+
+            return false;
+        } else {
+            return true;
+        }
 	}
 	
 

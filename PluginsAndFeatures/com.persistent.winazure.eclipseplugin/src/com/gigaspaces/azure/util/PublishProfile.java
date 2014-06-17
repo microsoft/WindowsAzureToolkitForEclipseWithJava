@@ -37,8 +37,7 @@ public class PublishProfile implements Serializable, Cloneable {
 	private String managementCertificate;
 	private List<Subscription> subscriptions = new ArrayList<Subscription>();
 	private String password = ""; //$NON-NLS-1$
-	private String thumbprint;
-	
+
 	@XmlAttribute(name = "PublishMethod")
 	public String getPublishMethod() {
 		return publishMethod;
@@ -82,13 +81,5 @@ public class PublishProfile implements Serializable, Cloneable {
 
 	public void setPassword(String pfxPassword) {
 		this.password = pfxPassword;
-	}
-
-	public String getThumbprint() {
-		return thumbprint;
-	}
-
-	public void setThumbprint(String thumbprint) {
-		this.thumbprint = thumbprint;
 	}
 }

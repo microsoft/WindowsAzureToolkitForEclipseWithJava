@@ -14,12 +14,11 @@
  *  limitations under the License.
  */
 
-
 package com.interopbridges.tools.windowsazure;
 
 public enum WindowsAzureRoleComponentDeployMethod {
-    copy,   // copy in Ant task
-    unzip,  // unzip in Ant task
-    exec,   // exec in Ant task
-    none    //none in ant task
+	copy, // copy in Ant task
+	unzip, // unzip in Ant task
+	exec, // exec in Ant task
+	none // none in ant task
 }

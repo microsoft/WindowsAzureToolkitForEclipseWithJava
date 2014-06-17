@@ -130,7 +130,7 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		gridData.grabExcessHorizontalSpace = false;
 
 		GridLayout gridLayoutTable = new GridLayout();
-		gridLayoutTable.numColumns = 3;
+		gridLayoutTable.numColumns = 2;
 		gridLayoutTable.marginRight = 0;
 		tblSubscriptions.setLayout(gridLayoutTable);
 		tblSubscriptions.setLayoutData(gridData);
@@ -139,16 +139,12 @@ public class SubscriptionPropertyPage extends PropertyPage {
 				SWT.FILL);
 
 		subscriptionNameCol.setText(Messages.subscriptionColName);
-		subscriptionNameCol.setWidth(120);
+		subscriptionNameCol.setWidth(160);
 
 		TableColumn subscriptionIdCol = new TableColumn(tblSubscriptions,
 				SWT.FILL);
 		subscriptionIdCol.setText(Messages.subscriptionIdColName);
-		subscriptionIdCol.setWidth(170);
-
-		TableColumn thumbprintCol = new TableColumn(tblSubscriptions, SWT.FILL);
-		thumbprintCol.setText(Messages.thumbprintColName);
-		thumbprintCol.setWidth(170);
+		subscriptionIdCol.setWidth(300);
 
 		tableViewer = new TableViewer(tblSubscriptions);
 		tableViewer.setContentProvider(new IStructuredContentProvider() {
@@ -318,9 +314,8 @@ public class SubscriptionPropertyPage extends PropertyPage {
 
 		int index = tableViewer.getTable().getSelectionIndex();
 		String id = tableViewer.getTable().getItem(index).getText(1);
-		String thumbprint = tableViewer.getTable().getItem(index).getText(2);
 
-		WizardCacheManager.removeSubscription(id, thumbprint);
+		WizardCacheManager.removeSubscription(id);
 		PreferenceUtil.save();
 		tableViewer.refresh();
 	}
@@ -329,10 +324,10 @@ public class SubscriptionPropertyPage extends PropertyPage {
 
 		int index = tableViewer.getTable().getSelectionIndex();
 
-		String thumbprint = tableViewer.getTable().getItem(index).getText(2);
+//		String thumbprint = tableViewer.getTable().getItem(index).getText(2);
 		String id = tableViewer.getTable().getItem(index).getText(1);
 
-		PublishData pd = WizardCacheManager.findPublishDataByThumbprint(thumbprint);
+		PublishData pd = WizardCacheManager.findPublishDataBySubscriptionId(id);
 
 		WizardCacheManager.changeCurrentSubscription(pd, id);
 
@@ -403,7 +398,7 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		for (PublishData pd : publishDatas) {
 			for (Subscription sub : pd.getPublishProfile().getSubscriptions()) {
 				SubscriptionPropertyPageTableElement el = new SubscriptionPropertyPageTableElement();
-				el.setPublishDataThumbprint(pd.getThumbprint());
+//				el.setPublishDataThumbprint(pd.getThumbprint());
 				el.setSubscriptionId(sub.getId());
 				el.setSubscriptionName(sub.getName());
 				if (!tableRowElements.contains(el)) {

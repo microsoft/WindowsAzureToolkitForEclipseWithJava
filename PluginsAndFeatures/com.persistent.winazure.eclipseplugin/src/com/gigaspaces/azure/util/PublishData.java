@@ -25,10 +25,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import com.gigaspaces.azure.model.HostedServices;
-import com.gigaspaces.azure.model.Locations;
 import com.gigaspaces.azure.model.StorageServices;
 import com.gigaspaces.azure.model.Subscription;
+import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
+import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
 
 @XmlRootElement(name = "PublishData")
 public class PublishData implements Serializable, Cloneable {
@@ -42,40 +44,51 @@ public class PublishData implements Serializable, Cloneable {
 
 	private AtomicBoolean initializing;
 
-	private transient Map<String, HostedServices> servicesPerSubscription;
+	private transient Map<String, ArrayList<HostedService>> servicesPerSubscription;
 	private transient Map<String, StorageServices> storagesPerSubscription;
-	private transient Map<String, Locations> locationsPerSubscription;
+	private transient Map<String, ArrayList<Location>> locationsPerSubscription;
 
 	private Subscription currentSubscription;
+    private Map<String, Configuration> configurationPerSubscription;
 
 	public Map<String, StorageServices> getStoragesPerSubscription() {
 		return storagesPerSubscription;
 	}
 
-	public void setStoragesPerSubscription(
-			Map<String, StorageServices> storagesPerSubscription) {
+	public void setStoragesPerSubscription(Map<String, StorageServices> storagesPerSubscription) {
 		this.storagesPerSubscription = storagesPerSubscription;
 	}
 
-	public Map<String, Locations> getLocationsPerSubscription() {
+	public Map<String, ArrayList<Location>> getLocationsPerSubscription() {
 		return locationsPerSubscription;
 	}
 
-	public void setLocationsPerSubscription(
-			Map<String, Locations> locationsPerSubscription) {
+	public void setLocationsPerSubscription(Map<String, ArrayList<Location>> locationsPerSubscription) {
 		this.locationsPerSubscription = locationsPerSubscription;
 	}
 
-	public Map<String, HostedServices> getServicesPerSubscription() {
+	public Map<String, ArrayList<HostedServiceListResponse.HostedService>> getServicesPerSubscription() {
 		return servicesPerSubscription;
 	}
 
 	public void setServicesPerSubscription(
-			Map<String, HostedServices> servicesPerSubscription) {
+			Map<String, ArrayList<HostedService>> servicesPerSubscription) {
 		this.servicesPerSubscription = servicesPerSubscription;
 	}
 
-	public Subscription getCurrentSubscription() {
+    public Configuration getCurrentConfiguration() {
+        return configurationPerSubscription.get(currentSubscription.getId());
+    }
+
+    public Configuration getConfiguration(String subscriptionId) {
+        return configurationPerSubscription.get(subscriptionId);
+    }
+
+    public void setConfigurationPerSubscription(Map<String, Configuration> configurationPerSubscription) {
+        this.configurationPerSubscription = configurationPerSubscription;
+    }
+
+    public Subscription getCurrentSubscription() {
 		return currentSubscription;
 	}
 
@@ -168,13 +181,4 @@ public class PublishData implements Serializable, Cloneable {
 			}
 		}
 	}
-
-	public String getThumbprint() {
-		return publishProfile.getThumbprint();
-	}
-
-	public void setThumbprint(String thumbprint) {
-		publishProfile.setThumbprint(thumbprint);
-	}
-
 }

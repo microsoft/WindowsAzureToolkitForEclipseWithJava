@@ -21,15 +21,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -49,6 +45,13 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.core.OperationStatus;
+import com.microsoft.windowsazure.core.OperationStatusResponse;
+import com.microsoft.windowsazure.exception.ServiceException;
+import com.microsoft.windowsazure.management.compute.models.*;
+import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PartInitException;
@@ -60,21 +63,11 @@ import org.xml.sax.SAXException;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.CertificateFile;
 import com.gigaspaces.azure.model.CertificateUpload;
-import com.gigaspaces.azure.model.Container;
-import com.gigaspaces.azure.model.CreateDeployment;
-import com.gigaspaces.azure.model.CreateHostedService;
-import com.gigaspaces.azure.model.CreateStorageServiceInput;
 import com.gigaspaces.azure.model.DeployDescriptor;
-import com.gigaspaces.azure.model.Deployment;
-import com.gigaspaces.azure.model.EnumerationResults;
-import com.gigaspaces.azure.model.HostedService;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 import com.gigaspaces.azure.model.InstanceStatus;
-import com.gigaspaces.azure.model.Operation;
 import com.gigaspaces.azure.model.RemoteDesktopDescriptor;
-import com.gigaspaces.azure.model.RoleInstance;
-import com.gigaspaces.azure.model.Status;
 import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.rest.RestAPIException;
 import com.gigaspaces.azure.rest.WindowsAzureRestUtils;
@@ -89,7 +82,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.wacommon.utils.Base64;
+import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
 import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
@@ -141,27 +134,27 @@ public final class DeploymentManager {
 
 			if (deploymentDesc.getDeployMode() == WindowsAzurePackageType.LOCAL) {
 				deployToLocalEmulator(selectedProject, deploymentDesc);
-				notifyProgress(deploymentDesc.getDeploymentId(), null, 100,RequestStatus.Succeeded, Messages.deplCompleted);
+				notifyProgress(deploymentDesc.getDeploymentId(), null, 100, OperationStatus.Succeeded, Messages.deplCompleted);
 				return;
 			}
 
 			// need to improve this check (maybe hostedSerivce.isExisting())?
-			if (hostedService.getUrl() == null || hostedService.getUrl().isEmpty()) { // the hosted service was not yet created.
-				notifyProgress(deploymentDesc.getDeploymentId(), null, 5,RequestStatus.InProgress, String.format("%s - %s", Messages.createHostedService, hostedService.getServiceName()));
+			if (hostedService.getUri() == null || hostedService.getUri().toString().isEmpty()) { // the hosted service was not yet created.
+				notifyProgress(deploymentDesc.getDeploymentId(), null, 5, OperationStatus.InProgress, String.format("%s - %s", Messages.createHostedService, hostedService.getServiceName()));
 				createHostedService(hostedService.getServiceName(), hostedService.getServiceName(),
-						hostedService.getHostedServiceProperties().getLocation(), hostedService.getHostedServiceProperties().getDescription());
+						hostedService.getProperties().getLocation(), hostedService.getProperties().getDescription());
 				conditionalProgress -= 5;
 			}
 
 			// same goes here
 			if (storageAccount.getUrl() == null || storageAccount.getUrl().isEmpty()) { // the storage account was not yet created
-				notifyProgress(deploymentDesc.getDeploymentId(), null, 10,RequestStatus.InProgress, String.format("%s - %s", Messages.createStorageAccount, storageAccount.getServiceName()));
+				notifyProgress(deploymentDesc.getDeploymentId(), null, 10, OperationStatus.InProgress, String.format("%s - %s", Messages.createStorageAccount, storageAccount.getServiceName()));
 				createStorageAccount(storageAccount.getServiceName(), storageAccount.getServiceName(),
-						storageAccount.getStorageServiceProperties().getLocation(), storageAccount.getStorageServiceProperties().getDescription());
+						storageAccount.getStorageAccountProperties().getLocation(), storageAccount.getStorageAccountProperties().getDescription());
 				conditionalProgress -= 10;
 			}
 
-			checkContainerExistance(deploymentDesc.getSubscriptionId(), service);
+			checkContainerExistance();
 
 			// upload certificates
 			if (deploymentDesc.getCertList() != null) {
@@ -175,33 +168,28 @@ public final class DeploymentManager {
 							cert.getPfxPath(),
 							cert.getPfxPwd());
 					notifyProgress(deploymentDesc.getDeploymentId(),
-							null, 0,RequestStatus.InProgress,
+							null, 0, OperationStatus.InProgress,
 							String.format("%s%s", Messages.deplUploadCert,
 									cert.getName()));
-					if (cert.getName().equalsIgnoreCase(Messages.remoteAccessPasswordEncryption)) {
-						WindowsAzureRestUtils.getInstance().installPublishSettings(
-								new File(deploymentDesc.getRemoteDesktopDescriptor().getPublicKey()),
-								null);
-					}
 				}
 			}
 			}
 
 			if (deploymentDesc.getRemoteDesktopDescriptor().isEnabled()) {
 
-				notifyProgress(deploymentDesc.getDeploymentId(), null, conditionalProgress,RequestStatus.InProgress, Messages.deplConfigRdp);
+				notifyProgress(deploymentDesc.getDeploymentId(), null, conditionalProgress, OperationStatus.InProgress, Messages.deplConfigRdp);
 
 				configureRemoteDesktop(deploymentDesc);
 			}
 			else {
-				notifyProgress(deploymentDesc.getDeploymentId(), null, conditionalProgress,RequestStatus.InProgress, Messages.deplConfigRdp);
+				notifyProgress(deploymentDesc.getDeploymentId(), null, conditionalProgress, OperationStatus.InProgress, Messages.deplConfigRdp);
 			}
 
 			Notifier notifier = new NotifierImp();
 
 			String targetCspckgName = createCspckTargetName(deploymentDesc);
 
-			notifyProgress(deploymentDesc.getDeploymentId(), null, 20, RequestStatus.InProgress,
+			notifyProgress(deploymentDesc.getDeploymentId(), null, 20, OperationStatus.InProgress,
 					Messages.uploadingServicePackage);
 
 			uploadPackageService(
@@ -211,12 +199,11 @@ public final class DeploymentManager {
 					Messages.eclipseDeployContainer.toLowerCase(),
 					deploymentDesc, notifier);
 
-			notifyProgress(deploymentDesc.getDeploymentId(), null, 20, RequestStatus.InProgress,
+			notifyProgress(deploymentDesc.getDeploymentId(), null, 20, OperationStatus.InProgress,
 					Messages.creatingDeployment);
 
 			String storageAccountURL = deploymentDesc.getStorageAccount().
-					getStorageServiceProperties().getEndpoints().
-					getEndpoints().get(0);
+                    getStorageAccountProperties().getEndpoints().get(0).toString();
 
 			String cspkgUrl = String.format("%s%s/%s", storageAccountURL,
 					Messages.eclipseDeployContainer.toLowerCase(), targetCspckgName);
@@ -230,30 +217,28 @@ public final class DeploymentManager {
 					deployState,
 					dateFormat.format(new Date()));
 			String requestId = createDeployment(deploymentDesc, service, cspkgUrl, deploymentName);
-			RequestStatus status = waitForStatus(deploymentDesc.getSubscriptionId(),
-					service, requestId, deploymentDesc.getMngUrl());
+			OperationStatus status = waitForStatus(deploymentDesc.getConfiguration(), service, requestId);
 
 			deletePackage(WizardCacheManager.createStorageServiceHelper(),
 					Messages.eclipseDeployContainer.toLowerCase(),
 					targetCspckgName, notifier);
 			notifyProgress(deploymentDesc.getDeploymentId(),
-					null, 0, RequestStatus.InProgress, Messages.deletePackage);
+					null, 0, OperationStatus.InProgress, Messages.deletePackage);
 
-			notifyProgress(deploymentDesc.getDeploymentId(), null, 20, RequestStatus.InProgress,Messages.waitingForDeployment);
+			notifyProgress(deploymentDesc.getDeploymentId(), null, 20, OperationStatus.InProgress,Messages.waitingForDeployment);
 
-			Deployment deployment = waitForDeployment(
-					deploymentDesc.getSubscriptionId(),
+			DeploymentGetResponse deployment = waitForDeployment(
+					deploymentDesc.getConfiguration(),
 					hostedService.getServiceName(),
 					service,
-					deploymentName,
-					deploymentDesc.getMngUrl());
+					deploymentName);
 
 			boolean displayHttpsLink = deploymentDesc.getDisplayHttpsLink();
 			
 			notifyProgress(deploymentDesc.getDeploymentId(),
-					displayHttpsLink?deployment.getUrl().replaceAll("http://", "https://"):deployment.getUrl(),
-					20, status,
-					deployment.getStatus().toString());
+                    displayHttpsLink ? deployment.getUri().toString().replaceAll("http://", "https://") : deployment.getUri().toString(),
+                    20, status,
+                    deployment.getStatus().toString());
 
 			if (deploymentDesc.isStartRdpOnDeploy()) {
 				WindowsAzureRestUtils.getInstance().launchRDP(deployment,deploymentDesc.getRemoteDesktopDescriptor().getUserName());
@@ -261,11 +246,11 @@ public final class DeploymentManager {
 		}
 		catch (Throwable t) {
 			String msg = (t != null ? t.getMessage() : "");
-			if (!msg.startsWith(RequestStatus.Failed.getStatus())) {
-				msg = RequestStatus.Failed.getStatus() + " : " + msg;
+			if (!msg.startsWith(OperationStatus.Failed.toString())) {
+				msg = OperationStatus.Failed.toString() + " : " + msg;
 			}
 			notifyProgress(deploymentDesc.getDeploymentId(), null, 100,
-					RequestStatus.Failed, msg,
+                    OperationStatus.Failed, msg,
 					deploymentDesc.getDeploymentId(),
 					deployState);
 			if (t instanceof DeploymentException) {
@@ -276,113 +261,91 @@ public final class DeploymentManager {
 	}
 
 	private void createStorageAccount(final String storageServiceName, final String label, final String location, final String description)
-	throws WACommonException, RestAPIException, InterruptedException, CommandLineException  {
+            throws WACommonException, RestAPIException, InterruptedException, ServiceException, CommandLineException {
 
-		final CreateStorageServiceInput body = new CreateStorageServiceInput(
-				storageServiceName, storageServiceName, location);
+        StorageAccountCreateParameters accountParameters = new StorageAccountCreateParameters();
+        accountParameters.setName(storageServiceName);
+        accountParameters.setLabel(label);
+        accountParameters.setLocation(location);
+        accountParameters.setDescription(description);
 
-		body.setDescription(description);
-		StorageService storageService = WizardCacheManager.createStorageAccount(body);
+		StorageService storageService = WizardCacheManager.createStorageAccount(accountParameters);
 		/*
 		 * Add newly created storage account
 		 * in centralized storage account registry.
 		 */
 		StorageAccount storageAccount = new StorageAccount(storageService.getServiceName(),
-				storageService.getStorageServiceKeys().getPrimary(),
+				storageService.getPrimaryKey(),
 				storageService.
-				getStorageServiceProperties().getEndpoints().
-				getEndpoints().get(0));
+                        getStorageAccountProperties().getEndpoints().get(0).toString());
 		StorageAccountRegistry.addAccount(storageAccount);
 		PreferenceUtilStrg.save();
 	}
 
 	private void createHostedService(final String hostedServiceName, final String label, final String location, final String description)
-	throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
+            throws WACommonException, ServiceException {
+        HostedServiceCreateParameters createHostedService = new HostedServiceCreateParameters();
+        createHostedService.setServiceName(hostedServiceName);
+        createHostedService.setLabel(label);
+        createHostedService.setLocation(location);
+        createHostedService.setDescription(description);
 
-		final CreateHostedService body = new CreateHostedService(
-				hostedServiceName, label, location);
-
-		body.setDescription(description);
-		WizardCacheManager.createHostedService(body);
-
+		WizardCacheManager.createHostedService(createHostedService);
 	}
 
-	private void checkContainerExistance(String subscriptionId,
-			WindowsAzureServiceManagement service) throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
+	private void checkContainerExistance() throws WACommonException, ServiceException {
 		WindowsAzureStorageServices storageServices = WizardCacheManager.createStorageServiceHelper();
-
-		try {
-			EnumerationResults results = storageServices.listContainers();
-
-			boolean isExist = false;
-
-			for (Container container : results.getContainers()) {
-				if (Messages.eclipseDeployContainer.equalsIgnoreCase(container
-						.getName())) {
-					isExist = true;
-					break;
-				}
-			}
-
-			if (isExist == false) {
-				storageServices.createContainer(Messages.eclipseDeployContainer.toLowerCase());
-			}
-		}
-		catch (InvalidKeyException e) {
-		}
-
+        storageServices.createContainer(Messages.eclipseDeployContainer.toLowerCase());
 	}
 
-	private Deployment waitForDeployment(String subscriptionId,
-			String serviceName, WindowsAzureServiceManagement service, String deploymentName, String mngUrl)
-					throws WACommonException, InterruptedException, DeploymentException, RestAPIException, CommandLineException {
-		Deployment deployment = null;
-		InstanceStatus status = null;
+	private DeploymentGetResponse waitForDeployment(Configuration configuration,
+                                                    String serviceName, WindowsAzureServiceManagement service, String deploymentName)
+					throws WACommonException, ServiceException, InterruptedException, DeploymentException {
+		DeploymentGetResponse deployment = null;
+		String status = null;
 		do {
 			Thread.sleep(5000);
-			deployment = service.getDeployment(subscriptionId, serviceName,
-					deploymentName, mngUrl);
+			deployment = service.getDeployment(configuration, serviceName, deploymentName);
 
-			for (RoleInstance instance : deployment.getRoleInstanceList()) {
+			for (RoleInstance instance : deployment.getRoleInstances()) {
 				status = instance.getInstanceStatus();
-				if (status == InstanceStatus.ReadyRole
-						|| status == InstanceStatus.CyclingRole
-						|| status == InstanceStatus.FailedStartingVM
-						|| status == InstanceStatus.UnresponsiveRole) {
+				if (InstanceStatus.ReadyRole.getInstanceStatus().equals(status)
+						|| InstanceStatus.CyclingRole.getInstanceStatus().equals(status)
+						|| InstanceStatus.FailedStartingVM.getInstanceStatus().equals(status)
+						|| InstanceStatus.UnresponsiveRole.getInstanceStatus().equals(status)) {
 					break;
 				}
 			}
-		} while (status != null && status != InstanceStatus.ReadyRole
-				&& status != InstanceStatus.CyclingRole
-				&& status != InstanceStatus.FailedStartingVM
-				&& status != InstanceStatus.UnresponsiveRole);
+		} while (status != null && !(InstanceStatus.ReadyRole.getInstanceStatus().equals(status)
+				|| InstanceStatus.CyclingRole.getInstanceStatus().equals(status)
+				|| InstanceStatus.FailedStartingVM.getInstanceStatus().equals(status)
+				|| InstanceStatus.UnresponsiveRole.getInstanceStatus().equals(status)));
 
-		if (status != InstanceStatus.ReadyRole) {
-			throw new DeploymentException(status.toString());
+		if (!InstanceStatus.ReadyRole.getInstanceStatus().equals(status)) {
+			throw new DeploymentException(status);
 		}
 		return deployment;
 	}
 
-	private RequestStatus waitForStatus(String subscriptionId,
-			WindowsAzureServiceManagement service, String requestId, String mngUrl) throws WACommonException,
-	InterruptedException, RestAPIException, CommandLineException {
-		Operation op;
-		RequestStatus status = null;
+	private OperationStatus waitForStatus(Configuration configuration, WindowsAzureServiceManagement service, String requestId)
+            throws WACommonException, InterruptedException, RestAPIException, ServiceException {
+		OperationStatusResponse op;
+		OperationStatus status = null;
 		do {
-			op = service.getOperationStatus(subscriptionId, requestId, mngUrl);
-			status = RequestStatus.valueOf(op.getStatus());
+			op = service.getOperationStatus(configuration, requestId);
+			status = op.getStatus();
 
-			Activator.getDefault().log(Messages.deplId + op.getID());
+			Activator.getDefault().log(Messages.deplId + op.getId());
 			Activator.getDefault().log(Messages.deplStatus + op.getStatus());
 			Activator.getDefault().log(Messages.deplHttpStatus + op.getHttpStatusCode());
 			if (op.getError() != null) {
-				Activator.getDefault().log(Messages.deplErrorMessage + op.getError().getMessage());
-				throw new RestAPIException(op.getError().getMessage());
+                Activator.getDefault().log(Messages.deplErrorMessage + op.getError().getMessage());
+                throw new RestAPIException(op.getError().getMessage());
 			}
 
 			Thread.sleep(5000);
 
-		} while (status == RequestStatus.InProgress);
+		} while (status == OperationStatus.InProgress);
 
 		return status;
 	}
@@ -391,12 +354,10 @@ public final class DeploymentManager {
 			WindowsAzureServiceManagement service,
 			String cspkgUrl,
 			String deploymentName)
-					throws WACommonException, UnsupportedEncodingException, IOException,
-					FileNotFoundException, RestAPIException, InterruptedException, CommandLineException {
+            throws WACommonException, IOException,
+            RestAPIException, InterruptedException, CommandLineException, URISyntaxException, ServiceException {
 
 		String label = deploymentDesc.getHostedService().getServiceName(); //$NON-NLS-1$
-
-		label = Base64.encode(label.getBytes(Messages.utfFormat)); //$NON-NLS-1$
 
 		File cscfgFile = new File(deploymentDesc.getCscfgFile());
 
@@ -418,21 +379,22 @@ public final class DeploymentManager {
 				fileInputStream.close();
 			}
 		}
-		String configuration = Base64.encode(cscfgBuff); //$NON-NLS-1$
-
 		String deployState = deploymentDesc.getDeployState().toLowerCase();
-		CreateDeployment body = new CreateDeployment(deploymentName, cspkgUrl,label, configuration);
 
-		body.setStartDeployment(true);
+        DeploymentCreateParameters parameters = new DeploymentCreateParameters();
+        parameters.setName(deploymentName);
+        parameters.setPackageUri(new URI(cspkgUrl));
+        parameters.setLabel(label);
+        parameters.setConfiguration(new String(cscfgBuff));
+        parameters.setStartDeployment(true);
 
-		return service.createDeployment(
-				deploymentDesc.getSubscriptionId(),
-				deploymentDesc.getHostedService().getServiceName(),
-				deployState,
-				body,
-				deploymentDesc.getMngUrl(),
-				deploymentDesc.getUnpublish());
-	}
+        return service.createDeployment(
+                deploymentDesc.getConfiguration(),
+                deploymentDesc.getHostedService().getServiceName(),
+                deployState,
+                parameters,
+                deploymentDesc.getUnpublish());
+    }
 
 	private static void uploadPackageService(final WindowsAzureStorageServices service, final String cspkg, String cspckgTargetName,
 			final String container, DeployDescriptor deploymentDesc,
@@ -476,7 +438,7 @@ public final class DeploymentManager {
 	public void notifyProgress(String deploymentId,
 			String deploymentURL,
 			int progress,
-			RequestStatus inprogress, String message, Object... args) {
+			OperationStatus inprogress, String message, Object... args) {
 
 		DeploymentEventArgs arg = new DeploymentEventArgs(this);
 		arg.setId(deploymentId);
@@ -536,7 +498,7 @@ public final class DeploymentManager {
 
 			configureSettings(doc, xpath, Messages.remoteAccessAccountExpiration, formatter.format(rdp.getExpirationDate()));
 
-			String thumbptint = EncUtilHelper.getThumbPrint(rdp.getPublicKey());
+			String thumbptint = CerPfxUtil.getThumbPrint(rdp.getPublicKey());
 			configureRdpCertificate(doc, xpath, thumbptint, "sha1"); //$NON-NLS-1$
 
 			Transformer transformer = TransformerFactory.newInstance().newTransformer();
@@ -706,11 +668,15 @@ public final class DeploymentManager {
 				}
 			}
 
-			CertificateFile certFile = new CertificateFile(buff, pfxPwd);
+            ServiceCertificateCreateParameters createParameters = new ServiceCertificateCreateParameters();
+            createParameters.setData(buff);
+            createParameters.setPassword(pfxPwd);
+            createParameters.setCertificateFormat(CertificateFormat.Pfx);
+
 			service.addCertificate(
-					deploymentDesc.getSubscriptionId(),
+					deploymentDesc.getConfiguration(),
 					deploymentDesc.getHostedService().getServiceName(),
-					certFile, deploymentDesc.getMngUrl());
+					createParameters);
 		} catch (Exception e) {
 			Activator.getDefault().log(Messages.deplError, e);
 			throw new DeploymentException("Error uploading certificate", e);
@@ -767,48 +733,42 @@ public final class DeploymentManager {
 			}
 		});
 
-		String subscriptionId = WizardCacheManager.getCurrentPublishData().getCurrentSubscription().getId();
-		String mngUrl = WizardCacheManager.getCurrentPublishData().getPublishProfile().getUrl();
+		Configuration configuration = WizardCacheManager.getCurrentPublishData().getCurrentConfiguration();
 		int[] progressArr = new int[]{50, 30, 20};
-		unPublish(subscriptionId, serviceName, deplymentName, mngUrl, progressArr);
+		unPublish(configuration, serviceName, deplymentName, progressArr);
 	}
 
 	/**
 	 * Unpublish deployment without notifying user.
-	 * @param subscriptionId
+	 * @param configuration
 	 * @param serviceName
 	 * @param deplymentName
-	 * @param mngUrl
 	 */
 	public void unPublish(
-			String subscriptionId,
+            Configuration configuration,
 			String serviceName,
 			String deplymentName,
-			String mngUrl,
 			int[] progressArr) {
 		try {
 			WindowsAzureServiceManagement service = WizardCacheManager.createServiceManagementHelper();
-			notifyProgress(deplymentName, null, progressArr[0], RequestStatus.InProgress,
+			notifyProgress(deplymentName, null, progressArr[0], OperationStatus.InProgress,
 					Messages.stoppingMsg, serviceName);
-			String requestId = service.updateDeploymentStatus(subscriptionId,
+			String requestId = service.updateDeploymentStatus(configuration,
 					serviceName,
 					deplymentName,
-					Status.Suspended,
-					mngUrl);
-			waitForStatus(subscriptionId, service, requestId, mngUrl);
-			notifyProgress(deplymentName, null, progressArr[1], RequestStatus.InProgress,
+                    UpdatedDeploymentStatus.Suspended
+            );
+			waitForStatus(configuration, service, requestId);
+			notifyProgress(deplymentName, null, progressArr[1], OperationStatus.InProgress,
 					Messages.undeployProgressMsg, deplymentName);
-			requestId = service.deleteDeployment(subscriptionId,
-					serviceName,
-					deplymentName,
-					mngUrl);
-			waitForStatus(subscriptionId, service, requestId, mngUrl);
-			notifyProgress(deplymentName, null, progressArr[2], RequestStatus.Succeeded,
+			requestId = service.deleteDeployment(configuration, serviceName, deplymentName);
+			waitForStatus(configuration, service, requestId);
+			notifyProgress(deplymentName, null, progressArr[2], OperationStatus.Succeeded,
 					Messages.undeployCompletedMsg, serviceName);
 		} catch (Exception e) {
 			Activator.getDefault().log(Messages.deplError, e);
 			notifyProgress(deplymentName, null, 100,
-					RequestStatus.Failed,
+                    OperationStatus.Failed,
 					e.getMessage(),
 					serviceName);
 		}

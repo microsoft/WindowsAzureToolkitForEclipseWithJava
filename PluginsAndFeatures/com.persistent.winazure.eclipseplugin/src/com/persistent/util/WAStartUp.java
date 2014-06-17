@@ -458,10 +458,6 @@ public class WAStartUp implements IStartup {
             		File.separator, Messages.cmpntFileName);
             String starterKit = String.format("%s%s%s", pluginInstLoc,
             		File.separator, Messages.starterKitFileName);
-            String restFile = String.format("%s%s%s", pluginInstLoc,
-            		File.separator, Messages.restFileName);
-			String restConfigFile = String.format("%s%s%s", pluginInstLoc,
-            		File.separator, Messages.restConfigFileName);
             String prefFile = String.format("%s%s%s", pluginInstLoc,
             		File.separator, Messages.prefFileName);
 
@@ -480,13 +476,6 @@ public class WAStartUp implements IStartup {
             	new File(starterKit).delete();
             }
             copyResourceFile(Messages.starterKitEntry, starterKit);
-
-            // Check for restutil.exe
-            if (new File(restFile).exists()) {
-            	new File(restFile).delete();
-            }
-            copyResourceFile(Messages.restFileEntry, restFile);
-			copyResourceFile(Messages.restConfigFileEntry, restConfigFile);
         } catch (Exception e) {
             Activator.getDefault().log(e.getMessage(), e);
         }

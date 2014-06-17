@@ -15,12 +15,13 @@
  *******************************************************************************/
 package com.gigaspaces.azure.wizards;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.microsoft.windowsazure.management.compute.models.DeploymentStatus;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -33,13 +34,9 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
 
-import waeclipseplugin.Activator;
-
-import com.microsoftopentechnologies.wacommon.utils.Base64;
-import com.gigaspaces.azure.model.Deployment;
-import com.gigaspaces.azure.model.HostedService;
-import com.gigaspaces.azure.model.HostedServices;
-import com.gigaspaces.azure.model.Status;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse.Deployment;
 import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.runnable.FetchDeploymentsForHostedServiceWithProgressWindow;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressWindow;
@@ -87,7 +84,7 @@ public class UndeploymentPage extends WindowsAzurePage {
 			setErrorMessage(Messages.deploymentIsNull);
 			return false;
 		}
-		String label = new String(Base64.decode(deployment.getLabel())); //$NON-NLS-1$
+		String label = deployment.getLabel();
 		((UndeployWizard) getWizard()).setSettings(serviceName,deployment.getName(), label, deployment.getDeploymentSlot().toString());
 
 		setErrorMessage(null);
@@ -192,30 +189,25 @@ public class UndeploymentPage extends WindowsAzurePage {
 
 		if (sel > -1) {
 
-			HostedService hostedService;
+            HostedServiceGetDetailedResponse hostedServiceDetailed;
 			FetchDeploymentsForHostedServiceWithProgressWindow progress = new FetchDeploymentsForHostedServiceWithProgressWindow(null, Display.getDefault().getActiveShell());
 			progress.setHostedServiceName(hostedServiceCombo.getText());
 			Display.getDefault().syncExec(progress);
 
-			hostedService = progress.getHostedService();
+			hostedServiceDetailed = progress.getHostedServiceDetailed();
 
 			deploymentCombo.removeAll();
 
-			for (Deployment deployment : hostedService.getDeployments()) {
+			for (Deployment deployment : hostedServiceDetailed.getDeployments()) {
 				if (deployment.getName() == null) {
 					continue;
 				}
-				if (deployment.getStatus().equals(Status.Running)) {
-					try {
-						String label = new String(Base64.decode(deployment.getLabel()), "UTF-8"); //$NON-NLS-1$
-						String id = label + " - " + deployment.getDeploymentSlot();
-						deploymentCombo.add(id);
-						deploymentCombo.setData(id, deployment);
-
-					} catch (UnsupportedEncodingException e) {
-						Activator.getDefault().log(Messages.error, e);
-					}
-				}
+				if (deployment.getStatus().equals(DeploymentStatus.Running)) {
+                    String label = deployment.getLabel();
+                    String id = label + " - " + deployment.getDeploymentSlot();
+                    deploymentCombo.add(id);
+                    deploymentCombo.setData(id, deployment);
+                }
 			}
 
 			if (deploymentCombo.getItemCount() > 0) {
@@ -240,7 +232,7 @@ public class UndeploymentPage extends WindowsAzurePage {
 
 		if (currentPublishData != null) {
 			Subscription currentSubscription = currentPublishData.getCurrentSubscription();
-			HostedServices hostedServices = currentPublishData.getServicesPerSubscription().get(currentSubscription.getId());
+			List<HostedService> hostedServices = currentPublishData.getServicesPerSubscription().get(currentSubscription.getId());
 			if (hostedServices != null) {
 
 				hostedServiceCombo.removeAll();

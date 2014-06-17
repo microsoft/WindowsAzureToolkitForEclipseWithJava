@@ -1,5 +1,5 @@
 /*
- Copyright 2013 Microsoft Open Technologies, Inc.
+ Copyright 2014 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -20,17 +20,18 @@ public class WindowsAzureManager {
     private static final int PROGRESS_INTERVAL = 5000;
     private static final String PROGRESS_MESSAGE = "still uploading";
 
-    public String createContainer(String containerName, String storageName, String accessKey, WindowsAzurePackage waPackage) {
-        return BlobOperations.createContainer(containerName, storageName, accessKey, waPackage);
+    public String createContainer(String containerName, String storageName, String accessKey, String blobURL, WindowsAzurePackage waPackage) {
+        return BlobOperations.createContainer(containerName, storageName, accessKey, blobURL, waPackage);
     }
 
-    public String uploadBlob(String filePath, String blobName, String containerName, String storageName, String accessKey, WindowsAzurePackage waPackage) {
+    public String uploadBlob(String filePath, String blobName, String containerName, String storageName, String accessKey, String blobURL,
+    		WindowsAzurePackage waPackage) {
         // Start showing progress bar
         ProgressBar progressBar = new ProgressBar(PROGRESS_INTERVAL, PROGRESS_MESSAGE);
         Thread progressBarThread = new Thread(progressBar);
         progressBarThread.start();
 
-        String response = BlobOperations.uploadBlob(filePath, blobName, containerName, storageName, accessKey, waPackage);
+        String response = BlobOperations.uploadBlob(filePath, blobName, containerName, storageName, accessKey, blobURL, waPackage);
 
         // Stop the progress bar
         progressBarThread.interrupt();
@@ -42,8 +43,8 @@ public class WindowsAzureManager {
         return response;
     }
 
-    public String useBlob(String blobName, String containerName, String storageName, String accessKey, WindowsAzurePackage waPackage) {
-        return BlobOperations.useBlob(blobName, containerName, storageName, accessKey, waPackage);
+    public String useBlob(String blobName, String containerName, String storageName, String accessKey, String blobURL, WindowsAzurePackage waPackage) {
+        return BlobOperations.useBlob(blobName, containerName, storageName, accessKey, blobURL, waPackage);
     }
 
 	/**

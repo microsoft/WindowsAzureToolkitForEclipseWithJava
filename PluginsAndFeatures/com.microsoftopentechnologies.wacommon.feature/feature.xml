@@ -2,9 +2,8 @@
 <feature
       id="com.microsoftopentechnologies.wacommon.feature"
       label="Azure Common Plugin (by MS Open Tech)"
-      version="2.3.0.qualifier"
-      provider-name="Microsoft Open Technologies Inc."
-      os="win32">
+      version="2.3.1.qualifier"
+      provider-name="Microsoft Open Technologies Inc.">
 
    <description>
       Provides the common functionality needed by other toolkit components.
@@ -15,7 +14,7 @@
    </copyright>
 
    <license url="">
-MICROSOFT OPEN TECHNOLOGIES SOFTWARE LICENSE TERMS
+      MICROSOFT OPEN TECHNOLOGIES SOFTWARE LICENSE TERMS
 AZURE PLUGIN FOR ECLIPSE WITH JAVA
 
 These license terms are an agreement between Microsoft Open Technologies, Inc. (“Microsoft Open Tech”) and you. Please read them. They apply to the software named above, which includes the media on which you received it, if any. The terms also apply to any Microsoft Open Tech

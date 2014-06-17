@@ -26,13 +26,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.microsoft.windowsazure.exception.ServiceException;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.model.StorageServices;
 import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.rest.WindowsAzureServiceManagement;
-import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.util.PublishData;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
@@ -102,20 +102,18 @@ public class LoadingStorageAccountTask extends LoadingTask<Map<String, StorageSe
 		public void run() {
 			List<StorageService> storageServicesForSubscription;
 			try {
-				storageServicesForSubscription = service.listStorageAccounts(subcriptionId,
-						data.getPublishProfile().getUrl());
+				storageServicesForSubscription = service.listStorageAccounts(data.getConfiguration(subcriptionId));
 				StorageServices services = new StorageServices();
 				services.setStorageServices(storageServicesForSubscription);
 				storageServicesMap.put(subcriptionId, services);
-			} catch (InterruptedException e) {
-				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
-			} catch (CommandLineException e) {
-				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
 			} catch (WACommonException e) {
 				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
 				e.printStackTrace();
-			}
-		}	
+			} catch (ServiceException e) {
+                Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
+                e.printStackTrace();
+            }
+        }
 	}
 
 	private void fireOnLoadedStorageServicesEvent() {

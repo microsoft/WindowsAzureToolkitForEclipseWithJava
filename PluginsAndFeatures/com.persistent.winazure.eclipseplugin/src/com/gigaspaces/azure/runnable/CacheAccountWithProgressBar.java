@@ -23,16 +23,20 @@ import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.wizards.Messages;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
 
-public class CacheAccountWithProgressBar extends AccountActionRunnable {
+import java.io.File;
 
-	public CacheAccountWithProgressBar(PublishData data, Shell shell, String message) {
-		super(data, shell);
+public class CacheAccountWithProgressBar extends AccountActionRunnable {
+    private final File publishSettingsFile;
+
+	public CacheAccountWithProgressBar(File publishSettingsFile, PublishData data, Shell shell, String message) {
+        super(data, shell);
+        this.publishSettingsFile = publishSettingsFile;
 	}
 
 	@Override
 	public void doTask() {
 		try {
-			WizardCacheManager.cachePublishData(data, this);
+			WizardCacheManager.cachePublishData(publishSettingsFile, data, this);
 		} 
 		catch (Exception e) {
 			Activator.getDefault().log(Messages.error, e);

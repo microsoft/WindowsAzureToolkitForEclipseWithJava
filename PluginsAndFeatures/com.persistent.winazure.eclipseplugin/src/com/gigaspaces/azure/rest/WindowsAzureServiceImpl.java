@@ -15,21 +15,8 @@
  *******************************************************************************/
 package com.gigaspaces.azure.rest;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
-import waeclipseplugin.Activator;
-import com.gigaspaces.azure.model.Header;
 import com.gigaspaces.azure.model.ModelFactory;
-import com.gigaspaces.azure.model.Response;
-import com.gigaspaces.azure.util.CommandLineException;
 
 /**
  * The Class WindowsAzureServiceImpl.
@@ -40,76 +27,5 @@ public class WindowsAzureServiceImpl implements WindowsAzureService {
 
 	public WindowsAzureServiceImpl() {
 		this.context = ModelFactory.createInstance();
-	}
-
-	protected byte[] addContentLength(HashMap<String, String> headers,
-			Object body) {
-		byte[] buff = null;
-		try {
-
-			JAXBContext context = JAXBContext.newInstance(body.getClass());
-			ByteArrayOutputStream stream = new ByteArrayOutputStream();
-			try {
-				context.createMarshaller().marshal(body, stream);
-				buff = stream.toByteArray();
-				Activator.getDefault().log(new String(buff));
-
-				headers.put(CONTENT_LENGTH, "" + stream.size());
-
-			} finally {
-				stream.close();
-			}
-		} catch (JAXBException e) {
-			Activator.getDefault().log(Messages.error, e);
-		} catch (IOException e) {
-			Activator.getDefault().log(Messages.error, e);
-		}
-
-		return buff;
-	}
-
-	protected Object deserialize(String xml) throws CommandLineException {
-		Object result = null;
-		try {
-			InputStream is = new ByteArrayInputStream(
-					xml.getBytes(Messages.utfFormat));
-
-			Unmarshaller unmarshaller = context.createUnmarshaller();
-
-			result = unmarshaller.unmarshal(is);
-
-		} catch (IOException e) {
-			Activator.getDefault().log(Messages.error, e);
-			throw new CommandLineException(Messages.deserializtnErr, e);
-
-		} catch (JAXBException e) {
-			throw new CommandLineException(Messages.deserializtnErr, e);
-		}
-		return result;
-	}
-
-	protected String getXRequestId(Response<?> response) throws RestAPIException {
-
-		for (Header header : response.getHeaders()) {
-			if (X_MS_REQUEST_ID.equalsIgnoreCase(header.getName())) {
-				return header.getValue();
-			}
-		}
-
-		throw new RestAPIException(response);
-
-	}
-
-	protected void validateResponse(Response<?> response) throws RestAPIException  {
-		if (response.getStatus() >= 200 && response.getStatus() < 203) {
-			return;
-		}
-
-		if (response.getStatus() == 409) {
-			throw new RestAPIConflictException(response);
-		}
-
-		throw new RestAPIException(response);
-		
 	}
 }

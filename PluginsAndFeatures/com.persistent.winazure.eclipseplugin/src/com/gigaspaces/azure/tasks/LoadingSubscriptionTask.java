@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.rest.WindowsAzureServiceManagement;
 import com.gigaspaces.azure.util.PublishData;
+import com.microsoft.windowsazure.Configuration;
 
 public class LoadingSubscriptionTask extends LoadingTask<List<Subscription>> {
 
@@ -57,6 +58,7 @@ public class LoadingSubscriptionTask extends LoadingTask<List<Subscription>> {
 		for (Subscription s : subs) {
 			LoadSubscription loadSubscription = new LoadSubscription();
 			loadSubscription.setSubscriptionId(s.getId());
+            loadSubscription.setConfiguration(data.getConfiguration(s.getId()));
 			Future<?> submit = threadPool.submit(loadSubscription);
 			futures.add(submit);
 		}
@@ -97,18 +99,23 @@ public class LoadingSubscriptionTask extends LoadingTask<List<Subscription>> {
 
 	class LoadSubscription implements Runnable {
 
+        private Configuration configuration;
 		private String subcriptionId;
 
 		public void setSubscriptionId(String id) {
 			this.subcriptionId = id;
 		}
 
-		@Override
+        public void setConfiguration(Configuration configuration) {
+            this.configuration = configuration;
+        }
+
+        @Override
 		public void run() {
 			try {
 				if (errorHappened.get() == false) {
-					Subscription subs = service.getSubscription(subcriptionId, data.getPublishProfile().getUrl());
-					addSubscription(subs);
+                    Subscription subs = service.getSubscription(configuration);
+                    addSubscription(subs);
 				}
 			} catch (Exception e) {
 				AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);

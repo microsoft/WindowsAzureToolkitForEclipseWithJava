@@ -109,7 +109,7 @@ public class PreferenceUtil {
 					listener.setNumberOfAccounts(publishDatas.length);
 					for (PublishData pd : publishDatas) {
 						try {
-							WizardCacheManager.cachePublishData(pd, listener);
+							WizardCacheManager.cachePublishData(null, pd, listener);
 						} catch (RestAPIException e) {
 							Activator.getDefault().log(Messages.error, e);
 						}

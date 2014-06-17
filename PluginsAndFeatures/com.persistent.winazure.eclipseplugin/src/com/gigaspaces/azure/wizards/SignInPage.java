@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusEvent;
@@ -48,8 +49,7 @@ import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.HostedService;
-import com.gigaspaces.azure.model.HostedServices;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 import com.gigaspaces.azure.model.KeyName;
 import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.model.StorageServices;
@@ -817,7 +817,7 @@ public class SignInPage extends WindowsAzurePage {
 							storageAccountCmb = UIUtils.selectByText(
 									storageAccountCmb,
 									storageAccountDialog.getStorageAccountName());
-							defaultLocation = WizardCacheManager.getStorageAccountFromCurrentPublishData(storageAccountDialog.getStorageAccountName()).getStorageServiceProperties().getLocation();
+							defaultLocation = WizardCacheManager.getStorageAccountFromCurrentPublishData(storageAccountDialog.getStorageAccountName()).getStorageAccountProperties().getLocation();
 						}
 					} else {
 						MessageUtil.displayErrorDialog(getShell(),Messages.storageAccountsLimitTitle,Messages.storageAccountsLimitErr);
@@ -985,7 +985,8 @@ public class SignInPage extends WindowsAzurePage {
 							hostedServiceCombo = UIUtils.
 									selectByText(hostedServiceCombo,
 											hostedService.getHostedServiceName());
-							defaultLocation = WizardCacheManager.getHostedServiceFromCurrentPublishData(hostedService.getHostedServiceName()).getHostedServiceProperties().getLocation();
+							defaultLocation = WizardCacheManager.getHostedServiceFromCurrentPublishData(hostedService.getHostedServiceName()).
+                                    getProperties().getLocation();
 						}
 					} else {
 						MessageUtil.displayErrorDialog(getShell(),
@@ -1019,7 +1020,7 @@ public class SignInPage extends WindowsAzurePage {
 		if (publishData != null) {
 			String currentSelection = hostedServiceCombo.getText();
 			Subscription currentSubscription = publishData.getCurrentSubscription();
-			HostedServices hostedServices = publishData.getServicesPerSubscription().
+			List<HostedService> hostedServices = publishData.getServicesPerSubscription().
 					get(currentSubscription.getId());
 			hostedServiceCombo.removeAll();
 			if (hostedServices != null && !hostedServices.isEmpty()) {
@@ -1205,27 +1206,14 @@ public class SignInPage extends WindowsAzurePage {
 
 			String pfxPassword = pfxDialog.getPfxPassword();
 			data.getPublishProfile().setPassword(pfxPassword);
-			String thumbprint;
-			try {
-				thumbprint = WindowsAzureRestUtils.getInstance().installPublishSettings(file, pfxPassword);
-			} catch (InterruptedException e) {
-				MessageUtil.displayErrorDialog(getShell(), Messages.importDlgTitle, String.format(Messages.importDlgMsg, file.getName(), Messages.failedToParse));
-				return null;
-			} catch (CommandLineException e) {
-				MessageUtil.displayErrorDialog(getShell(), Messages.importDlgTitle, String.format(Messages.importDlgMsg, file.getName(), Messages.failedToParse));
-				return null;
-			}
 
-			if (WizardCacheManager.findPublishDataByThumbprint(thumbprint) != null) {
-				MessageUtil.displayErrorDialog(getShell(), Messages.loadingCred, Messages.credentialsExist);
-				return null;
+			if (WizardCacheManager.findPublishDataBySubscriptionId(subscriptionId) != null) {
+                MessageDialog.openInformation(getShell(), Messages.loadingCred, Messages.credentialsExist);
 			}
-
-			data.setThumbprint(thumbprint);
 
 			data.reset();
 
-			AccountActionRunnable settings = new CacheAccountWithProgressBar(data, getShell(), null);
+			AccountActionRunnable settings = new CacheAccountWithProgressBar(file, data, getShell(), null);
 
 			doLoad(file, settings);
 			return data;
@@ -1242,7 +1230,7 @@ public class SignInPage extends WindowsAzurePage {
 		 */
 		if (data != null) {
 			AccountActionRunnable settings =
-					new CacheAccountWithProgressBar(data, getShell(), null);
+					new CacheAccountWithProgressBar(file, data, getShell(), null);
 			doLoad(file, settings);
 		}
 		return data;

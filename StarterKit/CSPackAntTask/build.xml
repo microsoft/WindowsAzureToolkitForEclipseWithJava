@@ -19,7 +19,7 @@
 	<target name="package" description="Package JARs" depends="clean">
 		<mkdir dir="${basedir}\build" />
 		<mkdir dir="${basedir}\jar" />
-		<javac srcdir="src" destdir="build" source="1.6" target="1.6" classpathref="build.classpath" />
+		<javac srcdir="src" destdir="build" source="1.6" target="1.6" classpathref="build.classpath"/>
 		<jar destfile="${basedir}\jar\.cspack.jar" basedir="${basedir}\build" />
 		<copy file="${basedir}\jar\.cspack.jar" tofile="${basedir}\..\WindowsAzureDeploymentProject\.cspack.jar" overwrite="true" />
 	</target>

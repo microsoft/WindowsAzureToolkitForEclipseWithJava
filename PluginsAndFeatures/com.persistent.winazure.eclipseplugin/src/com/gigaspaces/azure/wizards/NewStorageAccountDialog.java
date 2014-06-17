@@ -16,6 +16,8 @@
 
 package com.gigaspaces.azure.wizards;
 
+import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
+
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
@@ -32,15 +34,15 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
-import com.gigaspaces.azure.model.CreateStorageServiceInput;
-import com.gigaspaces.azure.model.Location;
-import com.gigaspaces.azure.model.Locations;
+import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
 import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.runnable.NewStorageAccountWithProgressWindow;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
 import com.persistent.util.MessageUtil;
+
+import java.util.List;
 
 public class NewStorageAccountDialog extends WADialog {
 	
@@ -93,10 +95,10 @@ public class NewStorageAccountDialog extends WADialog {
 				@Override
 				public void widgetSelected(final SelectionEvent e) {
 
-					final CreateStorageServiceInput body = new CreateStorageServiceInput(
-							storageAccountTxt.getText(), storageAccountTxt
-									.getText(), locationComb.getText());
-
+					final StorageAccountCreateParameters body = new StorageAccountCreateParameters();
+                    body.setName(storageAccountTxt.getText());
+                    body.setLabel(storageAccountTxt.getText());
+                    body.setLocation(locationComb.getText());
 					body.setDescription(descriptionTxt.getText());
 					
 					storageAccountNameToCreate = storageAccountTxt.getText();
@@ -262,7 +264,7 @@ public class NewStorageAccountDialog extends WADialog {
 	}
 
 	private void populateLocations() {
-		Locations items = null;
+		List<Location> items;
 		String subscriptionName = subscrptnCombo.getText();
 		if (subscriptionName != null && !subscriptionName.isEmpty()) {
 			PublishData publishData = (PublishData) subscrptnCombo

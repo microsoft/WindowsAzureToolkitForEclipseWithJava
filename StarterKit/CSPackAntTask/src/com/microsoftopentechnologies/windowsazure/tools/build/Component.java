@@ -1,5 +1,5 @@
 /*
- Copyright 2013 Microsoft Open Technologies, Inc.
+ Copyright 2014 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -430,6 +430,30 @@ public class Component {
 		}		
 	}
 	
+	/** Returns the blob URL of the storage service based on the URL, if this is a private Azure Blob
+	 * @return
+	 */
+	//TODO: Merge this with above API getCloudStorageEndpoint() after verifying in the methods which are calling this getCloudStorageEndpoint()
+	private String getBlobStorageEndpoint() { 
+		final URL url;
+		final String hostName;
+		final String[] hostNameParts;
+		if(null == (url = this.getCloudSrc()) || this.getCloudKey() == null) {
+			return null;
+		} else if(null == (hostName = url.getHost())) {
+			return null;
+		} else if(null == (hostNameParts = hostName.split("\\."))) {
+			return null;
+		} else if(hostNameParts.length < 4) {
+			return null;
+		} else {
+			StringBuilder baseURL = new StringBuilder();
+			baseURL.append(url.getProtocol()).append("://").append(url.getHost()).append("/");
+			return baseURL.toString();
+		}		
+	}
+
+	
 	/**
 	 * Verifies whether the download indicated by cloudsrc exists
 	 * @return
@@ -471,18 +495,20 @@ public class Component {
 		if(null == waManager) {
 			waPackage.log("warning: Failed to verify blob availability (" + cloudSrc.toExternalForm() + ") due to an internal error", 1);
 		} else if(null == (containerName = getCloudContainer()) || null == (blobName = getCloudBlob()) || null == (storageName = getCloudStorage())) {
-			waPackage.log("warning: Failed to verify blob availability (" + cloudSrc.toExternalForm() + ") because the URL does not appear to point to a Azure blob", 1);
+			waPackage.log("warning: Failed to verify blob availability (" + cloudSrc.toExternalForm() + ") because the URL does not appear to point to an Azure blob", 1);
         } else if(null == waManager.createContainer(containerName,
                 storageName,
                 this.getCloudKey(),
+                this.getBlobStorageEndpoint(),
                 waPackage)) {
             waPackage.log("warning: Failed to ensure the blob's availability because the specified container could not be created (" + containerName + ")", 1);
 		} else if(getCloudUpload() == CloudUpload.ALWAYS) {
-			uploadBlob(waManager, blobName, containerName, storageName, this.getCloudKey());
+			uploadBlob(waManager, blobName, containerName, storageName, this.getCloudKey(), this.getBlobStorageEndpoint());
         } else if(null != waManager.useBlob(blobName,
                 containerName,
                 storageName,
                 this.getCloudKey(),
+                this.getBlobStorageEndpoint(),
                 waPackage)) {
 			; // Blob existence confirmed, nothing else to do
 		} else if(WindowsAzurePackage.verifyURLAvailable(cloudAltSrc)) {
@@ -492,12 +518,12 @@ public class Component {
 		} else if(cloudAltSrc != null) {
 			throw new BuildException("The cloud source of this component (" + cloudAltSrc.toExternalForm() + ") is not available, so it cannot be deployed.");
 		} else if(getCloudUpload() == CloudUpload.AUTO) {
-			uploadBlob(waManager, blobName, containerName, storageName, this.getCloudKey());
+			uploadBlob(waManager, blobName, containerName, storageName, this.getCloudKey(), this.getBlobStorageEndpoint());
 		} 
 	}
 	
 
-	private void uploadBlob(WindowsAzureManager waManager, String blobName, String containerName, String storageName, String accessKey) {
+	private void uploadBlob(WindowsAzureManager waManager, String blobName, String containerName, String storageName, String accessKey, String blobURL) {
 		final WindowsAzurePackage waPackage = role.getPackage();
 		final File approotDir = role.getAppRootDir();
 		File srcFile = null;
@@ -552,6 +578,7 @@ public class Component {
                 containerName,
                 storageName,
                 this.getCloudKey(),
+                blobURL,
                 waPackage))) {
             waPackage.log("warning: Failed to upload blob " + this.getCloudSrc() + ". The deployment might not work correctly in the cloud", 1);
 		} else {

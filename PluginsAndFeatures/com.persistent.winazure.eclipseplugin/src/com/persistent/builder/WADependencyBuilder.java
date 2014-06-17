@@ -73,10 +73,10 @@ public class WADependencyBuilder extends IncrementalProjectBuilder {
 
             // Get existing Azure roles from WA project
             for (WindowsAzureRole windowsAzureRole : waProjManager.getRoles()) {
-            	String approotPath = String.format("%s%s%s%s%s",
-            			root.getProject(waProjManager.getProjectName()).getLocation(),
-            			File.separator, windowsAzureRole.getName(),
-            			File.separator, "approot");
+                String approotPath = String.format("%s%s%s%s%s",
+                        root.getProject(waProjManager.getProjectName()).getLocation(),
+                        File.separator, windowsAzureRole.getName(),
+                        File.separator, "approot");
 
                 // Get existing components from Azure role if any
                 List<WindowsAzureRoleComponent> listComponents = windowsAzureRole.getComponents();
@@ -96,7 +96,7 @@ public class WADependencyBuilder extends IncrementalProjectBuilder {
                                 asName = new File(frmPath).getName();
                             }
 
-                            String projName = frmPath.substring(frmPath.lastIndexOf('\\') + 1);
+                            String projName = frmPath.substring(frmPath.lastIndexOf(File.separator) + 1);
                             IProject iProj = root.getProject(projName);
                             ProjExportType type = ProjectNatureHelper.getProjectNature(iProj);
                             String basePath = Messages.basePath + File.separator + "..";
@@ -107,7 +107,7 @@ public class WADependencyBuilder extends IncrementalProjectBuilder {
                             }
                             else {
                                 impDestPath = String.format("%s%s%s%s%s",
-                                		approotPath, File.separator, asName, ".",
+                                        approotPath, File.separator, asName, ".",
                                         type.name().toLowerCase());
                             }
                             try {

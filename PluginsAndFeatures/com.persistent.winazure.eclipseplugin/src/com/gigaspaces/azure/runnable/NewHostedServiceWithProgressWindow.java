@@ -18,26 +18,24 @@ package com.gigaspaces.azure.runnable;
 
 import java.lang.reflect.InvocationTargetException;
 
+import com.microsoft.windowsazure.exception.ServiceException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.swt.widgets.Shell;
 
 import waeclipseplugin.Activator;
-import com.gigaspaces.azure.model.CreateHostedService;
-import com.gigaspaces.azure.rest.RestAPIConflictException;
-import com.gigaspaces.azure.rest.RestAPIException;
 import com.gigaspaces.azure.tasks.AccountCachingExceptionEvent;
-import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.wizards.Messages;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 import com.persistent.util.MessageUtil;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceCreateParameters;
 
 public class NewHostedServiceWithProgressWindow extends AccountActionRunnable implements Runnable {
 
-	private CreateHostedService body;
+	private HostedServiceCreateParameters createHostedService;
 	
 	private final static int TASKS = 100;
 	
@@ -45,8 +43,8 @@ public class NewHostedServiceWithProgressWindow extends AccountActionRunnable im
 		super(data, shell);
 	}
 	
-	public void setCreateHostedService(CreateHostedService body) {
-		this.body = body;
+	public void setCreateHostedService(HostedServiceCreateParameters createHostedService) {
+		this.createHostedService = createHostedService;
 	}
 	
 
@@ -68,7 +66,7 @@ public class NewHostedServiceWithProgressWindow extends AccountActionRunnable im
 	@Override
 	public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 		 
-		monitor.beginTask("Creating " + body.getServiceName(), TASKS);
+		monitor.beginTask("Creating " + createHostedService.getServiceName(), TASKS);
 		
 		Thread thread = doAsync();
 
@@ -93,36 +91,26 @@ public class NewHostedServiceWithProgressWindow extends AccountActionRunnable im
 	@Override
 	public void doTask() {
 		try {
-			WizardCacheManager.createHostedService(body);
+			WizardCacheManager.createHostedService(createHostedService);
 		}
-		catch (RestAPIConflictException e) {
+		/*catch (RestAPIConflictException e) {
 			AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
 			event.setException(e);
 			event.setMessage(Messages.hostedServiceConflictError);
 			onRestAPIError(event);
-			Activator.getDefault().log(Messages.error, e);			
-		}
-		catch (RestAPIException e) {
-			AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
-			event.setException(e);
-			event.setMessage(e.getMessage());
-			onRestAPIError(event);
 			Activator.getDefault().log(Messages.error, e);
-		}
-		catch (InterruptedException e) {
-		} 
-		catch (CommandLineException e) {
-			AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
-			event.setException(e);
-			event.setMessage(e.getMessage());
-			onRestAPIError(event);
-			Activator.getDefault().log(Messages.error, e);
-		}
+		}*/
 		catch(WACommonException e) {
 			Activator.getDefault().log(Messages.error, e);
 			e.printStackTrace();
-		}
-	}
+		} catch (ServiceException e) {
+            AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
+            event.setException(e);
+            event.setMessage(e.getMessage());
+            onRestAPIError(event);
+            Activator.getDefault().log(Messages.error, e);
+        }
+    }
 	
 	
 

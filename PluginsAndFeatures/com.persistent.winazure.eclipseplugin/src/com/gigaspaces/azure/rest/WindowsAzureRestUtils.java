@@ -19,38 +19,43 @@
 
 package com.gigaspaces.azure.rest;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 
+import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.core.OperationResponse;
+import com.microsoft.windowsazure.core.OperationStatusResponse;
+import com.microsoft.windowsazure.core.utils.KeyStoreType;
+import com.microsoft.windowsazure.exception.ServiceException;
+import com.microsoft.windowsazure.management.ManagementClient;
+import com.microsoft.windowsazure.management.ManagementService;
+import com.microsoft.windowsazure.management.compute.ComputeManagementClient;
+import com.microsoft.windowsazure.management.compute.ComputeManagementService;
+import com.microsoft.windowsazure.management.compute.models.*;
+import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
+import com.microsoft.windowsazure.management.configuration.PublishSettingsLoader;
+import com.microsoft.windowsazure.management.models.AffinityGroupListResponse;
+import com.microsoft.windowsazure.management.models.LocationsListResponse;
+import com.microsoft.windowsazure.management.models.SubscriptionGetResponse;
+import com.microsoft.windowsazure.management.storage.StorageManagementClient;
+import com.microsoft.windowsazure.management.storage.StorageManagementService;
+import com.microsoft.windowsazure.management.storage.models.*;
+import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 import org.eclipse.core.runtime.Platform;
 
 import waeclipseplugin.Activator;
 import com.microsoftopentechnologies.wacommon.utils.Base64;
-import com.gigaspaces.azure.model.Deployment;
-import com.gigaspaces.azure.model.ModelFactory;
-import com.gigaspaces.azure.model.RoleInstance;
-import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.util.Messages;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.PublishProfile;
@@ -58,16 +63,13 @@ import com.gigaspaces.azure.util.PublishProfile;
 public class WindowsAzureRestUtils {
 
 	private static String pluginFolder;
-	private static String uri;
 
 	private static WindowsAzureRestUtils instance;
-	private static final String CHAR_ENCODING = "UTF-8";
 
 	public static synchronized WindowsAzureRestUtils getInstance() {
 
 		if (instance == null) {
-			String eclipseInstallation = Platform.getInstallLocation().getURL()
-					.getPath().toString();
+			String eclipseInstallation = Platform.getInstallLocation().getURL().getPath();
 			if (eclipseInstallation.charAt(0) == '/'
 					|| eclipseInstallation.charAt(0) == '\\') {
 				eclipseInstallation = eclipseInstallation.substring(1);
@@ -78,376 +80,22 @@ public class WindowsAzureRestUtils {
 					File.separator, com.persistent.util.Messages.pluginFolder,
 					File.separator, com.persistent.util.Messages.pluginId);
 
-			uri = getRestEXE();
-
 			instance = new WindowsAzureRestUtils();
 		}
 
 		return instance;
 	}
 
-	public String runRest(HttpVerb method, String url,
-			HashMap<String, String> headers, Object body, String thumbprint)
-					throws InterruptedException, CommandLineException {
-		return runRest(method, url, headers, body, thumbprint, false);
-	}
-    
-    // this method is currently used just for the CreateDeployment request. who's body may be very long so we dont want to pass it as an xml string to the command line.
-	public String runRest(HttpVerb method, String url,
-			HashMap<String, String> headers, Object body, String thumbprint, boolean fileBody)
-					throws InterruptedException, CommandLineException {
-		List<String> commandArgs = new ArrayList<String>();
-		commandArgs.add(uri);
-		commandArgs.add("--request");
-		commandArgs.add("/verb:" + method);
-		commandArgs.add("/url:" + url);
-		commandArgs.add("/thumbprint:" + thumbprint);
-
-//		StringBuilder command = new StringBuilder();
-//		command.append("" + uri + " ");
-//		command.append("--request ");
-//		command.append("/verb:" + method + " ");
-//		command.append("/url:\"" + url + "\" ");
-//
-//		command.append("/thumbprint:\"" + thumbprint + "\" ");
-		List<String> headersList = appendHeades(headers);
-		commandArgs.addAll(headersList);
-		
-		if (fileBody) {
-
-			String base64Body = objectToBase64EncodedString(body);
-
-			File bodyFile;
-			try {
-				bodyFile = writeXmlToFile(base64Body); // save the base 64 encoded body string to a file. this file we be read by the .NET code and decoded.
-			} catch (IOException e) {
-				throw new CommandLineException(e);
-			}
-
-//			command.append("/filebody:\"" + bodyFile + "\" "); // appending the filepath of the file containing the body to the command. this is the fix for bug 454, shortning the command greatly.
-			commandArgs.add("/filebody:" + bodyFile);
-		} else {
-			String bodyContent = appendBody(body);
-			
-			if (bodyContent != null) {
-				commandArgs.add(bodyContent);
-			}
-		}
-
-		return execute(commandArgs);
-	}
-
-	private String objectToBase64EncodedString(Object object) throws CommandLineException {
-
-		JAXBContext context = ModelFactory.createInstance();
-
-		try {
-			StringWriter sw = new StringWriter();
-
-			Marshaller m = context.createMarshaller();
-
-			m.marshal(object, sw);
-
-			String xmlString = sw.getBuffer().toString()
-					.replace("ns1:", "").replace(":ns1", "")
-					.replace("ns2:", "").replace(":ns2", "")
-					.replace("ns3:", "").replace(":ns3", "");
-
-			xmlString = Base64
-					.encode(xmlString.getBytes("UTF-8"));
-			return xmlString;
-		} catch (JAXBException e) {
-			Activator.getDefault().log(Messages.error, e);
-			throw new CommandLineException(e);
-		} catch (UnsupportedEncodingException e) {
-			Activator.getDefault().log(Messages.error, e);
-			throw new CommandLineException(e);
-		}	
-	}
-
-	private File writeXmlToFile(String xml) throws IOException {
-		
-		String userHomeDir = System.getProperty("user.home"); // save the request to the user home directory.
-															  // we don't want users to be able to view other users requests.
-		
-		File temp = File.createTempFile(System.currentTimeMillis() + "_b", ".body", new File(
-				userHomeDir));
-
-		BufferedWriter writer = null;
-		try {
-			
-			writer = new BufferedWriter( new OutputStreamWriter(new FileOutputStream(temp),CHAR_ENCODING));
-			writer.write( xml);
-
-		} finally {
-			if ( writer != null) {
-				writer.close( );
-			}
-		}
-		return temp;
-	}
-
-	private String appendBody(Object body) throws CommandLineException {
-		if (body != null) {
-
-			JAXBContext context = ModelFactory.createInstance();
-
-			try {
-				StringWriter sw = new StringWriter();
-
-				Marshaller m = context.createMarshaller();
-
-				m.marshal(body, sw);
-
-				String xmlString = sw.getBuffer().toString()
-						.replace("ns1:", "").replace(":ns1", "")
-						.replace("ns2:", "").replace(":ns2", "")
-						.replace("ns3:", "").replace(":ns3", "");
-
-				xmlString = Base64
-						.encode(xmlString.getBytes("UTF-8"));
-
-				return "/body:" + xmlString;
-			} catch (JAXBException e) {
-				Activator.getDefault().log(Messages.error, e);
-				throw new CommandLineException(e);
-			} catch (UnsupportedEncodingException e) {
-				Activator.getDefault().log(Messages.error, e);
-				throw new CommandLineException(e);
-			}
-
-		}
-		return null;
-	}
-
-	private static String getRestEXE() {
-
+	public void launchRDP(DeploymentGetResponse deployment, String userName) {
 		try {
 
-			File pluginDir = new File(pluginFolder);
-			if (!pluginDir.exists()) {
-				pluginDir.mkdirs();
-			}
-			File restUtils = new File(pluginFolder, "restutil.exe");
-
-			boolean fileCreated = false;
-			if (!restUtils.exists()) {
-				fileCreated = restUtils.createNewFile();
-			}
-
-			InputStream input = Activator.class.getClassLoader()
-					.getResourceAsStream("restutil.exe");
-
-			FileOutputStream output = null;
-
-			try {
-				if (fileCreated) {
-					output = new FileOutputStream(restUtils);
-					int b = 0;
-
-					while ((b = input.read()) > -1) {
-						output.write(b);
-					}
-				}
-
-			} finally {
-				if (input != null)
-					input.close();
-				if (output != null)
-					output.close();
-			}
-
-		} catch (FileNotFoundException e) {
-			Activator.getDefault().log(Messages.error, e);
-		} catch (IOException e) {
-			Activator.getDefault().log(Messages.error, e);
-		}
-
-		return '"' + pluginFolder + File.separator + "restutil.exe" + '"';
-	}
-
-	private List<String> appendHeades(HashMap<String, String> headers) {
-		List<String> commandArgs = new ArrayList<String>();
-		if (headers != null && headers.size() > 0) {
-			Iterator<Entry<String, String>> iterator = headers.entrySet()
-					.iterator();
-
-			StringBuilder head = new StringBuilder();
-
-			for (int i = 0; iterator.hasNext(); i++) {
-				Entry<String, String> e = iterator.next();
-				head.append(e.getKey() + ":" + e.getValue());
-				if (i < headers.size() - 1) {
-					head.append(',');
-				}
-			}
-
-			commandArgs.add("/header:" + head.toString());
-		}
-		return commandArgs;
-	}
-
-	private String execute(List<String> command) throws CommandLineException,
-	InterruptedException {
-		StringBuilder result = new StringBuilder();
-		String error = "";
-		InputStream inputStream = null;
-		InputStream errorStream = null;
-		BufferedReader br = null;
-		BufferedReader ebr = null;
-		Process process = null;
-		try {
-			process = new ProcessBuilder(command).start();
-
-			inputStream = process.getInputStream();
-			errorStream = process.getErrorStream();
-			br = new BufferedReader(new InputStreamReader(inputStream));
-
-			String line = null;
-			while ((line = br.readLine()) != null) {
-
-				result.append(line);
-			}
-
-			process.waitFor();
-			ebr = new BufferedReader(new InputStreamReader(errorStream));
-			error = ebr.readLine();
-			if (error != null && (!error.equals(""))) {
-				Activator.getDefault().log(error + command, null);
-				throw new CommandLineException(error);
-			}
-		} catch (CommandLineException e) {
-			Activator.getDefault().log(Messages.error, e);
-			throw new CommandLineException(e.getMessage(), e);
-		} catch (IOException e) {
-			Activator.getDefault().log(Messages.error, e);
-			throw new CommandLineException(e.getMessage(), e);
-		} finally {
-			try {
-				if (inputStream != null) {
-					inputStream.close();
-				}
-				if (errorStream != null) {
-					errorStream.close();
-				}
-				if (br != null) {
-					br.close();
-				}
-				if (ebr != null) {
-					ebr.close();
-				}
-			} catch (IOException e) { //TBD: Need to revisit this for better handling
-				Activator.getDefault().log(Messages.error, e);
-				throw new CommandLineException(e.getMessage(), e);
-			}
-		}
-		return result.toString();
-	}
-
-	public String installPublishSettings(File file, String password)
-			throws InterruptedException, CommandLineException {
-		List<String> commandArgs = new ArrayList<String>();
-		commandArgs.add(uri);
-		commandArgs.add("--install");
-		commandArgs.add("/path:" + file.getPath());
-//		StringBuilder command = new StringBuilder();
-//		command.append("" + uri + " ");
-//		command.append("--install ");
-//		command.append("/path:\"" + file.getPath() + "\" ");
-
-		if (password != null && !password.isEmpty()) {
-//			command.append("/password:\"" + password + "\"");
-			commandArgs.add("/password:" + password);
-		}
-		return execute(commandArgs);
-	}
-
-//	private String execute(StringBuilder command) throws InterruptedException,
-//	CommandLineException {
-//		String result = null;
-//		try {
-//			result = execute(command.toString());
-//		} catch (CommandLineException e) {
-//			Activator.getDefault().log(Messages.error, e);
-//			throw new CommandLineException(e.getMessage(), e);
-//		} catch (IOException e) {
-//			Activator.getDefault().log(Messages.error, e);
-//			throw new CommandLineException(e.getMessage(), e);
-//		}
-//		return result;
-//	}
-
-	public String runStorage(HttpVerb method, String url, String storageKey,
-			HashMap<String, String> headers, Object body)
-					throws InterruptedException, CommandLineException {
-		List<String> commandArgs = new ArrayList<String>();
-		commandArgs.add(uri);
-		commandArgs.add("--request");
-		commandArgs.add("/verb:" + method);
-		commandArgs.add("/url:" + url);
-		commandArgs.add("/key:" + storageKey);
-		
-//		StringBuilder command = new StringBuilder();
-//		command.append("" + uri + " ");
-//		command.append("--request ");
-//		command.append("/verb:" + method + " ");
-//		command.append("/url:\"" + url + "\" ");
-//		command.append("/key:\"" + storageKey + "\" ");
-
-		List<String> headersList = appendHeades(headers);
-		if (headersList.size() > 0) {
-			commandArgs.addAll(headersList);
-		}
-
-		if (body != null) {
-
-			if (body instanceof byte[]) {
-				File temp;
-				try {
-					
-					String userHomeDir = System.getProperty("user.home");
-					
-					temp = File.createTempFile(System.currentTimeMillis() + "_b", ".chunck", new File(
-							userHomeDir));
-
-					FileOutputStream output = new FileOutputStream(temp);
-
-					byte[] buff = (byte[]) body;
-
-					try {
-						output.write(buff, 0, buff.length);
-					} finally {
-						output.close();
-					}
-//					command.append("/filebody:\"" + temp + "\" ");
-					commandArgs.add("/filebody:" + temp);
-
-				} catch (IOException e) {
-					Activator.getDefault().log(Messages.error, e);
-					throw new CommandLineException(e);
-				}
-
-			} else {
-				String bodyContent = appendBody(body);
-				if (bodyContent != null) {
-					commandArgs.add(bodyContent);
-				}
-			}
-		}
-		return execute(commandArgs);
-	}
-
-	public void launchRDP(Deployment deployment, String userName) {
-		try {
-
-			List<RoleInstance> instances = deployment.getRoleInstanceList()
-					.getRoleInstanceList();
+			List<RoleInstance> instances = deployment.getRoleInstances();
 
 			RoleInstance instance = instances.get(0);
 
 			StringBuilder command = new StringBuilder();
 
-			URL url = new URL(deployment.getUrl());
+			URL url = deployment.getUri().toURL();
 
 			command.append("full address:s:" + url.getHost() + "\r\n");
 			command.append("username:s:" + userName + "\r\n");
@@ -455,9 +103,7 @@ public class WindowsAzureRestUtils {
 					"LoadBalanceInfo:s:Cookie: mstshash=%s#%s",
 					instance.getRoleName(), instance.getInstanceName()));
 
-			String fileName = String.format("%s\\%s-%s.rdp", pluginFolder,
-					new String(Base64.decode(deployment.getLabel()),
-							"UTF-8"), instance.getInstanceName());
+			String fileName = String.format("%s\\%s-%s.rdp", pluginFolder, deployment.getLabel(), instance.getInstanceName());
 
 			File file = new File(fileName);
 			boolean fileCreated = false;
@@ -530,4 +176,329 @@ public class WindowsAzureRestUtils {
 		return publishData;
 	}
 
+    public static String installPublishSettings(File file, String subscriptionId, String password) throws Exception {
+        try {
+            if (password == null && file.getName().endsWith(com.gigaspaces.azure.wizards.Messages.publishSettExt)) {
+                Configuration configuration = PublishSettingsLoader.createManagementConfiguration(file.getPath(), subscriptionId);
+                String sId = (String) configuration.getProperty(ManagementConfiguration.SUBSCRIPTION_ID);
+                Activator.getDefault().log("SubscriptionId is: " + sId);
+                return sId;
+            }
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        }
+        return null;
+    }
+
+    public static Configuration getConfiguration(File file, String subscriptionId) throws IOException {
+        try {
+            Configuration configuration = PublishSettingsLoader.createManagementConfiguration(file.getPath(), subscriptionId);
+            Activator.getDefault().log("Created configuration for subscriptionId: " + subscriptionId);
+            return configuration;
+        } catch (IOException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        }
+    }
+
+    public static SubscriptionGetResponse getSubscription(Configuration configuration) throws ServiceException, WACommonException {
+        try {
+            ManagementClient client = ManagementService.create(configuration);
+            SubscriptionGetResponse response = client.getSubscriptionsOperations().get();
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static HostedServiceListResponse getHostedServices(Configuration configuration) throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            HostedServiceListResponse response = client.getHostedServicesOperations().list();
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static LocationsListResponse getLocations(Configuration configuration) throws ServiceException, WACommonException {
+        try {
+            ManagementClient client = ManagementService.create(configuration);
+            LocationsListResponse response = client.getLocationsOperations().list();
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static StorageAccountListResponse getStorageServices(Configuration configuration) throws ServiceException, WACommonException {
+        try {
+            StorageManagementClient client = StorageManagementService.create(configuration);
+            StorageAccountListResponse response = client.getStorageAccountsOperations().list();
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static StorageAccountGetKeysResponse getStorageKeys(Configuration configuration, String serviceName)
+            throws ServiceException, WACommonException {
+        try {
+            StorageManagementClient client = StorageManagementService.create(configuration);
+            StorageAccountGetKeysResponse response = client.getStorageAccountsOperations().getKeys(serviceName);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static OperationStatusResponse createStorageAccount(Configuration configuration, StorageAccountCreateParameters accountParameters)
+            throws ServiceException, WACommonException {
+        try {
+            StorageManagementClient client = StorageManagementService.create(configuration);
+            OperationStatusResponse response = client.getStorageAccountsOperations().create(accountParameters);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static StorageAccountGetResponse getStorageAccount(Configuration configuration, String serviceName)
+            throws ServiceException, WACommonException {
+        try {
+            StorageManagementClient client = StorageManagementService.create(configuration);
+            StorageAccountGetResponse response = client.getStorageAccountsOperations().get(serviceName);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static CheckNameAvailabilityResponse checkStorageNameAvailability(Configuration configuration, String storageAccountName)
+            throws ServiceException, WACommonException {
+        try {
+            StorageManagementClient client = StorageManagementService.create(configuration);
+            CheckNameAvailabilityResponse response = client.getStorageAccountsOperations().checkNameAvailability(storageAccountName);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static HostedServiceGetDetailedResponse getHostedServicesDetailed(Configuration configuration, String serviceName)
+            throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            HostedServiceGetDetailedResponse response = client.getHostedServicesOperations().getDetailed(serviceName);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static OperationResponse createHostedService(Configuration configuration, HostedServiceCreateParameters hostedServiceCreateParameters)
+            throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            OperationResponse response = client.getHostedServicesOperations().create(hostedServiceCreateParameters);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static HostedServiceCheckNameAvailabilityResponse checkHostedServiceNameAvailability(Configuration configuration, String hostedServiceName)
+            throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            HostedServiceCheckNameAvailabilityResponse response = client.getHostedServicesOperations().checkNameAvailability(hostedServiceName);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static DeploymentGetResponse getDeployment(Configuration configuration, String serviceName, String deploymentName)
+            throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            DeploymentGetResponse response = client.getDeploymentsOperations().getByName(serviceName, deploymentName);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static OperationResponse updateDeploymentStatus(Configuration configuration, String serviceName, String deploymentName,
+                                                           DeploymentUpdateStatusParameters deploymentStatus) throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            OperationResponse response = client.getDeploymentsOperations().beginUpdatingStatusByDeploymentName(serviceName, deploymentName, deploymentStatus);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static OperationResponse deleteDeployment(Configuration configuration, String serviceName, String deploymentName,
+                                                     boolean deleteFromStorage) throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            OperationResponse response = client.getDeploymentsOperations().deleteByName(serviceName, deploymentName, deleteFromStorage);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (IOException ex) {
+        	Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+        	throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        } catch (InterruptedException ex) {
+        	Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+        	throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        } catch (ExecutionException ex) {
+        	Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+        	throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static OperationStatusResponse getOperationStatus(Configuration configuration, String requestId)
+            throws ServiceException, WACommonException {
+        try {
+            ManagementClient client = ManagementService.create(configuration);
+            OperationStatusResponse response = client.getOperationStatus(requestId);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static List<ServiceCertificateListResponse.Certificate> getCertificates(Configuration configuration, String serviceName)
+            throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            ServiceCertificateListResponse response = client.getServiceCertificatesOperations().list(serviceName);
+            return response.getCertificates();
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static OperationStatusResponse addCertificate(Configuration configuration, String serviceName, ServiceCertificateCreateParameters parameters)
+            throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            OperationStatusResponse response = client.getServiceCertificatesOperations().create(serviceName, parameters);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static OperationStatusResponse createDeployment(Configuration configuration, String serviceName, DeploymentSlot deploymentSlot,
+                                                           DeploymentCreateParameters parameters)
+            throws ServiceException, WACommonException {
+        try {
+            ComputeManagementClient client = ComputeManagementService.create(configuration);
+            OperationStatusResponse response = client.getDeploymentsOperations().create(serviceName, deploymentSlot, parameters);
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (ExecutionException ex) {
+            Throwable cause = ex.getCause();
+            if (cause instanceof ServiceException) {
+                Activator.getDefault().log("status is: " + ((ServiceException)cause).getHttpStatusCode() + " error code: " + ((ServiceException)cause).getErrorCode());
+                throw (ServiceException)cause;
+            }
+            throw new WACommonException("Exception when create deployment", ex);
+        } catch (Exception ex) {
+            Activator.getDefault().log("ExceptionType is: " + ex.getClass().getName() + " package is: " + ex.getClass().getPackage().getName());
+            throw new WACommonException("Exception when create deployment", ex);
+        }
+    }
+
+    public static AffinityGroupListResponse listAffinityGroups(Configuration configuration) throws ServiceException, WACommonException {
+        try {
+            ManagementClient client = ManagementService.create(configuration);
+            AffinityGroupListResponse response = client.getAffinityGroupsOperations().list();
+            return response;
+        } catch (ServiceException ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw ex;
+        } catch (Exception ex) {
+            Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, ex);
+            throw new WACommonException(com.gigaspaces.azure.rest.Messages.error, ex);
+        }
+    }
+
+    public static Configuration loadConfiguration(String subscriptionId, String url) throws IOException {
+        String keystore = System.getProperty("user.home") + File.separator + ".azure" + File.separator + subscriptionId + ".out";
+        URI mngUri = URI.create(url);
+        return ManagementConfiguration.configure(mngUri, subscriptionId, keystore, "", KeyStoreType.pkcs12);
+    }
 }

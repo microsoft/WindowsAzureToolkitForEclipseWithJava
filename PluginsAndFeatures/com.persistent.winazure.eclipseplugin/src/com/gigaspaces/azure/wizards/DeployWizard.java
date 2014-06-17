@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
@@ -47,11 +49,10 @@ import org.eclipse.swt.widgets.Shell;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.model.AutoUpldCmpnts;
-import com.gigaspaces.azure.model.Certificate;
+import com.microsoft.windowsazure.management.compute.models.ServiceCertificateListResponse.Certificate;
 import com.gigaspaces.azure.model.CertificateUpload;
 import com.gigaspaces.azure.model.CertificateUploadList;
-import com.gigaspaces.azure.model.CreateStorageServiceInput;
-import com.gigaspaces.azure.model.HostedService;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 import com.gigaspaces.azure.model.RemoteDesktopDescriptor;
 import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
@@ -67,6 +68,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
 import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
@@ -441,24 +443,24 @@ public class DeployWizard extends Wizard {
 		}
 	}
 
-	private void createStorageAccountIfNotExists() throws InterruptedException, Exception {
+	private void createStorageAccountIfNotExists() throws Exception {
 		StorageService storageAccount = WizardCacheManager.getCurrentStorageAcount();
 
 		if (storageAccount.getUrl() == null || storageAccount.getUrl().isEmpty()) {
-			CreateStorageServiceInput body = new CreateStorageServiceInput(storageAccount.getServiceName(),
-			storageAccount.getServiceName(),
-			storageAccount.getStorageServiceProperties().getLocation());
-			body.setDescription(storageAccount.getStorageServiceProperties().getDescription());
-			StorageService storageService = WizardCacheManager.createStorageAccount(body);
+			StorageAccountCreateParameters accountParameters = new StorageAccountCreateParameters();
+            accountParameters.setName(storageAccount.getServiceName());
+			accountParameters.setLabel(storageAccount.getServiceName());
+			accountParameters.setLocation(storageAccount.getStorageAccountProperties().getLocation());
+			accountParameters.setDescription(storageAccount.getStorageAccountProperties().getDescription());
+			StorageService storageService = WizardCacheManager.createStorageAccount(accountParameters);
 			/*
 			 * Add newly created storage account
 			 * in centralized storage account registry.
 			 */
 			StorageAccount storageAccountPref = new StorageAccount(storageService.getServiceName(),
-					storageService.getStorageServiceKeys().getPrimary(),
+					storageService.getPrimaryKey(),
 					storageService.
-					getStorageServiceProperties().getEndpoints().
-					getEndpoints().get(0));
+                            getStorageAccountProperties().getEndpoints().get(0).toString());
 			StorageAccountRegistry.addAccount(storageAccountPref);
 			PreferenceUtilStrg.save();
 		}
@@ -478,10 +480,8 @@ public class DeployWizard extends Wizard {
 		List<Certificate> cloudCertList = null;
 		try {
 			HostedService service = WizardCacheManager.getCurentHostedService();
-			if (service.getUrl() != null
-					&& !service.getUrl().isEmpty()) {
-				cloudCertList = WizardCacheManager.
-						fetchUploadedCertificates().getCertificates();
+			if (service.getUri() != null) {
+				cloudCertList = WizardCacheManager.fetchUploadedCertificates();
 			}
 			List<WindowsAzureRole> roleList = projMngr.getRoles();
 			// iterate over roles
@@ -583,7 +583,7 @@ public class DeployWizard extends Wizard {
 							selectedProject.getLocation().toOSString(),
 							certPath);
 				}
-				String thumbprint = EncUtilHelper.getThumbPrint(certPath);
+				String thumbprint = CerPfxUtil.getThumbPrint(certPath);
 				if (thumbprint.equals(Messages.dfltThmbprnt)) {
 					usesSampleCert = true;
 				}
@@ -656,7 +656,7 @@ public class DeployWizard extends Wizard {
 					File certFile = new File(defaultCertPath);
 					if (certFile.exists()) {
 						String defaultThumbprint =
-								EncUtilHelper.getThumbPrint(defaultCertPath);
+								CerPfxUtil.getThumbPrint(defaultCertPath);
 						if (defaultThumbprint.equals(Messages.dfltThmbprnt)) {
 							waProjManager.setRemoteAccessAllRoles(true);
 							waProjManager.setRemoteAccessUsername(
@@ -748,10 +748,8 @@ public class DeployWizard extends Wizard {
 			// get number of roles in one project
 			List<WindowsAzureRole> roleList = projMngr.getRoles();
 			StorageService curAcc = WizardCacheManager.getCurrentStorageAcount();
-			String curKey = curAcc.getStorageServiceKeys().getPrimary();
-			String accUrl = curAcc.
-					getStorageServiceProperties().getEndpoints().
-					getEndpoints().get(0);
+			String curKey = curAcc.getPrimaryKey();
+			String accUrl = curAcc.getStorageAccountProperties().getEndpoints().get(0).toString();
 			for (int i = 0; i < roleList.size(); i++) {
 				WindowsAzureRole role = roleList.get(i);
 				/*

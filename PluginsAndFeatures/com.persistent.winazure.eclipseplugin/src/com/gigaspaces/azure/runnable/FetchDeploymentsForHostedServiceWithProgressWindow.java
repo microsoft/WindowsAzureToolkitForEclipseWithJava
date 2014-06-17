@@ -2,13 +2,13 @@ package com.gigaspaces.azure.runnable;
 
 import java.lang.reflect.InvocationTargetException;
 
+import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.swt.widgets.Shell;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.HostedService;
 import com.gigaspaces.azure.rest.InvalidThumbprintException;
 import com.gigaspaces.azure.rest.RestAPIException;
 import com.gigaspaces.azure.tasks.AccountCachingExceptionEvent;
@@ -22,7 +22,7 @@ import com.persistent.util.MessageUtil;
 public class FetchDeploymentsForHostedServiceWithProgressWindow extends AccountActionRunnable implements Runnable {
 
 	private String hostedServiceName;
-	private HostedService hostedService;
+	private HostedServiceGetDetailedResponse hostedService;
 	
 	private final static int TASKS = 100;
 	
@@ -48,24 +48,6 @@ public class FetchDeploymentsForHostedServiceWithProgressWindow extends AccountA
 		
 		try {
 			this.hostedService = WizardCacheManager.getHostedServiceWithDeployments(hostedServiceName);
-		} 
-		catch (RestAPIException e) {
-			AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
-			event.setException(e);
-			event.setMessage(e.getMessage());
-			onRestAPIError(event);
-			Activator.getDefault().log(Messages.error, e);
-		} 
-		catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		catch (CommandLineException e) {
-			AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
-			event.setException(e);
-			event.setMessage(e.getMessage());
-			onRestAPIError(event);
-			Activator.getDefault().log(Messages.error, e);
 		} catch (InvalidThumbprintException e) {
 			AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
 			event.setException(e);
@@ -112,11 +94,11 @@ public class FetchDeploymentsForHostedServiceWithProgressWindow extends AccountA
 		this.hostedServiceName = hostedServiceName;
 	}
 
-	public HostedService getHostedService() {
+	public HostedServiceGetDetailedResponse getHostedServiceDetailed() {
 		return hostedService;
 	}
 
-	public void setHostedService(HostedService hostedService) {
+	public void setHostedService(HostedServiceGetDetailedResponse hostedService) {
 		this.hostedService = hostedService;
 	}
 	

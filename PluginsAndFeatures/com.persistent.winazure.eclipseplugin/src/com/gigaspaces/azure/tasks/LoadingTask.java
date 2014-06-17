@@ -76,7 +76,7 @@ public abstract class LoadingTask<T> implements Callable<T>, Runnable {
 	protected synchronized WindowsAzureServiceManagement getServiceInstance() {
 		WindowsAzureServiceManagement instance = null;
 		try {
-			instance = new WindowsAzureServiceManagement(data.getThumbprint());
+			instance = new WindowsAzureServiceManagement();
 		} catch (InvalidThumbprintException e) {
 			Activator.getDefault().log(Messages.error,e);
 		}

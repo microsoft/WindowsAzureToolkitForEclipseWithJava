@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 
 import javax.xml.bind.JAXBException;
 
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
@@ -151,33 +152,20 @@ public class UIUtils {
 							Messages.failedToParse));
 			return null;
 		}
-		String thumbprint;
+		String subscriptionId;
 		try {
-			thumbprint = WindowsAzureRestUtils.getInstance().
-					installPublishSettings(file, null);
-		} catch (InterruptedException e) {
+			subscriptionId = WindowsAzureRestUtils.installPublishSettings(file, data.getSubscriptionIds().get(0), null);
+		} catch (Exception e) {
 			MessageUtil.displayErrorDialog(new Shell(),
 					Messages.importDlgTitle,
 					String.format(Messages.importDlgMsg,
 							file.getName(),
 							Messages.failedToParse));
 			return null;
-		} catch (CommandLineException e) {
-			MessageUtil.displayErrorDialog(new Shell(),
-					Messages.importDlgTitle,
-					String.format(Messages.importDlgMsg,
-							file.getName(),
-							e.getMessage()));
-			return null;
 		}
-		if (WizardCacheManager.
-				findPublishDataByThumbprint(thumbprint) != null) {
-			MessageUtil.displayErrorDialog(new Shell(),
-					Messages.loadingCred,
-					Messages.credentialsExist);
-			return null;
+		if (WizardCacheManager.findPublishDataBySubscriptionId(subscriptionId) != null) {
+            MessageDialog.openInformation(new Shell(), Messages.loadingCred, Messages.credentialsExist);
 		}
-		data.setThumbprint(thumbprint);
 		data.setCurrentSubscription(data.getPublishProfile().
 				getSubscriptions().get(0));
 		return data;

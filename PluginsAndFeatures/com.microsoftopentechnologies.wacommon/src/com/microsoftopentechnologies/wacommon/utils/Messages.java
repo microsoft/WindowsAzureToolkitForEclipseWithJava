@@ -29,11 +29,7 @@ public final class Messages extends NLS {
 	public static String encFileEntry;
 	/* Common messages - end */
 	
-    /* EncUtilHelper messages - start */
-	public static String encUtilErrMsg;
-    /* EncUtilHelper messages - end */
-	
-	/* Base64 messages - start */
+    /* Base64 messages - start */
 	public static String base64InvldStr;
 	/* Base64 messages - end */
 	public static String nameNtErMsg;
@@ -55,6 +51,8 @@ public final class Messages extends NLS {
 	public static String sdkLibBundleName;
 	public static String SDKLocErrMsg;
 	public static String sdkLibBaseJar;
+	public static String cmdUtilErrMsg;
+	
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

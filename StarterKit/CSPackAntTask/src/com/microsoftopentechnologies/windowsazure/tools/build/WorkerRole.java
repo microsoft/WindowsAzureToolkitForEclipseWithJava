@@ -1,5 +1,5 @@
 /*
- Copyright 2013 Microsoft Open Technologies, Inc.
+ Copyright 2014 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -231,15 +231,23 @@ public class WorkerRole {
 	public void includeStorageClientLibrary() {
 		File utilDirectory = new File(getAppRootDir(), WindowsAzurePackage.DEFAULT_UTIL_SUBDIR);
 		File storageClientDestFile = new File(utilDirectory, WindowsAzurePackage.STORAGEDLL_FILENAME);
-		File storageClientSrcFile = new File(new File(wapackage.getSdkDir(), WindowsAzurePackage.STORAGEDLL_SUBDIR), WindowsAzurePackage.STORAGEDLL_FILENAME);
-		if(storageClientDestFile.exists() && storageClientDestFile.isFile()) {
-			// Library already included
-			return;
-		} else if(!storageClientSrcFile.exists() || !storageClientSrcFile.isFile()) {
-			// Library cannot be found in SDK
-			throw new BuildException("The required StorageClient.dll cannot be found. Make sure you have installed the latest Azure SDK for .NET");
-		} else {
-			wapackage.copyFile(storageClientSrcFile, storageClientDestFile);
-		}
+        if(storageClientDestFile.exists() && storageClientDestFile.isFile()) {
+            // Library already included
+            return;
+        }
+        File storageClientSrcFile;
+        if (WindowsAzurePackage.IS_WINDOWS) {
+            storageClientSrcFile = new File(new File(wapackage.getSdkDir(), WindowsAzurePackage.STORAGEDLL_SUBDIR), WindowsAzurePackage.STORAGEDLL_FILENAME);
+            if(!storageClientSrcFile.exists() || !storageClientSrcFile.isFile()) {
+                // Library cannot be found in SDK
+                throw new BuildException("The required StorageClient.dll cannot be found. Make sure you have installed the latest Azure SDK for .NET");
+            } else {
+                wapackage.copyFile(storageClientSrcFile, storageClientDestFile);
+            }
+        } else {
+            // copy dll from 'sdkKit' directory - for linux and Mac
+            storageClientSrcFile = new File(String.format("%s%s%s", wapackage.getSdkKit(), File.separator, WindowsAzurePackage.STORAGEDLL_FILENAME));
+            wapackage.copyFile(storageClientSrcFile, storageClientDestFile);
+        }
 	}
 }

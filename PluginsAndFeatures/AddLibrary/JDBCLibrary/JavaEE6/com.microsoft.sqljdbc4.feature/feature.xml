@@ -3,15 +3,14 @@
       id="com.microsoft.sqljdbc4.feature"
       label="Microsoft JDBC Driver 4.0 for SQL Server"
       version="4.0.2206.100"
-      provider-name="Microsoft Corp."
-      os="win32">
+      provider-name="Microsoft Corp.">
 
    <description>
       Provides JDBC API for SQL Server and Windows Azure SQL Database for Java Platform Enterprise Edition 6
    </description>
 
    <copyright>
-      Copyright 2013 Microsoft Corp.
+      Copyright 2014 Microsoft Corp.
    </copyright>
 
    <license>

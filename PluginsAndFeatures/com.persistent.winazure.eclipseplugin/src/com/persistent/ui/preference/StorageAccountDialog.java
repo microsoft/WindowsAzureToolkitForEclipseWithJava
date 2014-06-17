@@ -327,9 +327,8 @@ public class StorageAccountDialog extends TitleAreaDialog {
 					StorageService service = NewStorageAccountDialog.getStorageService();
 					if (service != null) {
 						txtName.setText(service.getServiceName());
-						txtKey.setText(service.getStorageServiceKeys().getPrimary());
-						txtUrl.setText(service.getStorageServiceProperties().getEndpoints().
-								getEndpoints().get(0));
+						txtKey.setText(service.getPrimaryKey());
+						txtUrl.setText(service.getStorageAccountProperties().getEndpoints().get(0).toString());
 					}
 				}
 			}

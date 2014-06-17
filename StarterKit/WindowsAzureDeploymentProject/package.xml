@@ -16,7 +16,7 @@
 --><project basedir="." default="createwapackage" name="WindowsAzureDeploymentProject">
 	<property location="." name="cspack.dir"/>
 	<property location="Replace with Azure SDK Java libraries path" name="azure.lib.dir"/>
-		
+
 	<path id="build.classpath">
 		<!-- Setting cspack.jar in classpath -->
 		<fileset dir="${cspack.dir}">
@@ -43,19 +43,25 @@
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
     <property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-    <property name="creator.version" value="2.3.0"/>
+    <property name="creator.version" value="2.3.1"/>
   </target>
 
   <!-- Force emulator reset to ensure no locks on deploy directory -->
   <target name="checkResetScript">
-    <available file="${basedir}\emulatorTools\ResetEmulator.cmd" property="fileExists"/>
+	<available file="${basedir}\emulatorTools\ResetEmulator.cmd" property="fileExists"/>
+	<available file="${basedir}\emulatorTools\.WaitForReset.cmd" property="waitForResetExists"/>
   </target>
+
   <target depends="checkResetScript" if="fileExists" name="resetEmulator">
     <exec executable="${basedir}\emulatorTools\ResetEmulator.cmd" failifexecutionfails="false"/>
   </target>
+  
+  <target depends="resetEmulator" if="waitForResetExists" name="waitForReset">
+    <exec executable="${basedir}\emulatorTools\.WaitForReset.cmd" failifexecutionfails="false"/>
+  </target>
 
   <!-- This task creates a Azure cloud service package -->
-  <target depends="resetEmulator" description="Creates an Azure package" name="createwapackage">
+  <target depends="waitForReset" description="Creates an Azure package" name="createwapackage">
     <taskdef classname="com.microsoftopentechnologies.windowsazure.tools.build.WindowsAzurePackage" classpathref="build.classpath" name="windowsazurepackage"/>
 
     <!-- This is the directory where the Azure deployment package or folder will be saved -->

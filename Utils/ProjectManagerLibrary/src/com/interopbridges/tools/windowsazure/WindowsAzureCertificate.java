@@ -26,9 +26,7 @@ public class WindowsAzureCertificate {
 	}
 
 	protected WindowsAzureCertificate(WindowsAzureProjectManager waProj,
-			WindowsAzureRole waRole,
-			String name,
-			String fingerPrint) {
+			WindowsAzureRole waRole, String name, String fingerPrint) {
 		super();
 		this.wProj = waProj;
 		this.wRole = waRole;
@@ -40,16 +38,16 @@ public class WindowsAzureCertificate {
 			throws WindowsAzureInvalidProjectOperationException {
 		try {
 			XPath xPath = XPathFactory.newInstance().newXPath();
-            Document doc = wProj.getConfigFileDoc();
-            String expr = String.format(WindowsAzureConstants.CERT_ROLE_NAME,
-                    wRole.getName(), this.getName());
-            Element certNd = (Element) xPath.evaluate(expr, doc,
-                    XPathConstants.NODE);
-            if (certNd == null) {
-                throw new WindowsAzureInvalidProjectOperationException(
-                        "Exception while geting Certificate node");
-            }
-            return certNd;
+			Document doc = wProj.getConfigFileDoc();
+			String expr = String.format(WindowsAzureConstants.CERT_ROLE_NAME,
+					wRole.getName(), this.getName());
+			Element certNd = (Element) xPath.evaluate(expr, doc,
+					XPathConstants.NODE);
+			if (certNd == null) {
+				throw new WindowsAzureInvalidProjectOperationException(
+						"Exception while geting Certificate node");
+			}
+			return certNd;
 		} catch (Exception ex) {
 			throw new WindowsAzureInvalidProjectOperationException(
 					"Exception while geting Certificate node", ex);
@@ -61,8 +59,7 @@ public class WindowsAzureCertificate {
 		try {
 			XPath xPath = XPathFactory.newInstance().newXPath();
 			Document doc = wProj.getdefinitionFileDoc();
-			String expr = String.format(WindowsAzureConstants
-					.WR_CERT,
+			String expr = String.format(WindowsAzureConstants.WR_CERT,
 					wRole.getName(), this.getName());
 			Element ele = (Element) xPath.evaluate(expr, doc,
 					XPathConstants.NODE);
@@ -134,8 +131,8 @@ public class WindowsAzureCertificate {
 		boolean isRemoteAssociated = false;
 		try {
 			if (wProj.getRemoteAccessAllRoles()
-					&& getName().
-					equalsIgnoreCase(WindowsAzureConstants.REMOTEACCESS_FINGERPRINT)
+					&& getName().equalsIgnoreCase(
+							WindowsAzureConstants.REMOTEACCESS_FINGERPRINT)
 					&& getFingerPrint().equalsIgnoreCase(wRole.getThumbprint())) {
 				isRemoteAssociated = true;
 			}
@@ -146,22 +143,20 @@ public class WindowsAzureCertificate {
 		return isRemoteAssociated;
 	}
 
-	public boolean isSSLCert() throws WindowsAzureInvalidProjectOperationException {
+	public boolean isSSLCert()
+			throws WindowsAzureInvalidProjectOperationException {
 		boolean isSslCert = false;
 		WindowsAzureCertificate sslCert = wRole.getSslOffloadingCert();
-		if (sslCert != null
-				&& sslCert.getName().equalsIgnoreCase(getName())
+		if (sslCert != null && sslCert.getName().equalsIgnoreCase(getName())
 				&& sslCert.getFingerPrint().equalsIgnoreCase(getFingerPrint())) {
 			isSslCert = true;
 		}
 		return isSslCert;
 	}
 
-	public void delete()
-			throws WindowsAzureInvalidProjectOperationException {
+	public void delete() throws WindowsAzureInvalidProjectOperationException {
 		if (isRemoteAccess()) {
-			throw new
-			WindowsAzureInvalidProjectOperationException(
+			throw new WindowsAzureInvalidProjectOperationException(
 					"This certificate is assoiciated with remote access");
 		}
 		// remove from map
@@ -180,16 +175,16 @@ public class WindowsAzureCertificate {
 
 	private void removeParentNodeIfNeeded(Node parentNode) {
 		Boolean hasCertChild = false;
-		for (Node child = parentNode.getFirstChild();
-				child != null; child = child.getNextSibling()) {
+		for (Node child = parentNode.getFirstChild(); child != null; child = child
+				.getNextSibling()) {
 			if (child.getNodeName().equalsIgnoreCase("Certificate")) {
 				hasCertChild = true;
 				break;
 			}
 		}
 		/*
-		 *  if it was last certificate which got removed
-		 *  then remove Certificates tag as well.
+		 * if it was last certificate which got removed then remove Certificates
+		 * tag as well.
 		 */
 		if (!hasCertChild) {
 			parentNode.getParentNode().removeChild(parentNode);

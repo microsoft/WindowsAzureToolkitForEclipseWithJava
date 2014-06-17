@@ -62,6 +62,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
+import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
 import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
@@ -838,7 +839,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                 try {
                     if (isPathChanged) {
                     	String thumbprint =
-                    			EncUtilHelper.getThumbPrint(tempPath);
+                    			CerPfxUtil.getThumbPrint(tempPath);
                     	if (waProjManager.isRemoteAccessTryingToUseSSLCert(thumbprint)) {
                     		PluginUtil.displayErrorDialog(getShell(),
                     				Messages.remAccSyntaxErr,

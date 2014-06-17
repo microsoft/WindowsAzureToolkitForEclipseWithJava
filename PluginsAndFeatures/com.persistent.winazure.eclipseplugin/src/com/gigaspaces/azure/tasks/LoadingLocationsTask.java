@@ -26,16 +26,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.exception.ServiceException;
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.Locations;
+import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
 import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.rest.WindowsAzureServiceManagement;
-import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.util.PublishData;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
-public class LoadingLocationsTask extends LoadingTask<Map<String, Locations>> {
+public class LoadingLocationsTask extends LoadingTask<Map<String, ArrayList<Location>>> {
 
 	public LoadingLocationsTask(PublishData data) {
 		super(data);
@@ -44,12 +45,12 @@ public class LoadingLocationsTask extends LoadingTask<Map<String, Locations>> {
 	private static final int OPERATION_TIMEOUT = 120;
 
 	private final WindowsAzureServiceManagement service = getServiceInstance();
-	private final Map<String, Locations> locationsServicesMap = new ConcurrentHashMap<String, Locations>();
+	private final Map<String, ArrayList<Location>> locationsServicesMap = new ConcurrentHashMap<String, ArrayList<Location>>();
 	private List<Future<?>> futures = new ArrayList<Future<?>>();
 	private ScheduledExecutorService threadPool;
 
 	@Override
-	public Map<String, Locations> call() throws Exception {
+	public Map<String, ArrayList<Location>> call() throws Exception {
 
 		List<Subscription> subscriptions = data.getPublishProfile().getSubscriptions();
 		if (!subscriptions.isEmpty()) {
@@ -58,6 +59,7 @@ public class LoadingLocationsTask extends LoadingTask<Map<String, Locations>> {
 			for (Subscription sub : data.getPublishProfile().getSubscriptions()) {
 				LoadLocationsPerSubscription task = new LoadLocationsPerSubscription();
 				task.setSubscriptionId(sub.getId());
+                task.setConfiguration(data.getConfiguration(sub.getId()));
 				Future<?> submit = threadPool.submit(task);
 				futures.add(submit);
 			}
@@ -72,10 +74,10 @@ public class LoadingLocationsTask extends LoadingTask<Map<String, Locations>> {
 				event.setMessage("Timed out while waiting for locations, please try again");
 				threadPool.shutdownNow();
 				fireRestAPIErrorEvent(event);
-				return new ConcurrentHashMap<String, Locations>();
+				return new ConcurrentHashMap<String, ArrayList<Location>>();
 			}
 			catch (InterruptedException e) {
-				return new ConcurrentHashMap<String, Locations>();
+				return new ConcurrentHashMap<String, ArrayList<Location>>();
 			}
 		}
 
@@ -84,7 +86,7 @@ public class LoadingLocationsTask extends LoadingTask<Map<String, Locations>> {
 	}
 
 	@Override
-	protected void setDataResult(Map<String, Locations> data) {		
+	protected void setDataResult(Map<String, ArrayList<Location>> data) {
 		this.data.setLocationsPerSubscription(data);
 		if (!data.keySet().isEmpty()) {
 			fireOnLoadedLocationsEvent();
@@ -94,26 +96,27 @@ public class LoadingLocationsTask extends LoadingTask<Map<String, Locations>> {
 	class LoadLocationsPerSubscription implements Runnable {
 
 		private String subcriptionId;
+        private Configuration configuration;
 
 		public void setSubscriptionId(String id) {
 			this.subcriptionId = id;
 		}
 
-		@Override
+        public void setConfiguration(Configuration configuration) {
+            this.configuration = configuration;
+        }
+
+        @Override
 		public void run() {
-			Locations storageLocationsForSubscription;
 			try {
-				storageLocationsForSubscription = service.listLocations(subcriptionId,
-						data.getPublishProfile().getUrl());
+                ArrayList<Location> storageLocationsForSubscription = service.listLocations(configuration);
 				locationsServicesMap.put(subcriptionId, storageLocationsForSubscription);
-			} catch (InterruptedException e) {
-				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
-			} catch (CommandLineException e) {
-				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
 			} catch (WACommonException e) {
 				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
-			}
-		}	
+			} catch (ServiceException e) {
+                Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
+            }
+        }
 	}
 
 	private void fireOnLoadedLocationsEvent() {

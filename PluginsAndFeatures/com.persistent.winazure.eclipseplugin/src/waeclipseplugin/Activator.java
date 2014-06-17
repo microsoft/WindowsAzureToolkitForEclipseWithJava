@@ -49,6 +49,8 @@ public class Activator extends AbstractUIPlugin {
     // The plug-in ID
     public static final String PLUGIN_ID = "WAEclipsePlugin"; //$NON-NLS-1$
 
+    public static boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
+
     // The shared instance
     private static Activator plugin;
 

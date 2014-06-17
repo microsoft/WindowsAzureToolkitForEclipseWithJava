@@ -81,7 +81,7 @@ public class MethodUtils {
 		 */
 		if (data != null) {
 			Display.getDefault().syncExec(new
-					CacheAccountWithProgressWindow(data, new Shell(),
+					CacheAccountWithProgressWindow(file, data, new Shell(),
 							Messages.loadingCred));
 			PreferenceUtil.save();
 		}
@@ -106,10 +106,9 @@ public class MethodUtils {
 					StorageAccount strEle =
 							new StorageAccount(
 									strgService.getServiceName(),
-									strgService.
-									getStorageServiceKeys().getPrimary(),
-									strgService.getStorageServiceProperties().
-									getEndpoints().getEndpoints().get(0));
+									strgService.getPrimaryKey(),
+									strgService.getStorageAccountProperties().
+									getEndpoints().get(0).toString());
 					/*
 					 * Check if storage account is already present
 					 * in centralized repository,

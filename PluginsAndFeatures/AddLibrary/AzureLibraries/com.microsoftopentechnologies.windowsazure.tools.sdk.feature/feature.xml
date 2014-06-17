@@ -2,16 +2,15 @@
 <feature
       id="com.microsoftopentechnologies.windowsazure.tools.sdk.feature"
       label="Package for Microsoft Azure Libraries for Java (by MS Open Tech)"
-      version="0.4.6.qualifier"
-      provider-name="Microsoft Open Technologies Inc."
-      os="win32">
+      version="0.5.0.qualifier"
+      provider-name="Microsoft Open Technologies Inc.">
 
    <description>
       Provides APIs for accessing Microsoft Azure services, such as storage, service bus, service runtime, etc.
    </description>
 
    <copyright>
-      Copyright 2013 Microsoft Open Technologies, Inc.
+      Copyright 2014 Microsoft Open Technologies, Inc.
    </copyright>
 
    <license>

@@ -51,7 +51,6 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
 import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
-import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
@@ -315,11 +314,7 @@ public class CertificateDialog extends TitleAreaDialog {
 				}
 				String thumbprint = "";
 				try {
-					if (path.endsWith(".cer")) {
-						thumbprint = EncUtilHelper.getThumbPrint(path);
-					} else {
-						thumbprint = CerPfxUtil.getThumbPrint(cert);
-					}
+					thumbprint = CerPfxUtil.getThumbPrint(cert);					
 				} catch (Exception e) {
 					PluginUtil.displayErrorDialog(
 							this.getShell(),
@@ -360,7 +355,7 @@ public class CertificateDialog extends TitleAreaDialog {
 				populateCertName(removeSpaceFromCN(data.getCnName()));
 			}
 			try {
-				txtThumb.setText(EncUtilHelper.
+				txtThumb.setText(CerPfxUtil.
 						getThumbPrint(data.getCerFilePath()));
 			} catch (Exception e) {
 				PluginUtil.displayErrorDialog(

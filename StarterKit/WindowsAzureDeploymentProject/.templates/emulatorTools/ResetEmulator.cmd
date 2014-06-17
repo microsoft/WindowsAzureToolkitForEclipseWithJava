@@ -1,4 +1,8 @@
 @ECHO OFF
+:: check for DFService.exe
+set _PROCCOUNT=0
+for /f %%G in ('tasklist /NH ^| find /I /C "DFService.exe"') do set _PROCCOUNT=%%G
+if %_PROCCOUNT%==0 (goto:Exit) 
 
 :: Require elevation
 if "%_ELEVATED%"=="" (goto:Elevate) else (goto:Shutdown)
@@ -15,3 +19,6 @@ SET _ELEVATED=
 taskkill /im WAStorageEmulator.exe /f
 taskkill /im DFService.exe /f
 taskkill /im DFUI.exe /f
+
+:Exit
+exit 0

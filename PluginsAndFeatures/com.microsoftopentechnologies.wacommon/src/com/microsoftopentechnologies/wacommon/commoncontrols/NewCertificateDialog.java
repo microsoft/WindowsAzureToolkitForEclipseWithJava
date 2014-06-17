@@ -41,7 +41,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
 import com.microsoftopentechnologies.wacommon.Activator;
-import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
+import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.microsoftopentechnologies.wacommon.utils.Utils;
 
@@ -380,7 +380,7 @@ public class NewCertificateDialog extends TitleAreaDialog {
         else {
             try {
                 String alias = Messages.newCertDlgAlias;
-                EncUtilHelper.createCertificate(txtCertFile.getText(),
+                CerPfxUtil.createCertificate(txtCertFile.getText(),
                         txtPFXFile.getText(), alias , txtPwd.getText(), txtCNName.getText());
                 
                 //At this point certificates are created , populate the values for caller

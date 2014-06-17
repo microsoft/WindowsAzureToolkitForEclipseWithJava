@@ -18,15 +18,15 @@ package com.gigaspaces.azure.runnable;
 
 import java.lang.reflect.InvocationTargetException;
 
+import com.microsoft.windowsazure.exception.ServiceException;
+import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.swt.widgets.Shell;
 
 import waeclipseplugin.Activator;
-import com.gigaspaces.azure.model.CreateStorageServiceInput;
 import com.gigaspaces.azure.model.StorageService;
-import com.gigaspaces.azure.rest.RestAPIConflictException;
 import com.gigaspaces.azure.rest.RestAPIException;
 import com.gigaspaces.azure.tasks.AccountCachingExceptionEvent;
 import com.gigaspaces.azure.util.CommandLineException;
@@ -39,8 +39,7 @@ import com.persistent.util.MessageUtil;
 public class NewStorageAccountWithProgressWindow
 extends AccountActionRunnable implements Runnable {
 
-
-	private CreateStorageServiceInput body;
+	private StorageAccountCreateParameters body;
 	static StorageService storageService;
 	private final static int TASKS = 200;
 
@@ -48,7 +47,7 @@ extends AccountActionRunnable implements Runnable {
 		super(data, shell);
 	}
 
-	public void setCreateStorageAccount(CreateStorageServiceInput body) {
+	public void setCreateStorageAccount(StorageAccountCreateParameters body) {
 		this.body = body;
 	}
 
@@ -76,7 +75,7 @@ extends AccountActionRunnable implements Runnable {
 			throws InvocationTargetException, InterruptedException {
 
 		monitor.beginTask(Messages.crtStrgAcc
-				+ body.getServiceName()
+				+ body.getName()
 				+ Messages.takeMinLbl,
 				TASKS);
 
@@ -109,13 +108,6 @@ extends AccountActionRunnable implements Runnable {
 		try {
 			storageService = WizardCacheManager.createStorageAccount(body);
 		}
-		catch (RestAPIConflictException e) {
-			AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
-			event.setException(e);
-			event.setMessage(Messages.storageAccountConflictError);
-			onRestAPIError(event);
-			Activator.getDefault().log(Messages.error, e);
-		}
 		catch (RestAPIException e) {
 			AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
 			event.setException(e);
@@ -135,6 +127,12 @@ extends AccountActionRunnable implements Runnable {
 		catch(WACommonException e) {
 			Activator.getDefault().log(Messages.error, e);
 			e.printStackTrace();
-		}
-	}
+		} catch (ServiceException e) {
+            AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
+            event.setException(e);
+            event.setMessage(e.getMessage());
+            onRestAPIError(event);
+            Activator.getDefault().log(Messages.error, e);
+        }
+    }
 }

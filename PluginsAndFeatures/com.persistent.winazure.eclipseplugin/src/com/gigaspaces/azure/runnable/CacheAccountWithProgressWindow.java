@@ -16,6 +16,8 @@
 
 package com.gigaspaces.azure.runnable;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
@@ -32,14 +34,16 @@ public class CacheAccountWithProgressWindow extends AccountActionRunnable implem
 
 	private String message;
 	private boolean isCompletedSuccesfully;
+    private final File publishSettingsFile;
 	
 	public boolean isCompletedSuccesfully() {
 		return isCompletedSuccesfully;
 	}
 	
-	public CacheAccountWithProgressWindow(PublishData data, Shell shell, String message) {
+	public CacheAccountWithProgressWindow(File publishSettingsFile, PublishData data, Shell shell, String message) {
 		super(data, shell);
 		this.message = message;
+        this.publishSettingsFile = publishSettingsFile;
 	}
 
 	@Override
@@ -60,10 +64,12 @@ public class CacheAccountWithProgressWindow extends AccountActionRunnable implem
 	@Override
 	public void doTask() {
 		try {
-			WizardCacheManager.cachePublishData(data, this);
+			WizardCacheManager.cachePublishData(publishSettingsFile, data, this);
 		} catch (RestAPIException e) {
 			Activator.getDefault().log(Messages.error, e);
-		}
-		
-	}
+		} catch (IOException e) {
+            Activator.getDefault().log(Messages.error, e);
+        }
+
+    }
 }

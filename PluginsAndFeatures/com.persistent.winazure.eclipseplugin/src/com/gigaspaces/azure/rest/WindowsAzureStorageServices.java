@@ -24,24 +24,18 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
+import java.util.List;
 
+import com.microsoft.azure.storage.CloudStorageAccount;
+import com.microsoft.azure.storage.RetryNoRetry;
+import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
+import com.microsoft.azure.storage.StorageException;
+import com.microsoft.azure.storage.blob.*;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.deploy.Notifier;
-import com.gigaspaces.azure.model.EnumerationResults;
-import com.gigaspaces.azure.model.Response;
 import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.util.CommandLineException;
-import com.microsoft.windowsazure.services.blob.client.BlobContainerPermissions;
-import com.microsoft.windowsazure.services.blob.client.BlobContainerPublicAccessType;
-import com.microsoft.windowsazure.services.blob.client.CloudBlobClient;
-import com.microsoft.windowsazure.services.blob.client.CloudBlobContainer;
-import com.microsoft.windowsazure.services.blob.client.CloudBlockBlob;
-import com.microsoft.windowsazure.services.core.storage.CloudStorageAccount;
-import com.microsoft.windowsazure.services.core.storage.RetryNoRetry;
-import com.microsoft.windowsazure.services.core.storage.StorageCredentialsAccountAndKey;
-import com.microsoft.windowsazure.services.core.storage.StorageException;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
 
@@ -51,6 +45,9 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 	private StorageService storageAccount;
 	private String storageKey;
 	private final static int NTHREAD = 4;
+	private static final String BLOB = "blob";
+	private static final String TABLE = "table";
+	private static final String QUEUE = "queue";
 
 	public WindowsAzureStorageServices(StorageService storageAccount, String storageKey)
 			throws NoSuchAlgorithmException, InvalidKeyException {
@@ -63,23 +60,22 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 		this.storageKey = storageKey;
 	}
 
-	public EnumerationResults listContainers() throws WACommonException, InvalidKeyException,
-	RestAPIException, InterruptedException, CommandLineException {
-		String url = storageAccount.
-				getStorageServiceProperties().getEndpoints().
-				getEndpoints().get(0).concat(LIST_CONTAINERS);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		headers.put(X_MS_VERSION, Messages.xMsVersion);
-
-		String result = WindowsAzureRestUtils.getInstance().runStorage(HttpVerb.GET, url,storageKey, headers, null);
-
-		Response<?> response = (Response<?>) deserialize(result);
-
-		validateResponse(response);
-
-		return (EnumerationResults) response.getBody();
+	public void createContainer(String containerName) throws WACommonException {
+        try {
+            // setting option to use existing system default proxy
+            System.setProperty("java.net.useSystemProxies", "true");
+            CloudStorageAccount cloudStorageAccount =
+            		getCloudStorageAccount(storageAccount.getServiceName(),
+            				storageKey,
+            				storageAccount.getStorageAccountProperties().getEndpoints().get(0).toString());
+            CloudBlobClient blobClient = cloudStorageAccount.createCloudBlobClient();
+            CloudBlobContainer container = blobClient.getContainerReference(containerName);
+            // Create the container if it does not exist
+            container.createIfNotExists();
+        } catch (Exception ex) {
+            Activator.getDefault().log(Messages.error, ex);
+            throw new WACommonException(Messages.error, ex);
+        }
 	}
 
 	/**
@@ -133,7 +129,6 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 	 * Method deletes specified blob.
 	 * @param container
 	 * @param blobName
-	 * @param file
 	 * @param notifier
 	 * @throws CommandLineException
 	 * @throws FileNotFoundException
@@ -180,24 +175,20 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
         StorageCredentialsAccountAndKey credentials;
 
         credentials = new StorageCredentialsAccountAndKey(strAccName.getServiceName(), key);
-
-        String blobURL = strAccName.
-        		getStorageServiceProperties().getEndpoints().
-        		getEndpoints().get(0);
-       	cloudStorageAccount = new CloudStorageAccount(credentials,new URI(blobURL),null,null);
-
+        List<URI> endpoints = strAccName.getStorageAccountProperties().getEndpoints();
+       	cloudStorageAccount = new CloudStorageAccount(credentials, endpoints.get(0), endpoints.get(1), endpoints.get(2));
 
         serviceClient = cloudStorageAccount.createCloudBlobClient();
         if (!allowRetry) {
             // Setting no retry policy
-            RetryNoRetry  rnr = new RetryNoRetry();
+            RetryNoRetry rnr = new RetryNoRetry();
             serviceClient.setRetryPolicyFactory(rnr);
         }
 
         container 	  = serviceClient.getContainerReference(containerName);
 
         if (createCnt) {
-        	container.createIfNotExist();
+        	container.createIfNotExists();
         }
 
         // set max number of concurrent requests
@@ -220,26 +211,42 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
         }
         return container;
 	}
-
-	public String createContainer(String container)
-			throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
-
-		String url = storageAccount.
-				getStorageServiceProperties().getEndpoints().
-				getEndpoints().get(0).
-				concat(container.toLowerCase() + "?restype=container");
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		headers.put(X_MS_VERSION, "2011-08-18");
-
-		headers.put("x-ms-meta-Name", container);
-
-		String result = WindowsAzureRestUtils.getInstance().runStorage(HttpVerb.PUT, url,
-				storageKey, headers, null);
-
-		Response<?> response = (Response<?>) deserialize(result);
-
-		return getXRequestId(response);
+	
+	/** Returns CloudStorageAccount  */
+    private static CloudStorageAccount getCloudStorageAccount(String storageName, String accessKey, String blobURL) {
+        CloudStorageAccount cloudStorageAccount = null;
+        StorageCredentialsAccountAndKey credentials = new StorageCredentialsAccountAndKey(storageName, accessKey);
+        try {
+        	if (blobURL == null || blobURL.length() == 0) {
+        		cloudStorageAccount = new CloudStorageAccount(credentials);
+        	} else {
+        		cloudStorageAccount =  new CloudStorageAccount(credentials, new URI(blobURL), 
+        														new URI(getCustomURI(storageName, QUEUE, blobURL)), 
+        														new URI(getCustomURI(storageName, TABLE, blobURL)));
+        	}
+        } catch (Exception e) {
+        	// Incase of exception returning storage account for default cloud.
+        	try {
+        		cloudStorageAccount = new CloudStorageAccount(credentials);
+        	} catch (Exception e1) {
+        		// This case should not occur - just returning null if happens
+        		e1.printStackTrace();
+        		return null;
+        	}
+        }
+        return cloudStorageAccount;
+    }
+    
+    /** Returns custom URL for queue and table. */
+	private static String getCustomURI(String storageAccountName, String type, String blobURL) {
+		if (QUEUE.equalsIgnoreCase(type)) {
+			return blobURL.replace(storageAccountName + "." + BLOB,
+					storageAccountName + "." + type);
+		} else if (TABLE.equalsIgnoreCase(type)) {
+			return blobURL.replace(storageAccountName + "." + BLOB,
+					storageAccountName + "." + type);
+		} else {
+			return null;
+		}
 	}
 }

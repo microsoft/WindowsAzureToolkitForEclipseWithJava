@@ -22,7 +22,6 @@ public final class Messages extends NLS {
 	private static final String BUNDLE_NAME = "com.gigaspaces.azure.propertypage.messages"; //$NON-NLS-1$
 	public static String addBtnText;
 	public static String credentialDlgSubscriptionId;
-	public static String credentialDlgThumbprint;
 	public static String credentialsDlgTitle;
 	public static String credentialsNodeText;
 	public static String credentialsPageId;
@@ -33,7 +32,6 @@ public final class Messages extends NLS {
 	public static String saveCredFailedMsg;
 	public static String subscriptionColName;
 	public static String subscriptionIdColName;
-	public static String thumbprintColName;
 	public static String loadingCred;
 	public static String loadingAccountError;
 	public static String loadingCredentialsError;

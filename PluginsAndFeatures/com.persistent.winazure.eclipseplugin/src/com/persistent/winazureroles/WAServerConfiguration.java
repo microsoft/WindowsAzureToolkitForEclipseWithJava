@@ -1832,8 +1832,8 @@ public class WAServerConfiguration extends PropertyPage {
 					String cmpntPath = String.format("%s%s%s%s%s",
 							root.getProject(waProjManager.
 									getProjectName()).getLocation(),
-									File.separator, windowsAzureRole.getName(),
-									Messages.approot, cmpntName);
+							File.separator, windowsAzureRole.getName(),
+							Messages.approot, cmpntName);
 					windowsAzureRole.removeServerApplication(cmpntName);
 					if (!fileToDel.contains(cmpntPath)) {
 						fileToDel.add(cmpntPath);

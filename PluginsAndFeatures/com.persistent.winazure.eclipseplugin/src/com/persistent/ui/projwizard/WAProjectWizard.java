@@ -469,16 +469,18 @@ implements INewWizard, IPageChangedListener {
     @Override
     public void addPages() {
         String sdkPath = null;
-        try {
-            sdkPath = WindowsAzureProjectManager.
-            		getLatestAzureSdkDir();
-        } catch (IOException e) {
-            sdkPath = null;
-            Activator.getDefault().log(errorMessage, e);
+        if (Activator.IS_WINDOWS) {
+            try {
+                sdkPath = WindowsAzureProjectManager.getLatestAzureSdkDir();
+            } catch (IOException e) {
+                sdkPath = null;
+                Activator.getDefault().log(errorMessage, e);
+            }
+        } else {
+            Activator.getDefault().log("Not Windows OS, skipping getSDK");
         }
-
         try {
-            if (sdkPath == null) {
+            if (sdkPath == null && Activator.IS_WINDOWS) {
                 errorTitle = Messages.sdkInsErrTtl;
                 errorMessage = Messages.sdkInsErrMsg;
                 boolean choice = MessageDialog.openQuestion(new Shell(),

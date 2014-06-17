@@ -16,20 +16,28 @@
 
 package com.gigaspaces.azure.model;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import com.microsoft.windowsazure.management.storage.models.StorageAccountGetKeysResponse;
+import com.microsoft.windowsazure.management.storage.models.StorageAccountProperties;
 
-@XmlRootElement(name="StorageService")
-@XmlType
 public class StorageService {
 		      
 	private String url;
 	private String serviceName;
-	private StorageServiceKeys storageServiceKeys;
-	private StorageServiceProperties storageServiceProperties;
-	
-	@XmlElement(name="Url")
+    private String primaryKey;
+    private String secondaryKey;
+
+	private StorageAccountProperties storageAccountProperties;
+
+    public StorageService() {
+    }
+
+    public StorageService(String serviceName, StorageAccountGetKeysResponse response) {
+        this.serviceName = serviceName;
+        this.url = response.getUri().toString();
+        this.primaryKey = response.getPrimaryKey();
+        this.secondaryKey = response.getSecondaryKey();
+    }
+
 	public String getUrl() {
 		return url;
 	}
@@ -38,7 +46,6 @@ public class StorageService {
 		this.url = url;
 	}
 	
-	@XmlElement(name="ServiceName")
 	public String getServiceName() {
 		return serviceName;
 	}
@@ -47,21 +54,24 @@ public class StorageService {
 		this.serviceName = serviceName;
 	}
 
-	@XmlElement(name="StorageServiceKeys")
-	public StorageServiceKeys getStorageServiceKeys() {
-		return storageServiceKeys;
-	}
+    public String getPrimaryKey() {
+        return primaryKey;
+    }
 
-	public void setStorageServiceKeys(StorageServiceKeys storageServiceKeys) {
-		this.storageServiceKeys = storageServiceKeys;
+    public String getSecondaryKey() {
+        return secondaryKey;
+    }
+
+    public void setStorageServiceKeys(String primaryKey, String secondaryKey) {
+		this.primaryKey = primaryKey;
+        this.secondaryKey = secondaryKey;
 	}
 	
-	@XmlElement(name = "StorageServiceProperties")
-	public StorageServiceProperties getStorageServiceProperties() {
-		return storageServiceProperties;
+	public StorageAccountProperties getStorageAccountProperties() {
+		return storageAccountProperties;
 	}
 
-	public void setStorageServiceProperties(StorageServiceProperties storageServiceProperties) {
-		this.storageServiceProperties = storageServiceProperties;
+	public void setStorageAccountProperties(StorageAccountProperties storageAccountProperties) {
+		this.storageAccountProperties = storageAccountProperties;
 	}
 }

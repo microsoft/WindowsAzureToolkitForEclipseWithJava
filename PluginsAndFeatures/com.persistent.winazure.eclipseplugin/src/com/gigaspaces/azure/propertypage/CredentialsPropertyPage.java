@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -47,7 +45,6 @@ public class CredentialsPropertyPage extends PropertyPage {
 
 	private static boolean add;
 	
-	private Text txtThumbPrint;
 	private Text txtSubscriptionId;
 	
 	public static void setPublishData(PublishData si) {
@@ -80,36 +77,7 @@ public class CredentialsPropertyPage extends PropertyPage {
 		container.setLayoutData(gridData);
 
 		createSubscriptionIdComponent(container);
-		createThumbprintComponent(container);
 		return container;
-	}
-
-	private void createThumbprintComponent(Composite container) {
-		Label lblThumbprint = new Label(container, SWT.LEFT);
-		lblThumbprint.setText(Messages.credentialDlgThumbprint);
-		GridData gridData = new GridData();
-		gridData.heightHint = 20;
-		gridData.horizontalIndent = 5;
-		lblThumbprint.setLayoutData(gridData);
-
-		txtThumbPrint = new Text(container, SWT.SINGLE | SWT.BORDER);
-		gridData = new GridData();
-		gridData.widthHint = 275;
-		gridData.horizontalAlignment = GridData.END;
-		gridData.grabExcessHorizontalSpace = true;
-		txtThumbPrint.setLayoutData(gridData);
-
-		if (publishData != null) {
-			txtThumbPrint.setText(publishData.getThumbprint());
-		}
-
-		txtThumbPrint.addModifyListener(new ModifyListener() {
-
-			@Override
-			public void modifyText(ModifyEvent event) {
-			}
-		});
-
 	}
 
 	private void createSubscriptionIdComponent(Composite container) {
@@ -138,33 +106,32 @@ public class CredentialsPropertyPage extends PropertyPage {
 	public boolean performOk() {
 
 		String subsciptionId = txtSubscriptionId.getText();
-		String thumbprint = txtThumbPrint.getText();
-		
-		if ((subsciptionId != null && !subsciptionId.isEmpty()) && (thumbprint != null && !thumbprint.isEmpty())) {			
+
+		if (subsciptionId != null && !subsciptionId.isEmpty()) {
 			PublishData publishDataToCache = null;
 			if (edit) {
-				publishDataToCache = handleEdit(subsciptionId, thumbprint);
+				publishDataToCache = handleEdit(subsciptionId);
 			}
 			if (add){
-				publishDataToCache = handleAdd(subsciptionId, thumbprint);
+				publishDataToCache = handleAdd(subsciptionId);
 			}
 			if (publishDataToCache != null) {
 				String messageInCaseOfError = Messages.loadingCredentialsError;
-				CacheAccountWithProgressWindow settings = new CacheAccountWithProgressWindow(publishDataToCache, Display.getDefault().getActiveShell(), messageInCaseOfError);
+				CacheAccountWithProgressWindow settings = new CacheAccountWithProgressWindow(null, publishDataToCache, Display.getDefault().getActiveShell(), messageInCaseOfError);
 				Display.getDefault().syncExec(settings);
 				if (settings.isCompletedSuccesfully() && edit) {
-					WizardCacheManager.removeSubscription(subsciptionId,publishData.getThumbprint());
+					WizardCacheManager.removeSubscription(subsciptionId);
 				}
 			}
 		}
 		return super.performOk();
 	}
 
-	private PublishData handleAdd(String subsciptionId, String thumbprint) {
+	private PublishData handleAdd(String subsciptionId) {
 
-		PublishData pd = WizardCacheManager.findPublishDataByThumbprint(thumbprint);
+		PublishData pd = WizardCacheManager.findPublishDataBySubscriptionId(subsciptionId);
 		if (pd == null) {
-			pd = createPublishData(subsciptionId, thumbprint);
+			pd = createPublishData(subsciptionId);
 			return pd;
 		}
 		if (!doesSubscriptionExist(pd, subsciptionId)) {
@@ -178,11 +145,11 @@ public class CredentialsPropertyPage extends PropertyPage {
 		return pd;
 	}
 
-	private PublishData handleEdit(String subsciptionId, String thumbprint) {
-		PublishData pd = WizardCacheManager.findPublishDataByThumbprint(thumbprint);
+	private PublishData handleEdit(String subsciptionId) {
+		PublishData pd = WizardCacheManager.findPublishDataBySubscriptionId(subsciptionId);
 
 		if (pd == null) {
-			pd = createPublishData(subsciptionId, thumbprint);
+			pd = createPublishData(subsciptionId);
 			return pd;
 		} 
 		if (!doesSubscriptionExist(pd, subsciptionId)) {
@@ -196,10 +163,9 @@ public class CredentialsPropertyPage extends PropertyPage {
 		return pd;
 	}
 
-	private PublishData createPublishData(String subsciptionId,String thumbprint) {
+	private PublishData createPublishData(String subsciptionId) {
 		PublishData pd = new PublishData();
 		pd.setPublishProfile(new PublishProfile());
-		pd.getPublishProfile().setThumbprint(thumbprint);
 
 		List<Subscription> subs = new ArrayList<Subscription>();
 

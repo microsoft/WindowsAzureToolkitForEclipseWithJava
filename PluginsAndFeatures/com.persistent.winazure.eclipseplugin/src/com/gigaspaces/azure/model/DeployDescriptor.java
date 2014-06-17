@@ -19,6 +19,8 @@ package com.gigaspaces.azure.model;
 import java.util.Date;
 
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
+import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 
 public class DeployDescriptor {
 
@@ -33,10 +35,11 @@ public class DeployDescriptor {
 	private final HostedService hostedService;
 	private final RemoteDesktopDescriptor remoteDesktopDescriptor;
 	private final WindowsAzurePackageType deployMode;
-	private final String mngUrl;
+    private final String mngUrl;
 	private final String unpublish;
 	private final CertificateUploadList certList;
 	private final boolean displayHttpsLink;
+    private final Configuration configuration;
 
 	public DeployDescriptor(WindowsAzurePackageType deployMode,
 			String subscriptionId, StorageService storageAcount,
@@ -44,7 +47,7 @@ public class DeployDescriptor {
 			String cscfgFile, String deployState,
 			RemoteDesktopDescriptor remoteDesktopDescriptor, String mngUrl,
 			String unpublish,
-			CertificateUploadList certList, boolean displayHttpsLink) {
+			CertificateUploadList certList, boolean displayHttpsLink, Configuration configuration) {
 		this.deployMode = deployMode;
 		this.startTime = new Date();
 		this.deploymentId = String.format(Messages.deploymentIdFormat,
@@ -57,10 +60,11 @@ public class DeployDescriptor {
 		this.cspkgFile = cspkgFile;
 		this.cscfgFile = cscfgFile;
 		this.deployState = deployState;
-		this.mngUrl = mngUrl;
+        this.mngUrl = mngUrl;
 		this.unpublish = unpublish;
 		this.certList = certList;
 		this.displayHttpsLink=displayHttpsLink;
+        this.configuration = configuration;
 	}
 
 	public WindowsAzurePackageType getDeployMode() {
@@ -91,9 +95,9 @@ public class DeployDescriptor {
 
 	public String getStorageKey() {
 		if (accessKey == KeyName.Primary) {
-			return storageAcount.getStorageServiceKeys().getPrimary();
+			return storageAcount.getPrimaryKey();
 		}
-		return storageAcount.getStorageServiceKeys().getSecondary();
+		return storageAcount.getSecondaryKey();
 	}
 
 	public HostedService getHostedService() {
@@ -137,11 +141,11 @@ public class DeployDescriptor {
 		return remoteDesktopDescriptor.isStartRemoteRDP();
 	}
 
-	public String getMngUrl() {
-		return mngUrl;
-	}
+    public String getMngUrl() {
+        return mngUrl;
+    }
 
-	public String getUnpublish() {
+    public String getUnpublish() {
 		return unpublish;
 	}
 
@@ -152,4 +156,8 @@ public class DeployDescriptor {
 	public boolean getDisplayHttpsLink() {
 		return displayHttpsLink;
 	}
+
+    public Configuration getConfiguration() {
+        return configuration;
+    }
 }

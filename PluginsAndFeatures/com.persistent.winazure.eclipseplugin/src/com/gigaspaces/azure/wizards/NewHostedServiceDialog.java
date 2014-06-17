@@ -33,10 +33,11 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
 import com.gigaspaces.azure.model.CreateHostedService;
-import com.gigaspaces.azure.model.Location;
-import com.gigaspaces.azure.model.Locations;
+import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
 import com.gigaspaces.azure.util.UIUtils;
 import com.persistent.util.MessageUtil;
+
+import java.util.List;
 
 public class NewHostedServiceDialog extends WADialog {
 
@@ -192,7 +193,7 @@ public class NewHostedServiceDialog extends WADialog {
 	}
 
 	private void populateLocations() {
-		Locations items = WizardCacheManager.getLocation();
+		List<Location> items = WizardCacheManager.getLocation();
 		locationComb.removeAll();
 
 		for (Location location : items) {

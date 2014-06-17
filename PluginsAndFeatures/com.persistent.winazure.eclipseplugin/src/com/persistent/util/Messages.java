@@ -72,10 +72,6 @@ public final class Messages extends NLS {
 	public static String upgrdJobTtl;
 	public static String closeProj;
 	public static String cnslName;
-	public static String restFileName;
-	public static String restFileEntry;
-	public static String restConfigFileName;
-	public static String restConfigFileEntry;
 	public static String prefFileName;
 	public static String prefFileEntry;
 	public static String oldCmpntFileEntry;

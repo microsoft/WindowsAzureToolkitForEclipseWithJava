@@ -14,9 +14,8 @@
  *  limitations under the License.
  */
 
-
 package com.interopbridges.tools.windowsazure;
 
 public enum WindowsAzureRoleComponentImportMethod {
-    none, copy, zip, auto
+	none, copy, zip, auto
 }

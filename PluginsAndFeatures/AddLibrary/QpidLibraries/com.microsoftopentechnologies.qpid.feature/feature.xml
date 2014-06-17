@@ -3,8 +3,7 @@
       id="com.microsoftopentechnologies.qpid.feature"
       label="Package for Apache Qpid Client Libraries for JMS (by MS Open Tech)"
       version="0.19.0.qualifier"
-      provider-name="Microsoft Open Technologies Inc."
-      os="win32">
+      provider-name="Microsoft Open Technologies Inc.">
 
    <description>
       Provides the JMS client component from the Apache Qpid project to enable your application to use AMQP messaging in Microsoft Azure.

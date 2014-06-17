@@ -26,16 +26,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.microsoft.windowsazure.exception.ServiceException;
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.HostedServices;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.rest.WindowsAzureServiceManagement;
-import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.util.PublishData;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
-public class LoadingHostedServicesTask extends LoadingTask<Map<String,HostedServices>> {
+public class LoadingHostedServicesTask extends LoadingTask<Map<String, ArrayList<HostedService>>> {
 
 	public LoadingHostedServicesTask(PublishData data) {
 		super(data);
@@ -44,13 +44,13 @@ public class LoadingHostedServicesTask extends LoadingTask<Map<String,HostedServ
 	private static final int OPERATION_TIMEOUT = 120;
 
 	private final WindowsAzureServiceManagement service = getServiceInstance();
-	private final Map<String, HostedServices> hostedServicesMap = new ConcurrentHashMap<String, HostedServices>();
+	private final Map<String, ArrayList<HostedService>> hostedServicesMap = new ConcurrentHashMap<String, ArrayList<HostedService>>();
 	private List<Future<?>> futures = new ArrayList<Future<?>>();
 	private ScheduledExecutorService threadPool;
 
 
 	@Override
-	public Map<String , HostedServices> call() throws Exception {
+	public Map<String, ArrayList<HostedService>> call() throws Exception {
 
 		List<Subscription> subscriptions = data.getPublishProfile().getSubscriptions();
 		if (!subscriptions.isEmpty()) {
@@ -73,10 +73,10 @@ public class LoadingHostedServicesTask extends LoadingTask<Map<String,HostedServ
 				event.setMessage("Timed out while waiting for cloud services, please try again");
 				threadPool.shutdownNow();
 				fireRestAPIErrorEvent(event);
-				return new ConcurrentHashMap<String, HostedServices>();
+				return new ConcurrentHashMap<String, ArrayList<HostedService>>();
 			}
 			catch (InterruptedException e) {
-				return new ConcurrentHashMap<String, HostedServices>();
+				return new ConcurrentHashMap<String, ArrayList<HostedService>>();
 			}
 		}
 
@@ -85,7 +85,7 @@ public class LoadingHostedServicesTask extends LoadingTask<Map<String,HostedServ
 	}
 
 	@Override
-	protected void setDataResult(Map<String, HostedServices> data) {
+	protected void setDataResult(Map<String, ArrayList<HostedService>> data) {
 		this.data.setServicesPerSubscription(data);
 		if (!data.keySet().isEmpty()) {
 			fireOnLoadedHostesServicesEvent();
@@ -103,21 +103,16 @@ public class LoadingHostedServicesTask extends LoadingTask<Map<String,HostedServ
 		@Override
 		public void run() {
 
-			HostedServices hostedServicesForSubscription;
+			ArrayList<HostedService> hostedServicesForSubscription;
 			try {
-				hostedServicesForSubscription = service.listHostedServices(subcriptionId, data.getPublishProfile().getUrl());
+				hostedServicesForSubscription = service.listHostedServices(data.getConfiguration(subcriptionId));
 				hostedServicesMap.put(subcriptionId, hostedServicesForSubscription);
-			} 
-			catch (InterruptedException e) {
+			} catch (WACommonException e) {
 				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
-			} 
-			catch (CommandLineException e) {
-				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
-			}
-			catch (WACommonException e) {
-				Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
-			}
-		}	
+			} catch (ServiceException e) {
+                Activator.getDefault().log(com.gigaspaces.azure.rest.Messages.error, e);
+            }
+        }
 	}
 
 	private void fireOnLoadedHostesServicesEvent() {

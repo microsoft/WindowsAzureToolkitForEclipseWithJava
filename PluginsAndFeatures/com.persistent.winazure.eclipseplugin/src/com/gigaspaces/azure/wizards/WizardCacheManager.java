@@ -16,14 +16,11 @@
 
 package com.gigaspaces.azure.wizards;
 
+import java.io.File;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -31,6 +28,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.gigaspaces.azure.rest.*;
+import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.core.OperationStatus;
+import com.microsoft.windowsazure.core.OperationStatusResponse;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -46,28 +47,23 @@ import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.deploy.RequestStatus;
+import com.microsoft.windowsazure.exception.ServiceException;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceCreateParameters;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse;
+import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
+import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
+import com.microsoft.windowsazure.management.storage.models.StorageAccountProperties;
 import com.gigaspaces.azure.model.CertificateUpload;
 import com.gigaspaces.azure.model.CertificateUploadList;
-import com.gigaspaces.azure.model.Certificates;
-import com.gigaspaces.azure.model.CreateHostedService;
-import com.gigaspaces.azure.model.CreateStorageServiceInput;
+import com.microsoft.windowsazure.management.compute.models.ServiceCertificateListResponse.Certificate;
 import com.gigaspaces.azure.model.DeployDescriptor;
-import com.gigaspaces.azure.model.HostedService;
-import com.gigaspaces.azure.model.HostedServiceProperties;
-import com.gigaspaces.azure.model.HostedServices;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceProperties;
 import com.gigaspaces.azure.model.KeyName;
-import com.gigaspaces.azure.model.Locations;
-import com.gigaspaces.azure.model.Operation;
 import com.gigaspaces.azure.model.RemoteDesktopDescriptor;
 import com.gigaspaces.azure.model.StorageService;
-import com.gigaspaces.azure.model.StorageServiceProperties;
 import com.gigaspaces.azure.model.StorageServices;
 import com.gigaspaces.azure.model.Subscription;
-import com.gigaspaces.azure.rest.InvalidThumbprintException;
-import com.gigaspaces.azure.rest.RestAPIException;
-import com.gigaspaces.azure.rest.WindowsAzureServiceManagement;
-import com.gigaspaces.azure.rest.WindowsAzureStorageServices;
 import com.gigaspaces.azure.runnable.CacheAccountWithProgressWindow;
 import com.gigaspaces.azure.tasks.LoadingAccoutListener;
 import com.gigaspaces.azure.tasks.LoadingHostedServicesTask;
@@ -130,7 +126,7 @@ public final class WizardCacheManager {
 				getCurrentStorageAcount(), currentAccessKey,
 				getCurentHostedService(), deployFile, deployConfigFile,
 				deployState, remoteDesktopDescriptor,
-				currentPublishData.getPublishProfile().getUrl(), unpublish, certList, displayHttpsLink);
+            currentPublishData.getPublishProfile().getUrl(), unpublish, certList, displayHttpsLink, currentPublishData.getCurrentConfiguration());
 
 		remoteDesktopDescriptor = null;
 
@@ -145,9 +141,9 @@ public final class WizardCacheManager {
 			try {
 				String key = ""; //$NON-NLS-1$
 				if (currentAccessKey == KeyName.Primary)
-					key = storageService.getStorageServiceKeys().getPrimary();
+					key = storageService.getPrimaryKey();
 				else
-					key = storageService.getStorageServiceKeys().getSecondary();
+					key = storageService.getSecondaryKey();
 
 				return new WindowsAzureStorageServices(
 						storageService, key);
@@ -163,8 +159,7 @@ public final class WizardCacheManager {
 	public static WindowsAzureServiceManagement createServiceManagementHelper() {
 		if (currentPublishData != null) {
 			try {
-				return new WindowsAzureServiceManagement(
-						currentPublishData.getThumbprint());
+				return new WindowsAzureServiceManagement();
 			} catch (InvalidThumbprintException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -174,7 +169,7 @@ public final class WizardCacheManager {
 		return null;
 	}
 
-	public static Locations getLocation() {
+	public static List<Location> getLocation() {
 
 		if (currentPublishData != null)
 			return currentPublishData.getLocationsPerSubscription().get(
@@ -231,24 +226,24 @@ public final class WizardCacheManager {
 		return null;
 	}
 
-	public static PublishData findPublishDataByThumbprint(String thumbprint) {
+	public static PublishData findPublishDataBySubscriptionId(String subscriptionId) {
 
 		for (PublishData pd : PUBLISHS) {
 
-			if (thumbprint.equalsIgnoreCase(pd.getThumbprint()))
+			if (subscriptionId.equalsIgnoreCase(pd.getCurrentSubscription().getId()))
 				return pd;
 
 		}
 		return null;
 	}
 
-	public static void removeSubscription(String subscriptionId, String thumbprint) {
+	public static void removeSubscription(String subscriptionId) {
 
-		if (subscriptionId == null || thumbprint == null) {
+		if (subscriptionId == null) {
 			return;
 		}
 
-		PublishData publishData = findPublishDataByThumbprint(thumbprint);
+		PublishData publishData = findPublishDataBySubscriptionId(subscriptionId);
 
 		if (publishData == null) {
 			return;
@@ -350,66 +345,70 @@ public final class WizardCacheManager {
 	 * from currently selected cloud service on wizard.
 	 * @return
 	 */
-	public static Certificates fetchUploadedCertificates() {
+	public static List<Certificate> fetchUploadedCertificates() {
 		WindowsAzureServiceManagement service;
-		Subscription subscription = currentPublishData.getCurrentSubscription();
-		Certificates certsInService = null;
+		List<Certificate> certsInService = null;
 		try {
-			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
-			String subscriptionId = subscription.getId();
-			String mngUrl = currentPublishData.getPublishProfile().getUrl();
-			certsInService = service.listCertificates(
-					subscriptionId,
-					getCurentHostedService().getServiceName(),
-					mngUrl);
+			service = new WindowsAzureServiceManagement();
+			certsInService = service.listCertificates(currentPublishData.getCurrentConfiguration(), getCurentHostedService().getServiceName());
 		} catch (Exception e) {
 			Activator.getDefault().log(Messages.certUploadEr, e);
 		}
 		return certsInService;
 	}
 
-	public static HostedService createHostedService(CreateHostedService body)
-			throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
+	public static HostedService createHostedService(HostedServiceCreateParameters createHostedService)
+			throws WACommonException, ServiceException {
 
 		WindowsAzureServiceManagement service;
 		Subscription subscription = currentPublishData.getCurrentSubscription();
 
 		try {
-			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
+			service = new WindowsAzureServiceManagement();
 
 			String subscriptionId = subscription.getId();
-			String mngUrl = currentPublishData.getPublishProfile().getUrl();
-			service.createHostedService(subscriptionId, body, mngUrl);
-			HostedService hostedServiceProperties = service.getHostedServiceWithProperties(subscriptionId, body.getServiceName(), mngUrl);
-			
-			// remove previos mock if existed
-			currentPublishData.getServicesPerSubscription().get(subscriptionId).remove(body.getServiceName());
-			currentPublishData.getServicesPerSubscription().get(subscriptionId).add(hostedServiceProperties);
-			return hostedServiceProperties;
-		} 
-		catch (InvalidThumbprintException e) {
-			throw new CommandLineException(e);
+			service.createHostedService(currentPublishData.getCurrentConfiguration(), createHostedService);
+
+            // todo?
+			HostedServiceGetDetailedResponse hostedServiceGetDetailedResponse = service
+                    .getHostedServiceWithProperties(currentPublishData.getCurrentConfiguration(), createHostedService.getServiceName());
+            HostedService hostedService = new HostedService();
+            hostedService.setServiceName(hostedServiceGetDetailedResponse.getServiceName());
+            hostedService.setUri(hostedServiceGetDetailedResponse.getUri());
+            hostedService.setProperties(hostedServiceGetDetailedResponse.getProperties());
+
+            // remove previos mock if existed
+            for (HostedService hs : currentPublishData.getServicesPerSubscription().get(subscriptionId)) {
+                if (hostedService.getServiceName().equals(hs.getServiceName())) {
+                    currentPublishData.getServicesPerSubscription().get(subscriptionId).remove(hs);
+                    break; // important to avoid exception
+                }
+            }
+//			currentPublishData.getServicesPerSubscription().get(subscriptionId).remove(createHostedService.getServiceName());
+			currentPublishData.getServicesPerSubscription().get(subscriptionId).add(hostedService);
+			return hostedService;
+		} catch (InvalidThumbprintException e) {
+			throw new WACommonException(Messages.error, e);
 		}
 	}
 
-	public static StorageService createStorageAccount(CreateStorageServiceInput body) throws WACommonException,
-	RestAPIException, InterruptedException, CommandLineException {
+	public static StorageService createStorageAccount(StorageAccountCreateParameters accountParameters) throws WACommonException,
+	RestAPIException, InterruptedException, CommandLineException, ServiceException {
 
 		WindowsAzureServiceManagement service;
 		Subscription subscription = currentPublishData.getCurrentSubscription();
-
+        Configuration configuration = currentPublishData.getCurrentConfiguration();
 		try {
-			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
-			String mngUrl = currentPublishData.getPublishProfile().getUrl();
+			service = new WindowsAzureServiceManagement();
 
-			String requestId = service.createStorageAccount(subscription.getId(), body, mngUrl);
+			String requestId = service.createStorageAccount(currentPublishData.getCurrentConfiguration(), accountParameters);
 
-			waitForStatus(subscription.getId(), service, requestId);
+			waitForStatus(configuration, service, requestId);
 
-			StorageService storageAccount = service.getStorageAccount(subscription.getId(), body.getServiceName(), mngUrl);
+			StorageService storageAccount = service.getStorageAccount(configuration, accountParameters.getName());
 			
 			// remove previous mock if existed
-			currentPublishData.getStoragesPerSubscription().get(subscription.getId()).remove(body.getServiceName());
+			currentPublishData.getStoragesPerSubscription().get(subscription.getId()).remove(accountParameters.getName());
 			currentPublishData.getStoragesPerSubscription().get(subscription.getId()).add(storageAccount);
 			
 			return storageAccount;
@@ -419,48 +418,37 @@ public final class WizardCacheManager {
 		}
 	}
 	
-	public static boolean isHostedServiceNameAvailable(final String hostedServiceName) throws Exception,
-	InterruptedException, CommandLineException, RestAPIException {
-		
+	public static boolean isHostedServiceNameAvailable(final String hostedServiceName) throws Exception, CommandLineException, RestAPIException {
 		WindowsAzureServiceManagement service;
-		Subscription subscription = currentPublishData.getCurrentSubscription();
 		try {
-			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
-			return service.checkForCloudServiceDNSAvailability(subscription.getId(), hostedServiceName,
-					currentPublishData.getPublishProfile().getUrl());
-		} 
-		catch (InvalidThumbprintException e) {
+			service = new WindowsAzureServiceManagement();
+			return service.checkForCloudServiceDNSAvailability(currentPublishData.getCurrentConfiguration(), hostedServiceName);
+		} catch (InvalidThumbprintException e) {
 			throw new CommandLineException(e);
 		}
 	}
 	
-	public static boolean isStorageAccountNameAvailable(final String storageAccountName) throws Exception,
-	InterruptedException, CommandLineException, RestAPIException {
+	public static boolean isStorageAccountNameAvailable(final String storageAccountName) throws WACommonException, CommandLineException, ServiceException {
 		
 		WindowsAzureServiceManagement service;
 		Subscription subscription = currentPublishData.getCurrentSubscription();
 		try {
-			service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
-			return service.checkForStorageAccountDNSAvailability(subscription.getId(), storageAccountName,
-					currentPublishData.getPublishProfile().getUrl());
-
-		} 
-		catch (InvalidThumbprintException e) {
+			service = new WindowsAzureServiceManagement();
+			return service.checkForStorageAccountDNSAvailability(currentPublishData.getCurrentConfiguration(), storageAccountName);
+		} catch (InvalidThumbprintException e) {
 			throw new CommandLineException(e);
 		}
-
-
 	}
 
 	public static StorageService createStorageServiceMock(String storageAccountNameToCreate, String storageAccountLocation, String description) {
 
 		Subscription subscription = currentPublishData.getCurrentSubscription();
-		StorageServiceProperties props = new StorageServiceProperties();
+		StorageAccountProperties props = new StorageAccountProperties();
 		props.setDescription(description);
 		props.setLocation(storageAccountLocation);
 
 		StorageService storageService = new StorageService();
-		storageService.setStorageServiceProperties(props);
+		storageService.setStorageAccountProperties(props);
 		storageService.setServiceName(storageAccountNameToCreate);
 
 		currentPublishData.getStoragesPerSubscription().get(subscription.getId()).add(storageService);
@@ -476,20 +464,20 @@ public final class WizardCacheManager {
 		props.setLocation(hostedServiceLocation);
 
 		HostedService hostedService = new HostedService();
-		hostedService.setHostedServiceProperties(props);
+		hostedService.setProperties(props);
 		hostedService.setServiceName(hostedServiceNameToCreate);
 
 		currentPublishData.getServicesPerSubscription().get(subscription.getId()).add(hostedService);
 		return hostedService;
 	}
 
-	private static RequestStatus waitForStatus(String subscriptionId,WindowsAzureServiceManagement service, String requestId) throws 
-	WACommonException, InterruptedException, RestAPIException, CommandLineException {
-		Operation op;
-		RequestStatus status = null;
+	private static OperationStatus waitForStatus(Configuration configuration, WindowsAzureServiceManagement service, String requestId) throws
+	WACommonException, ServiceException, InterruptedException, RestAPIException {
+		OperationStatusResponse op;
+		OperationStatus status = null;
 		do {
-			op = service.getOperationStatus(subscriptionId, requestId, currentPublishData.getPublishProfile().getUrl());
-			status = RequestStatus.valueOf(op.getStatus());
+			op = service.getOperationStatus(configuration, requestId);
+			status = op.getStatus();
 
 			if (op.getError() != null) {
 				throw new RestAPIException(op.getError().getMessage());
@@ -497,11 +485,11 @@ public final class WizardCacheManager {
 
 			Thread.sleep(5000);
 
-		} while (status == RequestStatus.InProgress);
+		} while (status == OperationStatus.InProgress);
 		return status;
 	}
 
-	public static HostedServices getHostedServices() {
+	public static List<HostedService> getHostedServices() {
 
 		if (currentPublishData == null)
 			return null;
@@ -568,7 +556,7 @@ public final class WizardCacheManager {
 		else if (ConfigurationEventArgs.SUPSCRIPTION.equals(config.getKey())) {
 			PublishData publishData = (PublishData) config.getValue();
 			if (publishData.isInitialized() == false && publishData.isInitializing().compareAndSet(false, true)) {
-				CacheAccountWithProgressWindow settings = new CacheAccountWithProgressWindow(publishData, Display.getDefault().getActiveShell(), null);
+				CacheAccountWithProgressWindow settings = new CacheAccountWithProgressWindow(null, publishData, Display.getDefault().getActiveShell(), null);
 				Display.getDefault().syncExec(settings);				
 			}
 		} 
@@ -615,24 +603,17 @@ public final class WizardCacheManager {
 		}
 	}
 
-	public static HostedService getHostedServiceWithDeployments(String hostedService)
-			throws WACommonException, RestAPIException, InterruptedException, CommandLineException, InvalidThumbprintException {
-
-		String subscriptionId = currentPublishData.getCurrentSubscription()
-				.getId();
-
-		WindowsAzureServiceManagement service = null;
-		service = new WindowsAzureServiceManagement(currentPublishData.getThumbprint());
-		return service.getHostedServiceWithProperties(
-				subscriptionId, hostedService,
-				currentPublishData.getPublishProfile().getUrl());
+	public static HostedServiceGetDetailedResponse getHostedServiceWithDeployments(String hostedService)
+			throws WACommonException, InvalidThumbprintException {
+		WindowsAzureServiceManagement service = new WindowsAzureServiceManagement();
+		return service.getHostedServiceWithProperties(currentPublishData.getCurrentConfiguration(), hostedService);
 	}
 
 	public static void setCurrentPublishData(PublishData currentSubscription2) {
 		currentPublishData = currentSubscription2;
 	}
 
-	public static void cachePublishData(PublishData publishData, LoadingAccoutListener listener) throws RestAPIException {
+	public static void cachePublishData(File publishSettingsFile, PublishData publishData, LoadingAccoutListener listener) throws RestAPIException, IOException {
 
 		boolean canceled = false;
 		List<Subscription> subscriptions = null;
@@ -647,6 +628,15 @@ public final class WizardCacheManager {
 		if (subscriptions == null) {
 			return;
 		}
+
+        Map<String, Configuration> configurationPerSubscription = new HashMap<String, Configuration>();
+        for (Subscription subscription : subscriptions) {
+            Configuration configuration = publishSettingsFile == null ?
+                    WindowsAzureRestUtils.loadConfiguration(subscription.getId(), publishData.getPublishProfile().getUrl()) :
+                    WindowsAzureRestUtils.getConfiguration(publishSettingsFile, subscription.getId());
+            configurationPerSubscription.put(subscription.getId(), configuration);
+        }
+        publishData.setConfigurationPerSubscription(configurationPerSubscription);
 
 		if (publishData.isInitialized() == false && publishData.isInitializing().compareAndSet(false, true)) {
 
@@ -727,21 +717,21 @@ public final class WizardCacheManager {
 
 	private static void removeDuplicateSubscriptions(PublishData publishData) {
 
-		Map<String, String> subscriptionIdsToRemove = new HashMap<String, String>();
+		Set<String> subscriptionIdsToRemove = new HashSet<String>();
 
 		List<Subscription> subscriptionsOfPublishDataToCache = publishData.getPublishProfile().getSubscriptions();
 		for (Subscription subscriptionOfPublishDataToCache : subscriptionsOfPublishDataToCache) {
 			for (PublishData pd : PUBLISHS) {
 				for (Subscription existingSubscription : pd.getPublishProfile().getSubscriptions()) {
 					if (existingSubscription.getId().equals(subscriptionOfPublishDataToCache.getId())) {
-						subscriptionIdsToRemove.put(existingSubscription.getId(), pd.getThumbprint());
+						subscriptionIdsToRemove.add(existingSubscription.getId());
 					}
 				}
 			}
 		}
 
-		for (Entry<String, String> entry : subscriptionIdsToRemove.entrySet()) {
-			removeSubscription(entry.getKey(), entry.getValue());
+		for (String subscriptionId : subscriptionIdsToRemove) {
+			removeSubscription(subscriptionId);
 		}
 
 		List<PublishData> emptyPublishDatas = new ArrayList<PublishData>();
@@ -758,7 +748,7 @@ public final class WizardCacheManager {
 
 	private static boolean empty(PublishData data) {
 
-		Map<String, HostedServices> hostedServices = data.getServicesPerSubscription();
+		Map<String, ArrayList<HostedService>> hostedServices = data.getServicesPerSubscription();
 		if (hostedServices == null || hostedServices.keySet().isEmpty()) {
 			return true;
 		}
@@ -766,13 +756,9 @@ public final class WizardCacheManager {
 		if (storageServices == null || storageServices.keySet().isEmpty()) {
 			return true;
 		}
-		Map<String , Locations> locations = data.getLocationsPerSubscription();
-		if (locations == null || locations.keySet().isEmpty()) {
-			return true;
-		}
-		return false;
-
-	}
+		Map<String , ArrayList<Location>> locations = data.getLocationsPerSubscription();
+        return locations == null || locations.keySet().isEmpty();
+    }
 
 	public static StorageService getStorageAccountFromCurrentPublishData(String storageAccountName) {
 

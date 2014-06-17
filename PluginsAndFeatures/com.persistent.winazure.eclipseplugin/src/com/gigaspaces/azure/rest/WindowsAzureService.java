@@ -37,8 +37,6 @@ public interface WindowsAzureService {
 //	final static String MNGMT_SERV_URL = "https://management.core.windows.net/<subscription-id>"; //$NON-NLS-1$
 	final static String GET_OPERTN_STAT = "/operations/<request-id>"; //$NON-NLS-1$
 	final static String LIST_STRG_ACC = "/services/storageservices"; //$NON-NLS-1$
-	final static String GET_STRG_KEYS = "/<service-name>/keys"; //$NON-NLS-1$
-	final static String LIST_LOC = "/locations"; //$NON-NLS-1$
 	final static String LIST_AFF_GRPS = "/affinitygroups"; //$NON-NLS-1$
 	final static String LIST_HOST_SERV = "/services/hostedservices"; //$NON-NLS-1$
 	final static String HOST_SERV = "/<service-name>"; //$NON-NLS-1$

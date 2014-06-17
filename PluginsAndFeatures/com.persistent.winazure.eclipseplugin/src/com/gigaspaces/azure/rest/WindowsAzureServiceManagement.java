@@ -17,492 +17,211 @@
 package com.gigaspaces.azure.rest;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import com.gigaspaces.azure.deploy.DeploymentManager;
-import com.gigaspaces.azure.model.AffinityGroups;
-import com.gigaspaces.azure.model.AvailabilityResponse;
-import com.gigaspaces.azure.model.CertificateFile;
-import com.gigaspaces.azure.model.Certificates;
-import com.gigaspaces.azure.model.CreateDeployment;
-import com.gigaspaces.azure.model.CreateHostedService;
-import com.gigaspaces.azure.model.CreateStorageServiceInput;
-import com.gigaspaces.azure.model.Deployment;
-import com.gigaspaces.azure.model.HostedService;
-import com.gigaspaces.azure.model.HostedServices;
-import com.gigaspaces.azure.model.Locations;
+import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.core.OperationResponse;
+import com.microsoft.windowsazure.core.OperationStatusResponse;
+import com.microsoft.windowsazure.exception.ServiceException;
+import com.microsoft.windowsazure.management.compute.models.*;
+import com.microsoft.windowsazure.management.compute.models.ServiceCertificateListResponse.Certificate;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
+import com.microsoft.windowsazure.management.models.AffinityGroupListResponse;
+import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
 import com.gigaspaces.azure.model.ModelFactory;
-import com.gigaspaces.azure.model.Operation;
-import com.gigaspaces.azure.model.Response;
-import com.gigaspaces.azure.model.Status;
 import com.gigaspaces.azure.model.StorageService;
-import com.gigaspaces.azure.model.StorageServiceKeys;
-import com.gigaspaces.azure.model.StorageServices;
 import com.gigaspaces.azure.model.Subscription;
-import com.gigaspaces.azure.model.UpdateDeploymentStatus;
-import com.gigaspaces.azure.util.CommandLineException;
-import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
+import com.microsoft.windowsazure.management.models.LocationsListResponse;
+import com.microsoft.windowsazure.management.models.SubscriptionGetResponse;
+import com.microsoft.windowsazure.management.storage.models.*;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
+import waeclipseplugin.Activator;
 
 public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 
-	private final String thumbprint;
 
-	public WindowsAzureServiceManagement(String thumbprint) throws InvalidThumbprintException {
+	public WindowsAzureServiceManagement() throws InvalidThumbprintException {
 		super();
-		if (thumbprint == null || thumbprint.isEmpty()) {
-			throw new InvalidThumbprintException();
-		}
-		this.thumbprint = thumbprint;
 		context = ModelFactory.createInstance();
 	}
 
-	public Subscription getSubscription(String subscriptionId, String mngUrl) throws
-	WACommonException, RestAPIException, InterruptedException, CommandLineException {
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		headers.put(X_MS_VERSION, "2011-10-01");
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		validateResponse(response);	
-
-		return (Subscription) response.getBody();
+	public Subscription getSubscription(Configuration configuration) throws WACommonException {
+        SubscriptionGetResponse response;
+        try {
+            response = WindowsAzureRestUtils.getSubscription(configuration);
+        } catch (Exception ex) {
+            Activator.getDefault().log("exception", ex);
+            throw new WACommonException("Exception when getting subscription", ex);
+        }
+        return SubscriptionTransformer.transform(response);
 	}
 
-	public HostedService getHostedServiceWithProperties(String subscriptionId,String serviceName, String mngUrl) throws
-	WACommonException, RestAPIException, InterruptedException, CommandLineException {
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
-									  .replace(SERVICE_NAME, serviceName)
-									  .concat("?embed-detail=true"); //$NON-NLS-1$
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		headers.put(X_MS_VERSION, "2011-10-01"); //$NON-NLS-1$
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		validateResponse(response);
-
-		return (HostedService) response.getBody();
+	public HostedServiceGetDetailedResponse getHostedServiceWithProperties(Configuration configuration, String serviceName) throws WACommonException {
+        try {
+            HostedServiceGetDetailedResponse response = WindowsAzureRestUtils.getHostedServicesDetailed(configuration, serviceName);
+            return response;
+        } catch (Exception ex) {
+            Activator.getDefault().log("exception", ex);
+            throw new WACommonException("Exception when getting storage keys", ex);
+        }
 	}
 
-	public StorageService getStorageAccount(String subscriptionId,String serviceName, String mngUrl)
-	throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-					 				  .concat(LIST_STRG_ACC).concat(HOST_SERV)
-					 				  .replace(SERVICE_NAME, serviceName);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		validateResponse(response);
-
-		StorageService storageService = (StorageService) response.getBody();
-		StorageServiceKeys storageServiceKeys = getStorageKeys(subscriptionId, storageService.getServiceName(), mngUrl).getStorageServiceKeys();
-		storageService.setStorageServiceKeys(storageServiceKeys);
-
-		return storageService;
+	public StorageService getStorageAccount(Configuration configuration, String serviceName) throws WACommonException, ServiceException {
+        StorageService storageService = getStorageKeys(configuration, serviceName);
+        StorageAccountGetResponse response = WindowsAzureRestUtils.getStorageAccount(configuration, serviceName);
+        storageService.setStorageAccountProperties(response.getStorageAccount().getProperties());
+        return storageService;
+    }
+	
+	public boolean checkForStorageAccountDNSAvailability(Configuration configuration, final String storageAccountName)
+            throws WACommonException, ServiceException {
+        CheckNameAvailabilityResponse response = WindowsAzureRestUtils.checkStorageNameAvailability(configuration, storageAccountName);
+        return response.isAvailable();
 	}
 	
-	public boolean checkForStorageAccountDNSAvailability(final String subscriptionId, final String storageAccountName, String mngUrl) 
-	throws WACommonException, InterruptedException, CommandLineException, RestAPIException {
-		
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat("/services/storageservices/operations/isavailable/" + storageAccountName);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-		
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		validateResponse(response);
-		
-		AvailabilityResponse availabilityResponse = (AvailabilityResponse) response.getBody();
-		return availabilityResponse.getResult();
-
-	}
-	
-	public boolean checkForCloudServiceDNSAvailability(final String subscriptionId, final String hostedServiceName, String mngUrl)
-	throws WACommonException, InterruptedException, CommandLineException, RestAPIException {
-		
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat("/services/hostedservices/operations/isavailable/" + hostedServiceName);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-		
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		validateResponse(response);
-		
-		AvailabilityResponse availabilityResponse = (AvailabilityResponse) response.getBody();
-		return availabilityResponse.getResult();
-
-	}	
-
-
-	public Operation getOperationStatus(String subscriptionId, String requestId, String mngUrl) throws WACommonException,
-	RestAPIException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat(GET_OPERTN_STAT).replace(REQUEST_ID, requestId);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		validateResponse(response);
-
-		return (Operation) response.getBody();
+	public boolean checkForCloudServiceDNSAvailability(Configuration configuration, final String hostedServiceName) throws WACommonException, ServiceException {
+        HostedServiceCheckNameAvailabilityResponse response =
+                WindowsAzureRestUtils.checkHostedServiceNameAvailability(configuration, hostedServiceName);
+        return response.isAvailable();
 	}
 
-	public synchronized List<StorageService> listStorageAccounts(
-			String subscriptionId, String mngUrl) throws WACommonException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_STRG_ACC);
+	public OperationStatusResponse getOperationStatus(Configuration configuration, String requestId) throws WACommonException, ServiceException {
+        OperationStatusResponse response = WindowsAzureRestUtils.getOperationStatus(configuration, requestId);
+        return response;
+    }
 
-		HashMap<String, String> headers = new HashMap<String, String>();
+	public synchronized List<StorageService> listStorageAccounts(Configuration configuration) throws WACommonException, ServiceException {
+        List<StorageService> storageServices = new ArrayList<StorageService>();
+        StorageAccountListResponse response;
+        try {
+            response = WindowsAzureRestUtils.getStorageServices(configuration);
+        } catch (Exception ex) {
+            Activator.getDefault().log("exception", ex);
+            throw new WACommonException("Exception when getting storage services", ex);
+        }
 
-		addXMsVer2012(headers);
-
-		List<StorageService> storageServices = new ArrayList<StorageService>();
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		StorageServices services = (StorageServices) response.getBody();
-
-		if (!services.isEmpty()) {
-			for (StorageService ss : services) {
-				StorageService storageService = getStorageKeys(subscriptionId,
-						ss.getServiceName(), mngUrl);
-				storageService.setServiceName(ss.getServiceName());
-				storageService.setStorageServiceProperties(ss.
-						getStorageServiceProperties());
-				storageServices.add(storageService);
-			}
-		}
-
+        for (StorageAccount ss : response.getStorageAccounts()) {
+            StorageService storageService = getStorageKeys(configuration, ss.getName());
+            storageService.setServiceName(ss.getName());
+            storageService.setStorageAccountProperties(ss.getProperties());
+            storageServices.add(storageService);
+        }
 		return storageServices;
 	}
 
-	public StorageService getStorageKeys(String subscriptionId, String serviceName, String mngUrl) throws
-	WACommonException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat(LIST_STRG_ACC).concat(GET_STRG_KEYS)
-									  .replace(SERVICE_NAME, serviceName);
+	public StorageService getStorageKeys(Configuration configuration, String serviceName) throws ServiceException, WACommonException {
+        StorageAccountGetKeysResponse response = WindowsAzureRestUtils.getStorageKeys(configuration, serviceName);
+        return new StorageService(serviceName, response);
+    }
 
-		HashMap<String, String> headers = new HashMap<String, String>();
+	public synchronized ArrayList<Location> listLocations(Configuration configuration) throws WACommonException, ServiceException {
+        LocationsListResponse response = WindowsAzureRestUtils.getLocations(configuration);
+        return response.getLocations();
+    }
 
-		addXMsVer2012(headers);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		return (StorageService) response.getBody();
+    /**
+     * Note: this method is not currently used
+     * @param configuration
+     * @return
+     * @throws WACommonException
+     */
+	public AffinityGroupListResponse listAffinityGroups(Configuration configuration) throws WACommonException, ServiceException {
+        AffinityGroupListResponse response = WindowsAzureRestUtils.listAffinityGroups(configuration);
+        return response;
 	}
 
-	public synchronized Locations listLocations(String subscriptionId, String mngUrl) throws
-	WACommonException, InterruptedException, CommandLineException {
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_LOC);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = (Response<?>) deserialize(result);
-
-		return (Locations) response.getBody();
-	}
-
-	public AffinityGroups listAffinityGroups(String subscriptionId, String mngUrl) throws WACommonException,
-	InterruptedException, CommandLineException {
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_AFF_GRPS);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		return (AffinityGroups) response.getBody();
-	}
-
-	public synchronized HostedServices listHostedServices(String subscriptionId, String mngUrl) throws
-	WACommonException, InterruptedException, CommandLineException {
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_HOST_SERV);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		return (HostedServices) response.getBody();
-	}
+	public synchronized ArrayList<HostedService> listHostedServices(Configuration configuration) throws WACommonException, ServiceException {
+        HostedServiceListResponse response = WindowsAzureRestUtils.getHostedServices(configuration);
+        return response.getHostedServices();
+    }
 	
-	public synchronized Certificates listCertificates(String subscriptionId, String serviceName, String mngUrl) throws
-	WACommonException, InterruptedException, CommandLineException {
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-				  	.concat(LIST_HOST_SERV).concat(ADD_CERT)
-				  	.replace(SERVICE_NAME, serviceName);
+	public synchronized List<Certificate> listCertificates(Configuration configuration, String serviceName) throws WACommonException, ServiceException {
+        List<Certificate> certificates = WindowsAzureRestUtils.getCertificates(configuration, serviceName);
+        return certificates;
+    }
 
 
-		HashMap<String, String> headers = new HashMap<String, String>();
+	public String createHostedService(Configuration configuration, HostedServiceCreateParameters hostedServiceCreateParameters) throws
+            WACommonException, ServiceException {
+        OperationResponse response = WindowsAzureRestUtils.createHostedService(configuration, hostedServiceCreateParameters);
+        return response.getRequestId();
+    }
 
-		addXMsVer2012(headers);
 
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
+	public String createStorageAccount(Configuration configuration, StorageAccountCreateParameters accountParameters) throws ServiceException, WACommonException {
 
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		return (Certificates) response.getBody();
+        return WindowsAzureRestUtils.createStorageAccount(configuration, accountParameters).getRequestId();
 	}
 
 
-	public String createHostedService(String subscriptionId, CreateHostedService body, String mngUrl) throws
-	WACommonException, RestAPIException, InterruptedException, CommandLineException {
+	public DeploymentGetResponse getDeployment(Configuration configuration, String serviceName, String deploymentName) throws WACommonException, ServiceException {
+        DeploymentGetResponse response = WindowsAzureRestUtils.getDeployment(configuration, serviceName, deploymentName);
+        return response;
+    }
 
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_HOST_SERV);
+	public String deleteDeployment(Configuration configuration, String serviceName, String deploymentName) throws WACommonException, ServiceException {
+        OperationResponse response = WindowsAzureRestUtils.deleteDeployment(configuration, serviceName, deploymentName, false);
+        return response.getRequestId();
+    }
 
-		HashMap<String, String> headers = new HashMap<String, String>();
+	public String updateDeploymentStatus(Configuration configuration, String serviceName, String deploymentName, UpdatedDeploymentStatus status)
+            throws ServiceException, WACommonException {
+        DeploymentUpdateStatusParameters deploymentStatus = new DeploymentUpdateStatusParameters();
+        deploymentStatus.setStatus(status);
+        OperationResponse response = WindowsAzureRestUtils.updateDeploymentStatus(configuration, serviceName, deploymentName, deploymentStatus);
+        return response.getRequestId();
+    }
 
-		addXMsVer2012(headers);
+    public String createDeployment(Configuration configuration,
+                                   String serviceName,
+                                   String slotName,
+                                   DeploymentCreateParameters parameters,
+                                   String unpublish)
+            throws WACommonException, ServiceException {
 
-		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
+        DeploymentSlot deploymentSlot;
+        if (DeploymentSlot.Staging.toString().equalsIgnoreCase(slotName)) {
+            deploymentSlot = DeploymentSlot.Staging;
+        } else if (DeploymentSlot.Production.toString().equalsIgnoreCase(slotName)) {
+            deploymentSlot = DeploymentSlot.Production;
+        } else {
+            throw new WACommonException("Invalid deployment slot name");
+        }
+        OperationStatusResponse response;
+        try {
+            response = WindowsAzureRestUtils.createDeployment(configuration, serviceName, deploymentSlot, parameters);
+            return response.getRequestId();
+        } catch (ServiceException ex) {
+		    /*
+            * If delete deployment option is selected and
+		    * conflicting deployment exists then unpublish
+		    * deployment first and then again try to publish.
+		    */
+            if (unpublish.equalsIgnoreCase("true") && ex.getHttpStatusCode() == 409) {
+                HostedServiceGetDetailedResponse hostedServiceDetailed = getHostedServiceWithProperties(configuration, serviceName);
+                List<HostedServiceGetDetailedResponse.Deployment> list = hostedServiceDetailed.getDeployments();
+                String deploymentName = "";
+                for (int i = 0; i < list.size(); i++) {
+                    HostedServiceGetDetailedResponse.Deployment deployment = list.get(i);
+                    if (deployment.getDeploymentSlot().name().equalsIgnoreCase(slotName)) {
+                        deploymentName = deployment.getName();
+                    }
+                }
+                int[] progressArr = new int[]{0, 0, 0};
+                DeploymentManager.getInstance().unPublish(configuration, serviceName, deploymentName, progressArr);
+                response = WindowsAzureRestUtils.createDeployment(configuration, serviceName, deploymentSlot, parameters);
 
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.POST, url,
-				headers, body, thumbprint);
+                return response.getRequestId();
+            } else {
+                Activator.getDefault().log(Messages.error, ex);
+                throw ex;
+            }
+        }
+    }
 
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		validateResponse(response);
-
-		return getXRequestId(response);
+	public String addCertificate(Configuration configuration, String serviceName, ServiceCertificateCreateParameters createParameters)
+            throws WACommonException, ServiceException {
+        return WindowsAzureRestUtils.addCertificate(configuration, serviceName, createParameters).getRequestId();
 	}
-
-
-	public String createStorageAccount(String subscriptionId, CreateStorageServiceInput body, String mngUrl) throws
-	WACommonException, RestAPIException, InterruptedException, CommandLineException {
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl).concat(LIST_STRG_ACC);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-
-		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.POST, url,
-				headers, body, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		validateResponse(response);
-		
-		return getXRequestId(response);
-	}
-
-
-	public Deployment getDeployment(String subscriptionId, String serviceName,String deploymentName, String mngUrl) throws
-	WACommonException, RestAPIException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
-									  .replace(SERVICE_NAME, serviceName).concat(DPLY_NAME)
-									  .replace(DEPLOYMENT_NAME, deploymentName);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		headers.put(X_MS_VERSION, "2011-10-01");
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.GET, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-		
-		validateResponse(response);
-
-		return (Deployment) response.getBody();			
-	}
-
-	public String deleteDeployment(String subscriptionId, String serviceName,String deploymentName, String mngUrl) throws
-	WACommonException, RestAPIException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
-									  .replace(SERVICE_NAME, serviceName).concat(DPLY_NAME)
-									  .replace(DEPLOYMENT_NAME, deploymentName);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.DELETE, url,
-				headers, null, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		return getXRequestId(response);
-	}
-
-	public String updateDeploymentStatus(String subscriptionId,
-			String serviceName, String deploymentName,
-			Status status, String mngUrl)
-			throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
-									  .replace(SERVICE_NAME, serviceName).concat(DPLY_NAME)
-									  .replace(DEPLOYMENT_NAME, deploymentName)
-									  .concat("/?comp=status");
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
-
-		headers.put(X_MS_VERSION, "2009-10-01");
-
-		UpdateDeploymentStatus body = new UpdateDeploymentStatus();
-
-		body.setStatus(status);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.POST, url,
-				headers, body, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		return getXRequestId(response);
-	}
-
-	public String createDeployment(String subscriptionId,
-			String serviceName,
-			String slotName,
-			CreateDeployment body,
-			String mngUrl,
-			String unpublish)
-					throws WACommonException,
-					RestAPIException,
-					InterruptedException,
-					CommandLineException{
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat(LIST_HOST_SERV).concat(HOST_SERV)
-									  .replace(SERVICE_NAME, serviceName.toLowerCase())
-									  .concat(CREATE_DPLY)
-									  .replace(DEPLOYMENT_SLOT_NAME, slotName);
-
-		HashMap<String, String> headers = new HashMap<String, String>();
-		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
-
-		addXMsVer2012(headers);
-
-		addContentLength(headers, body);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.POST, url,
-				headers, body, thumbprint, true); // pass a flag indicating we want the body to be saved to a file. instead of passing it as a string to the command line.
-
-		Response<?> response = ((Response<?>) deserialize(result));
-		/*
-		 * If delete deployment option is selected and
-		 * conflicting deployment exists then unpublish
-		 * deployment first and then again try to publish.
-		 */
-		if (unpublish.equalsIgnoreCase("true")
-				&& response.getStatus() == 409) {
-			HostedService hostedService = getHostedServiceWithProperties(
-					subscriptionId, serviceName, mngUrl);
-			List<Deployment> list = hostedService.
-					getDeployments().getDeployments();
-			String deploymentName = "";
-			for (int i = 0; i < list.size(); i++) {
-				Deployment deployment = list.get(i);
-				if (deployment.getDeploymentSlot().name().
-						equalsIgnoreCase(slotName)) {
-					deploymentName = deployment.getName();
-				}
-			}
-			int[] progressArr = new int[]{0, 0, 0};
-			DeploymentManager.getInstance().
-			unPublish(subscriptionId, serviceName, deploymentName, mngUrl, progressArr);
-			result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.POST, url,
-					headers, body, thumbprint, true);
-			response = ((Response<?>) deserialize(result));
-		}
-
-		validateResponse(response);
-
-		return getXRequestId(response);
-	}
-
-	public String addCertificate(String subscriptionId, String serviceName,
-			CertificateFile body, String mngUrl) throws WACommonException, RestAPIException, InterruptedException, CommandLineException {
-
-		String url = PreferenceSetUtil.getSelectedManagementURL(subscriptionId, mngUrl)
-									  .concat(LIST_HOST_SERV).concat(ADD_CERT)
-									  .replace(SERVICE_NAME, serviceName);
-		HashMap<String, String> headers = new HashMap<String, String>();
-
-		addXMsVer2012(headers);
-
-		headers.put(CONTENT_TYPE, MediaType.APPLICATION_XML);
-
-		String result = WindowsAzureRestUtils.getInstance().runRest(HttpVerb.POST, url,
-				headers, body, thumbprint);
-
-		Response<?> response = ((Response<?>) deserialize(result));
-
-		return getXRequestId(response);
-	}
-	
-	private void addXMsVer2012(HashMap<String, String> headers) {
-		// addx_ms_version2012_03_01
-		headers.put(X_MS_VERSION, "2012-03-01"); //$NON-NLS-1$
-	}	
 }

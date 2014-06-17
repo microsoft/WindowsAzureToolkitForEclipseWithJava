@@ -71,13 +71,13 @@
         <artifactId>target-platform-configuration</artifactId>
         <version>${tycho-version}</version>
         <configuration>
-          <environments>
+         <!-- <environments>
             <environment>
               <os>win32</os>
               <ws>win32</ws>
               <arch>x86</arch>
             </environment>
-			</environments>			
+			</environments>-->
         </configuration>
       </plugin>
     </plugins>

@@ -16,6 +16,8 @@
 
 package com.gigaspaces.azure.deploy;
 
+import com.microsoft.windowsazure.core.OperationStatus;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.EventObject;
@@ -29,7 +31,7 @@ public class DeploymentEventArgs extends EventObject {
 	private String deployMessage;
 	private int deployCompleteness;
 	private Date startTime;
-	private RequestStatus status;
+	private OperationStatus status;
 	private String deploymentURL;
 
 	public String getDeploymentURL() {
@@ -90,14 +92,14 @@ public class DeploymentEventArgs extends EventObject {
 	/**
 	 * @return the status
 	 */
-	public RequestStatus getStatus() {
+	public OperationStatus getStatus() {
 		return status;
 	}
 
 	/**
 	 * @param status the status to set
 	 */
-	public void setStatus(RequestStatus status) {
+	public void setStatus(OperationStatus status) {
 		this.status = status;
 	}
 }

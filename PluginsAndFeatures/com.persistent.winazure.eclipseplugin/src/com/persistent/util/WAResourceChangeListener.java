@@ -267,7 +267,7 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 					sdkPath = null;
 					Activator.getDefault().log(errorMessage, e);
 				}
-				if (sdkPath == null) {
+				if (sdkPath == null && Activator.IS_WINDOWS) {
 					try {
 						Display.getDefault().syncExec(new Runnable() {
 							public void run() {

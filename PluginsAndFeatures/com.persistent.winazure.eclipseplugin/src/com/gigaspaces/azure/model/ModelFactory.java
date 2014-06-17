@@ -28,47 +28,13 @@ public class ModelFactory {
 	private static final List<Class<?>> CLASSES = new ArrayList<Class<?>>();
 
 	static {
-		CLASSES.add(AffinityGroup.class);
-		CLASSES.add(AffinityGroups.class);
-		CLASSES.add(BlockList.class);
-		CLASSES.add(CertificateFile.class);
-		CLASSES.add(CertificateFileV2.class);
-		CLASSES.add(Certificates.class);
-		CLASSES.add(Certificate.class);
-		CLASSES.add(Code.class);
-		CLASSES.add(Container.class);
-		CLASSES.add(Containers.class);
-		CLASSES.add(CreateDeployment.class);
 		CLASSES.add(CreateStorageServiceInput.class);
 		CLASSES.add(CreateHostedService.class);		
-		CLASSES.add(Deployment.class);
-		CLASSES.add(DeploymentSlot.class);
-		CLASSES.add(EnumerationResults.class);
-		CLASSES.add(Error.class);
-		CLASSES.add(HostedService.class);
-		CLASSES.add(HostedServiceProperties.class);
-		CLASSES.add(HostedServices.class);
-		CLASSES.add(InputEndpoint.class);
 		CLASSES.add(InstanceStatus.class);
 		CLASSES.add(KeyName.class);
-		CLASSES.add(Location.class);
-		CLASSES.add(Locations.class);
-		CLASSES.add(Operation.class);
-		CLASSES.add(Property.class);
-		CLASSES.add(Role.class);
-		CLASSES.add(RoleInstance.class);
-		CLASSES.add(Status.class);
 		CLASSES.add(StorageService.class);
-		CLASSES.add(StorageServiceKeys.class);
-		CLASSES.add(StorageServiceProperties.class);
-		CLASSES.add(Endpoints.class);
 		CLASSES.add(StorageServices.class);
 		CLASSES.add(Subscription.class);
-		CLASSES.add(Response.class);
-		CLASSES.add(Header.class);
-		CLASSES.add(UpgradeStatus.class);
-		CLASSES.add(UpdateDeploymentStatus.class);
-		CLASSES.add(AvailabilityResponse.class);
 	}
 
 	private static Class<?>[] getClasses() {

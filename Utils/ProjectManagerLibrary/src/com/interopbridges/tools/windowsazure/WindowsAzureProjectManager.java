@@ -137,11 +137,13 @@ public class WindowsAzureProjectManager {
 			ZipEntry zipEntry = (ZipEntry) entries.nextElement();
 			entryName = zipEntry.getName();
 			if (zipEntry.isDirectory()) {
-				(new File(tmpPath.concat(entryName))).mkdir();
+				(new File(tmpPath.concat(File.separator).concat(entryName)))
+						.mkdir();
 				continue;
 			}
 
-			String outputPath = tmpPath.concat(entryName);
+			String outputPath = tmpPath.concat(File.separator)
+					.concat(entryName);
 
 			File outputFile = new File(outputPath);
 			dataTransfer(zipFile.getInputStream(zipEntry),
@@ -455,7 +457,9 @@ public class WindowsAzureProjectManager {
 			for (Iterator<WindowsAzureRole> iterator = listRoles.iterator(); iterator
 					.hasNext();) {
 				WindowsAzureRole windowsAzureRole = iterator.next();
-
+				if (sdkVersion == null) {
+					sdkVersion = "2.3.0.0";
+				}
 				// If Session affinity is enabled
 				if (sdkVersion != null
 						&& (windowsAzureRole.getSessionAffinityInputEndpoint() != null || windowsAzureRole
@@ -2358,7 +2362,7 @@ public class WindowsAzureProjectManager {
 	 * keeping in mind it may reference Ant properties, such as ${basedir}:
 	 * /project
 	 * /target[@name='createwapackage']/windowsazurepackage/@emulatortoolsdir If
-	 * it’s not set, then the emulatorTools folder inside the project shall be
+	 * itï¿½s not set, then the emulatorTools folder inside the project shall be
 	 * assumed.
 	 * 
 	 * @throws WindowsAzureInvalidProjectOperationException
@@ -2409,7 +2413,7 @@ public class WindowsAzureProjectManager {
 	 * [@name='createwapackage']/windowsazurepackage/@packagedir Note that this
 	 * may reference Ant properties, such as ${basedir}, so the caller of this
 	 * API will likely need to invoke Ant API to resolve the returned path to an
-	 * actual file path. If it’s not set, then the deploy folder inside the
+	 * actual file path. If itï¿½s not set, then the deploy folder inside the
 	 * project shall be assumed.
 	 * 
 	 * @return package dir.
@@ -2433,7 +2437,7 @@ public class WindowsAzureProjectManager {
 			throw new WindowsAzureInvalidProjectOperationException(
 					"Exception while getting package dir", e);
 		}
-		return packDir;
+		return packDir.replace("\\", File.separator); // temporary fix; todo?
 	}
 
 	private String getValOfVarInpac(String varName)
