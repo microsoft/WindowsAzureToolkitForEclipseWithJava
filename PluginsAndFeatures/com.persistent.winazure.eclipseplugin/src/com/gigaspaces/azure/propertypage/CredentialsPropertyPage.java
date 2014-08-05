@@ -35,7 +35,6 @@ import com.gigaspaces.azure.runnable.CacheAccountWithProgressWindow;
 import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.PublishProfile;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
-import com.persistent.util.MessageUtil;
 
 public class CredentialsPropertyPage extends PropertyPage {
 
@@ -189,9 +188,5 @@ public class CredentialsPropertyPage extends PropertyPage {
 		}
 
 		return false;
-	}
-	
-	public void testErrorMessage() {
-		MessageUtil.displayErrorDialog(this.getShell(), "asdasd", "sadasd");
 	}
 }

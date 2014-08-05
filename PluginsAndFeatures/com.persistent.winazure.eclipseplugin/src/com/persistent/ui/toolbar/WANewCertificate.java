@@ -31,14 +31,16 @@ import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 public class WANewCertificate extends AbstractHandler {
 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		
 		try {
 			NewCertificateDialogData data = new NewCertificateDialogData();
-	        NewCertificateDialog dialog =	new NewCertificateDialog(new Shell(), data);	
-	        
+			/*
+			 * third parameter is jdkPath
+			 * as its toolbar button, do not refer any project for JDK path
+			 * just pass empty string.
+			 */
+	        NewCertificateDialog dialog =	new NewCertificateDialog(new Shell(), data, "");
 	        // Open the dialog
 	        dialog.open();
-			
 		} catch (Exception e) {
 			PluginUtil.displayErrorDialogAndLog(new Shell(), Messages.newCertErrTtl,
 												Messages.newCertMsg, e);

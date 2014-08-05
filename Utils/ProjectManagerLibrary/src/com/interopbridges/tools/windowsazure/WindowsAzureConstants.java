@@ -159,7 +159,7 @@ public final class WindowsAzureConstants {
 	public static final String CREATOR_VER = PROJ_PROPERTY
 			+ "/property[@name='creator.version']";
 	public static final String V17_VERSION = "1.7.0";
-	public static final String VERSION = "2.3.1";
+	public static final String VERSION = "2.4.0";
 	public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY
 			+ "/property[@name='project.%s.sessionaffinity.inputendpoint']";
 	public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY
@@ -467,7 +467,7 @@ public final class WindowsAzureConstants {
 
 	public static final String THRD_PARTY_JDK_NAME = "project.%s.jdk.name";
 
-	public static final String MIN_SDK_VERSION = "v2.3";
+	public static final String MIN_SDK_VERSION = "v2.4";
 	public static final String SA_NEW_VERSION_ATTR = "/configuration/runtime/assemblyBinding/dependentAssembly/bindingRedirect/@newVersion";
 
 	public static final String WR_CERTS = WORKER_ROLE

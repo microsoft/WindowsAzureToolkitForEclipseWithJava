@@ -15,7 +15,7 @@ limitations under the License.
 
 -->
 
-<componentsets version="2.3.0">
+<componentsets version="2.3.1">
 <!-- 
 *******************************************************************************
 HOW TO CREATE A NEW JDK PACKAGE DEPLOYMENT TEMPLATE:
@@ -47,6 +47,18 @@ of order will likely produce faulty logic.
 		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 	</componentset>
 	
+	<componentset name="Azul Zulu, OpenJDK 1.8.0_u05" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.8.0_05-8.1.0.6-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.8.0_05-8.1.0.6-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
+	<componentset name="Azul Zulu, OpenJDK 1.7.0_u55" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_55-7.4.0.5-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_55-7.4.0.5-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
 	<componentset name="Azul Zulu, OpenJDK 1.7.0_u51" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_51-7.3.0.4-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
@@ -69,6 +81,12 @@ of order will likely produce faulty logic.
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_25-7.0.0.0-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
         <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_25-7.0.0.0-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
+	<componentset name="Azul Zulu, OpenJDK 1.6.0_u49" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.6.0_49-6.4.0.6-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.6.0_49-6.4.0.6-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
 	</componentset>
 
 	<componentset name="Azul Zulu, OpenJDK 1.6.0_u47" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
@@ -151,6 +169,15 @@ exact order the components are listed in the compomnentset template, so getting
 them out of order will likely produce faulty logic.
  -->	
  
+ 	<componentset name="IBM WebSphere Application Server V8 Liberty profile" httpport="9080" type="server" detectpath="bin\server.bat" detecttext="WebSphere Application Server liberty">
+		<startupenv name="WLS_LIBERTY_HOME" value="${placeholder}" type="server.home"/>
+		<startupenv name="SERVER_APPS_LOCATION" value="%WLS_LIBERTY_HOME%\usr\servers\defaultServer\dropins" type="server.app.loc"/>
+		<startupenv name="JVM_ARGS" value="-DdefaultHostName=*"/>
+		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
+		<component deploymethod="exec" deploydir="%WLS_LIBERTY_HOME%\bin" importas="server.bat run" type="server.start"/>
+		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
+	</componentset>
+	 
 	<componentset name="Jetty 7" type="server" detectpath="lib\jetty-server-7.*" httpport="8080">
 		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>

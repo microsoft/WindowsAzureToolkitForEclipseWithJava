@@ -823,7 +823,7 @@ public class WindowsAzurePackage extends Task {
 			programFilesDir = System.getenv(ENV_PROGRAMFILES);
 		}
 
-		File emulatorDir = new File(String.format("%s%sMicrosoft SDKs%sWindows Azure%sEmulator", programFilesDir, File.separatorChar, File.separatorChar, File.separatorChar));
+		File emulatorDir = new File(String.format("%s%sMicrosoft SDKs%sAzure%sEmulator", programFilesDir, File.separatorChar, File.separatorChar, File.separatorChar));
 
 		// Check if the Emulator folder exists
 		if (emulatorDir.exists()) {
@@ -845,13 +845,13 @@ public class WindowsAzurePackage extends Task {
 			programFilesDir = System.getenv(ENV_PROGRAMFILES);
 		}
 
-		File storageEmulatorDir = new File(String.format("%s%sMicrosoft SDKs%sWindows Azure%sStorage Emulator", programFilesDir, File.separatorChar, File.separatorChar, File.separatorChar));
+        File storageEmulatorDir = new File(String.format("%s%sMicrosoft SDKs%sAzure%sStorage Emulator", programFilesDir, File.separatorChar, File.separatorChar, File.separatorChar));
 
 		// Check if the storage Emulator folder exists
 		if (storageEmulatorDir.exists()) {
 			return storageEmulatorDir.toString();
 		} else {
-			throw new IOException("Azure SDK v2.3 or later is not installed.");			
+			throw new IOException("Azure SDK v2.4 or later is not installed.");
 		}
 	}
 
@@ -868,11 +868,11 @@ public class WindowsAzurePackage extends Task {
 			programFilesDir = System.getenv(ENV_PROGRAMFILES);
 		}
 
-		File sdkDir = new File(String.format("%s%sMicrosoft SDKs%sWindows Azure%s.NET SDK", programFilesDir, File.separatorChar,File.separatorChar,File.separatorChar));
+		File sdkDir = new File(String.format("%s%sMicrosoft SDKs%sAzure%s.NET SDK", programFilesDir, File.separatorChar,File.separatorChar,File.separatorChar));
 
 		// Check if the SDK folder exists
 		if (!sdkDir.exists()) {
-			throw new IOException("Azure SDK v2.3 or later is not installed.");
+			throw new IOException("Azure SDK v2.4 or later is not installed.");
 		}
 		
 		String[] versionedSDKDirs = sdkDir.list();
@@ -894,7 +894,7 @@ public class WindowsAzurePackage extends Task {
 		}
 
 		if (latestVersionSdkDir == null) {
-			throw new IOException("Azure SDK v2.3 or later is not installed.");
+			throw new IOException("Azure SDK v2.4 or later is not installed.");
 		}
 
 		return String.format("%s%sbin", latestVersionSdkDir, File.separatorChar);

@@ -52,6 +52,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.ui.preference.StorageAccountsPreferencePage;
 import com.persistent.ui.projwizard.WAProjectWizard;
 
@@ -1507,7 +1508,7 @@ public class JdkSrvConfig {
 		String directory = null;
 		try {
 			String oldTxt = getTxtJdk().getText();
-			String path = WAEclipseHelper.
+			String path = PluginUtil.
 					jdkDefaultDirectory(oldTxt);
 			DirectoryDialog dialog =
 					new DirectoryDialog(new Shell());

@@ -38,6 +38,26 @@ public class Subscription implements Serializable,Cloneable {
 	private int currentCoreCount;
 	private int currentHostedServices;
 	private int currentStorageAccounts;
+	private String serviceManagementUrl;
+	private String managementCertificate;
+
+	@XmlAttribute(name = "ServiceManagementUrl")
+	public String getServiceManagementUrl() {
+		return serviceManagementUrl;
+	}
+
+	public void setServiceManagementUrl(String serviceManagementUrl) {
+		this.serviceManagementUrl = serviceManagementUrl;
+	}
+
+	@XmlAttribute(name = "ManagementCertificate")
+	public String getManagementCertificate() {
+		return managementCertificate;
+	}
+
+	public void setManagementCertificate(String managementCertificate) {
+		this.managementCertificate = managementCertificate;
+	}
 
 	@XmlAttribute(name = "Id")
 	public String getId() {

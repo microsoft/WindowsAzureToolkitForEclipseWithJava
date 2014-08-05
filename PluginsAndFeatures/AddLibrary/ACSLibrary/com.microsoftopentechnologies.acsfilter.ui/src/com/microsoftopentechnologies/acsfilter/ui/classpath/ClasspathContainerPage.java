@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Persistent Systems Ltd.
+ * Copyright 2014 Microsoft Open Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -682,7 +682,7 @@ public class ClasspathContainerPage extends WizardPage implements
      */
     protected void newCertBtnListener() {
     	NewCertificateDialogData data = new NewCertificateDialogData();
-        NewCertificateDialog dialog = new NewCertificateDialog(getShell(),data);
+        NewCertificateDialog dialog = new NewCertificateDialog(getShell(),data, "");
         int returnCode = dialog.open();
         if (returnCode == Window.OK) {
         		String certPath = data.getCerFilePath();

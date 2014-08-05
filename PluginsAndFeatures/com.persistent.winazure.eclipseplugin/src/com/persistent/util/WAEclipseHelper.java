@@ -360,63 +360,6 @@ public class WAEclipseHelper {
 	}
 
 	/**
-	 * Returns default JDK path.
-	 * 
-	 * @param currentlySelectedDir
-	 * @return
-	 */
-	public static String jdkDefaultDirectory(String currentlySelectedDir) {
-		File file;
-
-		// Try currently selected JDK path
-		String path = currentlySelectedDir;
-		if (path != null && !path.isEmpty()) {
-			file = new File(path);
-			if (file.isDirectory() && file.exists()) {
-				return path;
-			}
-		}
-
-		// Try JAVA_HOME
-		path = System.getenv("JAVA_HOME");
-		if (path != null && !path.isEmpty()) {
-			file = new File(path);
-			if (file.exists() && file.isDirectory()) {
-				// Verify presence of javac.exe
-				File javacFile = new File(file, "bin" + File.separator
-						+ "javac.exe");
-				if (javacFile.exists()) {
-					return path;
-				}
-			}
-		}
-
-		// Try under %ProgramFiles%\Java
-		path = String.format("%s%s%s", System.getenv("ProgramFiles"),
-				File.separator, "Java", File.separator);
-		file = new File(path);
-		if (!file.exists() || !file.isDirectory()) {
-			return "";
-		}
-
-		// Find the first entry under Java that contains jdk
-		File[] jdkDirs = file.listFiles();
-		Arrays.sort(jdkDirs);
-
-		TreeSet<File> sortedDirs = new TreeSet<File>(Arrays.asList(jdkDirs));
-		for (Iterator<File> iterator = sortedDirs.descendingIterator(); iterator
-				.hasNext();) {
-			File latestSdkDir = iterator.next();
-			if (latestSdkDir.isDirectory()
-					&& latestSdkDir.getName().contains("jdk")) {
-				return latestSdkDir.getAbsolutePath();
-			}
-		}
-
-		return "";
-	}
-
-	/**
 	 * This API compares if two files content is identical. It ignores extra
 	 * spaces and new lines while comparing
 	 * 
@@ -1145,5 +1088,23 @@ public class WAEclipseHelper {
 			}
 		}
 		return roleWithHTTPS;
+	}
+	
+	public static String findJdkPathFromRole(WindowsAzureProjectManager waProjManager) {
+		String jdkPath = "";
+		try {
+			// get number of roles in one project
+			List<WindowsAzureRole> roleList = waProjManager.getRoles();
+			for (int i = 0; i < roleList.size(); i++) {
+				String path = roleList.get(i).getJDKSourcePath();
+				if (path != null) {
+					jdkPath = path;
+					break;
+				}
+			}
+		} catch (Exception e) {
+			jdkPath = "";
+		}
+		return jdkPath;
 	}
 }

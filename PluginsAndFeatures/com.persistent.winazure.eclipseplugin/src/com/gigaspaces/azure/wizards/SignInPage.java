@@ -49,7 +49,6 @@ import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
 
-import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 import com.gigaspaces.azure.model.KeyName;
 import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.model.StorageServices;
@@ -59,7 +58,6 @@ import com.gigaspaces.azure.rest.WindowsAzureRestUtils;
 import com.gigaspaces.azure.runnable.AccountActionRunnable;
 import com.gigaspaces.azure.runnable.CacheAccountWithProgressBar;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressBar;
-import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
@@ -70,6 +68,7 @@ import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;

@@ -26,6 +26,7 @@ public final class Messages extends NLS {
     public static String impFrmPubSetLbl;
     public static String importDlgTitle;
     public static String importDlgMsg;
+    public static String importDlgMsgJavaVersion;
     public static String failedToParse;
     public static String loadingCred;
     public static String credentialsExist;

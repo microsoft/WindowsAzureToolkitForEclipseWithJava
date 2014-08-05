@@ -156,9 +156,17 @@ public class UIUtils {
 		try {
 			subscriptionId = WindowsAzureRestUtils.installPublishSettings(file, data.getSubscriptionIds().get(0), null);
 		} catch (Exception e) {
+            String errorMessage;
+            Throwable cause = e.getCause();
+            if (e instanceof RuntimeException && cause != null && cause instanceof ClassNotFoundException
+                    && cause.getMessage() != null && cause.getMessage().contains("org.bouncycastle.jce.provider.BouncyCastleProvider cannot be found")) {
+                errorMessage = Messages.importDlgMsgJavaVersion;
+            } else {
+                errorMessage = Messages.importDlgMsg;
+            }
 			MessageUtil.displayErrorDialog(new Shell(),
 					Messages.importDlgTitle,
-					String.format(Messages.importDlgMsg,
+					String.format(errorMessage,
 							file.getName(),
 							Messages.failedToParse));
 			return null;

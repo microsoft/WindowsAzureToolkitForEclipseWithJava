@@ -348,8 +348,14 @@ public class CertificateDialog extends TitleAreaDialog {
 
 	private void newBtnListener() {
 		NewCertificateDialogData data = new NewCertificateDialogData();
+		String jdkPath = "";
+		try {
+			jdkPath = waRole.getJDKSourcePath();
+		} catch (Exception e) {
+			jdkPath = "";
+		}
 		NewCertificateDialog dialog =
-				new NewCertificateDialog(this.getShell(), data);
+				new NewCertificateDialog(this.getShell(), data, jdkPath);
 		if (dialog.open() == Window.OK) {
 			if (txtName.getText().isEmpty()) {
 				populateCertName(removeSpaceFromCN(data.getCnName()));

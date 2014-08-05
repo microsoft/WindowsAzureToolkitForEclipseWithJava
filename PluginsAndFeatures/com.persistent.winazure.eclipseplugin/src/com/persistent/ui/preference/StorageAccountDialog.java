@@ -45,6 +45,8 @@ import org.eclipse.ui.PlatformUI;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.model.StorageService;
+import com.gigaspaces.azure.model.Subscription;
+import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.wizards.NewStorageAccountDialog;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
@@ -52,6 +54,7 @@ import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegi
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
+import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
 
 public class StorageAccountDialog extends TitleAreaDialog {
@@ -319,18 +322,18 @@ public class StorageAccountDialog extends TitleAreaDialog {
 		newStrAccBtn.addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				NewStorageAccountDialog storageAccountDialog =
-						new NewStorageAccountDialog(getShell(), "");
-				int result = storageAccountDialog.open();
-				// populate data in storage registry dialog
-				if (result == Window.OK) {
-					StorageService service = NewStorageAccountDialog.getStorageService();
-					if (service != null) {
-						txtName.setText(service.getServiceName());
-						txtKey.setText(service.getPrimaryKey());
-						txtUrl.setText(service.getStorageAccountProperties().getEndpoints().get(0).toString());
+					NewStorageAccountDialog storageAccountDialog =
+							new NewStorageAccountDialog(getShell(), "");
+					int result = storageAccountDialog.open();
+					// populate data in storage registry dialog
+					if (result == Window.OK) {
+						StorageService service = NewStorageAccountDialog.getStorageService();
+						if (service != null) {
+							txtName.setText(service.getServiceName());
+							txtKey.setText(service.getPrimaryKey());
+							txtUrl.setText(service.getStorageAccountProperties().getEndpoints().get(0).toString());
+						}
 					}
-				}
 			}
 
 			@Override

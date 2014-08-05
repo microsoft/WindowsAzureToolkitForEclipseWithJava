@@ -499,6 +499,6 @@ public class WindowsAzureRestUtils {
     public static Configuration loadConfiguration(String subscriptionId, String url) throws IOException {
         String keystore = System.getProperty("user.home") + File.separator + ".azure" + File.separator + subscriptionId + ".out";
         URI mngUri = URI.create(url);
-        return ManagementConfiguration.configure(mngUri, subscriptionId, keystore, "", KeyStoreType.pkcs12);
+        return ManagementConfiguration.configure(null, Configuration.load(), mngUri, subscriptionId, keystore, "", KeyStoreType.pkcs12);
     }
 }

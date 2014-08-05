@@ -27,8 +27,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.rest.WindowsAzureServiceManagement;
+import com.gigaspaces.azure.util.Messages;
 import com.gigaspaces.azure.util.PublishData;
 import com.microsoft.windowsazure.Configuration;
+import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
 public class LoadingSubscriptionTask extends LoadingTask<List<Subscription>> {
 
@@ -120,7 +122,12 @@ public class LoadingSubscriptionTask extends LoadingTask<List<Subscription>> {
 			} catch (Exception e) {
 				AccountCachingExceptionEvent event = new AccountCachingExceptionEvent(this);
 				event.setException(e);
-				if ((e.getMessage() == null) || (e.getMessage().isEmpty())) {
+                Throwable cause = e.getCause();
+                if (e instanceof WACommonException && cause != null && cause.getCause() != null && cause.getCause() instanceof ClassNotFoundException
+                        && cause.getCause().getMessage() != null
+                        && cause.getCause().getMessage().contains("org.bouncycastle.jce.provider.BouncyCastleProvider cannot be found")) {
+                    event.setMessage(Messages.importDlgMsgJavaVersion);
+                } else if ((e.getMessage() == null) || (e.getMessage().isEmpty())) {
 					event.setMessage(com.gigaspaces.azure.wizards.Messages.genericErrorWhileLoadingCred);					
 				}
 				else {

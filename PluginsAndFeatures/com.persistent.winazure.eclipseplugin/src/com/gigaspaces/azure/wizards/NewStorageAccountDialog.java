@@ -125,14 +125,25 @@ public class NewStorageAccountDialog extends WADialog {
 								 * Add account immediately.
 								 */
 								PublishData pubData = UIUtils.changeCurrentSubAsPerCombo(subscrptnCombo);
-								NewStorageAccountWithProgressWindow object =
-										new NewStorageAccountWithProgressWindow(
-												pubData, new Shell());
-								object.setCreateStorageAccount(body);
-								Display.getDefault().syncExec(object);
-								storageService =
-										NewStorageAccountWithProgressWindow.
-										getStorageService();
+                                PublishData publishData = WizardCacheManager.getCurrentPublishData();
+                                Subscription curSub = publishData.getCurrentSubscription();
+                                int maxStorageAccounts = curSub.getMaxStorageAccounts();
+
+                                if (maxStorageAccounts > publishData.getStoragesPerSubscription().get(curSub.getId()).size()) {
+                                    NewStorageAccountWithProgressWindow object =
+                                            new NewStorageAccountWithProgressWindow(
+                                                    pubData, new Shell());
+                                    object.setCreateStorageAccount(body);
+                                    Display.getDefault().syncExec(object);
+                                    storageService =
+                                            NewStorageAccountWithProgressWindow.
+                                                    getStorageService();
+                                } else {
+                                    MessageUtil.displayErrorDialog(getShell(),
+                                            com.gigaspaces.azure.wizards.Messages.storageAccountsLimitTitle,
+                                            com.gigaspaces.azure.wizards.Messages.storageAccountsLimitErr);
+                                    return;
+                                }
 							}
 							valid = true;
 							close();

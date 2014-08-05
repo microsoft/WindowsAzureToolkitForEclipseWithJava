@@ -56,10 +56,14 @@ public class NewCertificateDialog extends TitleAreaDialog {
     private String errorMessage;
     private IProject selProject;
     private NewCertificateDialogData newCertificateDialogHolder;
+    private String jdkPath;
 
-    public NewCertificateDialog(Shell parentShell,NewCertificateDialogData newCertificateDialogHolder) {
+    public NewCertificateDialog(Shell parentShell,
+    		NewCertificateDialogData newCertificateDialogHolder,
+    		String jdkPath) {
         super(parentShell);
         this.newCertificateDialogHolder = newCertificateDialogHolder;
+        this.jdkPath = jdkPath;
     }
 
     protected void configureShell(Shell newShell) {
@@ -380,8 +384,12 @@ public class NewCertificateDialog extends TitleAreaDialog {
         else {
             try {
                 String alias = Messages.newCertDlgAlias;
+                // fix for #2663
+                if (jdkPath == null || jdkPath.isEmpty()) {
+                	jdkPath = PluginUtil.jdkDefaultDirectory(null);
+                }
                 CerPfxUtil.createCertificate(txtCertFile.getText(),
-                        txtPFXFile.getText(), alias , txtPwd.getText(), txtCNName.getText());
+                        txtPFXFile.getText(), alias , txtPwd.getText(), txtCNName.getText(), jdkPath);
                 
                 //At this point certificates are created , populate the values for caller
                 if(newCertificateDialogHolder != null ){

@@ -73,6 +73,7 @@ import com.gigaspaces.azure.rest.RestAPIException;
 import com.gigaspaces.azure.rest.WindowsAzureRestUtils;
 import com.gigaspaces.azure.rest.WindowsAzureServiceManagement;
 import com.gigaspaces.azure.rest.WindowsAzureStorageServices;
+import com.gigaspaces.azure.rest.PluginConstants;
 import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.views.WindowsAzureActivityLogView;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
@@ -734,7 +735,7 @@ public final class DeploymentManager {
 		});
 
 		Configuration configuration = WizardCacheManager.getCurrentPublishData().getCurrentConfiguration();
-		int[] progressArr = new int[]{50, 30, 20};
+		int[] progressArr = new int[]{50, 50};
 		unPublish(configuration, serviceName, deplymentName, progressArr);
 	}
 
@@ -749,28 +750,42 @@ public final class DeploymentManager {
 			String serviceName,
 			String deplymentName,
 			int[] progressArr) {
-		try {
-			WindowsAzureServiceManagement service = WizardCacheManager.createServiceManagementHelper();
-			notifyProgress(deplymentName, null, progressArr[0], OperationStatus.InProgress,
-					Messages.stoppingMsg, serviceName);
-			String requestId = service.updateDeploymentStatus(configuration,
-					serviceName,
-					deplymentName,
-                    UpdatedDeploymentStatus.Suspended
-            );
-			waitForStatus(configuration, service, requestId);
-			notifyProgress(deplymentName, null, progressArr[1], OperationStatus.InProgress,
-					Messages.undeployProgressMsg, deplymentName);
-			requestId = service.deleteDeployment(configuration, serviceName, deplymentName);
-			waitForStatus(configuration, service, requestId);
-			notifyProgress(deplymentName, null, progressArr[2], OperationStatus.Succeeded,
-					Messages.undeployCompletedMsg, serviceName);
-		} catch (Exception e) {
-			Activator.getDefault().log(Messages.deplError, e);
-			notifyProgress(deplymentName, null, 100,
-                    OperationStatus.Failed,
-					e.getMessage(),
-					serviceName);
+		String requestId = null;
+		
+		int retryCount = 0;
+		boolean successfull = false;
+		while (!successfull) {
+			try {
+				retryCount++;
+				WindowsAzureServiceManagement service = WizardCacheManager.createServiceManagementHelper();
+	//          Commenting suspend deployment call since it is giving issues in china cloud.
+	//			notifyProgress(deplymentName, null, progressArr[0], OperationStatus.InProgress,
+	//					Messages.stoppingMsg, serviceName);
+	//			requestId = service.updateDeploymentStatus(configuration,
+	//					serviceName,
+	//					deplymentName,
+	//                    UpdatedDeploymentStatus.Suspended
+	//            );
+	//			waitForStatus(configuration, service, requestId);
+				notifyProgress(deplymentName, null, progressArr[0], OperationStatus.InProgress,
+						Messages.undeployProgressMsg, deplymentName);
+				requestId = service.deleteDeployment(configuration, serviceName, deplymentName);
+				waitForStatus(configuration, service, requestId);
+				notifyProgress(deplymentName, null, progressArr[1], OperationStatus.Succeeded,
+						Messages.undeployCompletedMsg, serviceName);
+				successfull = true;
+			} catch (Exception e) {
+				// Retry 5 times
+				if (retryCount > PluginConstants.REST_SERVICE_MAX_RETRY_COUNT) {
+					Activator.getDefault().log(Messages.deplError, e);
+					notifyProgress(deplymentName, null, 100,
+	                    OperationStatus.Failed,
+						e.getMessage(),
+						serviceName);
+				}
+				notifyProgress(deplymentName, null, -progressArr[0], OperationStatus.InProgress,
+						Messages.undeployProgressMsg, deplymentName);
+			}
 		}
 	}
 }

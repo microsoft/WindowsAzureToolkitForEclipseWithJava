@@ -211,16 +211,23 @@ public class CerPfxUtil {
 	 * @throws IOException
 	 */
 	public static void createCertificate(String certPath, String pfxPath,
-			String alias, String password, String cnName) throws Exception,
+			String alias, String password, String cnName, String jdkPath) throws Exception,
 			IOException {
 
 		String validityInDays = "3650";
 		String keyAlg = "RSA";
 		String keySize = "2048";
 		String storeType = "pkcs12";
+		String command = "keytool";
+		if (jdkPath != null && !jdkPath.isEmpty()) {
+			jdkPath = jdkPath.concat("\\bin");
+		}
+		if (new File(jdkPath).isDirectory()) {
+			command = String.format("%s%s%s", jdkPath, File.separator, command);
+		}
 
 		// Create Pfx file
-		String[] commandArgs = { "keytool", "-genkey", "-alias", alias,
+		String[] commandArgs = { command, "-genkey", "-alias", alias,
 				"-keystore", pfxPath, "-storepass", password, "-validity",
 				validityInDays, "-keyalg", keyAlg, "-keysize", keySize,
 				"-storetype", storeType, "-dname", "CN="+cnName };
@@ -229,7 +236,7 @@ public class CerPfxUtil {
 		// Create cer file i.e. extract public key from pfx
 		File pfxFile = new File(pfxPath);
 		if (pfxFile.exists()) {
-			String[] certCommandArgs = { "keytool", "-export", "-alias", alias,
+			String[] certCommandArgs = { command, "-export", "-alias", alias,
 					"-storetype", storeType, "-keystore", pfxPath,
 					"-storepass", password, "-rfc", "-file", certPath };
 			// output of keytool export command is going to error stream

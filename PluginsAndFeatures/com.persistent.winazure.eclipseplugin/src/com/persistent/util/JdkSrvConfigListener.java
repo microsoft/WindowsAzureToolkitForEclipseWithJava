@@ -24,6 +24,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.winazureroles.Messages;
 /**
  * Class has utility methods
@@ -41,7 +42,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 			WindowsAzureRole role) {
 		// Pre-populate with auto-discovered JDK if any
 		String jdkDefaultDir =
-				WAEclipseHelper.jdkDefaultDirectory(null);
+				PluginUtil.jdkDefaultDirectory(null);
 		getTxtJdk().setText(jdkDefaultDir);
 		setEnableJDK(true);
 		enableJdkRdButtons(getAutoDlRdCldBtn());

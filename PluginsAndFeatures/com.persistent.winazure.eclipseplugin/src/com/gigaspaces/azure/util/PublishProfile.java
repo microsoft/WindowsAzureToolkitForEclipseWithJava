@@ -36,7 +36,8 @@ public class PublishProfile implements Serializable, Cloneable {
 	private String url;
 	private String managementCertificate;
 	private List<Subscription> subscriptions = new ArrayList<Subscription>();
-	private String password = ""; //$NON-NLS-1$
+	private String password = "";
+	private String schemaVersion;
 
 	@XmlAttribute(name = "PublishMethod")
 	public String getPublishMethod() {
@@ -63,6 +64,15 @@ public class PublishProfile implements Serializable, Cloneable {
 
 	public void setManagementCertificate(String managementCertificate) {
 		this.managementCertificate = managementCertificate;
+	}
+
+	@XmlAttribute(name = "SchemaVersion")
+	public String getSchemaVersion() {
+		return schemaVersion;
+	}
+
+	public void setSchemaVersion(String schemaVersion) {
+		this.schemaVersion = schemaVersion;
 	}
 
 	@XmlElement(name = "Subscription")

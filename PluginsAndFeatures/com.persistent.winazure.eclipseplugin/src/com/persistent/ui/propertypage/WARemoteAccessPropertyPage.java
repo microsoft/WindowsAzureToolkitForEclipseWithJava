@@ -536,8 +536,10 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
      */
     protected void newBtnListener() {
     	NewCertificateDialogData data = new NewCertificateDialogData();
+    	
         NewCertificateDialog dialog =
-        		new NewCertificateDialog(getShell(), data);
+        		new NewCertificateDialog(getShell(), data,
+        				WAEclipseHelper.findJdkPathFromRole(waProjManager));
 
         int returnCode = dialog.open();
         if (returnCode == Window.OK) {
@@ -558,7 +560,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                 }
         }
     }
-
+    
     /**
      * Listener for workspace button.
      */

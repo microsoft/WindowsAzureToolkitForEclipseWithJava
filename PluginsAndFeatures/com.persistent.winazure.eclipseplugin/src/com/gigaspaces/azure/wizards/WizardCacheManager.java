@@ -18,6 +18,7 @@ package com.gigaspaces.azure.wizards;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -126,7 +127,8 @@ public final class WizardCacheManager {
 				getCurrentStorageAcount(), currentAccessKey,
 				getCurentHostedService(), deployFile, deployConfigFile,
 				deployState, remoteDesktopDescriptor,
-            currentPublishData.getPublishProfile().getUrl(), unpublish, certList, displayHttpsLink, currentPublishData.getCurrentConfiguration());
+            checkSchemaVersionAndReturnUrl(),
+            unpublish, certList, displayHttpsLink, currentPublishData.getCurrentConfiguration());
 
 		remoteDesktopDescriptor = null;
 
@@ -406,13 +408,19 @@ public final class WizardCacheManager {
 			waitForStatus(configuration, service, requestId);
 
 			StorageService storageAccount = service.getStorageAccount(configuration, accountParameters.getName());
-			
+			List<URI> endpoints = storageAccount.getStorageAccountProperties().getEndpoints();
+			if (endpoints.get(0).toString().startsWith("https://")) {
+				endpoints.set(0, URI.create(endpoints.get(0).toString().replaceFirst("https://", "http://")));
+				endpoints.set(1, URI.create(endpoints.get(1).toString().replaceFirst("https://", "http://")));
+				endpoints.set(2, URI.create(endpoints.get(2).toString().replaceFirst("https://", "http://")));
+			}
+
 			// remove previous mock if existed
 			currentPublishData.getStoragesPerSubscription().get(subscription.getId()).remove(accountParameters.getName());
 			currentPublishData.getStoragesPerSubscription().get(subscription.getId()).add(storageAccount);
-			
+
 			return storageAccount;
-		} 
+		}
 		catch (InvalidThumbprintException e) {
 			throw new CommandLineException(e);
 		}
@@ -429,9 +437,7 @@ public final class WizardCacheManager {
 	}
 	
 	public static boolean isStorageAccountNameAvailable(final String storageAccountName) throws WACommonException, CommandLineException, ServiceException {
-		
 		WindowsAzureServiceManagement service;
-		Subscription subscription = currentPublishData.getCurrentSubscription();
 		try {
 			service = new WindowsAzureServiceManagement();
 			return service.checkForStorageAccountDNSAvailability(currentPublishData.getCurrentConfiguration(), storageAccountName);
@@ -628,11 +634,18 @@ public final class WizardCacheManager {
 		if (subscriptions == null) {
 			return;
 		}
-
+		String schemaVer = publishData.getPublishProfile().getSchemaVersion();
+		boolean isNewSchema = schemaVer != null && !schemaVer.isEmpty() && schemaVer.equalsIgnoreCase("2.0");
+		// URL if schema version is 1.0
+		String url = publishData.getPublishProfile().getUrl();
         Map<String, Configuration> configurationPerSubscription = new HashMap<String, Configuration>();
         for (Subscription subscription : subscriptions) {
-            Configuration configuration = publishSettingsFile == null ?
-                    WindowsAzureRestUtils.loadConfiguration(subscription.getId(), publishData.getPublishProfile().getUrl()) :
+        	if (isNewSchema) {
+        		// publishsetting file is of schema version 2.0
+        		url = subscription.getServiceManagementUrl();
+        	}
+            Configuration configuration = (publishSettingsFile == null) ?
+                    WindowsAzureRestUtils.loadConfiguration(subscription.getId(), url) :
                     WindowsAzureRestUtils.getConfiguration(publishSettingsFile, subscription.getId());
             configurationPerSubscription.put(subscription.getId(), configuration);
         }
@@ -642,8 +655,12 @@ public final class WizardCacheManager {
 
 			List<Future<?>> loadServicesFutures = null;
 			Future<?> loadSubscriptionsFuture = null;
-			try {				
+			try {
+				List<Subscription> subBackup = publishData.getPublishProfile().getSubscriptions();
+
+				// thread pool size is number of subscriptions
 				ScheduledExecutorService subscriptionThreadPool = Executors.newScheduledThreadPool(subscriptions.size());
+
 				LoadingSubscriptionTask loadingSubscriptionTask = new LoadingSubscriptionTask(publishData);
 				loadingSubscriptionTask.setSubscriptionIds(subscriptions);
 				if (listener != null) {
@@ -653,14 +670,28 @@ public final class WizardCacheManager {
 				loadSubscriptionsFuture = subscriptionThreadPool.submit(new LoadingTaskRunner(loadingSubscriptionTask));				
 				loadSubscriptionsFuture.get(OPERATIONS_TIMEOUT, TimeUnit.SECONDS);
 
+				/*
+				 * add explicitly management URL and certificate which was removed
+				 * Changes are did to support both publish setting schema versions.
+				 */
+				if (isNewSchema) {
+					for (int i = 0; i < subBackup.size(); i++) {
+						publishData.getPublishProfile().getSubscriptions().get(i).
+						setServiceManagementUrl(subBackup.get(i).getServiceManagementUrl());
+						publishData.getPublishProfile().getSubscriptions().get(i).
+						setManagementCertificate(subBackup.get(i).getManagementCertificate());
+					}
+				}
+
 				if (publishData.getCurrentSubscription() == null && publishData.getPublishProfile().getSubscriptions().size() > 0) {
 					publishData.setCurrentSubscription(publishData.getPublishProfile().getSubscriptions().get(0));
 				}
 
+				// thread pool size is 3 to load hosted services, locations and storage accounts.
 				ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(3);
 				loadServicesFutures = new ArrayList<Future<?>>();
 
-
+				// Hosted services
 				LoadingHostedServicesTask loadingHostedServicesTask = new LoadingHostedServicesTask(publishData);
 				if (listener != null) {
 					loadingHostedServicesTask.addLoadingAccountListener(listener);
@@ -668,6 +699,7 @@ public final class WizardCacheManager {
 				Future<?> submitHostedServices = threadPool.submit(new LoadingTaskRunner(loadingHostedServicesTask));
 				loadServicesFutures.add(submitHostedServices);
 
+				// locations
 				LoadingLocationsTask loadingLocationsTask = new LoadingLocationsTask(publishData);
 				if (listener != null) {
 					loadingLocationsTask.addLoadingAccountListener(listener);
@@ -675,6 +707,7 @@ public final class WizardCacheManager {
 				Future<?> submitLocations = threadPool.submit(new LoadingTaskRunner(loadingLocationsTask));
 				loadServicesFutures.add(submitLocations);
 
+				// storage accounts
 				LoadingStorageAccountTask loadingStorageAccountTask = new LoadingStorageAccountTask(publishData);
 				if (listener != null) {
 					loadingStorageAccountTask.addLoadingAccountListener(listener);
@@ -685,7 +718,22 @@ public final class WizardCacheManager {
 				for (Future<?> future : loadServicesFutures) {
 					future.get(OPERATIONS_TIMEOUT, TimeUnit.SECONDS);
 				}
-			} 
+
+				for (Subscription sub : publishData.getPublishProfile().getSubscriptions()) {
+					/*
+					 * Get collection of storage services in each subscription.
+					 */
+					StorageServices services = publishData.getStoragesPerSubscription().get(sub.getId());
+					for (StorageService strgService : services) {
+						List<URI> endpoints = strgService.getStorageAccountProperties().getEndpoints();
+						if (endpoints.get(0).toString().startsWith("https://")) {
+							endpoints.set(0, URI.create(endpoints.get(0).toString().replaceFirst("https://", "http://")));
+							endpoints.set(1, URI.create(endpoints.get(1).toString().replaceFirst("https://", "http://")));
+							endpoints.set(2, URI.create(endpoints.get(2).toString().replaceFirst("https://", "http://")));
+						}
+					}
+				}
+			}
 			catch (InterruptedException e) {
 				if (loadSubscriptionsFuture != null) {
 					loadSubscriptionsFuture.cancel(true);
@@ -696,16 +744,15 @@ public final class WizardCacheManager {
 					}
 				}
 				canceled = true;
-			} 
+			}
 			catch (ExecutionException e) {
-			} 
+			}
 			catch (TimeoutException e) {
 			}
 		}
 
 
-		if (publishData.getPublishProfile().getSubscriptions().size() > 0) {			
-
+		if (publishData.getPublishProfile().getSubscriptions().size() > 0) {
 			if (!empty(publishData) && !canceled) {
 				removeDuplicateSubscriptions(publishData);
 				PUBLISHS.add(publishData);
@@ -744,7 +791,7 @@ public final class WizardCacheManager {
 		for (PublishData emptyData : emptyPublishDatas) {
 			PUBLISHS.remove(emptyData);
 		}
-	}	
+	}
 
 	private static boolean empty(PublishData data) {
 
@@ -761,9 +808,7 @@ public final class WizardCacheManager {
     }
 
 	public static StorageService getStorageAccountFromCurrentPublishData(String storageAccountName) {
-
 		if (currentPublishData != null) {
-
 			for (StorageService storageService : currentPublishData
 					.getStoragesPerSubscription()
 					.get(currentPublishData.getCurrentSubscription().getId())) {
@@ -771,10 +816,19 @@ public final class WizardCacheManager {
 						storageAccountName))
 					return storageService;
 			}
-
 		}
-
 		return null;
+	}
 
+	private static String checkSchemaVersionAndReturnUrl() {
+		String url = null;
+		String schemaVer = currentPublishData.getPublishProfile().getSchemaVersion();
+		if (schemaVer != null && !schemaVer.isEmpty() && schemaVer.equalsIgnoreCase("2.0")) {
+			// publishsetting file is of schema version 2.0
+			url = currentPublishData.getCurrentSubscription().getServiceManagementUrl();
+		} else {
+			url = currentPublishData.getPublishProfile().getUrl();
+		}
+		return url;
 	}
 }

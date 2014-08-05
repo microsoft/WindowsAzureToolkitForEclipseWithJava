@@ -458,7 +458,7 @@ public class WindowsAzureProjectManager {
 					.hasNext();) {
 				WindowsAzureRole windowsAzureRole = iterator.next();
 				if (sdkVersion == null) {
-					sdkVersion = "2.3.0.0";
+					sdkVersion = "2.4.0.0";
 				}
 				// If Session affinity is enabled
 				if (sdkVersion != null
@@ -2181,7 +2181,7 @@ public class WindowsAzureProjectManager {
 		}
 
 		File sdkDir = new File(String.format(
-				"%s%sMicrosoft SDKs%sWindows Azure%s.NET SDK", programFilesDir,
+				"%s%sMicrosoft SDKs%sAzure%s.NET SDK", programFilesDir,
 				File.separatorChar, File.separatorChar, File.separatorChar));
 
 		// Check if the SDK folder exists
@@ -2203,7 +2203,7 @@ public class WindowsAzureProjectManager {
 				if (versionedSdkDir.isDirectory()) {
 
 					// Since we are iterating in descending manner , below if
-					// will be true only if SDK2.3 or greater version is not
+					// will be true only if SDK2.4 or greater version is not
 					// installed.
 					// If greater version is installed we always break loop and
 					// return the value.
@@ -2268,7 +2268,7 @@ public class WindowsAzureProjectManager {
 		}
 
 		File emulatorDir = new File(String.format(
-				"%s%sMicrosoft SDKs%sWindows Azure%sEmulator", programFilesDir,
+				"%s%sMicrosoft SDKs%sAzure%sEmulator", programFilesDir,
 				File.separatorChar, File.separatorChar, File.separatorChar));
 
 		// Check if the Emulator folder exists
@@ -2294,7 +2294,7 @@ public class WindowsAzureProjectManager {
 		}
 
 		File storageEmulatorDir = new File(String.format(
-				"%s%sMicrosoft SDKs%sWindows Azure%sStorage Emulator",
+				"%s%sMicrosoft SDKs%sAzure%sStorage Emulator",
 				programFilesDir, File.separatorChar, File.separatorChar,
 				File.separatorChar));
 
@@ -2302,7 +2302,7 @@ public class WindowsAzureProjectManager {
 		if (storageEmulatorDir.exists()) {
 			return storageEmulatorDir.toString();
 		} else {
-			throw new IOException("Azure SDK v2.3 or later is not installed.");
+			throw new IOException("Azure SDK v2.4 or later is not installed.");
 		}
 	}
 

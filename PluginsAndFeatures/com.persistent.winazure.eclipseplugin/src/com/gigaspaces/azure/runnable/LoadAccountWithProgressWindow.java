@@ -41,7 +41,13 @@ public class LoadAccountWithProgressWindow extends AccountActionRunnable impleme
 			dialog.run(true, true, this);
 			dialog.close();
 		} catch (InvocationTargetException e) {
-			MessageUtil.displayErrorDialog(shell, com.gigaspaces.azure.propertypage.Messages.loadingCred, Messages.loadingAccountError);
+            // special check for Java 1.6 and bouncycastle not in classpath error
+            if (com.gigaspaces.azure.util.Messages.importDlgMsgJavaVersion.equals(e.getMessage())) {
+                MessageUtil.displayErrorDialog(shell, com.gigaspaces.azure.propertypage.Messages.loadingCred,
+                        com.gigaspaces.azure.util.Messages.importDlgMsgJavaVersion);
+            } else {
+                MessageUtil.displayErrorDialog(shell, com.gigaspaces.azure.propertypage.Messages.loadingCred, Messages.loadingAccountError);
+            }
 			Activator.getDefault().log(Messages.error, e);
 		} catch (InterruptedException e) {
 		}

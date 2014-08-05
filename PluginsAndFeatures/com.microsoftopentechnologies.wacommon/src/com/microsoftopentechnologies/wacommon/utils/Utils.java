@@ -70,7 +70,6 @@ public class Utils {
 		BufferedReader ebr = null;
 		try {
 			Process process = new ProcessBuilder(command).start();
-			;
 			inputStream = process.getInputStream();
 			errorStream = process.getErrorStream();
 			br = new BufferedReader(new InputStreamReader(inputStream));

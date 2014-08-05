@@ -46,14 +46,9 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		context = ModelFactory.createInstance();
 	}
 
-	public Subscription getSubscription(Configuration configuration) throws WACommonException {
+	public Subscription getSubscription(Configuration configuration) throws WACommonException, ServiceException {
         SubscriptionGetResponse response;
-        try {
-            response = WindowsAzureRestUtils.getSubscription(configuration);
-        } catch (Exception ex) {
-            Activator.getDefault().log("exception", ex);
-            throw new WACommonException("Exception when getting subscription", ex);
-        }
+        response = WindowsAzureRestUtils.getSubscription(configuration);
         return SubscriptionTransformer.transform(response);
 	}
 
@@ -161,7 +156,7 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
     }
 
 	public String deleteDeployment(Configuration configuration, String serviceName, String deploymentName) throws WACommonException, ServiceException {
-        OperationResponse response = WindowsAzureRestUtils.deleteDeployment(configuration, serviceName, deploymentName, false);
+        OperationResponse response = WindowsAzureRestUtils.deleteDeployment(configuration, serviceName, deploymentName, true);
         return response.getRequestId();
     }
 
@@ -208,7 +203,7 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
                         deploymentName = deployment.getName();
                     }
                 }
-                int[] progressArr = new int[]{0, 0, 0};
+                int[] progressArr = new int[]{0, 0};
                 DeploymentManager.getInstance().unPublish(configuration, serviceName, deploymentName, progressArr);
                 response = WindowsAzureRestUtils.createDeployment(configuration, serviceName, deploymentSlot, parameters);
 
