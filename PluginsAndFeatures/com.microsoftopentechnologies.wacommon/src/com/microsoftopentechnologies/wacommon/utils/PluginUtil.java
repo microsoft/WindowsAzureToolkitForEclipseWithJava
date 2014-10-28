@@ -18,9 +18,6 @@ package com.microsoftopentechnologies.wacommon.utils;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.TreeSet;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -167,64 +164,28 @@ public class PluginUtil {
 	    	 e.printStackTrace();
 	    	 throw new WACommonException(Messages.SDKLocErrMsg);
 		}
-       
-        return libLocation;
+
+		return libLocation;
 	}
-	
-	/**
-	 * Returns default JDK path.
-	 * 
-	 * @param currentlySelectedDir
-	 * @return
-	 */
-	public static String jdkDefaultDirectory(String currentlySelectedDir) {
-		File file;
 
-		// Try currently selected JDK path
-		String path = currentlySelectedDir;
-		if (path != null && !path.isEmpty()) {
-			file = new File(path);
-			if (file.isDirectory() && file.exists()) {
-				return path;
-			}
-		}
+	public static String getPrefFilePath() {
+		String prefFilePath = String.format("%s%s%s%s%s%s%s",
+				new File(Platform.getInstallLocation().getURL().
+						getFile()).getPath().toString(),
+						File.separator,
+						Messages.pluginFolder ,
+						File.separator,
+						Messages.waCommonFolderID,
+						File.separator,
+				"preferencesets.xml");
+		return prefFilePath;
+	}
 
-		// Try JAVA_HOME
-		path = System.getenv("JAVA_HOME");
-		if (path != null && !path.isEmpty()) {
-			file = new File(path);
-			if (file.exists() && file.isDirectory()) {
-				// Verify presence of javac.exe
-				File javacFile = new File(file, "bin" + File.separator
-						+ "javac.exe");
-				if (javacFile.exists()) {
-					return path;
-				}
-			}
-		}
-
-		// Try under %ProgramFiles%\Java
-		path = String.format("%s%s%s", System.getenv("ProgramFiles"),
-				File.separator, "Java", File.separator);
-		file = new File(path);
-		if (!file.exists() || !file.isDirectory()) {
-			return "";
-		}
-
-		// Find the first entry under Java that contains jdk
-		File[] jdkDirs = file.listFiles();
-		Arrays.sort(jdkDirs);
-
-		TreeSet<File> sortedDirs = new TreeSet<File>(Arrays.asList(jdkDirs));
-		for (Iterator<File> iterator = sortedDirs.descendingIterator(); iterator
-				.hasNext();) {
-			File latestSdkDir = iterator.next();
-			if (latestSdkDir.isDirectory()
-					&& latestSdkDir.getName().contains("jdk")) {
-				return latestSdkDir.getAbsolutePath();
-			}
-		}
-
-		return "";
+	public static String getEncPath() {
+		String encPath = String.format("%s%s%s%s%s", new File(
+				Platform.getInstallLocation().getURL().getFile()).getPath()
+				.toString(), File.separator, Messages.pluginFolder, File.separator,
+				Messages.waCommonFolderID);
+		return encPath;
 	}
 }

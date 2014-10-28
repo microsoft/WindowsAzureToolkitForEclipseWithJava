@@ -34,8 +34,9 @@ import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
-import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
+import com.microsoftopentechnologies.wacommonutil.PreferenceSetUtil;
 import com.persistent.util.WAEclipseHelper;
 
 /**
@@ -59,8 +60,9 @@ public class WABuildCloud extends AbstractHandler {
 				waProjManager.setPackageType(WindowsAzurePackageType.CLOUD);
 			}
 			try {
+				String path = PluginUtil.getPrefFilePath();
 				String prefSetUrl = PreferenceSetUtil.getSelectedPortalURL(
-						PreferenceSetUtil.getSelectedPreferenceSetName());
+						PreferenceSetUtil.getSelectedPreferenceSetName(path), path);
 				/*
 				 * Don't check if URL is empty or null.
 				 * As if it is then we remove "portalurl" attribute

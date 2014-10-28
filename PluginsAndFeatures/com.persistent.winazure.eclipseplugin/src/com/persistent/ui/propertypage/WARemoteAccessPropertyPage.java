@@ -60,11 +60,14 @@ import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.microsoftopentechnologies.exception.AzureCommonsException;
+import com.microsoftopentechnologies.propertypage.RemoteAccess;
+import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
-import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
-import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.microsoftopentechnologies.wacommonutil.CerPfxUtil;
+import com.microsoftopentechnologies.wacommonutil.EncUtilHelper;
 import com.persistent.util.WAEclipseHelper;
 
 
@@ -539,7 +542,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
     	
         NewCertificateDialog dialog =
         		new NewCertificateDialog(getShell(), data,
-        				WAEclipseHelper.findJdkPathFromRole(waProjManager));
+        				WAEclipseHelperMethods.findJdkPathFromRole(waProjManager));
 
         int returnCode = dialog.open();
         if (returnCode == Window.OK) {
@@ -701,21 +704,13 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
             newPath = String.format("%s%s",
             		selProject.getLocation().toOSString(), newPath);
         }
-        File cerFile = new File(newPath);
-        boolean isRemoteEnabled = remoteChkBtn.getSelection();
-        if (isRemoteEnabled && userName.isEmpty()) {
-            setErrorMessage(Messages.remAccNameNull);
+        try {
+			RemoteAccess.okToLeave(newPath, remoteChkBtn.getSelection(), userName, expDate);
+			setErrorMessage(null);
+		} catch (AzureCommonsException e) {
+			setErrorMessage(e.getMessage());
             okToProceed = false;
-        } else if (isRemoteEnabled && expDate.isEmpty()) {
-            setErrorMessage(Messages.remAccExpDateNull);
-            okToProceed = false;
-        } else if (isRemoteEnabled
-                && (!cerFile.exists() || (!newPath.endsWith(".cer")))) {
-            setErrorMessage(Messages.remAccInvldPath);
-            okToProceed = false;
-        } else {
-            setErrorMessage(null);
-        }
+		}
 
         boolean retVal = false;
         if (okToProceed) {
@@ -872,7 +867,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
                         		&& isPwdChanged) {
                             String encryptedPwd =
                             		EncUtilHelper.encryptPassword(pwd,
-                            				tempPath);
+                            				tempPath, PluginUtil.getEncPath());
                             waProjManager.
                             setRemoteAccessEncryptedPassword(encryptedPwd);
                         } else {
@@ -1020,24 +1015,17 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
     private boolean validateExpDate(String expDate, DateFormat formatter)
     		throws ParseException,
     		WindowsAzureInvalidProjectOperationException {
-        Date userSelected;
-        boolean isValid = true;
-        long todaySeconds, userDateSeconds;
-            userSelected = formatter.parse(expDate);
-            userDateSeconds = userSelected.getTime();
-            GregorianCalendar todayCal = new GregorianCalendar();
-            todaySeconds = todayCal.getTimeInMillis();
-            if ((userDateSeconds - todaySeconds) < 0) {
-                PluginUtil.displayErrorDialog(new Shell(),
-                		Messages.remAccErTxtTitle,
-                		Messages.remAccDateWrong);
-                isValid = false;
-            } else {
-                waProjManager
-                        .setRemoteAccessAccountExpiration(formatter
-                                .parse(expDate));
-            }
-            return isValid;
+    	boolean isValid = RemoteAccess.validateExpDate(expDate, formatter);
+    	if (isValid) {
+    		waProjManager
+    		.setRemoteAccessAccountExpiration(formatter
+    				.parse(expDate));
+    	} else {
+    		PluginUtil.displayErrorDialog(new Shell(),
+    				Messages.remAccErTxtTitle,
+    				Messages.remAccDateWrong);
+    	}
+    	return isValid;
     }
 
     /**

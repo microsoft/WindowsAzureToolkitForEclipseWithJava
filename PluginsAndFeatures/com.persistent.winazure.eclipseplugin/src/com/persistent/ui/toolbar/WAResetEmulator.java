@@ -17,12 +17,6 @@ package com.persistent.ui.toolbar;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -32,16 +26,12 @@ import org.eclipse.swt.widgets.Shell;
 
 import waeclipseplugin.Activator;
 
-import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
-import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
-import com.microsoftopentechnologies.wacommon.utils.FileUtil;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 /**
  * This class resets the Azure Emulator.
  */
 public class WAResetEmulator extends AbstractHandler {
-	private static final int BUFF_SIZE = 1024;
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -50,40 +40,18 @@ public class WAResetEmulator extends AbstractHandler {
 					.getInstallLocation().getURL().getPath().toString(),
 					File.separator, Messages.pluginFolder, File.separator,
 					Messages.pluginId, Messages.pWizStarterKit);
-			StringBuilder output = new StringBuilder();
-			ZipFile zipFile = new ZipFile(strKitLoc);
-
 			// copy elevate.vbs to temp location
 			String tmpPath = System.getProperty("java.io.tmpdir");
-			FileUtil.copyFileFromZip(
-					new File(strKitLoc),
+			com.microsoftopentechnologies.roleoperations.WAResetEmulator.
+			resetEmulator(strKitLoc,
 					"%proj%/.templates/emulatorTools/.elevate.vbs",
 					new File(String.format("%s%s%s", tmpPath, File.separator,
 							".elevate.vbs")));
-
-			@SuppressWarnings("rawtypes")
-			Enumeration entries = zipFile.entries();
-			while (entries.hasMoreElements()) {
-				ZipEntry entry = (ZipEntry) entries.nextElement();
-				if (entry.getName().toLowerCase().indexOf(Messages.rstEmCmd) != -1) {
-					InputStream in = zipFile.getInputStream(entry);
-					Reader reader = new InputStreamReader(in);
-					char[] buf = new char[BUFF_SIZE];
-					int length = reader.read(buf, 0, buf.length);
-					while (length > 0) {
-						output.append(buf, 0, length);
-						length = reader.read(buf, 0, buf.length);
-					}
-					break;
-				}
-			}
-			zipFile.close();
-			WindowsAzureProjectManager.resetEmulator(output.toString());
-		} catch (WindowsAzureInvalidProjectOperationException e) {
-			PluginUtil.displayErrorDialogAndLog(new Shell(),
-					Messages.rstEmltrErrTtl, Messages.rstEmuErrMsg, e);
 		} catch (IOException e1) {
 			Activator.getDefault().log(Messages.ioErrMsg, e1);
+		} catch (Exception e) {
+			PluginUtil.displayErrorDialogAndLog(new Shell(),
+					Messages.rstEmltrErrTtl, Messages.rstEmuErrMsg, e);
 		}
 		return null;
 	}

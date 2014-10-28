@@ -40,10 +40,10 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
+import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.Activator;
-import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommon.utils.Utils;
+import com.microsoftopentechnologies.wacommonutil.Utils;
 
 public class NewCertificateDialog extends TitleAreaDialog {
 
@@ -386,9 +386,9 @@ public class NewCertificateDialog extends TitleAreaDialog {
                 String alias = Messages.newCertDlgAlias;
                 // fix for #2663
                 if (jdkPath == null || jdkPath.isEmpty()) {
-                	jdkPath = PluginUtil.jdkDefaultDirectory(null);
+                	jdkPath = WAEclipseHelperMethods.jdkDefaultDirectory(null);
                 }
-                CerPfxUtil.createCertificate(txtCertFile.getText(),
+                com.microsoftopentechnologies.wacommonutil.CerPfxUtil.createCertificate(txtCertFile.getText(),
                         txtPFXFile.getText(), alias , txtPwd.getText(), txtCNName.getText(), jdkPath);
                 
                 //At this point certificates are created , populate the values for caller

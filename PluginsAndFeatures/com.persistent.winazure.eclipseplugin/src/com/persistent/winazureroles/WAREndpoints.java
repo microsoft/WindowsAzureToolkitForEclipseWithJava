@@ -51,6 +51,9 @@ import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.exception.AzureCommonsException;
+import com.microsoftopentechnologies.model.RoleAndEndpoint;
+import com.microsoftopentechnologies.roleoperations.WAREndpointsUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
@@ -70,14 +73,6 @@ public class WAREndpoints extends PropertyPage {
     private static List<WindowsAzureEndpoint> listEndPoints;
     private Button btnEdit;
     private Button btnRemove;
-    /**
-     * End point range's minimum value.
-     */
-    private final static int RANGE_MIN = 1;
-    /**
-     * End point range's maximum value.
-     */
-    private final static int RANGE_MAX = 65535;
     private boolean isPageDisplayed = false;
     private static String auto = "(auto)";
 
@@ -518,34 +513,13 @@ public class WAREndpoints extends PropertyPage {
          * @throws WindowsAzureInvalidProjectOperationException .
          */
         private void modifyName(WindowsAzureEndpoint endpoint,
-                Object modifiedVal)
-                        throws WindowsAzureInvalidProjectOperationException {
-            // Validate endpoint name
-        	String endptName = modifiedVal.toString();
-        	/*
-        	 * Check endpoint name contain
-        	 * alphanumeric and underscore characters only.
-        	 * Starts with alphabet.
-        	 */
-        	if (WAEclipseHelper.isAlphaNumericUnderscore(endptName)) {
-        		boolean isValid = windowsAzureRole
-        				.isAvailableEndpointName(endptName,
-        						endpoint.getEndPointType());
-        		/*
-        		 * Check already used endpoint name is given.
-        		 */
-        		if (isValid || endptName.equalsIgnoreCase(endpoint.getName())) {
-        			endpoint.setName(modifiedVal.toString());
-        		} else {
-        			PluginUtil.displayErrorDialog(
-        					getShell(),
-        					Messages.dlgInvdEdPtName1,
-        					Messages.dlgInvdEdPtName2);
-        		}
-        	} else {
-        		PluginUtil.displayErrorDialog(getShell(),
-        				Messages.dlgInvdEdPtName1,
-        				Messages.enPtAlphNuMsg);
+        		Object modifiedVal)
+        				throws WindowsAzureInvalidProjectOperationException {
+        	try {
+        		WAREndpointsUtilMethods.modifyName(endpoint, modifiedVal, windowsAzureRole);
+        	} catch (AzureCommonsException e) {
+        		PluginUtil.displayErrorDialog(
+        				getShell(), Messages.dlgInvdEdPtName1, e.getMessage());
         	}
         }
 
@@ -557,80 +531,19 @@ public class WAREndpoints extends PropertyPage {
          * @throws WindowsAzureInvalidProjectOperationException .
          */
         private void modifyPublicPort(WindowsAzureEndpoint endpoint,
-                Object modifiedVal)
-                        throws WindowsAzureInvalidProjectOperationException {
-        	/*
-        	 * Check only one '-' is present,
-        	 * while specifying range for Instance end point.
-        	 * If end point is Internal or Input then,
-        	 * it will not satisfy if condition
-        	 * and dash count will be zero.
-        	 */
-        	int dashCnt = 0;
-        	if (endpoint.getEndPointType().
-        			equals(WindowsAzureEndpointType.InstanceInput)) {
-        		dashCnt = StringUtils.countMatches(
-        				modifiedVal.toString().trim(), "-");
-        		if (dashCnt > 1) {
-        			PluginUtil.displayErrorDialog(getShell(),
-        					Messages.dlgInvldPort,
-        					Messages.dashErrMsg);
-        		}
-        	}
-        	if (dashCnt <= 1) {
-        		// Check for valid range 1 to 65535
-        		Boolean isPortValid = true;
-        		try {
-        			/*
-        			 * If public port contains '-'
-        			 * then split string and
-        			 * get two integer values out of it.
-        			 * else directly check for value.
-        			 */
-        			if (dashCnt == 1) {
-        				String[] range = modifiedVal.
-        						toString().split("-");
-        				int rngStart = Integer.
-        						parseInt(range[0]);
-        				int rngEnd = Integer.parseInt(range[1]);
-        				if (!(rngStart >= RANGE_MIN
-        						&& rngStart <= RANGE_MAX
-        						&& rngEnd >= RANGE_MIN
-        						&& rngEnd <= RANGE_MAX)) {
-        					isPortValid = false;
-        				}
-        			} else {
-        				int port = Integer.parseInt(
-        						modifiedVal.toString());
-        				if (!(port >= RANGE_MIN
-        						&& port <= RANGE_MAX)) {
-        					isPortValid = false;
-        				}
-        			}
-        		} catch (NumberFormatException e) {
-        			isPortValid = false;
-        		}
-        		if (isPortValid) {
-        			// Validate port
-        			boolean isValid = windowsAzureRole.isValidEndpoint(
-        					endpoint.getName(),
-        					endpoint.getEndPointType(),
-        					endpoint.getPrivatePort(),
-        					modifiedVal.toString());
-        			if (isValid) {
-        				endpoint.setPort(
-        						modifiedVal.toString());
-        			} else {
-        				PluginUtil.displayErrorDialog(
-        						getShell(),
-        						Messages.dlgInvldPort,
-        						Messages.dlgPortInUse);
-        			}
-        		} else {
-        			PluginUtil.displayErrorDialog(getShell(),
-        					Messages.dlgInvldPort,
-        					Messages.rngErrMsg);
-        		}
+        		Object modifiedVal)
+        				throws WindowsAzureInvalidProjectOperationException {
+
+        	int dashCnt = StringUtils.countMatches(
+        			modifiedVal.toString().trim(), "-");
+        	try {
+        		endpoint = WAREndpointsUtilMethods.modifyPublicPort(endpoint,
+        				modifiedVal,
+        				dashCnt, windowsAzureRole);
+        	} catch (AzureCommonsException e) {
+        		PluginUtil.displayErrorDialog(getShell(),
+        				Messages.dlgInvldPort,
+        				e.getMessage());
         	}
         }
 
@@ -642,127 +555,21 @@ public class WAREndpoints extends PropertyPage {
          * @throws WindowsAzureInvalidProjectOperationException .
          */
         private void modifyPrivatePort(WindowsAzureEndpoint endpoint,
-                Object modifiedVal)
-                        throws WindowsAzureInvalidProjectOperationException {
-        	/*
-        	 * Check only one '-' is present,
-        	 * while specifying range for Internal end point.
-        	 * If end point is Instance or Input then,
-        	 * it will not satisfy if condition
-        	 * and dash count will be zero.
-        	 */
-        	int dashCnt = 0;
-        	if (endpoint.getEndPointType().
-        			equals(WindowsAzureEndpointType.Internal)) {
-        		dashCnt = StringUtils.countMatches(
-        				modifiedVal.toString().trim(), "-");
-        		if (dashCnt > 1) {
-        			PluginUtil.displayErrorDialog(getShell(),
-        					Messages.dlgInvldPort,
-        					Messages.dashErrMsg);
+        		Object modifiedVal)
+        				throws WindowsAzureInvalidProjectOperationException {
+        	int dashCnt = StringUtils.countMatches(
+        			modifiedVal.toString().trim(), "-");
+        	try {
+        		RoleAndEndpoint obj = WAREndpointsUtilMethods.
+        				modifyPrivatePort(
+        				endpoint, modifiedVal, dashCnt, windowsAzureRole);
+        		if (obj != null) {
+        			endpoint = obj.getEndPt();
+        			windowsAzureRole = obj.getRole();
         		}
-        	}
-        	if (dashCnt <= 1) {
-        		// Check for valid range 1 to 65535
-        		Boolean isPortValid = true;
-        		try {
-        			/*
-        			 * If public port contains '-'
-        			 * then split string and
-        			 * get two integer values out of it.
-        			 * else directly check for value.
-        			 */
-        			if (dashCnt == 1) {
-        				String[] range = modifiedVal.
-        						toString().split("-");
-        				int rngStart = Integer.
-        						parseInt(range[0]);
-        				int rngEnd = Integer.parseInt(range[1]);
-        				if (!(rngStart >= RANGE_MIN
-        						&& rngStart <= RANGE_MAX
-        						&& rngEnd >= RANGE_MIN
-        						&& rngEnd <= RANGE_MAX)) {
-        					isPortValid = false;
-        				}
-        			} else {
-        				// no dash
-        				if (!((modifiedVal.toString().isEmpty()
-        						|| modifiedVal.toString().equalsIgnoreCase("*"))
-        						&& (endpoint.getEndPointType().
-        								equals(WindowsAzureEndpointType.Internal)
-        								|| endpoint.getEndPointType().
-        								equals(WindowsAzureEndpointType.Input)))) {
-        				int port = Integer.
-        						parseInt(modifiedVal.toString());
-        				if (!(port >= RANGE_MIN
-        						&& port <= RANGE_MAX)) {
-        					isPortValid = false;
-        				}
-        			  }
-        			}
-        		} catch (NumberFormatException e) {
-        			isPortValid = false;
-        		}
-        		if (isPortValid) {
-        			// Validate port
-        			String privatePort = modifiedVal.toString();
-        			if (privatePort.isEmpty()
-        					|| privatePort.equalsIgnoreCase("*")) {
-        				privatePort = null;
-        			}
-        			boolean isValid = windowsAzureRole.isValidEndpoint(
-        					endpoint.getName(),
-        					endpoint.getEndPointType(),
-        					privatePort,
-        					endpoint.getPort());
-        			if (isValid) {
-        				boolean canChange = true;
-        				boolean isDebugEnabled = false;
-        				boolean isSuspended = false;
-        				WindowsAzureEndpoint endPt =
-        						windowsAzureRole.getDebuggingEndpoint();
-        				/*
-        				 * check if the endpoint is associated with debug,
-        				 * if yes then set isDebugEnabled to true and
-        				 * store the suspended mode value. Disable debug endpoint
-        				 * and then enable it with the modified endpoint.
-        				 */
-        				if (endPt != null
-        						&& endpoint.getName().equalsIgnoreCase(
-        								endPt.getName())) {
-        					if (privatePort == null) {
-        						PluginUtil.displayErrorDialog(
-        								getShell(),
-        								Messages.dlgInvldPort,
-        								Messages.dbgPort);
-        						canChange = false;
-        					} else {
-        						isSuspended = windowsAzureRole.
-        								getStartSuspended();
-        						windowsAzureRole.setDebuggingEndpoint(null);
-        						isDebugEnabled = true;
-        					}
-        				}
-        				if (canChange) {
-        					endpoint.setPrivatePort(privatePort);
-        					if (isDebugEnabled) {
-        						windowsAzureRole.
-        						setDebuggingEndpoint(endpoint);
-        						windowsAzureRole.
-        						setStartSuspended(isSuspended);
-        					}
-        				}
-        			} else {
-        				PluginUtil.displayErrorDialog(
-        						getShell(),
-        						Messages.dlgInvldPort,
-        						Messages.dlgPortInUse);
-        			}
-        		} else {
-        			PluginUtil.displayErrorDialog(getShell(),
-        					Messages.dlgInvldPort,
-        					Messages.rngErrMsg);
-        		}
+        	} catch (AzureCommonsException e1) {
+        		PluginUtil.displayErrorDialog(getShell(),
+        				Messages.dlgInvldPort, e1.getMessage());
         	}
         }
 

@@ -16,7 +16,6 @@
 package com.persistent.winazureroles;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -43,6 +42,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.model.RoleAndEndpoint;
+import com.microsoftopentechnologies.roleoperations.WARLoadBalanceUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 /**
@@ -290,7 +291,7 @@ public class WARLoadBalance extends PropertyPage {
         try {
         	WindowsAzureEndpoint endpt = null;
         	populateEndPointList();
-        	endpt = findInputEndpt();
+        	endpt = WARLoadBalanceUtilMethods.findInputEndpt(waRole, endpointsList);
 
             if (endpt == null) {
                 boolean choice = MessageDialog.openConfirm(getShell(),
@@ -334,25 +335,10 @@ public class WARLoadBalance extends PropertyPage {
      */
     private WindowsAzureEndpoint createEndpt()
     		throws WindowsAzureInvalidProjectOperationException {
-        WindowsAzureEndpoint endpt = null;
-        StringBuffer endptName = new StringBuffer(Messages.lbHttpEndpt);
-        int index = 1;
-        int httpPort = HTTP_PORT;
-        while (!waRole.isAvailableEndpointName(
-        		endptName.toString(),
-        		WindowsAzureEndpointType.Input)) {
-            endptName.insert(4, index++);
-        }
-
-        while (!waProjManager.isValidPort(String.valueOf(httpPort),
-                WindowsAzureEndpointType.Input)) {
-        	httpPort++;
-        }
-        endpt = waRole.addEndpoint(endptName.toString(),
-                WindowsAzureEndpointType.Input,
-                String.valueOf(HTTP_PRV_PORT),
-                String.valueOf(httpPort));
-        return endpt;
+    	RoleAndEndpoint obj = WARLoadBalanceUtilMethods.createEndpt(waRole, waProjManager);
+    	WindowsAzureEndpoint endpt = obj.getEndPt();
+    	waRole = obj.getRole();
+    	return endpt;
     }
 
     /**
@@ -374,39 +360,6 @@ public class WARLoadBalance extends PropertyPage {
                           endpoint.getPrivatePort()));
             }
         }
-    }
-
-    /**
-     * find input endpoint to associate it with
-     * session affinity.
-     * @return WindowsAzureEndpoint
-     * @throws WindowsAzureInvalidProjectOperationException
-     */
-    private WindowsAzureEndpoint findInputEndpt()
-    		throws WindowsAzureInvalidProjectOperationException {
-        WindowsAzureEndpoint endpt = null;
-        boolean isFirst = true;
-        WindowsAzureEndpoint sslEndPt = waRole.getSslOffloadingInputEndpoint();
-        if (sslEndPt != null) {
-        	endpt = sslEndPt;
-        } else {
-        for (WindowsAzureEndpoint endpoint : endpointsList) {
-            if (endpoint.getEndPointType().
-                    equals(WindowsAzureEndpointType.Input)
-                    && endpoint.getPrivatePort() != null
-                    && !endpoint.equals(waRole.getDebuggingEndpoint())) {
-                if (isFirst) {
-                    endpt = endpoint;
-                    isFirst = false;
-                }
-                if (endpoint.getPort().equalsIgnoreCase(String.valueOf(HTTP_PORT))) {
-                    endpt = endpoint;
-                    break;
-                }
-            }
-        }
-        }
-        return endpt;
     }
 
     @Override
@@ -442,20 +395,11 @@ public class WARLoadBalance extends PropertyPage {
      * @return selectedEndpoint
      */
     private WindowsAzureEndpoint getStickySelectedEndpoint() {
-        List<WindowsAzureEndpoint> endpointsList;
         WindowsAzureEndpoint selectedEndpoint = null;
         try {
-            endpointsList = new ArrayList<WindowsAzureEndpoint>(
-                    waRole.getEndpoints());
-            for (WindowsAzureEndpoint endpoint : endpointsList) {
-                if (comboEndpt.getText().equals(
-                        String.format(Messages.dbgEndPtStr,
-                                endpoint.getName(),
-                                endpoint.getPort(),
-                                endpoint.getPrivatePort()))) {
-                    selectedEndpoint = endpoint;
-                }
-            }
+            selectedEndpoint = WARLoadBalanceUtilMethods.
+            		getStickySelectedEndpoint(waRole,
+            				comboEndpt.getText());
         } catch (WindowsAzureInvalidProjectOperationException e) {
         	PluginUtil.displayErrorDialogAndLog(
         			getShell(),

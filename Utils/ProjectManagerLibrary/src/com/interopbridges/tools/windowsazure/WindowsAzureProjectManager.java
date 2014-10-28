@@ -1,19 +1,18 @@
 /**
- * Copyright 2013 Persistent Systems Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.interopbridges.tools.windowsazure;
 
 import java.io.BufferedOutputStream;
@@ -2517,13 +2516,17 @@ public class WindowsAzureProjectManager {
 	}
 
 	/**
-	 * API returns sorted array of third party JDK names.
-	 * 
+	 * API returns array of third party JDK names
+	 * in the order they appear in componentsets.xml.
+	 * By default method won't include JDKs with status="deprecated"
+	 * but in special case where
+	 * user have already used deprecated JDK, we will add that to list.
 	 * @param templateFile
+	 * @param depJdkName - deprecated JDK name which should be added to list.
 	 * @return
 	 * @throws WindowsAzureInvalidProjectOperationException
 	 */
-	public static String[] getThirdPartyJdkNames(File templateFile)
+	public static String[] getThirdPartyJdkNames(File templateFile, String depJdkName)
 			throws WindowsAzureInvalidProjectOperationException {
 		try {
 			ArrayList<String> thrdJdkList = new ArrayList<String>();
@@ -2533,7 +2536,19 @@ public class WindowsAzureProjectManager {
 					Element ele = (Element) compSet.item(i);
 					String name = ele.getAttribute("name");
 					if (!name.equalsIgnoreCase("JDK")) {
-						thrdJdkList.add(name);
+						String status = ele.getAttribute("status");
+						if (!status.equalsIgnoreCase("deprecated")) {
+							// not deprecated then simply add
+							thrdJdkList.add(name);
+						} else if(status.equalsIgnoreCase("deprecated")
+								&& !depJdkName.isEmpty()
+								&& name.equalsIgnoreCase(depJdkName)) {
+							/*
+							 * deprecated but it needs to be added
+							 * as user have used that JDK in project.
+							 */
+							thrdJdkList.add(name);
+						}
 					}
 				}
 			}

@@ -45,14 +45,12 @@ import org.eclipse.ui.ide.IDE;
 
 import waeclipseplugin.Activator;
 
-import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
-import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
-import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.microsoftopentechnologies.roleoperations.JdkSrvConfigUtilMethods;
+import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
 import com.persistent.ui.preference.StorageAccountsPreferencePage;
 import com.persistent.ui.projwizard.WAProjectWizard;
 
@@ -1071,42 +1069,8 @@ public class JdkSrvConfig {
 	 */
 	public static Combo urlModifyListner(String url,
 			String nameInUrl, Combo combo) {
-		String endpoint = StorageRegistryUtilMethods.
-				getServiceEndpoint(url);
-		String accNameToSet = accNames[0];
-		if (nameInUrl != null
-				&& !nameInUrl.isEmpty()
-				&& endpoint != null) {
-			// check storage account name present in list
-			if (Arrays.asList(accNames).contains(nameInUrl)) {
-				/*
-				 * check endpoint of storage account from list
-				 * and from URL matches then
-				 * only select storage account otherwise select none.
-				 */
-				int index = Arrays.asList(accNames).indexOf(nameInUrl);
-				String endpointInReg = StorageRegistryUtilMethods.
-						getServiceEndpoint(StorageAccountRegistry.
-								getStrgList().get(index - 1).getStrgUrl());
-				if (endpoint.equalsIgnoreCase(endpointInReg)) {
-					accNameToSet = nameInUrl;
-				}
-			} else if (StorageRegistryUtilMethods.
-					isDuplicatePresent()) {
-				/*
-				 * If accounts with same name but
-				 * different service URL exists
-				 * then check concatenation of account name
-				 * and service endpoint exists in list.
-				 */
-				String accAndUrl = StorageRegistryUtilMethods.
-						getAccNmSrvcUrlToDisplay(nameInUrl, endpoint);
-				if (Arrays.asList(accNames).contains(accAndUrl)) {
-					accNameToSet = accAndUrl;
-				}
-			}
-		}
-		combo.setText(accNameToSet);
+		combo.setText(JdkSrvConfigUtilMethods.
+				getNameToSet(url, nameInUrl, accNames));
 		return combo;
 	}
 
@@ -1129,7 +1093,8 @@ public class JdkSrvConfig {
 			// For JDK tab and auto upload option selected
 			if (tabControl != null && JDK_TXT.equals(tabControl)) {
 				if (autoDlRdCldBtn.getSelection()) {
-					urlTxt.setText(prepareCloudBlobURL(txtJdk.getText() , newUrl));
+					urlTxt.setText(JdkSrvConfigUtilMethods.
+							prepareCloudBlobURL(txtJdk.getText() , newUrl));
 					return urlTxt;
 				} else if (thrdPrtJdkBtn.getSelection()) {
 					urlTxt.setText(prepareUrlForThirdPartyJdk(
@@ -1141,7 +1106,8 @@ public class JdkSrvConfig {
 			// For Server and auto upload option selected
 			if (tabControl != null && SRV_TXT.equals(tabControl)
 					&& autoDlRdCldBtnSrv.getSelection()) {
-				String value = prepareCloudBlobURL(txtDir.getText() , newUrl);
+				String value = JdkSrvConfigUtilMethods.
+						prepareCloudBlobURL(txtDir.getText() , newUrl);
 				urlTxt.setText(value);
 				return urlTxt;
 			}
@@ -1185,47 +1151,6 @@ public class JdkSrvConfig {
 	}
 
 	/**
-	 * This API appends eclipse container name and filename to url
-	 * in order to construct blob url.
-	 * @param filePath
-	 * @param newUrl
-	 * @return
-	 */
-	public static String prepareCloudBlobURL(String filePath,
-			String newUrl) {
-		if ((filePath == null || filePath.length() == 0)
-			|| (newUrl == null || newUrl.length() == 0)) {
-			return "";
-		}
-
-		File jdkPath = new File(filePath);
-		return new StringBuilder(newUrl).append(Messages.eclipseDeployContainer)
-											.append(FWD_SLASH)
-											.append(jdkPath.getName().trim().replaceAll("\\s+", "-"))
-											.append(".zip").toString();
-	}
-
-	/**
-	 * This API appends eclipse container name and filename to url
-	 * in order to construct blob url.
-	 * @param asName
-	 * @param url
-	 * @return
-	 */
-	public static String prepareUrlForApp(String asName,
-			String url) {
-		if ((asName == null || asName.length() == 0)
-				|| (url == null || url.length() == 0)) {
-			return "";
-		}
-
-		return new StringBuilder(url)
-		.append(Messages.eclipseDeployContainer)
-		.append(FWD_SLASH)
-		.append(asName).toString();
-	}
-
-	/**
 	 * Method prepares third party JDK URL
 	 * by appending eclipse container name and
 	 * filename from third party URL.
@@ -1235,15 +1160,8 @@ public class JdkSrvConfig {
 	public static String prepareUrlForThirdPartyJdk(String jdkName, String url) {
 		String finalUrl = "";
 		try {
-			String cloudValue = WindowsAzureProjectManager.
-					getCloudValue(jdkName, cmpntFile);
-			String dirName = cloudValue.substring(cloudValue.lastIndexOf("\\") + 1,
-					cloudValue.length());
-			finalUrl = new StringBuilder(url)
-			.append(Messages.eclipseDeployContainer)
-			.append(FWD_SLASH)
-			.append(dirName)
-			.append(".zip").toString();
+			finalUrl = JdkSrvConfigUtilMethods.
+					prepareUrlForThirdPartyJdk(jdkName, url, cmpntFile);
 		} catch (Exception ex) {
 			Activator.getDefault().log(ex.getMessage());
 		}
@@ -1312,43 +1230,8 @@ public class JdkSrvConfig {
 	 */
 	public static Combo populateStrgNameAsPerKey(String key,
 			Combo combo) {
-		boolean isSet = false;
-		String accName = accNames[0];
-		if (key != null) {
-			// get index of account which has matching access key
-			int index = StorageRegistryUtilMethods.
-					getStrgAccIndexAsPerKey(key);
-			if (index >= 0) {
-				StorageAccount account = StorageAccountRegistry.
-						getStrgList().get(index);
-				accName = account.getStrgName();
-				// check storage account name present in list
-				if (Arrays.asList(accNames).contains(accName)) {
-					isSet = true;
-				} else if (StorageRegistryUtilMethods.
-						isDuplicatePresent()) {
-					/*
-					 * If accounts with same name but
-					 * different service URL exists
-					 * then check concatenation of account name
-					 * and service endpoint exists in list.
-					 */
-					String endpoint = StorageRegistryUtilMethods.
-							getServiceEndpoint(account.getStrgUrl());
-					String accAndUrl = StorageRegistryUtilMethods.
-							getAccNmSrvcUrlToDisplay(accName, endpoint);
-					if (Arrays.asList(accNames).contains(accAndUrl)) {
-						accName = accAndUrl;
-						isSet = true;
-					}
-				}
-			}
-		}
-		if (isSet) {
-			combo.setText(accName);
-		} else {
-			combo.setText(accNames[0]);
-		}
+		combo.setText(JdkSrvConfigUtilMethods.
+				getNameToSetAsPerKey(key, accNames));
 		return combo;
 	}
 
@@ -1454,11 +1337,9 @@ public class JdkSrvConfig {
 	/**
 	 * Utility method to update java home value.
 	 */
-	public static void updateJDKHome(WindowsAzureRole role) {
+	public static void updateJDKHome(String jdkPath) {
 		try {
-			String jdkPath = getTxtJdk().getText();
-			String jdkHome = role.constructJdkHome(jdkPath,
-					cmpntFile);
+			String jdkHome = WindowsAzureRole.constructJdkHome(jdkPath, cmpntFile);
 			getTxtJavaHome().setText(jdkHome);
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			Activator.getDefault().log(e.getMessage());
@@ -1468,11 +1349,10 @@ public class JdkSrvConfig {
 	/**
 	 * Utility method to update server home value.
 	 */
-	public static void updateServerHome(WindowsAzureRole role) {
+	public static void updateServerHome(String srvPath) {
 		// set server home directory text box value
-		String srvPath = getTxtDir().getText();
 		try {
-			String srvHome = role.constructServerHome(
+			String srvHome = WindowsAzureRole.constructServerHome(
 					getComboServer().getText(),
 					srvPath,
 					cmpntFile);
@@ -1508,7 +1388,7 @@ public class JdkSrvConfig {
 		String directory = null;
 		try {
 			String oldTxt = getTxtJdk().getText();
-			String path = PluginUtil.
+			String path = WAEclipseHelperMethods.
 					jdkDefaultDirectory(oldTxt);
 			DirectoryDialog dialog =
 					new DirectoryDialog(new Shell());
@@ -1618,38 +1498,6 @@ public class JdkSrvConfig {
 				Activator.getDefault().log(e.getMessage(), e);
 			}
 		}
-	}
-
-	/**
-	 * Returns true if auto upload is selected for JDK else false.
-	 * @return
-	 * @throws WindowsAzureInvalidProjectOperationException
-	 */
-	public static boolean isJDKAutoUploadPrevSelected(WindowsAzureRole role)
-			throws WindowsAzureInvalidProjectOperationException {
-		WARoleComponentCloudUploadMode uploadMode =
-				role.getJDKCloudUploadMode();
-		if (uploadMode != null
-				&& uploadMode.equals(WARoleComponentCloudUploadMode.auto)) {
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Returns true if auto upload is selected for Server else false.
-	 * @return
-	 * @throws WindowsAzureInvalidProjectOperationException
-	 */
-	public static boolean isServerAutoUploadPrevSelected(WindowsAzureRole role)
-			throws WindowsAzureInvalidProjectOperationException {
-		WARoleComponentCloudUploadMode uploadMode =
-				role.getServerCloudUploadMode();
-		if (uploadMode != null
-				&& uploadMode.equals(WARoleComponentCloudUploadMode.auto)) {
-			return true;
-		}
-		return false;
 	}
 
 	/**

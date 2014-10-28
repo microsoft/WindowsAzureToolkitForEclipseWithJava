@@ -1,21 +1,19 @@
-package com.interopbridges.tools.windowsazure;
-
 /**
- * Copyright 2013 Persistent Systems Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
+package com.interopbridges.tools.windowsazure;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1241,7 +1239,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API is for enabling debugging by creating all the necessary XML
-	 * markup if it’s not already there.
+	 * markup if itï¿½s not already there.
 	 * 
 	 * @param endpoint
 	 *            as debugging end point
@@ -1274,7 +1272,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API on WindowsAzureRole class to disable debugging by removing the
-	 * entire –agentlib:jdwp=… setting from the _JAVA_OPTIONS variable but
+	 * entire ï¿½agentlib:jdwp=ï¿½ setting from the _JAVA_OPTIONS variable but
 	 * leaving others that the user may have put in there in place, unless there
 	 * are no other options specified in it, then also removing the
 	 * corresponding <Variable> element itself.
@@ -1318,14 +1316,14 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API is for determines whether debugging has been enabled. Returns
-	 * True by testing _JAVA_OPTIONS for the presence of: the “-agentlib:jdwp=“
-	 * option setting, AND the “transport=dt_socket” subsetting inside it AND
-	 * the “server=y” subsetting Else False.
+	 * True by testing _JAVA_OPTIONS for the presence of: the ï¿½-agentlib:jdwp=ï¿½
+	 * option setting, AND the ï¿½transport=dt_socketï¿½ subsetting inside it AND
+	 * the ï¿½server=yï¿½ subsetting Else False.
 	 * 
 	 * @return isEbabled .
 	 */
 	protected Boolean getDebuggingEnabled() {
-		// =“-agentlib:jdwp=transport=dt_socket,server=y,address=8081,suspend=n
+		// =ï¿½-agentlib:jdwp=transport=dt_socket,server=y,address=8081,suspend=n
 		Boolean isEnabled = false;
 		try {
 			XPath xPath = XPathFactory.newInstance().newXPath();
@@ -1359,7 +1357,7 @@ public class WindowsAzureRole {
 	/**
 	 * This API is to return the WindowsAzureEndpoint object whose local port is
 	 * the same as the port inside the address subsetting form the _JAVA_OPTIONS
-	 * variable’s -agentlib:jdwp setting.
+	 * variableï¿½s -agentlib:jdwp setting.
 	 * 
 	 * @return WindowsAzureEndpoint .
 	 * @throws WindowsAzureInvalidProjectOperationException .
@@ -1426,7 +1424,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API sets the local port of the WindowsAzureEndpoint object as the
-	 * address subsetting of the –agentlib:jdwp setting. Throws an exception if
+	 * address subsetting of the ï¿½agentlib:jdwp setting. Throws an exception if
 	 * debugging is not enabled.
 	 * 
 	 * @param endPoint
@@ -1499,8 +1497,8 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API on WindowsAzureRole class to find whether the JVM should start
-	 * in suspended mode. This corresponds to the “suspend=y|n” subsetting of
-	 * the –agentlib:jdwp setting. Throws an exception if debugging is not
+	 * in suspended mode. This corresponds to the ï¿½suspend=y|nï¿½ subsetting of
+	 * the ï¿½agentlib:jdwp setting. Throws an exception if debugging is not
 	 * enabled.
 	 * 
 	 * @return Boolean status
@@ -1548,8 +1546,8 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API on WindowsAzureRole class to specify whether the JVM should
-	 * start in suspended mode. This corresponds to the “suspend=y|n” subsetting
-	 * of the –agentlib:jdwp setting. Throws an exception if debugging is not
+	 * start in suspended mode. This corresponds to the ï¿½suspend=y|nï¿½ subsetting
+	 * of the ï¿½agentlib:jdwp setting. Throws an exception if debugging is not
 	 * enabled.
 	 * 
 	 * @param status
@@ -3141,7 +3139,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API exposes the source path of the JDK if one is configured,
-	 * depending on the presence of Xpath component[@type=“jdk.deploy”] inside
+	 * depending on the presence of Xpath component[@type=ï¿½jdk.deployï¿½] inside
 	 * the appropriate <workerrole> element in package.xml. If no JDK
 	 * configured, the API shall return NULL. The return string comes directly
 	 * from @importsrc
@@ -3182,7 +3180,7 @@ public class WindowsAzureRole {
 	 * @return
 	 * @throws WindowsAzureInvalidProjectOperationException
 	 */
-	public String constructJdkHome(String path, File templateFile)
+	public static String constructJdkHome(String path, File templateFile)
 			throws WindowsAzureInvalidProjectOperationException {
 		String envVal = "";
 		try {
@@ -3227,7 +3225,7 @@ public class WindowsAzureRole {
 	 * @return
 	 * @throws WindowsAzureInvalidProjectOperationException
 	 */
-	public String constructServerHome(String name, String path,
+	public static String constructServerHome(String name, String path,
 			File templateFile)
 			throws WindowsAzureInvalidProjectOperationException {
 		String envVal = "";
@@ -3267,10 +3265,10 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API sets the JDK source path, adding the JDK configuration from the
-	 * template file (e.g. componentsets.xml ) if it’s not in package.xml yet.
+	 * template file (e.g. componentsets.xml ) if itï¿½s not in package.xml yet.
 	 * Only one JDK can be configured per role. When set to NULL, all
 	 * <component> and <startupenv> XML with @type starting with the substring
-	 * “server.” shall be removed from <workerrole>
+	 * ï¿½server.ï¿½ shall be removed from <workerrole>
 	 * 
 	 * @param path
 	 * @param templateFile
@@ -3417,11 +3415,11 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API sets the Server source path and name, finding the right
-	 * <componentset> based on the provided name and @type=“server”. It adds the
-	 * Server configuration from the template file if it’s not in package.xml
+	 * <componentset> based on the provided name and @type=ï¿½serverï¿½. It adds the
+	 * Server configuration from the template file if itï¿½s not in package.xml
 	 * yet (or replacing whatever is there). Only one server can be configured
 	 * per role. When set to NULL, all <component> and <startupenv> XML with @type
-	 * starting with the substring “server.” shall be removed from <workerrole>
+	 * starting with the substring ï¿½server.ï¿½ shall be removed from <workerrole>
 	 * 
 	 * @param name
 	 * @param path
@@ -3730,7 +3728,7 @@ public class WindowsAzureRole {
 	 * This function expose the source path and the name of the server if one is
 	 * configured, depending on the presence of the special Ant property storing
 	 * the name of the server and then the presence of
-	 * component[@type=“server.deploy”] inside the appropriate <workerrole>
+	 * component[@type=ï¿½server.deployï¿½] inside the appropriate <workerrole>
 	 * element. If no server is configured, return NULL.
 	 * 
 	 * @return
@@ -3761,7 +3759,7 @@ public class WindowsAzureRole {
 	 * This function expose the source path and the name of the server if one is
 	 * configured, depending on the presence of the special Ant property storing
 	 * the name of the server and then the presence of
-	 * component[@type=“server.deploy”] inside the appropriate <workerrole>
+	 * component[@type=ï¿½server.deployï¿½] inside the appropriate <workerrole>
 	 * element. If no server is configured .
 	 * 
 	 * @param path
@@ -3820,7 +3818,7 @@ public class WindowsAzureRole {
 	 * This function expose the source path and the name of the server if one is
 	 * configured, depending on the presence of the special Ant property storing
 	 * the name of the server and then the presence of
-	 * component[@type=“server.deploy”] inside the appropriate <workerrole>
+	 * component[@type=ï¿½server.deployï¿½] inside the appropriate <workerrole>
 	 * element. If no server is configured, return NULL.
 	 * 
 	 * @return
@@ -3848,9 +3846,9 @@ public class WindowsAzureRole {
 	}
 
 	/**
-	 * This finds the appropriate <component> template (@type=“server.app”)
+	 * This finds the appropriate <component> template (@type=ï¿½server.appï¿½)
 	 * inside the provided componentsets.xml file, copies it over right before
-	 * the <component> element with @type=“server.start” in package.xml, and
+	 * the <component> element with @type=ï¿½server.startï¿½ in package.xml, and
 	 * sets its @importsrc, @importmethod (auto or copy), and @importas, as
 	 * figured out by the plugin depending on the user input.
 	 * 
@@ -3977,7 +3975,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API will remove an application from package.xml. This deletes the
-	 * <component> (@type=“server.app” and @name=“?”) inside the appropriate
+	 * <component> (@type=ï¿½server.appï¿½ and @name=ï¿½?ï¿½) inside the appropriate
 	 * <workerrole> element in package.xml.
 	 * 
 	 * @throws WindowsAzureInvalidProjectOperationException
@@ -4790,7 +4788,7 @@ public class WindowsAzureRole {
 	 * getCacheMemoryPercent() returns 0, or name is null or in use by another
 	 * cache (case insensitive comparison) or port is not between 1-65535, or
 	 * already in use by anything else Create internal endpoint named
-	 * “memcache_name” and the supplied port Inject the new cache object into
+	 * ï¿½memcache_nameï¿½ and the supplied port Inject the new cache object into
 	 * the JSON with the specified name and return a WindowsAzureNamedCache
 	 * object from the API.
 	 * 

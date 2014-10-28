@@ -1,18 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
+/**
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 
 package com.gigaspaces.azure.wizards;
 
@@ -28,12 +28,13 @@ import org.eclipse.ui.console.MessageConsoleStream;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.deploy.DeploymentEventArgs;
-import com.gigaspaces.azure.deploy.DeploymentEventListener;
-import com.gigaspaces.azure.deploy.DeploymentException;
 import com.gigaspaces.azure.deploy.DeploymentManager;
-import com.gigaspaces.azure.deploy.UploadProgressEventArgs;
-import com.gigaspaces.azure.deploy.UploadProgressEventListener;
+import com.microsoftopentechnologies.deploy.deploy.DeploymentEventArgs;
+import com.microsoftopentechnologies.deploy.deploy.DeploymentEventListener;
+import com.microsoftopentechnologies.deploy.deploy.UploadProgressEventArgs;
+import com.microsoftopentechnologies.deploy.deploy.UploadProgressEventListener;
+import com.microsoftopentechnologies.exception.DeploymentException;
+
 
 public class WindowsAzureDeploymentJob extends Job {
 

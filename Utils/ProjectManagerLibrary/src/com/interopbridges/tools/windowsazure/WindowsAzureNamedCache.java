@@ -1,3 +1,18 @@
+/**
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.interopbridges.tools.windowsazure;
 
 import java.util.List;
@@ -78,7 +93,7 @@ public class WindowsAzureNamedCache {
 	 * This API will sets the name of cache. Throw if name is null or in use by
 	 * another cache (case insensitive comparison) the associated endpoint
 	 * cannot be renamed to "memchache_" + name (e.g. it's duplicate) the
-	 * current name is "default" – that one cannot be renamed - Else: change the
+	 * current name is default that one cannot be renamed - Else: change the
 	 * name of the cache in JSON (name) rename the associated endpoint to
 	 * "memcache_" + name
 	 * 
@@ -250,7 +265,7 @@ public class WindowsAzureNamedCache {
 
 	/**
 	 * This API is to delete the named cache Throw exception if this is the
-	 * “default” cache, because that cache cannot be deleted- Else: remove the
+	 * default cache, because that cache cannot be deleted- Else: remove the
 	 * corresponding cache object declaration from the JSON (rewrite the JSON)
 	 * remove the corresponding endpoint
 	 * 

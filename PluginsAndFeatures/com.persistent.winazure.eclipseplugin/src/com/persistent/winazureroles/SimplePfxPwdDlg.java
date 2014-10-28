@@ -28,8 +28,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
-import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.microsoftopentechnologies.wacommonutil.CerPfxUtil;
 
 public class SimplePfxPwdDlg extends org.eclipse.jface.dialogs.Dialog {
 	private Text txtPwd;

@@ -34,8 +34,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
-import com.microsoftopentechnologies.wacommon.utils.WACommonException;
+import com.microsoftopentechnologies.wacommonutil.PreferenceSetUtil;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.WAEclipseHelper;
 /**
@@ -130,16 +129,17 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 	 * after okToLeave then value modified by user is populated.
 	 */
 	private void setToDefaultName() {
+		String filePath = PluginUtil.getPrefFilePath();
 		try {
 			prefNameCmb.setItems(PreferenceSetUtil.
-					getPrefSetNameArr());
+					getPrefSetNameArr(filePath));
 			if (!valOkToLeave.isEmpty()) {
 				prefNameCmb.setText(valOkToLeave);
 			} else {
 				prefNameCmb.setText(PreferenceSetUtil.
-						getSelectedPreferenceSetName());
+						getSelectedPreferenceSetName(filePath));
 			}
-		} catch (WACommonException e) {
+		} catch (Exception e) {
 			PluginUtil.displayErrorDialog(getShell(),
 					Messages.errTtl,
 					Messages.getPrefErMsg);
@@ -154,16 +154,17 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 	 */
 	private void populateValues() {
 		String nameInCombo = prefNameCmb.getText();
+		String filePath = PluginUtil.getPrefFilePath();
 		try {
 			txtPortal.setText(PreferenceSetUtil.
-					getSelectedPortalURL(nameInCombo));
+					getSelectedPortalURL(nameInCombo, filePath));
 			txtMangmnt.setText(PreferenceSetUtil.
-					getManagementURL(nameInCombo));
+					getManagementURL(nameInCombo, filePath));
 			txtBlobUrl.setText(PreferenceSetUtil.
-					getBlobServiceURL(nameInCombo));
+					getBlobServiceURL(nameInCombo, filePath));
 			txtPubSet.setText(PreferenceSetUtil.
-					getSelectedPublishSettingsURL(nameInCombo));
-		} catch (WACommonException e) {
+					getSelectedPublishSettingsURL(nameInCombo, filePath));
+		} catch (Exception e) {
 			PluginUtil.displayErrorDialog(getShell(),
 					Messages.errTtl,
 					Messages.getPrefErMsg);
@@ -282,11 +283,11 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 			 * but still we need to create attribute.
 			 */
 			if (isPerformOk) {
-				PreferenceSetUtil.setPrefDefault(cmbValue);
+				PreferenceSetUtil.setPrefDefault(cmbValue, PluginUtil.getPrefFilePath());
 			} else {
 				valOkToLeave = cmbValue;
 			}
-		} catch (WACommonException e) {
+		} catch (Exception e) {
 			PluginUtil.displayErrorDialog(getShell(),
 					Messages.errTtl,
 					Messages.setPrefErMsg);

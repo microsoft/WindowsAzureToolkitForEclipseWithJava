@@ -25,8 +25,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 
-import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
-import com.microsoftopentechnologies.wacommon.utils.WACommonException;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.microsoftopentechnologies.wacommonutil.PreferenceSetUtil;
 /**
  * Class configure publish settings download dialog.
  * Opens browser to download publish settings file.
@@ -66,11 +66,12 @@ public class PublishSettingsDialog extends Dialog {
 		browser.setLayout(layout);
 		browser.setSize(900, 600);
 		try {
+			String filePath = PluginUtil.getPrefFilePath();
 			browser.setUrl(PreferenceSetUtil.
 					getSelectedPublishSettingsURL(
 							PreferenceSetUtil.
-							getSelectedPreferenceSetName()));
-		} catch (WACommonException e) {
+							getSelectedPreferenceSetName(filePath), filePath));
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return parent;

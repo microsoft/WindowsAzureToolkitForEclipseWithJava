@@ -16,7 +16,6 @@
 package com.persistent.winazureroles;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -53,6 +52,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureLocalStorage;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.exception.AzureCommonsException;
+import com.microsoftopentechnologies.roleoperations.WARLocalStorageUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
@@ -401,36 +402,14 @@ public class WARLocalStorage extends PropertyPage {
           * @throws WindowsAzureInvalidProjectOperationException .
           */
          private void modifyName(WindowsAzureLocalStorage loclRes,
-                 Object modifiedVal)
-                         throws WindowsAzureInvalidProjectOperationException {
-             // Validate resource name
-             if (modifiedVal.toString().isEmpty()) {
-                 PluginUtil.displayErrorDialog(getShell(),
-                		 Messages.lclStgNameErrTtl,
-                		 Messages.lclStgNameEmpMsg);
-             } else {
-                     StringBuffer strBfr =
-                    		 new StringBuffer(modifiedVal.toString());
-                     boolean isValidName = true;
-                     for (Iterator<String> iterator =
-                    		 mapLclStg.keySet().iterator();
-                             iterator.hasNext();) {
-                         String key = iterator.next();
-                         if (key.equalsIgnoreCase(strBfr.toString())) {
-                             isValidName = false;
-                             break;
-                         }
-                     }
-                     if (isValidName || modifiedVal.toString().equalsIgnoreCase(
-                             loclRes.getName())) {
-                         loclRes.setName(modifiedVal.toString());
-                     } else {
-                    	 PluginUtil.displayErrorDialog(
-                    			 getShell(),
-                    			 Messages.lclStgNameErrTtl,
-                    			 Messages.lclStgNameErrMsg);
-                     }
-             }
+        		 Object modifiedVal)
+        				 throws WindowsAzureInvalidProjectOperationException {
+        	 try {
+        		 loclRes = WARLocalStorageUtilMethods.
+        				 modifyName(loclRes, modifiedVal, mapLclStg);
+        	 } catch (AzureCommonsException e) {
+        		 PluginUtil.displayErrorDialog(getShell(), Messages.lclStgNameErrTtl, e.getMessage());
+        	 }
          }
 
          /**
@@ -492,51 +471,14 @@ public class WARLocalStorage extends PropertyPage {
           * @throws WindowsAzureInvalidProjectOperationException .
           */
          private void modifyPath(WindowsAzureLocalStorage loclRes,
-                 Object modifiedVal)
-                         throws WindowsAzureInvalidProjectOperationException {
-             StringBuffer strBfr = new StringBuffer(modifiedVal.toString());
-             if (modifiedVal.toString().isEmpty()) {
-                 loclRes.setPathEnv("");
-             }
-             else if (!modifiedVal.toString().
-            		 equalsIgnoreCase(loclRes.getPathEnv())) {
-                 try {
-                     boolean isPathValid = true;
-                     for (Iterator<WindowsAzureLocalStorage> iterator =
-                             mapLclStg.values().iterator();
-                    		 iterator.hasNext();) {
-                         WindowsAzureLocalStorage type =
-                        		 (WindowsAzureLocalStorage) iterator.next();
-                         if (type.getPathEnv().
-                        		 equalsIgnoreCase(strBfr.toString())) {
-                             isPathValid = false;
-                             break;
-                         }
-                     }
-                     if (windowsAzureRole.getRuntimeEnv().
-                    		 containsKey(strBfr.toString())) {
-                         isPathValid = false;
-                         PluginUtil.displayErrorDialog(getShell(),
-                        		 Messages.lclStgPathErrTtl,
-                        		 Messages.lclStgEnvVarMsg);
-                     }
-                     else if (isPathValid
-                    		 || modifiedVal.toString().equalsIgnoreCase(
-                             loclRes.getPathEnv())) {
-                         loclRes.setPathEnv(modifiedVal.toString());
-                     } else {
-                         PluginUtil.displayErrorDialog(getShell(),
-                        		 Messages.lclStgPathErrTtl,
-                        		 Messages.lclStgPathErrMsg);
-                     }
-                 }
-                 catch (Exception e) {
-                	 PluginUtil.displayErrorDialogAndLog(
-                			 getShell(),
-                			 Messages.lclStgSetErrTtl,
-                			 Messages.lclStgSetErrMsg, e);
-                 }
-             }
+        		 Object modifiedVal)
+        				 throws WindowsAzureInvalidProjectOperationException {
+        	 try {
+        		 WARLocalStorageUtilMethods.modifyPath(
+        				 loclRes, modifiedVal, mapLclStg, windowsAzureRole);
+        	 } catch (AzureCommonsException e1) {
+        		 PluginUtil.displayErrorDialog(getShell(), Messages.lclStgPathErrTtl, e1.getMessage());
+        	 }
          }
 
          @SuppressWarnings("unchecked")

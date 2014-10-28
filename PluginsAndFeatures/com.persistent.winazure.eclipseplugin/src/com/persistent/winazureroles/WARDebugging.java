@@ -48,6 +48,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.model.RoleAndEndpoint;
+import com.microsoftopentechnologies.roleoperations.WARDebuggingUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
@@ -68,7 +70,6 @@ public class WARDebugging extends PropertyPage {
     private Map<String,String> debugMap = new HashMap<String, String>();
     private int childOk;
     private boolean isPageDisplayed = false;
-    private final int DEBUG_PORT = 8090;
 
     @Override
     public String getTitle() {
@@ -363,42 +364,18 @@ public class WARDebugging extends PropertyPage {
             comboEndPoint.setEnabled(true);
             jvmCheck.setEnabled(true);
             lblDebugEndPoint.setEnabled(true);
-            int endPointSuffix = 1;
-            StringBuffer strBfr = new StringBuffer(Messages.dlgDebug);
-            WindowsAzureEndpoint endpt = null;
-            while (!windowsAzureRole.
-            		isAvailableEndpointName(strBfr.toString(),
-            				WindowsAzureEndpointType.Input)) {
-                strBfr.delete(9, strBfr.length());
-                strBfr.append(endPointSuffix++);
-            }
-            int publicPort = DEBUG_PORT;
-            while (!waProjManager.isValidPort(
-                    String.valueOf(publicPort),
-                    WindowsAzureEndpointType.Input)) {
-                publicPort++;
-            }
-            int privatePort = DEBUG_PORT;
-            while (!waProjManager
-                    .isValidPort(String.valueOf(privatePort),
-                            WindowsAzureEndpointType.Input)) {
-                privatePort++;
-            }
-            if (windowsAzureRole.isValidEndpoint(strBfr.toString(),
-                    WindowsAzureEndpointType.Input,
-                    String.valueOf(privatePort), String.valueOf(publicPort))) {
-                endpt = windowsAzureRole
-                        .addEndpoint(strBfr.toString(),
-                                WindowsAzureEndpointType.Input,
-                                String.valueOf(privatePort),
-                                String.valueOf(publicPort));
 
-                populateEndPointList();
-                comboEndPoint.setText(String.format(Messages.dbgEndPtStr,
-                        endpt.getName(),
-                        endpt.getPort(),
-                        endpt.getPrivatePort()));
-            }
+            RoleAndEndpoint obj = WARDebuggingUtilMethods.
+            		getDebuggingEndpoint(windowsAzureRole, waProjManager);
+            windowsAzureRole = obj.getRole();
+            WindowsAzureEndpoint endpt = obj.getEndPt();
+
+            populateEndPointList();
+            comboEndPoint.setText(String.format(Messages.dbgEndPtStr,
+                    endpt.getName(),
+                    endpt.getPort(),
+                    endpt.getPrivatePort()));
+
             dbgSelEndpoint = endpt;
         } catch (WindowsAzureInvalidProjectOperationException e) {
         	PluginUtil.displayErrorDialogAndLog(
@@ -414,27 +391,17 @@ public class WARDebugging extends PropertyPage {
      * @return selectedEndpoint
      */
     private WindowsAzureEndpoint getDebugSelectedEndpoint() {
-        List<WindowsAzureEndpoint> endpointsList;
-        WindowsAzureEndpoint selectedEndpoint = null;
-        try {
-            endpointsList = new ArrayList<WindowsAzureEndpoint>(
-                    windowsAzureRole.getEndpoints());
-            for (WindowsAzureEndpoint endpoint : endpointsList) {
-                if (comboEndPoint.getText().equals(
-                        String.format(Messages.dbgEndPtStr,
-                                endpoint.getName(),
-                                endpoint.getPort(),
-                                endpoint.getPrivatePort()))) {
-                    selectedEndpoint = endpoint;
-                }
-            }
-        } catch (WindowsAzureInvalidProjectOperationException e) {
-        	PluginUtil.displayErrorDialogAndLog(
-        			getShell(),
-        			Messages.adRolErrTitle,
-        			Messages.dlgDbgErr, e);
-        }
-        return selectedEndpoint;
+    	WindowsAzureEndpoint selectedEndpoint = null;
+    	try {
+    		selectedEndpoint = WARDebuggingUtilMethods.
+    				getDebugSelectedEndpoint(windowsAzureRole, comboEndPoint.getText());
+    	} catch (WindowsAzureInvalidProjectOperationException e) {
+    		PluginUtil.displayErrorDialogAndLog(
+    				getShell(),
+    				Messages.adRolErrTitle,
+    				Messages.dlgDbgErr, e);
+    	}
+    	return selectedEndpoint;
     }
 
     /**

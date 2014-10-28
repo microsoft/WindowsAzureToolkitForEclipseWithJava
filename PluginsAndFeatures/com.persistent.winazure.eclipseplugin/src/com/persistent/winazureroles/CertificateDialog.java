@@ -18,11 +18,7 @@ package com.persistent.winazureroles;
 import java.io.FileInputStream;
 import java.net.URL;
 import java.security.cert.X509Certificate;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -48,10 +44,12 @@ import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureCertificate;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.exception.AzureCommonsException;
+import com.microsoftopentechnologies.roleoperations.CertificateDialogUtilMethods;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
-import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.microsoftopentechnologies.wacommonutil.CerPfxUtil;
 import com.persistent.util.WAEclipseHelper;
 
 public class CertificateDialog extends TitleAreaDialog {
@@ -223,43 +221,12 @@ public class CertificateDialog extends TitleAreaDialog {
 
 	private boolean validateNameAndThumbprint(String name, String thumb) {
 		boolean retVal = true;
-		if (WAEclipseHelper.isAlphaNumericUnderscore(name)) {
-			for (Iterator<Entry<String, WindowsAzureCertificate>> iterator =
-					mapCert.entrySet().iterator();
-					iterator.hasNext();) {
-				WindowsAzureCertificate cert = iterator.next().getValue();
-				if (cert.getName().trim().equalsIgnoreCase(name)
-						|| cert.getFingerPrint().trim().equalsIgnoreCase(thumb)) {
-					retVal = false;
-					PluginUtil.displayErrorDialog(
-							this.getShell(),
-							Messages.certErrTtl,
-							Messages.certAddErrMsg);
-					break;
-				}
-			}
-		} else {
-			retVal = false;
-			PluginUtil.displayErrorDialog(
-					this.getShell(),
-					Messages.certErrTtl,
-					Messages.certRegMsg);
+		try {
+			retVal = CertificateDialogUtilMethods.validateNameAndThumbprint(name, thumb, mapCert);
+		} catch (AzureCommonsException e) {
+			PluginUtil.displayErrorDialog(getShell(), Messages.genErrTitle, e.getMessage());
 		}
 		return retVal;
-	}
-
-	private boolean isNameAlreadyPresent(String name) {
-		boolean isPresent = false;
-		for (Iterator<Entry<String, WindowsAzureCertificate>> iterator =
-				mapCert.entrySet().iterator();
-				iterator.hasNext();) {
-			WindowsAzureCertificate cert = iterator.next().getValue();
-			if (cert.getName().trim().equalsIgnoreCase(name)) {
-				isPresent = true;
-				break;
-			}
-		}
-		return isPresent;
 	}
 
 	@Override
@@ -294,7 +261,7 @@ public class CertificateDialog extends TitleAreaDialog {
 	}
 
 	private void importBtnListner() {
-		String path = CerPfxUtil.importCerPfx(this.getShell(),
+		String path = com.microsoftopentechnologies.wacommon.utils.CerPfxUtil.importCerPfx(this.getShell(),
 				WAEclipseHelper.getSelectedProject().getLocation().toPortableString());
 		String password = null;
 		boolean proceed = true;
@@ -310,7 +277,9 @@ public class CertificateDialog extends TitleAreaDialog {
 			X509Certificate cert = CerPfxUtil.getCert(path, password);
 			if (cert != null) {
 				if (txtName.getText().isEmpty()) {
-					populateCertName(removeSpaceFromCN(cert.getSubjectDN().getName()));
+					populateCertName(
+							CertificateDialogUtilMethods.
+							removeSpaceFromCN(cert.getSubjectDN().getName()));
 				}
 				String thumbprint = "";
 				try {
@@ -326,24 +295,13 @@ public class CertificateDialog extends TitleAreaDialog {
 		}
 	}
 
-	private String removeSpaceFromCN(String nameParam) {
-		String name = nameParam;
-		name = name.replaceAll("\\s+", "");
-		return name.substring(name.indexOf("=") + 1);
-	}
 	/**
 	 * Method checks if certificate name is already
 	 * used then make it unique by concatenating current date.
 	 * @param certName
 	 */
 	private void populateCertName(String certNameParam) {
-		String certName = certNameParam;
-		if (isNameAlreadyPresent(certName)) {
-			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-			Date now = new Date();
-			certName = certName + dateFormat.format(now);
-		}
-		txtName.setText(certName);
+		txtName.setText(CertificateDialogUtilMethods.populateCertName(certNameParam, mapCert));
 	}
 
 	private void newBtnListener() {
@@ -358,7 +316,9 @@ public class CertificateDialog extends TitleAreaDialog {
 				new NewCertificateDialog(this.getShell(), data, jdkPath);
 		if (dialog.open() == Window.OK) {
 			if (txtName.getText().isEmpty()) {
-				populateCertName(removeSpaceFromCN(data.getCnName()));
+				populateCertName(
+						CertificateDialogUtilMethods.
+						removeSpaceFromCN(data.getCnName()));
 			}
 			try {
 				txtThumb.setText(CerPfxUtil.

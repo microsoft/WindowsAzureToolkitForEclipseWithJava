@@ -70,8 +70,8 @@
   
     <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
     <jar jarfile="${dist}/${jar_name}" basedir="${build}"/>
-  	<copy file="${dist}/${jar_name}" tofile="${basedir}\..\..\PluginsAndFeatures\com.persistent.winazure.eclipseplugin\resources\${jar_name}" overwrite="true" />
-  
+  	<copy file="${dist}/${jar_name}" tofile="${basedir}\..\..\PluginsAndFeatures\com.microsoftopentechnologies.wacommon\resources\${jar_name}" overwrite="true" />
+  	<copy file="${dist}/${jar_name}" tofile="${basedir}\..\AzureCommons\resources\${jar_name}" overwrite="true" />
   </target>
 
   <target name="clean"

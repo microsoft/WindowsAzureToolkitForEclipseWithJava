@@ -15,7 +15,7 @@
 	<classpathentry exported="true" kind="lib" path="dependencies/jersey-core-1.13.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/jettison-1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/mail-1.4.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="dependencies/microsoft-windowsazure-storage-sdk-0.7.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/azure-storage-1.2.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/jersey-json-1.13.jar"/>

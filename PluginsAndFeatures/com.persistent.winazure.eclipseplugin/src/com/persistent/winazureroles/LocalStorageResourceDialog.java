@@ -16,7 +16,6 @@
 package com.persistent.winazureroles;
 import java.io.FileInputStream;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.core.runtime.FileLocator;
@@ -43,6 +42,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureLocalStorage;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.exception.AzureCommonsException;
+import com.microsoftopentechnologies.roleoperations.LocalStrgResDialogUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 /**
  * Class creates UI controls and respective listeners
@@ -145,23 +146,7 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
         if (isResEdit) {
             populateData();
         } else {
-            StringBuffer strBfr = new StringBuffer(Messages.lclStgResStr);
-            int lclStgSuffix = 1;
-            boolean isValidName = true;
-           do {
-               isValidName = true;
-            for (Iterator<String> iterator = lclStgMap.keySet().iterator();
-                    iterator.hasNext();) {
-                String key = iterator.next();
-                if (key.equalsIgnoreCase(strBfr.toString())) {
-                    isValidName = false;
-                    strBfr.delete(12, strBfr.length());
-                    strBfr.append(lclStgSuffix++);
-                    break;
-                }
-            }
-
-            } while (!isValidName);
+        	StringBuffer strBfr = LocalStrgResDialogUtilMethods.formName(lclStgMap);
             txtResource.setText(strBfr.toString());
             txtSize.setText("1");
             txtVar.setText(String.format("%s%s",
@@ -253,35 +238,16 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
       * @return retVal : true if name is valid else false
       */
      private boolean isValidName(String name) {
-         boolean retVal = true;
-         StringBuffer strBfr = new StringBuffer(name);
-         try {
-             boolean isValidName = true;
-             for (Iterator<String> iterator = lclStgMap.keySet().iterator();
-                     iterator.hasNext();) {
-                 String key = iterator.next();
-                 if (key.equalsIgnoreCase(strBfr.toString())) {
-                     isValidName = false;
-                     break;
-                 }
-             }
-
-             if (!isValidName
-            		 && !(isResEdit && strBfr.toString().
-            				 equalsIgnoreCase(resName))) {
-                 retVal = false;
-                 PluginUtil.displayErrorDialog(
-                		 getShell(),
-                		 Messages.lclStgNameErrTtl,
-                		 Messages.lclStgNameErrMsg);
-             }
-         } catch (Exception e) {
-             PluginUtil.displayErrorDialogAndLog(
-            		 getShell(),
-            		 Messages.lclStgSetErrTtl,
-            		 Messages.lclStgSetErrMsg, e);
-         }
-         return retVal;
+    	 boolean retVal = true;
+    	 try {
+    		 retVal = LocalStrgResDialogUtilMethods.
+    				 isValidName(name, lclStgMap, isResEdit, resName);
+    	 } catch (AzureCommonsException e) {
+    		 retVal = false;
+    		 PluginUtil.displayErrorDialog(getShell(),
+    				 Messages.genErrTitle, e.getMessage());
+    	 }
+    	 return retVal;
      }
 
      /**
@@ -335,40 +301,17 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
       * @return retVal : true if valid path else false
       */
      private boolean isValidPath(String path) {
-         boolean retVal = true;
-         StringBuffer strBfr = new StringBuffer(path);
-         if (!path.isEmpty()) {
-             try {
-                 for (Iterator<WindowsAzureLocalStorage> iterator =
-                         lclStgMap.values().iterator(); iterator.hasNext();) {
-                     WindowsAzureLocalStorage type =
-                    		 (WindowsAzureLocalStorage) iterator.next();
-                     if (type.getPathEnv().
-                    		 equalsIgnoreCase(strBfr.toString())) {
-                         retVal = false;
-                         PluginUtil.displayErrorDialog(
-                        		 getShell(),
-                        		 Messages.lclStgPathErrTtl,
-                        		 Messages.lclStgPathErrMsg);
-                         break;
-                     }
-                 }
-              if (windowsAzureRole.getRuntimeEnv().
-            		  containsKey(strBfr.toString())) {
-                  retVal = false;
-                  PluginUtil.displayErrorDialog(getShell(),
-                		  Messages.lclStgPathErrTtl,
-                		  Messages.lclStgEnvVarMsg);
-              }
-             } catch (Exception e) {
-                 PluginUtil.displayErrorDialogAndLog(
-                		 getShell(),
-                		 Messages.lclStgSetErrTtl,
-                		 Messages.lclStgSetErrMsg, e);
-                 retVal = false;
-             }
-         }
-         return retVal;
+    	 boolean retVal = true;
+    	 try {
+    		 retVal = LocalStrgResDialogUtilMethods.
+    				 isValidPath(path, lclStgMap, windowsAzureRole);
+    	 } catch (AzureCommonsException e) {
+    		 retVal = false;
+    		 PluginUtil.displayErrorDialogAndLog(
+    				 getShell(), Messages.genErrTitle,
+    				 e.getMessage(), e);
+    	 }
+    	 return retVal;
      }
 
      /**

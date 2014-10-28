@@ -28,6 +28,8 @@ import java.util.List;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
+import com.microsoftopentechnologies.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.Activator;
 import com.microsoftopentechnologies.wacommon.utils.Messages;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;

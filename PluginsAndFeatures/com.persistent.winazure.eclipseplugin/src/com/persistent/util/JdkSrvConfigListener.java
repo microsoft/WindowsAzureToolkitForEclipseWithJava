@@ -22,9 +22,8 @@ import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
-import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
-import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
 import com.persistent.winazureroles.Messages;
 /**
  * Class has utility methods
@@ -39,16 +38,16 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @return
 	 */
 	public static String jdkChkBoxChecked(
-			WindowsAzureRole role) {
+			String depJdkName) {
 		// Pre-populate with auto-discovered JDK if any
 		String jdkDefaultDir =
-				PluginUtil.jdkDefaultDirectory(null);
+				WAEclipseHelperMethods.jdkDefaultDirectory(null);
 		getTxtJdk().setText(jdkDefaultDir);
 		setEnableJDK(true);
 		enableJdkRdButtons(getAutoDlRdCldBtn());
 		getSerCheckBtn().setEnabled(true);
-		configureAutoUploadJDKSettings(role, Messages.dlNtLblDir);
-		showThirdPartyJdkNames(true);
+		configureAutoUploadJDKSettings(Messages.dlNtLblDir);
+		showThirdPartyJdkNames(true, depJdkName);
 		return jdkDefaultDir;
 	}
 	/**
@@ -60,7 +59,8 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		setEnableServer(false);
 		setEnableDlGrp(false, false);
 		setEnableDlGrpSrv(false, false);
-		showThirdPartyJdkNames(false);
+		// un-checking check box hence no need to JDK name.
+		showThirdPartyJdkNames(false, "");
 	}
 
 	/**
@@ -68,15 +68,14 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @param role
 	 * @param label
 	 */
-	public static void modifyJdkText(
-			WindowsAzureRole role, String label) {
+	public static void modifyJdkText(String label) {
 		// update only for auto upload not for third party JDK.
 		if (getAutoDlRdCldBtn().getSelection()) {
 			setTxtUrl(cmbBoxListener(
 					getCmbStrgAccJdk(),
 					getTxtUrl(), "JDK"));
 			updateJDKDlNote(label);
-			updateJDKHome(role);
+			updateJDKHome(getTxtJdk().getText());
 		}
 	}
 
@@ -106,12 +105,11 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * radio button is selected.
 	 * @param role
 	 */
-	public static void jdkDeployBtnSelected(
-			WindowsAzureRole role) {
+	public static void jdkDeployBtnSelected() {
 		// deploy radio button selected
 		setEnableDlGrp(true, false);
 		updateJDKDlNote(Messages.dlNtLblDir);
-		updateJDKHome(role);
+		updateJDKHome(getTxtJdk().getText());
 		enableThirdPartyJdkCombo(false);
 	}
 
@@ -121,8 +119,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @param role
 	 * @param label
 	 */
-	public static void thirdPartyJdkBtnSelected(
-			WindowsAzureRole role, String label) {
+	public static void thirdPartyJdkBtnSelected(String label) {
 		setEnableDlGrp(true, true);
 		enableThirdPartyJdkCombo(true);
 		thirdPartyComboListener();
@@ -145,6 +142,13 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		setCmbStrgAccJdk(
 				urlModifyListner(url, nameInUrl,
 						getCmbStrgAccJdk()));
+		/*
+		 * update JAVA_HOME accordingly
+		 */
+		if (WAEclipseHelperMethods.isBlobStorageUrl(url) && url.endsWith(".zip")) {
+			url = url.substring(0, url.indexOf(".zip"));
+			updateJDKHome(url);
+		}
 	}
 
 	/**
@@ -158,8 +162,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	/**
 	 * Method is used when Server check box is checked.
 	 */
-	public static void srvChkBoxChecked(
-			WindowsAzureRole role, String label) {
+	public static void srvChkBoxChecked(String label) {
 		enableSrvRdButtons(getAutoDlRdCldBtnSrv());
 		setEnableServer(true);
 		try {
@@ -168,7 +171,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 					getServerTemplateNames(cmpntFile);
 			Arrays.sort(servList);
 			getComboServer().setItems(servList);
-			configureAutoUploadServerSettings(role, label);
+			configureAutoUploadServerSettings(label);
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			Activator.getDefault().log(e.getMessage());
 		}
@@ -188,14 +191,13 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @param role
 	 * @param label
 	 */
-	public static void modifySrvText(
-			WindowsAzureRole role, String label) {
+	public static void modifySrvText(String label) {
 		if (isSrvAutoUploadChecked()) {
 			setTxtUrlSrv(cmbBoxListener(
 					getCmbStrgAccSrv(),
 					getTxtUrlSrv(), "SERVER"));
 			updateSrvDlNote(label);
-			updateServerHome(role);
+			updateServerHome(getTxtDir().getText());
 		}
 	}
 
@@ -229,12 +231,11 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @param role
 	 * @param label
 	 */
-	public static void srvDeployBtnSelected(
-			WindowsAzureRole role, String label) {
+	public static void srvDeployBtnSelected(String label) {
 		// server deploy radio button selected
 		setEnableDlGrpSrv(true, false);
 		updateSrvDlNote(label);
-		updateServerHome(role);
+		updateServerHome(getTxtDir().getText());
 	}
 
 	/**
@@ -256,6 +257,13 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		setCmbStrgAccSrv(
 				urlModifyListner(url, nameInUrl,
 						getCmbStrgAccSrv()));
+		/*
+		 * update home directory for server accordingly
+		 */
+		if (WAEclipseHelperMethods.isBlobStorageUrl(url) && url.endsWith(".zip")) {
+			url = url.substring(0, url.indexOf(".zip"));
+			updateServerHome(url);
+		}
 	}
 
 	/**
@@ -272,13 +280,12 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @param role
 	 * @param label
 	 */
-	public static void configureAutoUploadServerSettings(
-			WindowsAzureRole role, String label) {
+	public static void configureAutoUploadServerSettings(String label) {
 		setEnableDlGrpSrv(true, true);
 		populateDefaultStrgAccForSrvAuto();
 		updateServerDlURL();
 		updateSrvDlNote(label);
-		updateServerHome(role);
+		updateServerHome(getTxtDir().getText());
 	}
 
 	/**
@@ -288,11 +295,11 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @param label
 	 */
 	public static void configureAutoUploadJDKSettings(
-			WindowsAzureRole role, String label) {
+			String label) {
 		setEnableDlGrp(true, true);
 		updateJDKDlURL();
 		updateJDKDlNote(label);
-		updateJDKHome(role);
+		updateJDKHome(getTxtJdk().getText());
 		enableThirdPartyJdkCombo(false);
 	}
 
@@ -311,11 +318,11 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * show third party JDK names or not.
 	 * @param status
 	 */
-	public static void showThirdPartyJdkNames(Boolean status) {
+	public static void showThirdPartyJdkNames(Boolean status, String depJdkName) {
 		if (status) {
 			try {
 				String [] thrdPrtJdkArr = WindowsAzureProjectManager.
-						getThirdPartyJdkNames(cmpntFile);
+						getThirdPartyJdkNames(cmpntFile, depJdkName);
 				// check at least one element is present
 				if (thrdPrtJdkArr.length >= 1) {
 					getThrdPrtJdkCmb().setItems(thrdPrtJdkArr);

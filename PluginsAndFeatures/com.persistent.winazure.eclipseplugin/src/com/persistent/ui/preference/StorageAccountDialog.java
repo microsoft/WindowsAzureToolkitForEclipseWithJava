@@ -16,7 +16,6 @@
 package com.persistent.ui.preference;
 
 import java.io.FileInputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.eclipse.core.runtime.FileLocator;
@@ -44,18 +43,14 @@ import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.StorageService;
-import com.gigaspaces.azure.model.Subscription;
-import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.wizards.NewStorageAccountDialog;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.model.StorageService;
+import com.microsoftopentechnologies.preference.PreferenceUtilMethods;
+import com.microsoftopentechnologies.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
-import com.persistent.util.MessageUtil;
-import com.persistent.util.WAEclipseHelper;
+import com.microsoftopentechnologies.wacommonutil.PreferenceSetUtil;
 
 public class StorageAccountDialog extends TitleAreaDialog {
 	private Text txtName;
@@ -333,7 +328,7 @@ public class StorageAccountDialog extends TitleAreaDialog {
 							txtKey.setText(service.getPrimaryKey());
 							txtUrl.setText(service.getStorageAccountProperties().getEndpoints().get(0).toString());
 						}
-					}
+				}
 			}
 
 			@Override
@@ -380,109 +375,20 @@ public class StorageAccountDialog extends TitleAreaDialog {
 	@Override
 	protected void okPressed() {
 		boolean isValid = false;
-		// edit scenario.
-		if (isEdit) {
-			// check access key is changed, then edit else not.
-			String newKey = txtKey.getText().trim();
-			if (!account.getStrgKey().equals(newKey)) {
-				if (newKey.contains(" ")) {
-					isValid = false;
-					PluginUtil.displayErrorDialog(getShell(),
-							Messages.keyErrTtl,
-							Messages.keyErrMsg);
-				} else {
-					isValid = true;
-					StorageAccountRegistry.
-					editAccountAccessKey(account, newKey);
-				}
-			} else {
-				isValid = true;
-			}
+		String error = PreferenceUtilMethods.
+				storageAccDlgOkPressed(isEdit,
+						txtKey.getText().trim(),
+						txtName.getText().trim(),
+						txtUrl.getText().trim(), account);
+		if (error != null && error.isEmpty()) {
+			isValid = true;
 		} else {
-			// add scenario.
-			// validate account name
-			if (validateName()) {
-				// validate URL
-				String name = txtName.getText().trim();
-				try {
-					String url = txtUrl.getText().trim();
-					// append '/' if not present.
-					if (!url.endsWith("/")) {
-						url = url + "/";
-					}
-					if (url.equalsIgnoreCase(name + Messages.blobEnPt)) {
-						url = String.format("%s%s%s",
-								Messages.http,
-								name,
-								Messages.blobEnPt);
-					}
-					new URL(url);
-					if (url.startsWith(Messages.http + name + '.')
-							|| url.startsWith(Messages.https + name + '.')) {
-						// validate access key
-						String key = txtKey.getText().trim();
-						if (key.contains(" ")) {
-							isValid = false;
-							PluginUtil.displayErrorDialog(getShell(),
-									Messages.keyErrTtl,
-									Messages.keyErrMsg);
-						} else {
-							// check account does not exist previously
-							StorageAccount account = new StorageAccount(
-									txtName.getText().trim(),
-									key,
-									url);
-							if (!StorageAccountRegistry.getStrgList().contains(account)) {
-								StorageAccountRegistry.addAccount(account);
-								isValid = true;
-							} else {
-								isValid = false;
-								PluginUtil.displayErrorDialog(getShell(),
-										Messages.errTtl,
-										Messages.urlPreErrMsg);
-							}
-						}
-					} else {
-						isValid = false;
-						PluginUtil.displayErrorDialog(getShell(),
-								Messages.errTtl, Messages.urlErMsg);
-					}
-				} catch (MalformedURLException e) {
-					isValid = false;
-					PluginUtil.displayErrorDialog(getShell(),
-							Messages.errTtl, Messages.urlErMsg);
-				}
-			} else {
-				isValid = false;
-			}
+			PluginUtil.displayErrorDialog(getShell(),
+					Messages.errTtl, error);
 		}
 		if (isValid) {
 			super.okPressed();
 		}
-	}
-
-	/**
-	 * Method validates storage account name.
-	 * @return
-	 */
-	private boolean validateName() {
-		Boolean isVallidName = false;
-		String name = txtName.getText().trim();
-		if (WAEclipseHelper.isLowerCaseAndInteger(name)) {
-			if (name.length() >= 3
-					&& name.length() <= 24) {
-				isVallidName = true;
-			} else {
-				isVallidName = false;
-				PluginUtil.displayErrorDialog(getShell(),
-						Messages.errTtl, Messages.namelnErMsg);
-			}
-		} else {
-			isVallidName = false;
-			PluginUtil.displayErrorDialog(getShell(),
-					Messages.errTtl, Messages.nameRxErMsg);
-		}
-		return isVallidName;
 	}
 
 	/**
@@ -494,7 +400,7 @@ public class StorageAccountDialog extends TitleAreaDialog {
 		String url = "";
 		try {
 			url = PreferenceSetUtil.
-					getSelectedBlobServiceURL(storageName);
+					getSelectedBlobServiceURL(storageName, PluginUtil.getPrefFilePath());
 		} catch (Exception e) {
 			Activator.getDefault().log(Messages.errTtl, e);
 		}

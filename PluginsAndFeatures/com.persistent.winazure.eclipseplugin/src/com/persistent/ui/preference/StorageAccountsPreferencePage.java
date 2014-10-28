@@ -15,9 +15,7 @@
 */
 package com.persistent.ui.preference;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.PreferencePage;
@@ -45,11 +43,14 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.UIUtils;
+import com.microsoftopentechnologies.preference.PreferenceUtilMethods;
+import com.microsoftopentechnologies.preference.StorageAccPrefPageTableElement;
+import com.microsoftopentechnologies.preference.StorageAccPrefPageTableElements;
+import com.microsoftopentechnologies.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
 
 public class StorageAccountsPreferencePage
 extends PreferencePage implements IWorkbenchPreferencePage {
@@ -354,22 +355,7 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 	private Object[] getTableContent() {
 		// loads data from preference file.
 		PreferenceUtilStrg.load();
-		List<StorageAccount> strgList =
-				StorageAccountRegistry.getStrgList();
-		List<StorageAccPrefPageTableElement> tableRowElements =
-				new ArrayList<StorageAccPrefPageTableElement>();
-		for (StorageAccount storageAcc : strgList) {
-			if (storageAcc != null) {
-				StorageAccPrefPageTableElement ele =
-						new StorageAccPrefPageTableElement();
-				ele.setStorageName(storageAcc.getStrgName());
-				ele.setStorageUrl(storageAcc.getStrgUrl());
-				tableRowElements.add(ele);
-			}
-		}
-		StorageAccPrefPageTableElements elements =
-				new StorageAccPrefPageTableElements();
-		elements.setElements(tableRowElements);
+		StorageAccPrefPageTableElements elements = PreferenceUtilMethods.getPrefPageTableElements();
 		return elements.getElements().toArray();
 	}
 

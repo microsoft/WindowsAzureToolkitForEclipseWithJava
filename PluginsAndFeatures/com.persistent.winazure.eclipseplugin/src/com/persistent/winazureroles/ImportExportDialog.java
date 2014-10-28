@@ -17,7 +17,6 @@ package com.persistent.winazureroles;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -60,15 +59,15 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
-import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentCloudMethod;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentDeployMethod;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.roleoperations.ImportExportDialogUtilMethods;
+import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.ProjectNatureHelper;
 import com.persistent.util.ProjectNatureHelper.ProjExportType;
-import com.persistent.util.WAEclipseHelper;
 /**
  * Class creates UI controls and respective listeners
  * for add or edit component dialog.
@@ -396,22 +395,10 @@ public class ImportExportDialog extends TitleAreaDialog {
 	 * @return
 	 */
 	private boolean validateDlGroup() {
-		boolean isValidUrl = true;
-		try {
-			if (dlCheckBtn.getSelection()) {
-				String url = txtUrl.getText().trim();
-				if (url.isEmpty()) {
-					isValidUrl = false;
-				} else {
-					new URL(url);
-					if (!WAEclipseHelper.isBlobStorageUrl(url)) {
-						isValidUrl = false;
-					}
-				}
-			}
-		} catch (MalformedURLException e) {
-			isValidUrl = false;
-		}
+		boolean isValidUrl = ImportExportDialogUtilMethods.
+				validateDlGroup(
+						dlCheckBtn.getSelection(),
+						txtUrl.getText().trim());
 		if (!isValidUrl) {
 			PluginUtil.displayErrorDialog(
 					this.getShell(),
@@ -473,7 +460,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 							if (file.isFile()) {
 								file.delete();
 							} else if (file.isDirectory()) {
-								WAEclipseHelper.deleteDirectory(file);
+								WAEclipseHelperMethods.deleteDirectory(file);
 							}
 						}
 					}
@@ -514,24 +501,17 @@ public class ImportExportDialog extends TitleAreaDialog {
 								addComponent("importsrc", txtFromPath.getText().trim());
 					}
 				}
-				if (!txtToDir.getText().isEmpty()
-						|| !txtToDir.getText().equalsIgnoreCase("\\.")) {
-					winAzureRoleCmpnt.setDeployDir(txtToDir.getText().trim());
-				}
-				winAzureRoleCmpnt.setDeployMethod(
-						WindowsAzureRoleComponentDeployMethod.
-						valueOf(comboDeploy.getText()));
-				winAzureRoleCmpnt.setDeployName(txtName.getText().trim());
-				if (comboImport.getText().equalsIgnoreCase("WAR")
-						|| comboImport.getText().equalsIgnoreCase("JAR")
-						|| comboImport.getText().equalsIgnoreCase("EAR")) {
-					winAzureRoleCmpnt.setImportMethod(
-							WindowsAzureRoleComponentImportMethod.auto);
-				} else {
-					winAzureRoleCmpnt.setImportMethod(
-							WindowsAzureRoleComponentImportMethod.
-							valueOf(comboImport.getText()));
-				}
+				winAzureRoleCmpnt = ImportExportDialogUtilMethods.okPressedPart2(
+						winAzureRoleCmpnt,
+						txtToDir.getText().trim(),
+						comboDeploy.getText(),
+						txtName.getText().trim(),
+						comboImport.getText(),
+						txtUrl.getText().trim(),
+						cloudMethods,
+						comboCloud.getText(),
+						JdkSrvConfig.getAccessKey(comboStrgAcc));
+
 				if (!txtFromPath.getText().startsWith(BASE_PATH)
 						&& txtFromPath.getText().
 						contains(root.getLocation().toOSString())) {
@@ -547,22 +527,6 @@ public class ImportExportDialog extends TitleAreaDialog {
 						|| !txtFromPath.getText().equalsIgnoreCase("\\.")) {
 					winAzureRoleCmpnt.setImportPath(
 							txtFromPath.getText().trim());
-				}
-
-				// set cloud URL.
-				winAzureRoleCmpnt.setCloudDownloadURL(txtUrl.getText().trim());
-				// set access key.
-				String key = JdkSrvConfig.getAccessKey(comboStrgAcc);
-				winAzureRoleCmpnt.setCloudKey(key);
-				// set cloud method.
-				if (comboCloud.getText().equalsIgnoreCase(cloudMethods[0])
-						|| comboCloud.getText().isEmpty()) {
-					winAzureRoleCmpnt.setCloudMethod(
-							WindowsAzureRoleComponentCloudMethod.none);
-				} else {
-					winAzureRoleCmpnt.setCloudMethod(
-							WindowsAzureRoleComponentCloudMethod.
-							valueOf(comboCloud.getText()));
 				}
 				super.okPressed();
 			} catch (WindowsAzureInvalidProjectOperationException e) {
@@ -797,19 +761,6 @@ public class ImportExportDialog extends TitleAreaDialog {
 	}
 
 	/**
-	 * Converts the array of objects to String array.
-	 * @param obj : array of objects
-	 * @return
-	 */
-	private String[] convertObjToStr(Object[] obj) {
-		String[] text = new String[obj.length];
-		for (int i = 0; i < obj.length; i++) {
-			text[i] = obj[i].toString();
-		}
-		return text;
-	}
-
-	/**
 	 * Creates the FromPath component.
 	 * @param group Group under which this component
 	 * need to be added
@@ -1002,25 +953,8 @@ public class ImportExportDialog extends TitleAreaDialog {
 	public String getAsName() {
 		File file = new File(ProjectNatureHelper.
 				convertPath(txtFromPath.getText()));
-		String name = file.getName();
-
-		// Replacing spaces with underscore
-		if (name != null && !name.isEmpty()) {
-			name = name.trim().replaceAll("\\s+", "_");
-		}
-		if (comboImport.getText().equalsIgnoreCase("EAR")) {
-			name = name.concat(".ear");
-		} else if (comboImport.getText().equalsIgnoreCase("WAR")) {
-			name = name.concat(".war");
-		} else if (comboImport.getText().equalsIgnoreCase("JAR")) {
-			name = name.concat(".jar");
-		} else if (comboImport.getText().equalsIgnoreCase(
-				WindowsAzureRoleComponentImportMethod.zip.name())) {
-			if (file.isFile()) {
-				name = name.substring(0, name.lastIndexOf("."));
-			}
-			name = name.concat(".zip");
-		}
+		String name = ImportExportDialogUtilMethods.
+				getAsName(file, comboImport.getText());
 		return name;
 	}
 
@@ -1041,7 +975,7 @@ public class ImportExportDialog extends TitleAreaDialog {
 		groupGridData.grabExcessHorizontalSpace = true;
 		groupGridData.horizontalAlignment = SWT.FILL;
 		comboDeploy.setLayoutData(groupGridData);
-		String[] dplMethods = convertObjToStr(
+		String[] dplMethods = ImportExportDialogUtilMethods.convertObjToStr(
 				WindowsAzureRoleComponentDeployMethod.values());
 		comboDeploy.setItems(dplMethods);
 		comboDeploy.setText(dplMethods[0]);

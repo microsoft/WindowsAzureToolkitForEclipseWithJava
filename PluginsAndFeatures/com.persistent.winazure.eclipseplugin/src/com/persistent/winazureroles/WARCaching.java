@@ -16,7 +16,6 @@
 package com.persistent.winazureroles;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -61,13 +60,14 @@ import org.eclipse.ui.dialogs.PropertyPage;
 import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureCacheExpirationPolicy;
-import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureNamedCache;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.exception.AzureCommonsException;
+import com.microsoftopentechnologies.roleoperations.WARCachingUtilMethods;
+import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.WAEclipseHelper;
@@ -1019,47 +1019,13 @@ public class WARCaching extends PropertyPage {
 		private void modifyPort(WindowsAzureNamedCache cache,
 				Object modifiedVal)
 						throws WindowsAzureInvalidProjectOperationException {
-			Boolean isValidPort = false;
-			String portTxt = modifiedVal.toString();
-			if (portTxt.isEmpty()) {
-				isValidPort = false;
-			} else {
-				try {
-					int portNum = Integer.parseInt(portTxt);
-					if (RANGE_MIN <= portNum
-							&& portNum <= RANGE_MAX) {
-						/*
-						 * Check whether end point of same name or port
-						 * exist already.
-						 */
-						Boolean isValidEp = wARole.isValidEndpoint(
-								String.format("%s%s", Messages.cachEndPtName,
-										cache.getName()),
-										WindowsAzureEndpointType.Internal,
-										portTxt, "");
-						if (isValidEp) {
-							isValidPort = true;
-						} else {
-							PluginUtil.displayErrorDialog(
-									getShell(),
-									Messages.cachPortErrTtl,
-									Messages.dlgPortInUse);
-							return;
-						}
-					} else {
-						isValidPort = false;
-					}
-				} catch (NumberFormatException e) {
-					isValidPort = false;
-				}
-			}
-			if (isValidPort) {
-				cache.getEndpoint().setPrivatePort(portTxt);
-			} else {
+			try {
+				cache = WARCachingUtilMethods.modifyPort(cache, modifiedVal, wARole);
+			} catch (AzureCommonsException e1) {
 				PluginUtil.displayErrorDialog(
 						getShell(),
 						Messages.cachPortErrTtl,
-						Messages.rngErrMsg);
+						e1.getMessage());
 			}
 		}
 
@@ -1072,25 +1038,10 @@ public class WARCaching extends PropertyPage {
 		private void modifyMinToLive(WindowsAzureNamedCache cache,
 				Object modifiedVal)
 						throws WindowsAzureInvalidProjectOperationException {
-			Boolean isVallidMtl = false;
-			int mtl = 0;
 			String mtlTxt = modifiedVal.toString();
-			if (mtlTxt.isEmpty()) {
-				isVallidMtl = false;
-			} else {
-				try {
-					mtl = Integer.parseInt(mtlTxt);
-					if (mtl > 0) {
-						isVallidMtl = true;
-					} else {
-						isVallidMtl = false;
-					}
-				} catch (NumberFormatException e) {
-					isVallidMtl = false;
-				}
-			}
+			Boolean isVallidMtl = WARCachingUtilMethods.validateMtl(mtlTxt);
 			if (isVallidMtl) {
-				cache.setMinutesToLive(mtl);
+				cache.setMinutesToLive(Integer.parseInt(mtlTxt));
 			} else {
 				PluginUtil.displayErrorDialog(
 						getShell(),
@@ -1108,35 +1059,8 @@ public class WARCaching extends PropertyPage {
 		private void modifyExpirationPol(WindowsAzureNamedCache cache,
 				Object modifiedVal)
 						throws WindowsAzureInvalidProjectOperationException {
-			// NEVER_EXPIRES
-			if (modifiedVal.toString().equals("0")) {
-				cache.setExpirationPolicy(
-						WindowsAzureCacheExpirationPolicy.
-						NEVER_EXPIRES);
-				/*
-				 * If expiration policy is set to
-				 * NEVER_EXPIRES then set MTL to zero
-				 */
-				cache.setMinutesToLive(0);
-			}
-			// ABSOLUTE
-			else if (modifiedVal.toString().equals("1")) {
-				cache.setExpirationPolicy(
-						WindowsAzureCacheExpirationPolicy.
-						ABSOLUTE);
-				if (cache.getMinutesToLive() == 0) {
-					cache.setMinutesToLive(DEFAULT_TTL);
-				}
-			}
-			// SLIDING_WINDOW
-			else if (modifiedVal.toString().equals("2")) {
-				cache.setExpirationPolicy(
-						WindowsAzureCacheExpirationPolicy.
-						SLIDING_WINDOW);
-				if (cache.getMinutesToLive() == 0) {
-					cache.setMinutesToLive(DEFAULT_TTL);
-				}
-			}
+			cache = WARCachingUtilMethods.
+					modifyExpirationPol(cache, modifiedVal.toString());
 		}
 
 		/**
@@ -1191,44 +1115,12 @@ public class WARCaching extends PropertyPage {
 		private void modifyCacheName(WindowsAzureNamedCache cache,
 				Object modifiedVal)
 						throws WindowsAzureInvalidProjectOperationException {
-			if (modifiedVal.toString().isEmpty()) {
+			try {
+				cache = WARCachingUtilMethods.modifyCacheName(cache, modifiedVal, mapCache);
+			} catch (AzureCommonsException e) {
 				PluginUtil.displayErrorDialog(getShell(),
 						Messages.cachNameErrTtl,
-						Messages.cachNameEmpMsg);
-			} else {
-				StringBuffer strBfr =
-						new StringBuffer(modifiedVal.toString());
-				boolean isValidName = true;
-				/*
-				 * Check cache name contains alphanumeric characters,
-				 * underscore and starts with alphabet only.
-				 */
-				if (WAEclipseHelper.
-						isAlphaNumericUnderscore(
-								modifiedVal.toString())) {
-					for (Iterator<String> iterator =
-							mapCache.keySet().iterator();
-							iterator.hasNext();) {
-						String key = iterator.next();
-						if (key.equalsIgnoreCase(strBfr.toString())) {
-							isValidName = false;
-							break;
-						}
-					}
-					if (isValidName
-							|| modifiedVal.toString().equalsIgnoreCase(
-									cache.getName())) {
-						cache.setName(modifiedVal.toString());
-					} else {
-						PluginUtil.displayErrorDialog(getShell(),
-								Messages.cachNameErrTtl,
-								Messages.cachNameErrMsg);
-					}
-				} else {
-					PluginUtil.displayErrorDialog(getShell(),
-							Messages.cachNameErrTtl,
-							Messages.chNameAlphNuMsg);
-				}
+						e.getMessage());
 			}
 		}
 

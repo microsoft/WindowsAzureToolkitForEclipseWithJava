@@ -1,78 +1,36 @@
-/*******************************************************************************
- * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
+/**
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 
 package com.gigaspaces.azure.deploy;
 
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
-import com.microsoft.windowsazure.Configuration;
-import com.microsoft.windowsazure.core.OperationStatus;
-import com.microsoft.windowsazure.core.OperationStatusResponse;
-import com.microsoft.windowsazure.exception.ServiceException;
-import com.microsoft.windowsazure.management.compute.models.*;
-import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.CertificateUpload;
-import com.gigaspaces.azure.model.DeployDescriptor;
-import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
-import com.gigaspaces.azure.model.InstanceStatus;
-import com.gigaspaces.azure.model.RemoteDesktopDescriptor;
-import com.gigaspaces.azure.model.StorageService;
-import com.gigaspaces.azure.rest.RestAPIException;
-import com.gigaspaces.azure.rest.WindowsAzureRestUtils;
-import com.gigaspaces.azure.rest.WindowsAzureServiceManagement;
-import com.gigaspaces.azure.rest.WindowsAzureStorageServices;
 import com.gigaspaces.azure.rest.PluginConstants;
 import com.gigaspaces.azure.util.CommandLineException;
 import com.gigaspaces.azure.views.WindowsAzureActivityLogView;
@@ -80,11 +38,30 @@ import com.gigaspaces.azure.wizards.WizardCacheManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.core.OperationStatus;
+import com.microsoft.windowsazure.core.OperationStatusResponse;
+import com.microsoft.windowsazure.management.compute.models.DeploymentGetResponse;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceCreateParameters;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
+import com.microsoft.windowsazure.management.compute.models.RoleInstance;
+import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
+import com.microsoftopentechnologies.deploy.deploy.DeploymentEventArgs;
+import com.microsoftopentechnologies.deploy.deploy.DeploymentManagerUtilMethods;
+import com.microsoftopentechnologies.deploy.model.CertificateUpload;
+import com.microsoftopentechnologies.deploy.model.DeployDescriptor;
+import com.microsoftopentechnologies.exception.DeploymentException;
+import com.microsoftopentechnologies.exception.RestAPIException;
+import com.microsoftopentechnologies.model.InstanceStatus;
+import com.microsoftopentechnologies.model.Notifier;
+import com.microsoftopentechnologies.model.StorageService;
+import com.microsoftopentechnologies.rest.WindowsAzureRestUtils;
+import com.microsoftopentechnologies.rest.WindowsAzureServiceManagement;
+import com.microsoftopentechnologies.rest.WindowsAzureStorageServices;
+import com.microsoftopentechnologies.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
-import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
 
@@ -163,7 +140,7 @@ public final class DeploymentManager {
 			if (certList != null && certList.size() > 0) {
 				for (int i = 0; i < certList.size(); i++) {
 					CertificateUpload cert = certList.get(i);
-					uploadCertificateIfNeededGeneric(
+					DeploymentManagerUtilMethods.uploadCertificateIfNeededGeneric(
 							service,
 							deploymentDesc,
 							cert.getPfxPath(),
@@ -179,8 +156,8 @@ public final class DeploymentManager {
 			if (deploymentDesc.getRemoteDesktopDescriptor().isEnabled()) {
 
 				notifyProgress(deploymentDesc.getDeploymentId(), null, conditionalProgress, OperationStatus.InProgress, Messages.deplConfigRdp);
-
-				configureRemoteDesktop(deploymentDesc);
+				DeploymentManagerUtilMethods.configureRemoteDesktop(deploymentDesc,
+						WizardCacheManager.getCurrentDeployConfigFile(), PluginUtil.getEncPath());
 			}
 			else {
 				notifyProgress(deploymentDesc.getDeploymentId(), null, conditionalProgress, OperationStatus.InProgress, Messages.deplConfigRdp);
@@ -193,7 +170,7 @@ public final class DeploymentManager {
 			notifyProgress(deploymentDesc.getDeploymentId(), null, 20, OperationStatus.InProgress,
 					Messages.uploadingServicePackage);
 
-			uploadPackageService(
+			DeploymentManagerUtilMethods.uploadPackageService(
 					WizardCacheManager.createStorageServiceHelper(),
 					deploymentDesc.getCspkgFile(),
 					targetCspckgName,
@@ -217,10 +194,10 @@ public final class DeploymentManager {
 					hostedService.getServiceName(),
 					deployState,
 					dateFormat.format(new Date()));
-			String requestId = createDeployment(deploymentDesc, service, cspkgUrl, deploymentName);
+			String requestId = DeploymentManagerUtilMethods.createDeployment(deploymentDesc, service, cspkgUrl, deploymentName);
 			OperationStatus status = waitForStatus(deploymentDesc.getConfiguration(), service, requestId);
 
-			deletePackage(WizardCacheManager.createStorageServiceHelper(),
+			DeploymentManagerUtilMethods.deletePackage(WizardCacheManager.createStorageServiceHelper(),
 					Messages.eclipseDeployContainer.toLowerCase(),
 					targetCspckgName, notifier);
 			notifyProgress(deploymentDesc.getDeploymentId(),
@@ -242,7 +219,20 @@ public final class DeploymentManager {
                     deployment.getStatus().toString());
 
 			if (deploymentDesc.isStartRdpOnDeploy()) {
-				WindowsAzureRestUtils.getInstance().launchRDP(deployment,deploymentDesc.getRemoteDesktopDescriptor().getUserName());
+				// plugin folder
+				String eclipseInstallation = Platform.getInstallLocation().getURL().getPath();
+				if (eclipseInstallation.charAt(0) == '/'
+						|| eclipseInstallation.charAt(0) == '\\') {
+					eclipseInstallation = eclipseInstallation.substring(1);
+				}
+				eclipseInstallation = eclipseInstallation.replace("/",
+						File.separator);
+				String pluginFolder = String.format("%s%s%s%s%s", eclipseInstallation,
+						File.separator, com.persistent.util.Messages.pluginFolder,
+						File.separator, com.persistent.util.Messages.pluginId);
+				WindowsAzureRestUtils.getInstance().launchRDP(deployment,
+						deploymentDesc.getRemoteDesktopDescriptor().getUserName(),
+						pluginFolder);
 			}
 		}
 		catch (Throwable t) {
@@ -262,7 +252,7 @@ public final class DeploymentManager {
 	}
 
 	private void createStorageAccount(final String storageServiceName, final String label, final String location, final String description)
-            throws WACommonException, RestAPIException, InterruptedException, ServiceException, CommandLineException {
+            throws Exception {
 
         StorageAccountCreateParameters accountParameters = new StorageAccountCreateParameters();
         accountParameters.setName(storageServiceName);
@@ -284,7 +274,7 @@ public final class DeploymentManager {
 	}
 
 	private void createHostedService(final String hostedServiceName, final String label, final String location, final String description)
-            throws WACommonException, ServiceException {
+            throws Exception {
         HostedServiceCreateParameters createHostedService = new HostedServiceCreateParameters();
         createHostedService.setServiceName(hostedServiceName);
         createHostedService.setLabel(label);
@@ -294,14 +284,14 @@ public final class DeploymentManager {
 		WizardCacheManager.createHostedService(createHostedService);
 	}
 
-	private void checkContainerExistance() throws WACommonException, ServiceException {
+	private void checkContainerExistance() throws Exception {
 		WindowsAzureStorageServices storageServices = WizardCacheManager.createStorageServiceHelper();
         storageServices.createContainer(Messages.eclipseDeployContainer.toLowerCase());
 	}
 
 	private DeploymentGetResponse waitForDeployment(Configuration configuration,
                                                     String serviceName, WindowsAzureServiceManagement service, String deploymentName)
-					throws WACommonException, ServiceException, InterruptedException, DeploymentException {
+					throws Exception {
 		DeploymentGetResponse deployment = null;
 		String status = null;
 		do {
@@ -329,7 +319,7 @@ public final class DeploymentManager {
 	}
 
 	private OperationStatus waitForStatus(Configuration configuration, WindowsAzureServiceManagement service, String requestId)
-            throws WACommonException, InterruptedException, RestAPIException, ServiceException {
+            throws Exception {
 		OperationStatusResponse op;
 		OperationStatus status = null;
 		do {
@@ -349,69 +339,6 @@ public final class DeploymentManager {
 		} while (status == OperationStatus.InProgress);
 
 		return status;
-	}
-
-	private String createDeployment(DeployDescriptor deploymentDesc,
-			WindowsAzureServiceManagement service,
-			String cspkgUrl,
-			String deploymentName)
-            throws WACommonException, IOException,
-            RestAPIException, InterruptedException, CommandLineException, URISyntaxException, ServiceException {
-
-		String label = deploymentDesc.getHostedService().getServiceName(); //$NON-NLS-1$
-
-		File cscfgFile = new File(deploymentDesc.getCscfgFile());
-
-		byte[] cscfgBuff = new byte[(int) cscfgFile.length()];
-
-		FileInputStream fileInputStream = new FileInputStream(cscfgFile);
-
-		DataInputStream dis = new DataInputStream((fileInputStream));
-
-		try {
-			dis.readFully(cscfgBuff);
-			dis.close();
-		}
-		finally {
-			if (dis != null) {
-				dis.close();
-			}
-			if (fileInputStream != null) {
-				fileInputStream.close();
-			}
-		}
-		String deployState = deploymentDesc.getDeployState().toLowerCase();
-
-        DeploymentCreateParameters parameters = new DeploymentCreateParameters();
-        parameters.setName(deploymentName);
-        parameters.setPackageUri(new URI(cspkgUrl));
-        parameters.setLabel(label);
-        parameters.setConfiguration(new String(cscfgBuff));
-        parameters.setStartDeployment(true);
-
-        return service.createDeployment(
-                deploymentDesc.getConfiguration(),
-                deploymentDesc.getHostedService().getServiceName(),
-                deployState,
-                parameters,
-                deploymentDesc.getUnpublish());
-    }
-
-	private static void uploadPackageService(final WindowsAzureStorageServices service, final String cspkg, String cspckgTargetName,
-			final String container, DeployDescriptor deploymentDesc,
-			Notifier notifier) throws WACommonException, URISyntaxException, RestAPIException, InterruptedException,
-			CommandLineException, ExecutionException, IOException {
-		File file = new File(cspkg);
-		service.putBlob(container,cspckgTargetName, file, notifier);
-	}
-
-	private static void deletePackage(
-			final WindowsAzureStorageServices service,
-			final String container,
-			String cspckgTargetName,
-			Notifier notifier)
-					throws CommandLineException, FileNotFoundException {
-		service.deleteBlob(container, cspckgTargetName, notifier);
 	}
 
 	private String createCspckTargetName(DeployDescriptor deploymentDesc) {
@@ -449,239 +376,6 @@ public final class DeploymentManager {
 		arg.setStartTime(new Date());
 		arg.setStatus(inprogress);
 		Activator.getDefault().fireDeploymentEvent(arg);
-	}
-
-	private void configureRemoteDesktop(DeployDescriptor deploymentDesc) throws DeploymentException {
-		DocumentBuilder docBuilder = null;
-		Document doc = null;
-		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-		docBuilderFactory.setIgnoringElementContentWhitespace(true);
-		RemoteDesktopDescriptor rdp = deploymentDesc.getRemoteDesktopDescriptor();
-		boolean enabled = rdp.isEnabled();
-		try {
-
-			docBuilder = docBuilderFactory.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		}
-		File cscfg = new File(WizardCacheManager.getCurrentDeployConfigFile());
-
-		try {
-			doc = docBuilder.parse(cscfg);
-
-			XPathFactory factory = XPathFactory.newInstance();
-			XPath xpath = factory.newXPath();
-
-			if (enabled) {
-				configureSettings(doc, xpath, Messages.remoteAccessEnabledSetting, Messages.remoteAccessEnabledSettingVal);
-			}
-			else {
-				configureSettings(doc, xpath, Messages.remoteAccessEnabledSetting, "false");
-			}
-			configureSettings(doc, xpath, Messages.remoteFormarderEnabledSetting, Messages.remoteFormarderEnabledSettingVal);
-			configureSettings(doc, xpath, Messages.remoteAccessAccountUsername, rdp.getUserName());
-			/** Changes for #645 **/
-			String encPassword = null;
-			//Ignore cscfg file name and deploy folder
-			String projPath 					 =  cscfg.getParentFile().getParent();
-			WindowsAzureProjectManager waProjMgr =  WindowsAzureProjectManager.load(new File(projPath));
-			encPassword 						 =  waProjMgr.getRemoteAccessEncryptedPassword();
-
-			if (encPassword != null && encPassword.equals(rdp.getPassword())) {
-				encPassword = rdp.getPassword();
-			} else {
-				encPassword =   EncUtilHelper.encryptPassword(rdp.getPassword(), rdp.getPublicKey());
-			}
-
-			configureSettings(doc, xpath, Messages.remoteAccessAccountEncryptedPassword, encPassword);
-
-			SimpleDateFormat formatter = new SimpleDateFormat(Messages.dateFormat, Locale.getDefault());
-
-			configureSettings(doc, xpath, Messages.remoteAccessAccountExpiration, formatter.format(rdp.getExpirationDate()));
-
-			String thumbptint = CerPfxUtil.getThumbPrint(rdp.getPublicKey());
-			configureRdpCertificate(doc, xpath, thumbptint, "sha1"); //$NON-NLS-1$
-
-			Transformer transformer = TransformerFactory.newInstance().newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, Messages.deplYes);
-
-			// initialize StreamResult with File object to save to file
-			StreamResult result = new StreamResult(cscfg);
-			DOMSource source = new DOMSource(doc);
-			transformer.transform(source, result);
-
-		} catch (SAXException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (IOException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (TransformerConfigurationException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (TransformerFactoryConfigurationError e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (TransformerException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (WindowsAzureInvalidProjectOperationException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (XPathExpressionException e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		} catch (Exception e) {
-			throw new DeploymentException(Messages.deplFailedConfigRdp, e);
-		}
-	}
-
-	private void configureRdpCertificate(Document doc, XPath xpath, String thumbprint, String thumbprintAlgorithm) throws XPathExpressionException {
-
-		ensureCertificationSectionExist(doc, xpath);
-
-		XPathExpression expr;
-
-		ensureConfigurationSettingsSectionExist(doc, xpath);
-
-		expr = xpath.compile(Messages.certificatePath);
-		Object result = expr.evaluate(doc, XPathConstants.NODESET);
-
-		NodeList nodes = (NodeList) result;
-
-		if (nodes.getLength() == 0) {
-			XPathExpression expr1 = xpath.compile(Messages.certificatesPath);
-			result = expr1.evaluate(doc, XPathConstants.NODESET);
-			nodes = (NodeList) result;
-
-			for (int i = 0; i < nodes.getLength(); i++) {
-				Element node = doc.createElement(Messages.certificateElem);
-				node.setAttribute(Messages.certificateNameAttr,
-						Messages.remoteAccessPasswordEncryption);
-				node.setAttribute(Messages.thumbprintAttr, thumbprint);
-				node.setAttribute(Messages.thumbprintAlg, thumbprintAlgorithm);
-				nodes.item(i).appendChild(node);
-			}
-		} else {
-			for (int i = 0; i < nodes.getLength(); i++) {
-				nodes.item(i).getAttributes().getNamedItem(Messages.thumbprint)
-				.setNodeValue(thumbprint);
-				nodes.item(i).getAttributes()
-				.getNamedItem(Messages.thumbprintAlg)
-				.setNodeValue(thumbprintAlgorithm);
-			}
-		}
-	}
-
-	private void ensureCertificationSectionExist(Document doc, XPath xpath)
-			throws XPathExpressionException {
-		XPathExpression expr1;
-
-		expr1 = xpath.compile(Messages.certificatesPath);
-
-		Object result = expr1.evaluate(doc, XPathConstants.NODESET);
-		NodeList nodes = (NodeList) result;
-
-		if (nodes.getLength() == 0) {
-			XPathExpression expr2 = xpath.compile(Messages.rolePath);
-			result = expr2.evaluate(doc, XPathConstants.NODESET);
-			nodes = (NodeList) result;
-			for (int i = 0; i < nodes.getLength(); i++) {
-				Element node = doc.createElement(Messages.certificatesElem);
-				nodes.item(i).appendChild(node);
-			}
-		}
-	}
-
-	private void configureSettings(Document doc, XPath xpath, String key,
-			String value) throws XPathExpressionException {
-		XPathExpression expr;
-
-		ensureConfigurationSettingsSectionExist(doc, xpath);
-
-		expr = xpath.compile(String.format(Messages.configurationSettingPath,
-				key));
-		Object result = expr.evaluate(doc, XPathConstants.NODESET);
-
-		NodeList nodes = (NodeList) result;
-
-		if (nodes.getLength() == 0) {
-			XPathExpression expr1 = xpath
-					.compile(Messages.configurationSettingsPath);
-			result = expr1.evaluate(doc, XPathConstants.NODESET);
-			nodes = (NodeList) result;
-
-			for (int i = 0; i < nodes.getLength(); i++) {
-				Element node = doc.createElement(Messages.settingElem);
-				node.setAttribute(Messages.settingNameAttr, key);
-				node.setAttribute(Messages.settingValueAttr, value);
-
-				nodes.item(i).appendChild(node);
-			}
-		} else {
-			for (int i = 0; i < nodes.getLength(); i++) {
-				nodes.item(i).getAttributes()
-				.getNamedItem(Messages.settingValueAttr)
-				.setNodeValue(value);
-			}
-		}
-
-	}
-
-	private void ensureConfigurationSettingsSectionExist(Document doc,
-			XPath xpath) throws XPathExpressionException {
-
-		XPathExpression expr1;
-
-		expr1 = xpath.compile(Messages.configurationSettingsPath);
-
-		Object result = expr1.evaluate(doc, XPathConstants.NODESET);
-		NodeList nodes = (NodeList) result;
-
-		if (nodes.getLength() == 0) {
-			XPathExpression expr2 = xpath.compile(Messages.rolePath);
-			result = expr2.evaluate(doc, XPathConstants.NODESET);
-			nodes = (NodeList) result;
-			for (int i = 0; i < nodes.getLength(); i++) {
-				Element node = doc
-						.createElement(Messages.configurationSettingsElem);
-				nodes.item(i).appendChild(node);
-			}
-		}
-
-	}
-	
-	private void uploadCertificateIfNeededGeneric(
-			WindowsAzureServiceManagement service,
-			DeployDescriptor deploymentDesc,
-			String pfxPath,
-			String pfxPwd)
-					throws DeploymentException {
-		try {
-			File pfxFile = new File(pfxPath);
-			byte[] buff = new byte[(int) pfxFile.length()];
-			FileInputStream fileInputStram = null;
-			DataInputStream dis = null;
-			try {
-				fileInputStram = new FileInputStream(pfxFile);
-				dis = new DataInputStream(fileInputStram);
-				dis.readFully(buff);
-			}
-			finally {
-				if (fileInputStram != null) {
-					fileInputStram.close();
-				}
-				if (dis != null) {
-					dis.close();
-				}
-			}
-
-            ServiceCertificateCreateParameters createParameters = new ServiceCertificateCreateParameters();
-            createParameters.setData(buff);
-            createParameters.setPassword(pfxPwd);
-            createParameters.setCertificateFormat(CertificateFormat.Pfx);
-
-			service.addCertificate(
-					deploymentDesc.getConfiguration(),
-					deploymentDesc.getHostedService().getServiceName(),
-					createParameters);
-		} catch (Exception e) {
-			Activator.getDefault().log(Messages.deplError, e);
-			throw new DeploymentException("Error uploading certificate", e);
-		}
 	}
 
 	private void openWindowsAzureActivityLogView(

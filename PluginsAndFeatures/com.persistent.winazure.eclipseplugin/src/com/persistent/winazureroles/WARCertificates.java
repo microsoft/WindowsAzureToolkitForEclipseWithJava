@@ -52,6 +52,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureCertificate;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
@@ -424,7 +425,7 @@ public class WARCertificates extends PropertyPage{
 						Messages.certErrTtl,
 						Messages.certInvMsg);
 			} else {
-				if (WAEclipseHelper.isAlphaNumericUnderscore(modifiedTxt)) {
+				if (WAEclipseHelperMethods.isAlphaNumericUnderscore(modifiedTxt)) {
 					boolean isValidName = true;
 					for (Iterator<String> iterator =
 							mapCert.keySet().iterator();

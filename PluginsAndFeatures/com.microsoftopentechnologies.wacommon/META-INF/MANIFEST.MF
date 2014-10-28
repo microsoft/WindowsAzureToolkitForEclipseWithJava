@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Azure Common Plugin Library (by MS Open Tech)
 Bundle-SymbolicName: com.microsoftopentechnologies.wacommon;singleton:=true
-Bundle-Version: 2.4.0.qualifier
+Bundle-Version: 2.4.1.qualifier
 Bundle-Activator: com.microsoftopentechnologies.wacommon.Activator
 Require-Bundle: org.eclipse.ui;bundle-version="3.6.0",
  org.eclipse.core.runtime,
@@ -13,9 +13,34 @@ Require-Bundle: org.eclipse.ui;bundle-version="3.6.0",
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-Vendor: Microsoft Open Technologies Inc.
-Bundle-ClassPath: .
+Bundle-ClassPath: .,
+ resources/AzureCommons.jar,
+ resources/ProjectManagerLibrary.jar,
+ resources/AzureManagementUtil.jar
 Export-Package: com.microsoftopentechnologies.wacommon,
  com.microsoftopentechnologies.wacommon.commoncontrols,
  com.microsoftopentechnologies.wacommon.startup,
  com.microsoftopentechnologies.wacommon.storageregistry,
- com.microsoftopentechnologies.wacommon.utils
+ com.microsoftopentechnologies.wacommon.utils,
+ com.microsoftopentechnologies.builder,
+ com.microsoftopentechnologies.deploy.deploy,
+ com.microsoftopentechnologies.deploy.model,
+ com.microsoftopentechnologies.deploy.propertypages,
+ com.microsoftopentechnologies.deploy.tasks,
+ com.microsoftopentechnologies.deploy.util,
+ com.microsoftopentechnologies.deploy.wizard,
+ com.microsoftopentechnologies.exception,
+ com.microsoftopentechnologies.messagehandler,
+ com.microsoftopentechnologies.model,
+ com.microsoftopentechnologies.preference,
+ com.microsoftopentechnologies.propertypage,
+ com.microsoftopentechnologies.roleoperations,
+ com.microsoftopentechnologies.startup,
+ com.microsoftopentechnologies.storageregistry,
+ com.microsoftopentechnologies.util,
+ com.microsoftopentechnologies.wacommonutil,
+ com.microsoftopentechnologies.xmlhandling,
+ com.interopbridges.tools.windowsazure,
+ com.microsoftopentechnologies.rest
+ 
+ 

@@ -1,18 +1,18 @@
 /**
- * Copyright 2013 Persistent Systems Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.gigaspaces.azure.util;
 
 import java.io.File;
@@ -23,16 +23,14 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
-import com.gigaspaces.azure.model.StorageService;
-import com.gigaspaces.azure.model.StorageServices;
-import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.propertypage.Messages;
 import com.gigaspaces.azure.runnable.CacheAccountWithProgressWindow;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressWindow;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
+import com.microsoftopentechnologies.deploy.util.PublishData;
+import com.microsoftopentechnologies.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
 /**
  * Class has common methods which
  * handles publish settings file and extract data.
@@ -95,41 +93,8 @@ public class MethodUtils {
 	public static void prepareListFromPublishData() {
 		List<StorageAccount> strgList = StorageAccountRegistry.getStrgList();
 		Collection<PublishData> publishDatas = WizardCacheManager.getPublishDatas();
-		for (PublishData pd : publishDatas) {
-			for (Subscription sub : pd.getPublishProfile().getSubscriptions()) {
-				/*
-				 * Get collection of storage services in each subscription.
-				 */
-				StorageServices services = pd.getStoragesPerSubscription().get(sub.getId());
-				// iterate over collection of services.
-				for (StorageService strgService : services) {
-					StorageAccount strEle =
-							new StorageAccount(
-									strgService.getServiceName(),
-									strgService.getPrimaryKey(),
-									strgService.getStorageAccountProperties().
-									getEndpoints().get(0).toString());
-					/*
-					 * Check if storage account is already present
-					 * in centralized repository,
-					 * if present then do not add.
-					 * if not present then check
-					 * access key is valid or not.
-					 * If not then update with correct one in registry. 
-					 */
-					if (strgList.contains(strEle)) {
-						int index = strgList.indexOf(strEle);
-						StorageAccount account = strgList.get(index);
-						String newKey = strEle.getStrgKey();
-						if (!account.getStrgKey().equals(newKey)) {
-							account.setStrgKey(newKey);
-						}
-					} else {
-						strgList.add(strEle);
-					}
-				}
-			}
-		}
+		strgList = com.microsoftopentechnologies.deploy.util.MethodUtils.
+				prepareListFromPublishData(strgList, publishDatas);
 		PreferenceUtilStrg.save();
 	}
 

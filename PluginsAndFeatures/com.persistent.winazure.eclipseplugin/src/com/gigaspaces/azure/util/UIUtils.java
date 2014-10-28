@@ -1,3 +1,18 @@
+/**
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.gigaspaces.azure.util;
 
 import java.io.File;
@@ -16,9 +31,9 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 
-import com.gigaspaces.azure.model.Subscription;
-import com.gigaspaces.azure.rest.WindowsAzureRestUtils;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
+import com.microsoftopentechnologies.deploy.util.PublishData;
+import com.microsoftopentechnologies.model.Subscription;
 import com.persistent.util.MessageUtil;
 
 public class UIUtils {
@@ -88,6 +103,8 @@ public class UIUtils {
 		}
 		combo = selectByText(
 				combo, currentSelection);
+		} else if (publishes.isEmpty() || publishes.size() == 0) {
+			combo.removeAll();
 		}
 		return combo;
 	}
@@ -143,7 +160,7 @@ public class UIUtils {
 			File file) {
 		PublishData data;
 		try {
-			data = WindowsAzureRestUtils.parse(file);
+			data = com.microsoftopentechnologies.deploy.util.UIUtils.parse(file);
 		} catch (JAXBException e) {
 			MessageUtil.displayErrorDialog(new Shell(),
 					Messages.importDlgTitle,
@@ -154,12 +171,12 @@ public class UIUtils {
 		}
 		String subscriptionId;
 		try {
-			subscriptionId = WindowsAzureRestUtils.installPublishSettings(file, data.getSubscriptionIds().get(0), null);
+			subscriptionId = com.microsoftopentechnologies.deploy.util.UIUtils.installPublishSettings(file, data.getSubscriptionIds().get(0), null);
 		} catch (Exception e) {
             String errorMessage;
             Throwable cause = e.getCause();
             if (e instanceof RuntimeException && cause != null && cause instanceof ClassNotFoundException
-                    && cause.getMessage() != null && cause.getMessage().contains("org.bouncycastle.jce.provider.BouncyCastleProvider cannot be found")) {
+                    && cause.getMessage() != null && cause.getMessage().contains("org.bouncycastle.jce.provider.BouncyCastleProvider")) {
                 errorMessage = Messages.importDlgMsgJavaVersion;
             } else {
                 errorMessage = Messages.importDlgMsg;

@@ -50,8 +50,7 @@ public class WindowsAzurePackage extends Task {
 	public static final String UTIL_DOWNLOAD_FILENAME = "download.vbs";
 	public static final String UTIL_WASH_FILENAME = "wash.cmd";
 	public static final String UTIL_WASH_PATH = DEFAULT_UTIL_SUBDIR + "\\" + UTIL_WASH_FILENAME;
-    private static final String SDK_PROPERTIES = "sdk.properties";
-	
+
 	public static final String INTERNAL_STARTUP_FILE_NAME = ".startup.cmd";
 	private static final String INTERNAL_STARTUP_SUBDIR = "startup";
 	public static final String USER_STARTUP_FILE_NAME = "startup.cmd";

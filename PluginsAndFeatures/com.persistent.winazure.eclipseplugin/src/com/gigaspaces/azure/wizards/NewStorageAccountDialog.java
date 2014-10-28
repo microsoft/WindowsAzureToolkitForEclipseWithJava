@@ -1,19 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
-
+/**
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.gigaspaces.azure.wizards;
 
 import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
@@ -35,10 +34,10 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
 import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
-import com.gigaspaces.azure.model.StorageService;
-import com.gigaspaces.azure.model.Subscription;
+import com.microsoftopentechnologies.deploy.util.PublishData;
+import com.microsoftopentechnologies.model.StorageService;
+import com.microsoftopentechnologies.model.Subscription;
 import com.gigaspaces.azure.runnable.NewStorageAccountWithProgressWindow;
-import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
 import com.persistent.util.MessageUtil;
 
@@ -130,14 +129,14 @@ public class NewStorageAccountDialog extends WADialog {
                                 int maxStorageAccounts = curSub.getMaxStorageAccounts();
 
                                 if (maxStorageAccounts > publishData.getStoragesPerSubscription().get(curSub.getId()).size()) {
-                                    NewStorageAccountWithProgressWindow object =
-                                            new NewStorageAccountWithProgressWindow(
-                                                    pubData, new Shell());
-                                    object.setCreateStorageAccount(body);
-                                    Display.getDefault().syncExec(object);
-                                    storageService =
-                                            NewStorageAccountWithProgressWindow.
-                                                    getStorageService();
+								NewStorageAccountWithProgressWindow object =
+										new NewStorageAccountWithProgressWindow(
+												pubData, new Shell());
+								object.setCreateStorageAccount(body);
+								Display.getDefault().syncExec(object);
+								storageService =
+										NewStorageAccountWithProgressWindow.
+										getStorageService();
                                 } else {
                                     MessageUtil.displayErrorDialog(getShell(),
                                             com.gigaspaces.azure.wizards.Messages.storageAccountsLimitTitle,

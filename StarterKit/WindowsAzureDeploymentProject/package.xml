@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
- Copyright 2014 Microsoft Open Technologies, Inc.
+ Copyright 2013 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
     <property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-    <property name="creator.version" value="2.4.0"/>
+    <property name="creator.version" value="2.4.1"/>
   </target>
 
   <!-- Force emulator reset to ensure no locks on deploy directory -->

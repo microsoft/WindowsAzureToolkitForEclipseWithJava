@@ -48,8 +48,8 @@ import org.eclipse.ui.model.WorkbenchLabelProvider;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.persistent.util.WAEclipseHelper;
 
 /**
  * This Class provides the debug option to the user
@@ -432,7 +432,7 @@ public class DebugConfigurationDialog extends TrayDialog {
             paramMap.put(Messages.dlgDbgEmuConf, tempConfigName);
             paramMap.put(Messages.dlgDbgEmuProj, projText.getText());
             paramMap.put(Messages.dlgDbgEmuHost,
-            		WAEclipseHelper.getHostName());
+            		WAEclipseHelperMethods.getHostName());
             paramMap.put(Messages.dlgDbgEmuPort,
                     debugEndpoint.getPrivatePort());
             configList.add(tempConfigName);

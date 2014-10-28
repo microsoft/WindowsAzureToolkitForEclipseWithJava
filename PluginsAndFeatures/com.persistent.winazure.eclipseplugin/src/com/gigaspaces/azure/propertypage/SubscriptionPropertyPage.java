@@ -1,24 +1,21 @@
-/*******************************************************************************
- * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
-
+/**
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.gigaspaces.azure.propertypage;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import org.eclipse.jface.preference.IPreferenceNode;
 import org.eclipse.jface.preference.PreferenceDialog;
@@ -50,12 +47,13 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.dialogs.PropertyDialogAction;
 import org.eclipse.ui.dialogs.PropertyPage;
 
-import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
-import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
+import com.microsoftopentechnologies.deploy.propertypages.SubscriptionPropertyPageTableElement;
+import com.microsoftopentechnologies.deploy.propertypages.SubscriptionPropertyPageUtilMethods;
+import com.microsoftopentechnologies.deploy.util.PublishData;
 import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
 
 public class SubscriptionPropertyPage extends PropertyPage {
@@ -64,7 +62,6 @@ public class SubscriptionPropertyPage extends PropertyPage {
 	private TableViewer tableViewer;
 	private Button btnAddSubscription;
 	private Button btnRemoveSubscription;
-	private Button btnEditSubscription;
 	private Button btnImpFrmPubSetFile;
 
 	@Override
@@ -244,35 +241,15 @@ public class SubscriptionPropertyPage extends PropertyPage {
 			}
 		});
 
-		btnEditSubscription = new Button(containerButtons, SWT.PUSH);
-		btnEditSubscription.setEnabled(false);
-		btnEditSubscription.setText(Messages.editBtnText);
-		gridData = new GridData();
-		gridData.widthHint = 70;
-		btnEditSubscription.setLayoutData(gridData);
-
 		tblSubscriptions.addSelectionListener(new SelectionListener() {
 
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				btnEditSubscription.setEnabled(true);
 				btnRemoveSubscription.setEnabled(true);
 			}
 
 			@Override
 			public void widgetDefaultSelected(SelectionEvent event) {
-			}
-		});
-
-		btnEditSubscription.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent arg0) {
-				editButtonListener();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent arg0) {
 			}
 		});
 
@@ -303,7 +280,6 @@ public class SubscriptionPropertyPage extends PropertyPage {
 							SelectionChangedEvent selectionchangedevent) {
 
 						if (selectionchangedevent.getSelection().isEmpty()) {
-							btnEditSubscription.setEnabled(false);
 							btnRemoveSubscription.setEnabled(false);
 						}
 					}
@@ -320,29 +296,7 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		tableViewer.refresh();
 	}
 
-	protected void editButtonListener() {
-
-		int index = tableViewer.getTable().getSelectionIndex();
-
-//		String thumbprint = tableViewer.getTable().getItem(index).getText(2);
-		String id = tableViewer.getTable().getItem(index).getText(1);
-
-		PublishData pd = WizardCacheManager.findPublishDataBySubscriptionId(id);
-
-		WizardCacheManager.changeCurrentSubscription(pd, id);
-
-		CredentialsPropertyPage.setAdd(false);
-		CredentialsPropertyPage.setEdit(true);
-		
-		if (openPropertyDialog(pd) == Window.OK) {
-			PreferenceUtil.save();
-			tableViewer.refresh();
-		}
-	}
-
 	protected void addButtonListener() {
-		CredentialsPropertyPage.setAdd(true);
-		CredentialsPropertyPage.setEdit(false);
 		if (openPropertyDialog(null) == Window.OK) {
 			PreferenceUtil.save();
 			tableViewer.refresh();
@@ -394,22 +348,7 @@ public class SubscriptionPropertyPage extends PropertyPage {
 
 	private Object[] getTableContent() {
 		Collection<PublishData> publishDatas = WizardCacheManager.getPublishDatas();
-		List<SubscriptionPropertyPageTableElement> tableRowElements = new ArrayList<SubscriptionPropertyPageTableElement>();
-		for (PublishData pd : publishDatas) {
-			for (Subscription sub : pd.getPublishProfile().getSubscriptions()) {
-				SubscriptionPropertyPageTableElement el = new SubscriptionPropertyPageTableElement();
-//				el.setPublishDataThumbprint(pd.getThumbprint());
-				el.setSubscriptionId(sub.getId());
-				el.setSubscriptionName(sub.getName());
-				if (!tableRowElements.contains(el)) {
-					tableRowElements.add(el);
-				}
-			}
-		}
-		SubscriptionPropertyPageTableElements elements = new SubscriptionPropertyPageTableElements();
-		elements.setElements(tableRowElements);
-
-		return elements.getElements().toArray();
+		return SubscriptionPropertyPageUtilMethods.getTableContent(publishDatas);
 	}
 
 	private static class SelectionProvider implements ISelectionProvider {

@@ -21,7 +21,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.text.DateFormat;
@@ -46,17 +45,10 @@ import org.eclipse.wst.xml.core.internal.catalog.provisional.INextCatalog;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
-import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
-import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
-import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
-import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentCloudMethod;
+import com.microsoftopentechnologies.startup.WAStartUpUtilMethods;
+import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageRegistryUtilMethods;
-import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
 
 /**
  * This class gets executed after the Workbench initialises.
@@ -178,78 +170,8 @@ public class WAStartUp implements IStartup {
     public static WindowsAzureProjectManager initializeStorageAccountRegistry(
     		WindowsAzureProjectManager projMngr) {
     	try {
-    		List<StorageAccount> strgAccList = StorageAccountRegistry.getStrgList();
-    		// get number of roles in one project
-    		List<WindowsAzureRole> roleList = projMngr.getRoles();
-    		for (int i = 0; i < roleList.size(); i++) {
-    			WindowsAzureRole role = roleList.get(i);
-    			// check for caching storage account name and key given
-    			String key = role.getCacheStorageAccountKey();
-    			String name = role.getCacheStorageAccountName();
-    			if (key != null
-    					&& name != null
-    					&& !key.isEmpty()
-    					&& !name.isEmpty()
-    					&& WAEclipseHelper.isLowerCaseAndInteger(name)) {
-    				StorageAccount account = new StorageAccount(name,
-    						key,
-    						PreferenceSetUtil.getSelectedBlobServiceURL(name));
-    				if (strgAccList.contains(account)) {
-    					int index = strgAccList.indexOf(account);
-    					String keyInReg = strgAccList.get(index).getStrgKey();
-    					if (!key.equals(keyInReg)) {
-    						// update key of component
-    						role.setCacheStorageAccountKey(keyInReg);
-    					}
-    				} else {
-    					// add account in registry.
-    					strgAccList.add(account);
-    				}
-    			}
-
-    			// get list of components in one role.
-    			List<WindowsAzureRoleComponent> cmpnntsList =
-    					role.getComponents();
-    			for (int j = 0; j < cmpnntsList.size(); j++) {
-    				WindowsAzureRoleComponent component =
-    						cmpnntsList.get(j);
-    				// check cloud URL is set or not
-    				String url = component.getCloudDownloadURL();
-    				if (url != null
-    						&& !url.isEmpty()) {
-    					try {
-    					new URL(url);
-    					String accessKey = component.getCloudKey();
-    					/*
-    					 * check cloud key is set or not
-    					 * if not then URL is publicly accessible
-    					 * hence do not add that account in registry.
-    					 */
-    					if (accessKey != null
-    							&& !accessKey.isEmpty()) {
-    						StorageAccount account = new StorageAccount(
-    								StorageRegistryUtilMethods.
-    								getAccNameFromUrl(url),
-    								accessKey,
-    								StorageRegistryUtilMethods.
-    								getServiceEndpointUrl(url));
-    						if (strgAccList.contains(account)) {
-    							int index = strgAccList.indexOf(account);
-    							String keyInReg = strgAccList.get(index).getStrgKey();
-    							if (!accessKey.equals(keyInReg)) {
-    								// update key of component
-    								component.setCloudKey(keyInReg);
-    							}
-    						} else {
-    							// add account in registry.
-    							strgAccList.add(account);
-    						}
-    					}
-    					} catch(MalformedURLException e) {
-    					}
-    				}
-    			}
-    		}
+    		projMngr = WAStartUpUtilMethods.initializeStorageAccountRegistry(projMngr,
+    				WAEclipseHelper.getTemplateFile(Messages.prefFileName));
     	} catch (Exception e) {
     		Activator.getDefault().log(Messages.expStrgReg, e);
     	}
@@ -267,90 +189,7 @@ public class WAStartUp implements IStartup {
     public static WindowsAzureProjectManager changeLocalToAuto(
     		WindowsAzureProjectManager projMngr, String projName) {
     	try {
-    		// get number of roles in one project
-    		List<WindowsAzureRole> roleList = projMngr.getRoles();
-    		for (int i = 0; i < roleList.size(); i++) {
-    			WindowsAzureRole role = roleList.get(i);
-    			// get list of components in one role.
-    			List<WindowsAzureRoleComponent> cmpnntsList =
-    					role.getComponents();
-    			for (int j = 0; j < cmpnntsList.size(); j++) {
-    				WindowsAzureRoleComponent component =
-    						cmpnntsList.get(j);
-    				String type = component.getType();
-    				String key = component.getCloudKey();
-    				String url = component.getCloudDownloadURL();
-    				/*
-    				 * check component is JDK or server
-    				 * and cloud URL and key is not specified
-    				 * i.e. deployment is for local.
-    				 */
-    				if ((type.equals(
-    						com.persistent.winazureroles.Messages.typeJdkDply)
-    						|| type.equals(
-    								com.persistent.winazureroles.Messages.typeSrvDply))
-    								&& (key == null || key.isEmpty())
-    								&& (url == null || url.isEmpty())) {
-    					component.setCloudDownloadURL(AUTO);
-    					component.setCloudUploadMode(
-    							WARoleComponentCloudUploadMode.auto);
-    					component.setCloudMethod(
-    							WindowsAzureRoleComponentCloudMethod.unzip);
-    					// store home properties
-    					/*
-    					 * For auto upload cloud
-    					 * and local home property will be same.
-    					 * So just check package type, construct
-    					 * home value and set.
-    					 */
-    					if (projMngr.getPackageType().
-    							equals(WindowsAzurePackageType.LOCAL)) {
-    						if (type.equals(
-    								com.persistent.winazureroles.Messages.typeJdkDply)) {
-    							role.setJDKCloudHome(
-    									role.constructJdkHome(
-    											component.getImportPath(),
-    											cmpntFile));
-    						} else if (type.equals(
-    								com.persistent.winazureroles.Messages.typeSrvDply)) {
-    							role.setServerCloudHome(
-    									role.constructServerHome(role.getServerName(),
-    											component.getImportPath(),
-    											cmpntFile));
-    						}
-    					} else {
-    						if (type.equals(
-    								com.persistent.winazureroles.Messages.typeJdkDply)) {
-    							role.setJDKLocalHome(
-    									role.constructJdkHome(
-    											component.getImportPath(),
-    											cmpntFile));
-    						} else if (type.equals(
-    								com.persistent.winazureroles.Messages.typeSrvDply)) {
-    							role.setServerLocalHome(
-    									role.constructServerHome(role.getServerName(),
-    											component.getImportPath(), cmpntFile));
-    						}
-    					}
-    				} else if (type.equals(
-    						com.persistent.winazureroles.Messages.typeSrvApp)) {
-    					String approotPathSubStr = String.format("%s%s%s%s",
-    							projName,
-    							File.separator,
-    							role.getName(),
-    							com.persistent.winazureroles.Messages.approot);
-    					String impSrc = component.getImportPath();
-    					if (impSrc != null
-    							&& !impSrc.isEmpty()
-    							&& !impSrc.contains(approotPathSubStr)) {
-    						component.setCloudUploadMode(WARoleComponentCloudUploadMode.always);
-    						component.setCloudDownloadURL(AUTO);
-    						component.setCloudMethod(
-    								WindowsAzureRoleComponentCloudMethod.copy);
-    					}
-    				}
-    			}
-    		}
+    		projMngr = WAStartUpUtilMethods.changeLocalToAuto(projMngr, projName, cmpntFile);
     	} catch (Exception e) {
     		Activator.getDefault().log(Messages.expLocToAuto, e);
     	}
@@ -493,18 +332,24 @@ public class WAStartUp implements IStartup {
      * @param componentType
      * @throws Exception
      */
-    private void upgradePluginComponent(String pluginComponentPath, String resourceFile, 
-    		String oldResourceFile, String componentType) throws Exception {
+    private void upgradePluginComponent(String pluginComponentPath, String resource, 
+    		String oldResource, String componentType) throws Exception {
         File pluginComponentFile = new File(pluginComponentPath);
         if (pluginComponentFile.exists()) {
         	String pluginComponentVersion = null;
+        	String resourceFileVersion = null;
+        	File resourceFile = WAEclipseHelper.getResourceAsFile(resource);
         	try {
         		if (COMPONENTSETS_TYPE.equals(componentType)) {
         			pluginComponentVersion = WindowsAzureProjectManager.
         					getComponentSetsVersion(pluginComponentFile);
+        			resourceFileVersion = WindowsAzureProjectManager.
+        					getComponentSetsVersion(resourceFile);
         		} else {
         			pluginComponentVersion = WindowsAzureProjectManager.
         					getPreferenceSetsVersion(pluginComponentFile);
+        			resourceFileVersion = WindowsAzureProjectManager.
+        					getPreferenceSetsVersion(resourceFile);
         		}
         	} catch(Exception e ) {
         		Activator.getDefault().log(
@@ -512,16 +357,18 @@ public class WAStartUp implements IStartup {
         	+ componentType
         	+ ", considering version as null");
         	}
+        	
+        	
+        	
         	if ((pluginComponentVersion != null
         			&& !pluginComponentVersion.isEmpty())
-        			&& pluginComponentVersion.equals(
-        					WindowsAzureProjectManager.getCurrVerion())) {
+        			&& pluginComponentVersion.equals(resourceFileVersion)) {
         		// Do not do anything
         	} else {
         		// Check with old plugin component for upgrade scenarios
         		File oldPluginComponentFile = WAEclipseHelper.
-        				getResourceAsFile(oldResourceFile);
-        		boolean isIdenticalWithOld = WAEclipseHelper.
+        				getResourceAsFile(oldResource);
+        		boolean isIdenticalWithOld = WAEclipseHelperMethods.
         				isFilesIdentical(
         						oldPluginComponentFile, pluginComponentFile);
         		if (isIdenticalWithOld) {
@@ -531,15 +378,15 @@ public class WAStartUp implements IStartup {
         			// Rename old one
         			DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
         			Date date = new Date();
-        			WAEclipseHelper.copyFile(pluginComponentPath,
+        			WAEclipseHelperMethods.copyFile(pluginComponentPath,
         					pluginComponentPath
         					+ ".old"
         					+ dateFormat.format(date));
         		}
-        		copyResourceFile(resourceFile, pluginComponentPath);
+        		copyResourceFile(resource, pluginComponentPath);
         	}
         } else {
-        	copyResourceFile(resourceFile, pluginComponentPath);
+        	copyResourceFile(resource, pluginComponentPath);
         }
     }
 

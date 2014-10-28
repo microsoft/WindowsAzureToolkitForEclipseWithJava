@@ -1,0 +1,54 @@
+<project name="AzureCommons" default="dist" basedir=".">
+    <description>
+        Plugin Azure Common Code
+    </description>
+	
+	  <!-- set global properties for this build -->
+
+	  <property name="project_name" value="AzureCommons"/>
+	  <property name="src" location="src"/>
+	  <property name="jar_name" value="${project_name}.jar"/>
+	  <property name="war_name" value="${project_name}.war"/>
+	
+	<property file="build.properties"/>
+	
+	<path id="build.classpath">
+			<!-- Setting azure libraries in classpath -->
+			<fileset dir="${azure.lib.dir}">
+				<include name="*.jar"/>			
+				<include name="dependencies/*.jar"/>
+			</fileset>
+		<fileset dir="resources">
+				<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	<!-- top level targets -->
+	
+	<target name="compile-sources" depends="init" description="compile the source code " >
+		<javac includeantruntime="false" srcdir="${src}" destdir="build" source="1.6" target="1.6" classpathref="build.classpath" />
+	</target>
+
+  <target name="dist" depends="compile-sources" description="generate the distributable files " >
+    <jar destfile="${basedir}\jar\${jar_name}" basedir="${basedir}\build" >
+  	      <fileset dir="${src}">
+  	          <include name="**/*.properties"/>
+  	      </fileset>
+  	</jar>
+  	<copy file="${basedir}\jar\${jar_name}" tofile="${basedir}\..\..\PluginsAndFeatures\com.microsoftopentechnologies.wacommon\resources\${jar_name}" overwrite="true" />
+  </target>
+
+  <target name="clean" description="clean up" >
+    <!-- Delete the ${build} and ${dist} directory trees -->
+  	<delete dir="${basedir}\build"/>
+  	<delete dir="${basedir}\jar"/>
+  </target>
+	
+  <target name="init" depends="clean" description="initialize the build environment" >
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create directory structures -->
+    <mkdir dir="${basedir}\build"/>
+    <mkdir dir="${basedir}\jar"/>
+  </target>
+</project>

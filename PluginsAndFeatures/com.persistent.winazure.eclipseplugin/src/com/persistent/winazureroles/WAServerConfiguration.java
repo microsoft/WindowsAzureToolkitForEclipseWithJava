@@ -60,6 +60,9 @@ import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
+import com.microsoftopentechnologies.roleoperations.JdkSrvConfigUtilMethods;
+import com.microsoftopentechnologies.roleoperations.WAServerConfUtilMethods;
+import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.ui.projwizard.WAApplicationDialog;
 import com.persistent.util.AppCmpntParam;
@@ -110,15 +113,16 @@ public class WAServerConfiguration extends PropertyPage {
 				JdkSrvConfig.setEnableJDK(true);
 				JdkSrvConfig.
 				getTxtJdk().setText(jdkSrcPath);
-				JdkSrvConfigListener.showThirdPartyJdkNames(true);
+				String jdkName = windowsAzureRole.getJDKCloudName();
+				// project may be using deprecated JDK, hence pass to method
+				JdkSrvConfigListener.showThirdPartyJdkNames(true, jdkName);
 				String jdkUrl = windowsAzureRole.getJDKCloudURL();
 				// JDK download group
 				if (jdkUrl != null && !jdkUrl.isEmpty()) {
 					// JDK auto upload option configured
-					if (JdkSrvConfig.
+					if (JdkSrvConfigUtilMethods.
 							isJDKAutoUploadPrevSelected(windowsAzureRole)) {
 						// check for third party JDK
-						String jdkName = windowsAzureRole.getJDKCloudName();
 						if (jdkName.isEmpty()) {
 							JdkSrvConfig.getAutoDlRdCldBtn().setSelection(true);
 						} else {
@@ -192,7 +196,7 @@ public class WAServerConfiguration extends PropertyPage {
 				String srvUrl = windowsAzureRole.getServerCloudURL();
 				if (srvUrl != null && !srvUrl.isEmpty()) {
 					// server auto upload option configured
-					if (JdkSrvConfig.
+					if (JdkSrvConfigUtilMethods.
 							isServerAutoUploadPrevSelected(windowsAzureRole)) {
 						JdkSrvConfig.getAutoDlRdCldBtnSrv().setSelection(true);
 						JdkSrvConfig.setEnableDlGrpSrv(true, true);
@@ -399,8 +403,7 @@ public class WAServerConfiguration extends PropertyPage {
 		addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent arg0) {
-				JdkSrvConfigListener.modifyJdkText(
-						windowsAzureRole, Messages.dlNtLblDir);
+				JdkSrvConfigListener.modifyJdkText(Messages.dlNtLblDir);
 				handlePageComplete();
 			}
 		});
@@ -412,7 +415,8 @@ public class WAServerConfiguration extends PropertyPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getJdkCheckBtn().getSelection()) {
 					try {
-						setJDK(JdkSrvConfigListener.jdkChkBoxChecked(windowsAzureRole));
+						// populate third party JDKs whose status in not deprecated
+						setJDK(JdkSrvConfigListener.jdkChkBoxChecked(""));
 					} catch (WindowsAzureInvalidProjectOperationException e) {
 						PluginUtil.displayErrorDialogAndLog(
 								getShell(),
@@ -432,7 +436,8 @@ public class WAServerConfiguration extends PropertyPage {
 							}
 						}
 						// Remove JAVA_HOME settings
-						removeJavaHomeSettings();
+						windowsAzureRole = WAServerConfUtilMethods.
+								removeJavaHomeSettings(windowsAzureRole, waProjManager);
 						if (windowsAzureRole.getServerName() != null
 								&& windowsAzureRole.
 								getServerSourcePath() != null) {
@@ -482,7 +487,7 @@ public class WAServerConfiguration extends PropertyPage {
 					JdkSrvConfig.getTxtUrl().setText(
 							JdkSrvConfig.getUrl(
 									JdkSrvConfig.getCmbStrgAccJdk()));
-					JdkSrvConfigListener.jdkDeployBtnSelected(windowsAzureRole);
+					JdkSrvConfigListener.jdkDeployBtnSelected();
 				}
 				handlePageComplete();
 				accepted = false;
@@ -500,8 +505,7 @@ public class WAServerConfiguration extends PropertyPage {
 				if (JdkSrvConfig.getAutoDlRdCldBtn().getSelection()) {
 					// auto upload radio button selected
 					JdkSrvConfigListener.
-					configureAutoUploadJDKSettings(windowsAzureRole,
-							Messages.dlNtLblDir);
+					configureAutoUploadJDKSettings(Messages.dlNtLblDir);
 				}
 				handlePageComplete();
 				accepted = false;
@@ -528,8 +532,7 @@ public class WAServerConfiguration extends PropertyPage {
 				 * then do not do any thing.
 				 */
 				if (!JdkSrvConfig.getThrdPrtJdkCmb().isEnabled()) {
-					JdkSrvConfigListener.thirdPartyJdkBtnSelected(
-							windowsAzureRole, Messages.dlNtLblDir);
+					JdkSrvConfigListener.thirdPartyJdkBtnSelected(Messages.dlNtLblDir);
 					jdkPrevName = JdkSrvConfig.
 							getThrdPrtJdkCmb().getText();
 				}
@@ -644,7 +647,6 @@ public class WAServerConfiguration extends PropertyPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getSerCheckBtn().getSelection()) {
 					JdkSrvConfigListener.srvChkBoxChecked(
-							windowsAzureRole,
 							Messages.dlNtLblDir);
 				} else {
 					// Remove server home settings
@@ -710,7 +712,6 @@ public class WAServerConfiguration extends PropertyPage {
 			@Override
 			public void modifyText(ModifyEvent arg0) {
 				JdkSrvConfigListener.modifySrvText(
-						windowsAzureRole,
 						Messages.dlNtLblDir);
 				handlePageComplete();
 			}
@@ -722,7 +723,7 @@ public class WAServerConfiguration extends PropertyPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				serBrowseBtnListener();
-				JdkSrvConfigListener.modifySrvText(windowsAzureRole,
+				JdkSrvConfigListener.modifySrvText(
 						Messages.dlNtLblDir);
 			}
 			@Override
@@ -752,7 +753,7 @@ public class WAServerConfiguration extends PropertyPage {
 						cmpntFile);
 				if (JdkSrvConfig.isSrvDownloadChecked()
 						|| JdkSrvConfig.isSrvAutoUploadChecked()) {
-					JdkSrvConfig.updateServerHome(windowsAzureRole);
+					JdkSrvConfig.updateServerHome(JdkSrvConfig.getTxtDir().getText());
 				}
 				handlePageComplete();
 			}
@@ -794,7 +795,7 @@ public class WAServerConfiguration extends PropertyPage {
 				if (JdkSrvConfig.getDlRdCldBtnSrv()
 						.getSelection()) {
 					JdkSrvConfigListener.
-					srvDeployBtnSelected(windowsAzureRole,
+					srvDeployBtnSelected(
 							Messages.dlNtLblDir);
 				}
 				handlePageComplete();
@@ -813,7 +814,6 @@ public class WAServerConfiguration extends PropertyPage {
 						.getSelection()) {
 					// server auto upload radio button selected
 					JdkSrvConfigListener.configureAutoUploadServerSettings(
-							windowsAzureRole,
 							Messages.dlNtLblDir);
 				} else {
 					/*
@@ -875,7 +875,8 @@ public class WAServerConfiguration extends PropertyPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				JdkSrvConfig.updateServerDlURL();
-				JdkSrvConfig.updateServerHome(windowsAzureRole);
+				JdkSrvConfig.updateServerHome(
+						JdkSrvConfig.getTxtDir().getText());
 				handlePageComplete();
 			}
 
@@ -1009,12 +1010,12 @@ public class WAServerConfiguration extends PropertyPage {
 
 	private void checkForHttpElseAddEndpt(String srvPriPort) {
 		try {
-			WindowsAzureEndpoint httpEndpt = WAEclipseHelper.
+			WindowsAzureEndpoint httpEndpt = WAEclipseHelperMethods.
 					findEndpointWithPubPortWithAuto(HTTP_PORT, windowsAzureRole);
 			if (httpEndpt != null) {
 				httpEndpt.setPrivatePort(srvPriPort);
 			} else {
-				WindowsAzureRole httpRole = WAEclipseHelper.
+				WindowsAzureRole httpRole = WAEclipseHelperMethods.
 						findRoleWithEndpntPubPort(HTTP_PORT, waProjManager);
 				if (httpRole != null) {
 					MessageDialog.openWarning(this.getShell(),
@@ -1023,7 +1024,8 @@ public class WAServerConfiguration extends PropertyPage {
 									httpRole.getName()));
 				} else {
 					// create an endpoint
-					addEndpt(srvPriPort);
+					windowsAzureRole = WAServerConfUtilMethods.
+							addEndpt(srvPriPort, windowsAzureRole);
 				}
 			}
 		} catch (WindowsAzureInvalidProjectOperationException e) {
@@ -1032,22 +1034,6 @@ public class WAServerConfiguration extends PropertyPage {
 					Messages.srvErrTtl,
 					Messages.errSrvPort, e);
 		}
-	}
-
-	private void addEndpt(String srvPriPort)
-			throws WindowsAzureInvalidProjectOperationException {
-		StringBuffer endptName = new StringBuffer(Messages.lbHttpEndpt);
-		int index = 1;
-		// find suitable name
-		while (!windowsAzureRole.isAvailableEndpointName(
-				endptName.toString(),
-				WindowsAzureEndpointType.Input)) {
-			endptName.insert(4, index++);
-		}
-		windowsAzureRole.addEndpoint(endptName.toString(),
-				WindowsAzureEndpointType.Input,
-				srvPriPort,
-				String.valueOf(HTTP_PORT));
 	}
 
 	/**
@@ -1282,7 +1268,7 @@ public class WAServerConfiguration extends PropertyPage {
 						} else {
 							try {
 								new URL(jdkUrl);
-								if (WAEclipseHelper.isBlobStorageUrl(jdkUrl)) {
+								if (WAEclipseHelperMethods.isBlobStorageUrl(jdkUrl)) {
 									String javaHome = JdkSrvConfig.getTxtJavaHome().
 											getText().trim();
 									if (javaHome.isEmpty()) {
@@ -1344,7 +1330,7 @@ public class WAServerConfiguration extends PropertyPage {
 						try {
 							// Validate Server URL
 							new URL(srvUrl);
-							if (WAEclipseHelper.isBlobStorageUrl(srvUrl)) {
+							if (WAEclipseHelperMethods.isBlobStorageUrl(srvUrl)) {
 								String srvHome = JdkSrvConfig.getTxtHomeDir().
 										getText().trim();
 								if (srvHome.isEmpty()) {
@@ -1425,7 +1411,7 @@ public class WAServerConfiguration extends PropertyPage {
 							// JDK cloud option selected
 							try {
 								new URL(jdkUrl);
-								if (WAEclipseHelper.isBlobStorageUrl(jdkUrl)) {
+								if (WAEclipseHelperMethods.isBlobStorageUrl(jdkUrl)) {
 									isUrlValid = true;
 								} else {
 									PluginUtil.displayErrorDialog(getShell(),
@@ -1514,7 +1500,7 @@ public class WAServerConfiguration extends PropertyPage {
 							// Server cloud option selected
 							try {
 								new URL(srvUrl);
-								if (WAEclipseHelper.isBlobStorageUrl(srvUrl)) {
+								if (WAEclipseHelperMethods.isBlobStorageUrl(srvUrl)) {
 									isSrvUrlValid = true;
 								} else {
 									PluginUtil.displayErrorDialog(getShell(),
@@ -1871,7 +1857,7 @@ public class WAServerConfiguration extends PropertyPage {
 		}
 		File jdkFile = new File(jdkPath);
 		if (jdkFile.exists()) {
-			WAEclipseHelper.deleteDirectory(jdkFile);
+			WAEclipseHelperMethods.deleteDirectory(jdkFile);
 			WAEclipseHelper.refreshWorkspace(
 					Messages.rfrshErrTtl,
 					Messages.rfrshErrMsg);
@@ -1902,7 +1888,7 @@ public class WAServerConfiguration extends PropertyPage {
 			if (srvFile.isFile()) {
 				srvFile.delete();
 			} else if (srvFile.isDirectory()) {
-				WAEclipseHelper.deleteDirectory(srvFile);
+				WAEclipseHelperMethods.deleteDirectory(srvFile);
 			}
 			WAEclipseHelper.refreshWorkspace(
 					Messages.rfrshErrTtl,
@@ -1917,21 +1903,15 @@ public class WAServerConfiguration extends PropertyPage {
 	 * @return WindowsAzureRoleComponent
 	 */
 	private WindowsAzureRoleComponent getPrevCmpnt(String cmpntType) {
-		List<WindowsAzureRoleComponent> listComponents = null;
 		WindowsAzureRoleComponent cmp = null;
 		try {
-			listComponents = windowsAzureRole.getComponents();
+			cmp = WAServerConfUtilMethods.
+					getPrevCmpnt(cmpntType, windowsAzureRole);
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			PluginUtil.displayErrorDialogAndLog(
 					getShell(),
 					Messages.cmpntSetErrTtl,
 					Messages.cmpntgetErrMsg, e);
-		}
-		for (int i = 0; i < listComponents.size(); i++) {
-			if (listComponents.get(i).getType().
-					equalsIgnoreCase(cmpntType)) {
-				cmp = listComponents.get(i);
-			}
 		}
 		return cmp;
 	}
@@ -1945,19 +1925,9 @@ public class WAServerConfiguration extends PropertyPage {
 	 */
 	private void updateJavaHome(String javaHome) {
 		try {
-			if (waProjManager.getPackageType().
-					equals(WindowsAzurePackageType.LOCAL)) {
-				windowsAzureRole.setJDKCloudHome(
-						javaHome);
-				windowsAzureRole.setJDKLocalHome(null);
-			} else {
-				windowsAzureRole.
-				setRuntimeEnv(Messages.jvHome, javaHome);
-				windowsAzureRole.setJDKLocalHome(
-						windowsAzureRole.constructJdkHome(
-								JdkSrvConfig.getTxtJdk().getText().trim(),
-								cmpntFile));
-			}
+			windowsAzureRole = WAServerConfUtilMethods.
+					updateJavaHome(javaHome, windowsAzureRole, waProjManager,
+							JdkSrvConfig.getTxtJdk().getText().trim(), cmpntFile);
 		} catch (Exception e) {
 			PluginUtil.displayErrorDialog(
 					getShell(),
@@ -1975,54 +1945,15 @@ public class WAServerConfiguration extends PropertyPage {
 	 */
 	private void updateServerHome(String srvHome) {
 		try {
-			if (waProjManager.getPackageType().
-					equals(WindowsAzurePackageType.LOCAL)) {
-				windowsAzureRole.setServerCloudHome(
-						srvHome);
-				windowsAzureRole.setServerLocalHome(null);
-			} else {
-				windowsAzureRole.
-				setRuntimeEnv(windowsAzureRole.
-						getRuntimeEnvName(
-								Messages.typeSrvHm),
-								srvHome);
-				windowsAzureRole.setServerLocalHome(
-						windowsAzureRole.constructServerHome(
-								JdkSrvConfig.getComboServer().getText(),
-								JdkSrvConfig.getTxtDir().getText().trim(),
-								cmpntFile));
-			}
+			windowsAzureRole = WAServerConfUtilMethods.updateServerHome(srvHome,
+					windowsAzureRole, waProjManager,
+					JdkSrvConfig.getTxtDir().getText().trim(),
+					JdkSrvConfig.getComboServer().getText(), cmpntFile);
 		} catch (Exception e) {
 			PluginUtil.displayErrorDialog(
 					getShell(),
 					Messages.genErrTitle,
 					Messages.srvHomeErr);
-		}
-	}
-
-	/**
-	 * Method removes java home settings,
-	 * according to current package type.
-	 * Method will get called on the event of
-	 * check box uncheck.
-	 */
-	private void removeJavaHomeSettings() {
-		try {
-			if (waProjManager.getPackageType().
-					equals(WindowsAzurePackageType.LOCAL)) {
-				windowsAzureRole.setJDKCloudHome(null);
-			} else {
-				String localVal =
-						windowsAzureRole.getJDKLocalHome();
-				windowsAzureRole.
-				setRuntimeEnv(Messages.jvHome, localVal);
-				windowsAzureRole.setJDKLocalHome(null);
-			}
-		} catch (Exception e) {
-			PluginUtil.displayErrorDialog(
-					getShell(),
-					Messages.genErrTitle,
-					Messages.jvHomeErr);
 		}
 	}
 
@@ -2034,18 +1965,8 @@ public class WAServerConfiguration extends PropertyPage {
 	 */
 	private void removeServerHomeSettings() {
 		try {
-			if (waProjManager.getPackageType().
-					equals(WindowsAzurePackageType.LOCAL)) {
-				windowsAzureRole.setServerCloudHome(null);
-			} else {
-				String localVal =
-						windowsAzureRole.getServerLocalHome();
-				windowsAzureRole.
-				setRuntimeEnv(windowsAzureRole.
-						getRuntimeEnvName(Messages.typeSrvHm),
-						localVal);
-				windowsAzureRole.setServerLocalHome(null);
-			}
+			windowsAzureRole = WAServerConfUtilMethods.
+					removeServerHomeSettings(windowsAzureRole, waProjManager);
 		} catch (Exception e) {
 			PluginUtil.displayErrorDialog(
 					getShell(),

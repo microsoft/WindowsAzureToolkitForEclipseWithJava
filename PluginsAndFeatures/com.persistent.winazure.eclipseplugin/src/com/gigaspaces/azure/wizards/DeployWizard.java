@@ -1,19 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
-
+/**
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.gigaspaces.azure.wizards;
 
 import java.io.File;
@@ -22,12 +21,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -48,15 +42,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.AutoUpldCmpnts;
-import com.microsoft.windowsazure.management.compute.models.ServiceCertificateListResponse.Certificate;
-import com.gigaspaces.azure.model.CertificateUpload;
-import com.gigaspaces.azure.model.CertificateUploadList;
-import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
-import com.gigaspaces.azure.model.RemoteDesktopDescriptor;
-import com.gigaspaces.azure.model.StorageService;
 import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
-import com.gigaspaces.azure.util.WizardCache;
 import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureCertificate;
@@ -65,13 +51,26 @@ import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
+import com.microsoft.windowsazure.management.compute.models.ServiceCertificateListResponse.Certificate;
+import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
+import com.microsoftopentechnologies.deploy.model.AutoUpldCmpnts;
+import com.microsoftopentechnologies.deploy.model.CertificateUpload;
+import com.microsoftopentechnologies.deploy.model.CertificateUploadList;
+import com.microsoftopentechnologies.deploy.model.RemoteDesktopDescriptor;
+import com.microsoftopentechnologies.deploy.util.WizardCache;
+import com.microsoftopentechnologies.deploy.wizard.ConfigurationEventArgs;
+import com.microsoftopentechnologies.deploy.wizard.DeployWizardUtilMethods;
+import com.microsoftopentechnologies.model.StorageService;
+import com.microsoftopentechnologies.roleoperations.JdkSrvConfigUtilMethods;
+import com.microsoftopentechnologies.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.wacommon.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.wacommon.utils.CerPfxUtil;
-import com.microsoftopentechnologies.wacommon.utils.EncUtilHelper;
-import com.microsoftopentechnologies.wacommon.utils.PreferenceSetUtil;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
+import com.microsoftopentechnologies.wacommonutil.CerPfxUtil;
+import com.microsoftopentechnologies.wacommonutil.EncUtilHelper;
+import com.microsoftopentechnologies.wacommonutil.PreferenceSetUtil;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
@@ -147,6 +146,7 @@ public class DeployWizard extends Wizard {
 			// Configure or remove remote access settings
 			boolean status = handleRDPSettings(waProjManager);
 			if (!status) {
+				showBusy(false);
 				return false;
 			}
 			// certificate upload configuration
@@ -220,8 +220,9 @@ public class DeployWizard extends Wizard {
 			}
 			// WORKITEM: China Support customizable portal URL in the plugin
 			try {
+				String path = PluginUtil.getPrefFilePath();
 				String prefSetUrl = PreferenceSetUtil.getSelectedPortalURL(
-						PreferenceSetUtil.getSelectedPreferenceSetName());
+						PreferenceSetUtil.getSelectedPreferenceSetName(path), path);
 				/*
 				 * Don't check if URL is empty or null.
 				 * As if it is then we remove "portalurl" attribute
@@ -483,45 +484,7 @@ public class DeployWizard extends Wizard {
 			if (service.getUri() != null) {
 				cloudCertList = WizardCacheManager.fetchUploadedCertificates();
 			}
-			List<WindowsAzureRole> roleList = projMngr.getRoles();
-			// iterate over roles
-			for (int i = 0; i < roleList.size(); i++) {
-				WindowsAzureRole role = roleList.get(i);
-				Map<String, WindowsAzureCertificate> pmlCertList = role.getCertificates();
-				for (Iterator<Entry<String, WindowsAzureCertificate>> iterator =
-						pmlCertList.entrySet().iterator();
-						iterator.hasNext();) {
-					WindowsAzureCertificate pmlCert = iterator.next().getValue();
-					/*
-					 * No certificate present on cloud as REST API returned null
-					 * Need to upload each certificate
-					 */
-					if (cloudCertList == null
-							|| cloudCertList.isEmpty()) {
-						if (!isDuplicateThumbprintCert(certToUpload, pmlCert)) {
-							certToUpload.add(pmlCert);
-						}
-					} else {
-						/*
-						 * Check certificate is present on cloud
-						 * or not.
-						 */
-						boolean isPresent = false;
-						for (int j = 0; j < cloudCertList.size(); j++) {
-							Certificate cloudCert = cloudCertList.get(j);
-							if (cloudCert.getThumbprint().
-									equalsIgnoreCase(pmlCert.getFingerPrint())) {
-								isPresent = true;
-								break;
-							}
-						}
-						if (!isPresent
-								&& !isDuplicateThumbprintCert(certToUpload, pmlCert)) {
-							certToUpload.add(pmlCert);
-						}
-					}
-				}
-			}
+			certToUpload = DeployWizardUtilMethods.handleCertUpload(projMngr, cloudCertList);
 		} catch (Exception e) {
 			Display.getDefault().syncExec(new Runnable() {
 				public void run() {
@@ -536,31 +499,6 @@ public class DeployWizard extends Wizard {
 	}
 
 	/**
-	 * Certificate is not present on cloud
-	 * but check whether its already
-	 * been added to certToUpload list.
-	 * To avoid unnecessary PFX password prompt
-	 * invocation.
-	 * @param certToUpload
-	 * @param pmlCert
-	 * @return
-	 */
-	private boolean isDuplicateThumbprintCert(
-			List<WindowsAzureCertificate> certToUpload,
-			WindowsAzureCertificate pmlCert) {
-		boolean alreadyAdded = false;
-		for (int j = 0; j < certToUpload.size(); j++) {
-			WindowsAzureCertificate certObj = certToUpload.get(j);
-			if (certObj.getFingerPrint().
-					equalsIgnoreCase(pmlCert.getFingerPrint())) {
-				alreadyAdded = true;
-				break;
-			}
-		}
-		return alreadyAdded;
-	}
-
-	/**
 	 * If remote desktop is enabled
 	 * then method checks whether
 	 * its using sample certificate or not.
@@ -570,24 +508,8 @@ public class DeployWizard extends Wizard {
 	private boolean checkRDPUsesSampleCert(WindowsAzureProjectManager waProjManager) {
 		Boolean usesSampleCert = false;
 		try {
-			if (waProjManager.getRemoteAccessAllRoles()) {
-				/*
-				 * Check if sample certificate is used or
-				 * custom one.
-				 */
-				String certPath = waProjManager.getRemoteAccessCertificatePath();
-				if (certPath.startsWith(BASE_PATH)) {
-					certPath = certPath.substring(certPath.indexOf("}") + 1
-							, certPath.length());
-					certPath = String.format("%s%s",
-							selectedProject.getLocation().toOSString(),
-							certPath);
-				}
-				String thumbprint = CerPfxUtil.getThumbPrint(certPath);
-				if (thumbprint.equals(Messages.dfltThmbprnt)) {
-					usesSampleCert = true;
-				}
-			}
+			usesSampleCert = DeployWizardUtilMethods.checkRDPUsesSampleCert(waProjManager,
+					selectedProject.getLocation().toOSString());
 		} catch (Exception e) {
 			Display.getDefault().syncExec(new Runnable() {
 				public void run() {
@@ -643,7 +565,7 @@ public class DeployWizard extends Wizard {
 							equals(waProjManager.getRemoteAccessEncryptedPassword())) {
 						String encryptedPwd =
 								EncUtilHelper.encryptPassword(pwd,
-										certPath);
+										certPath, PluginUtil.getEncPath());
 						waProjManager.
 						setRemoteAccessEncryptedPassword(encryptedPwd);
 					}
@@ -687,7 +609,7 @@ public class DeployWizard extends Wizard {
 							// save password, encrypt always as storing for the first time
 							String encryptedPwd =
 									EncUtilHelper.encryptPassword(pwd,
-											certPath);
+											certPath, PluginUtil.getEncPath());
 							waProjManager.
 							setRemoteAccessEncryptedPassword(encryptedPwd);
 							// save expiration date
@@ -804,7 +726,7 @@ public class DeployWizard extends Wizard {
 									com.persistent.winazureroles.Messages.typeJdkDply)) {
 								String jdkName = role.getJDKCloudName();
 								if (jdkName == null || jdkName.isEmpty()) {
-									component.setCloudDownloadURL(JdkSrvConfig.
+									component.setCloudDownloadURL(JdkSrvConfigUtilMethods.
 											prepareCloudBlobURL(
 													component.getImportPath(),
 													accUrl));
@@ -816,12 +738,12 @@ public class DeployWizard extends Wizard {
 								}
 							} else if (cmpntType.equals(
 									com.persistent.winazureroles.Messages.typeSrvDply)){
-								component.setCloudDownloadURL(JdkSrvConfig.
+								component.setCloudDownloadURL(JdkSrvConfigUtilMethods.
 										prepareCloudBlobURL(
 												component.getImportPath(),
 												accUrl));
 							} else {
-								component.setCloudDownloadURL(JdkSrvConfig.
+								component.setCloudDownloadURL(JdkSrvConfigUtilMethods.
 										prepareUrlForApp(
 												component.getDeployName(),
 												accUrl));
@@ -873,30 +795,8 @@ public class DeployWizard extends Wizard {
 	private WindowsAzureProjectManager addAutoCloudUrl(
 			WindowsAzureProjectManager projMngr) {
 		try {
-			// get number of roles in one project
-			List<WindowsAzureRole> roleList = projMngr.getRoles();
-			for (int i = 0; i < roleList.size(); i++) {
-				WindowsAzureRole role = roleList.get(i);
-				AutoUpldCmpnts obj = new AutoUpldCmpnts(role.getName());
-				// check list has entry with this role name
-				if (mdfdCmpntList.contains(obj)) {
-					// get list of components
-					List<WindowsAzureRoleComponent> cmpnntsList =
-							role.getComponents();
-					// get indices of components which needs to be updated.
-					int index = mdfdCmpntList.indexOf(obj);
-					AutoUpldCmpnts presentObj =
-							mdfdCmpntList.get(index);
-					List<Integer> indices = presentObj.getCmpntIndices();
-					// iterate over indices and update respective components.
-					for (int j = 0; j < indices.size(); j++) {
-						WindowsAzureRoleComponent cmpnt =
-								cmpnntsList.get(indices.get(j));
-						cmpnt.setCloudDownloadURL(auto);
-						cmpnt.setCloudKey("");
-					}
-				}
-			}
+			projMngr = DeployWizardUtilMethods.
+					addAutoCloudUrl(projMngr, mdfdCmpntList);
 		} catch (Exception e) {
 			Display.getDefault().syncExec(new Runnable() {
 				public void run() {
@@ -920,16 +820,8 @@ public class DeployWizard extends Wizard {
 	private WindowsAzureProjectManager addAutoSettingsForCache(
 			WindowsAzureProjectManager projMngr) {
 		try {
-			// get number of roles in one project
-			List<WindowsAzureRole> roleList = projMngr.getRoles();
-			for (int i = 0; i < roleList.size(); i++) {
-				WindowsAzureRole role = roleList.get(i);
-				if (roleMdfdCache.contains(role.getName())) {
-					role.setCacheStorageAccountName(dashAuto);
-					role.setCacheStorageAccountKey("");
-					role.setCacheStorageAccountUrl("");
-				}
-			}
+			projMngr = DeployWizardUtilMethods.
+					addAutoSettingsForCache(projMngr, roleMdfdCache);
 		} catch (Exception e) {
 			Display.getDefault().syncExec(new Runnable() {
 				public void run() {

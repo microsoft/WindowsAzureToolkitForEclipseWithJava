@@ -15,7 +15,6 @@
 */
 package com.persistent.winazureroles;
 
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.jface.dialogs.Dialog;
@@ -32,8 +31,9 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
-import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.exception.AzureCommonsException;
+import com.microsoftopentechnologies.roleoperations.WAEnvVarDialogUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 /**
@@ -243,37 +243,19 @@ public class WAEnvVarDialog extends Dialog {
      * @return true if the variable name is valid, else false
      */
     private boolean validateName() {
-        boolean retVal = true;
-        String name = txtName.getText();
-        boolean isValidName = true;
-        for (Iterator<String> iterator = mapEnvVar.keySet().iterator();
-                iterator.hasNext();) {
-            String key = iterator.next();
-            if (key.trim().equalsIgnoreCase(name.trim())) {
-                isValidName = false;
-                break;
-            }
-        }
-        try {
-        if (!isValidName
-            && !(isEditVariable
-                    && varName.equalsIgnoreCase(txtName.getText()))
-                    || waRole.getLsEnv().contains(name)) {
-            // Here the comparison is case-insensitive to avoid this message,
-            // when user only changes case (upper/lower) of the name.
-            PluginUtil.displayErrorDialog(
-            		getShell(),
-            		Messages.evInUseTitle,
-            		Messages.evInUseMsg);
-            retVal = false;
-        }
-        } catch (WindowsAzureInvalidProjectOperationException e) {
-        	PluginUtil.displayErrorDialogAndLog(
-        			this.getShell(),
-        			Messages.envErrTtl,
-        			Messages.envValMsg, e);
-        	retVal = false;
-        }
-        return retVal;
+    	boolean retVal;
+    	try {
+    		retVal = WAEnvVarDialogUtilMethods.validateName(
+    				txtName.getText().trim(),
+    				mapEnvVar,
+    				isEditVariable,
+    				varName, waRole);
+    	} catch (AzureCommonsException e) {
+    		retVal = false;
+    		PluginUtil.displayErrorDialog(
+    				getShell(),
+    				Messages.genErrTitle, e.getMessage());
+    	}
+    	return retVal;
     }
 }

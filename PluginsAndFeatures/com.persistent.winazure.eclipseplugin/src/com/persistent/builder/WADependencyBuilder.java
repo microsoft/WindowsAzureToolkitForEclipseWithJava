@@ -38,6 +38,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
+import com.microsoftopentechnologies.builder.WAExportJar;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 import com.persistent.util.ProjectNatureHelper;

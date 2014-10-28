@@ -34,12 +34,12 @@ import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
-import com.gigaspaces.azure.deploy.DeploymentEventArgs;
-import com.gigaspaces.azure.deploy.DeploymentEventListener;
-import com.gigaspaces.azure.deploy.UploadProgressEventArgs;
-import com.gigaspaces.azure.deploy.UploadProgressEventListener;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.deploy.deploy.DeploymentEventArgs;
+import com.microsoftopentechnologies.deploy.deploy.DeploymentEventListener;
+import com.microsoftopentechnologies.deploy.deploy.UploadProgressEventArgs;
+import com.microsoftopentechnologies.deploy.deploy.UploadProgressEventListener;
 
 /**
  * The activator class controls the plug-in life cycle

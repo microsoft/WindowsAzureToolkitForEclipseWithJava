@@ -17,7 +17,6 @@ package com.persistent.winazureroles;
 
 import java.io.FileInputStream;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.core.runtime.FileLocator;
@@ -41,12 +40,12 @@ import org.eclipse.ui.PlatformUI;
 import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureCacheExpirationPolicy;
-import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureNamedCache;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.exception.AzureCommonsException;
+import com.microsoftopentechnologies.roleoperations.CacheDialogUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.persistent.util.WAEclipseHelper;
 /**
  * Class creates UI controls and respective listeners
  * for Named Cache dialog.
@@ -72,14 +71,6 @@ public class CacheDialog extends TitleAreaDialog {
 	private static String[] arrType = {Messages.expPolNvrExp,
 		Messages.expPolAbs,
 		Messages.expPolSlWn};
-	/**
-	 * End point range's minimum value.
-	 */
-	private final static int RANGE_MIN = 1;
-	/**
-	 * End point range's maximum value.
-	 */
-	private final static int RANGE_MAX = 65535;
 
 	/**
 	 * Constructor to be called for add cache.
@@ -186,7 +177,7 @@ public class CacheDialog extends TitleAreaDialog {
 			}
 			txtPortNum.setText(cache.getEndpoint().
 					getPrivatePort());
-			comboExpPolicy.setText(getExpPolStr(cache));
+			comboExpPolicy.setText(CacheDialogUtilMethods.getExpPolStr(cache));
 			/*
 			 * Check if expiration policy is NEVER_EXPIRES
 			 * then disable minutes to live text box
@@ -458,44 +449,14 @@ public class CacheDialog extends TitleAreaDialog {
 	 */
 	private Boolean isValidName(String name) {
 		boolean retVal = true;
-		StringBuffer strBfr = new StringBuffer(name);
 		try {
-			boolean isValidName = true;
-			/*
-			 * Check cache name contains alphanumeric characters,
-			 * underscore and starts with alphabet only.
-			 */
-			if (WAEclipseHelper.
-					isAlphaNumericUnderscore(name)) {
-				for (Iterator<String> iterator =
-						cacheMap.keySet().iterator();
-						iterator.hasNext();) {
-					String key = iterator.next();
-					if (key.equalsIgnoreCase(
-							strBfr.toString())) {
-						isValidName = false;
-						break;
-					}
-				}
-				if (!isValidName
-						&& !(isEdit && strBfr.toString().
-								equalsIgnoreCase(cacheName))) {
-					retVal = false;
-					PluginUtil.displayErrorDialog(getShell(),
-							Messages.cachNameErrTtl,
-							Messages.cachNameErrMsg);
-				}
-			} else {
-				retVal = false;
-				PluginUtil.displayErrorDialog(getShell(),
-						Messages.cachNameErrTtl,
-						Messages.chNameAlphNuMsg);
-			}
-		} catch (Exception e) {
-			PluginUtil.displayErrorDialogAndLog(
-					getShell(),
-					Messages.cachErrTtl,
-					Messages.cachSetErrMsg, e);
+			retVal = CacheDialogUtilMethods.isValidName(name,
+					cacheMap, isEdit, cacheName);
+		} catch (AzureCommonsException e) {
+			retVal = false;
+			PluginUtil.displayErrorDialog(getShell(),
+					Messages.genErrTitle,
+					e.getMessage());
 		}
 		return retVal;
 	}
@@ -507,17 +468,8 @@ public class CacheDialog extends TitleAreaDialog {
 	 * @return Boolean
 	 */
 	private Boolean validateMtl(String minToLive) {
-		Boolean isVallidMtl = false;
-		try {
-			int mtl = Integer.parseInt(minToLive);
-			if (mtl > 0) {
-				isVallidMtl = true;
-			} else {
-				isVallidMtl = false;
-			}
-		} catch (NumberFormatException e) {
-			isVallidMtl = false;
-		}
+		Boolean isVallidMtl = CacheDialogUtilMethods.
+				validateMtl(minToLive);
 		if (!isVallidMtl) {
 			PluginUtil.displayErrorDialog(getShell(),
 					Messages.cachMtlErrTtl,
@@ -534,47 +486,11 @@ public class CacheDialog extends TitleAreaDialog {
 	 */
 	private Boolean validatePort(String port) {
 		Boolean isValidPortRng = false;
-		Boolean isValidPort = true;
 		try {
-			int portNum = Integer.parseInt(port);
-			if (RANGE_MIN <= portNum
-					&& portNum <= RANGE_MAX) {
-				/*
-				 * Check whether end point of same name or port
-				 * exist already.
-				 */
-				WindowsAzureNamedCache namedCache =
-						cacheMap.get(cacheName);
-				Boolean isValidEp = windowsAzureRole.isValidEndpoint(
-						String.format("%s%s", Messages.cachEndPtName,
-								txtCacheName.getText()),
-								WindowsAzureEndpointType.Internal,
-								port, "");
-				if (isValidEp) {
-					isValidPortRng = true;
-				} else if (!isValidEp
-						&& (isEdit && namedCache.getEndpoint().
-						getPrivatePort().equals(port))) {
-					isValidPortRng = true;
-				} else {
-					isValidPort = false;
-				}
-			} else {
-				isValidPortRng = false;
-			}
-		} catch (NumberFormatException e) {
-			isValidPortRng = false;
-		} catch (Exception e) {
-			isValidPortRng = false;
-		}
-		if (!isValidPort) {
-			PluginUtil.displayErrorDialog(getShell(),
-					Messages.cachPortErrTtl,
-					Messages.dlgPortInUse);
-		} else if (!isValidPortRng) {
-			PluginUtil.displayErrorDialog(getShell(),
-					Messages.cachPortErrTtl,
-					Messages.rngErrMsg);
+			isValidPortRng = CacheDialogUtilMethods.validatePort(port, cacheMap, cacheName, isEdit,
+					txtCacheName.getText(), windowsAzureRole);
+		} catch (AzureCommonsException e) {
+			PluginUtil.displayErrorDialog(getShell(), Messages.genErrTitle, e.getMessage());
 		}
 		return isValidPortRng;
 	}
@@ -590,61 +506,18 @@ public class CacheDialog extends TitleAreaDialog {
 		 * Mapping of expiration policies shown on UI
 		 * to actual values stored in project manager object
 		 */
-		WindowsAzureCacheExpirationPolicy expPol;
-		if (expPolCmbTxt.equals(Messages.expPolNvrExp)) {
-			expPol = WindowsAzureCacheExpirationPolicy.
-					NEVER_EXPIRES;
-		} else if (expPolCmbTxt.equals(Messages.expPolAbs)) {
-			expPol = WindowsAzureCacheExpirationPolicy.ABSOLUTE;
-		} else {
-			expPol = WindowsAzureCacheExpirationPolicy.
-					SLIDING_WINDOW;
-		}
+		WindowsAzureCacheExpirationPolicy expPol =
+				CacheDialogUtilMethods.getExpPolObject(expPolCmbTxt);
 		try {
-			if (backupCheck.getSelection()) {
-				namedCache.setBackups(true);
-			} else {
-				namedCache.setBackups(false);
-			}
-			namedCache.setExpirationPolicy(expPol);
-			/*
-			 * Check if expiration policy is
-			 * NEVER_EXPIRES then set value to zero
-			 * else set value of minutes to live
-			 * property specified in text box.
-			 */
-			if (expPolCmbTxt.equals(Messages.expPolNvrExp)) {
-				namedCache.setMinutesToLive(0);
-			} else {
-				namedCache.setMinutesToLive(Integer.
-						parseInt(txtMinLive.getText().trim()));
-			}
+			CacheDialogUtilMethods.setCacheAttributes(namedCache,
+					expPolCmbTxt,
+					backupCheck.getSelection(),
+					expPol,
+					txtMinLive.getText().trim());
 		} catch (Exception e) {
 			PluginUtil.displayErrorDialog(getShell(),
 					Messages.cachErrTtl,
 					Messages.cachSetErrMsg);
 		}
-	}
-
-	/**
-	 * Mapping of expiration policies stored in project manager object
-	 * to values shown on UI.
-	 * @param cache
-	 * @return
-	 */
-	private String getExpPolStr(WindowsAzureNamedCache cache) {
-		String expPolStr;
-		if (cache.getExpirationPolicy().
-				equals(WindowsAzureCacheExpirationPolicy.
-						NEVER_EXPIRES)) {
-			expPolStr = Messages.expPolNvrExp;
-		} else if (cache.getExpirationPolicy().
-				equals(WindowsAzureCacheExpirationPolicy.
-						ABSOLUTE)) {
-			expPolStr = Messages.expPolAbs;
-		} else {
-			expPolStr = Messages.expPolSlWn;
-		}
-		return expPolStr;
 	}
 }

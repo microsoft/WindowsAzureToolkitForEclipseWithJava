@@ -15,27 +15,18 @@
  */
 package com.microsoftopentechnologies.wacommon.utils;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.eclipse.core.runtime.FileLocator;
 
 import com.microsoftopentechnologies.wacommon.Activator;
 
 
-public class FileUtil {
-	
-	private static final int BUFF_SIZE = 1024;
-	
+public class FileUtil {	
     
     /**
      * copy specified file to eclipse plugins folder
@@ -53,75 +44,10 @@ public class FileUtil {
 	        FileInputStream fis = new FileInputStream(file);
 	        File outputFile = new File(destFile);
 	        FileOutputStream fos = new FileOutputStream(outputFile);
-	        writeFile(fis , fos);
+	        com.microsoftopentechnologies.wacommonutil.FileUtil.writeFile(fis , fos);
 		} catch (IOException e) {
 			Activator.getDefault().log(e.getMessage(), e);
 		}
 
     }
-    
-    /**
-     * Method writes contents of file.
-     * @param inStream
-     * @param outStream
-     * @throws IOException
-     */
-    public static void writeFile(InputStream inStream, OutputStream outStream)
-    		throws IOException {
-
-        try {
-            byte[] buf = new byte[BUFF_SIZE];
-            int len = inStream.read(buf);
-            while (len > 0) {
-                outStream.write(buf, 0, len);
-                len = inStream.read(buf);
-            }
-        } finally {
-            if (inStream != null) {
-                inStream.close();
-            }
-            if (outStream != null) {
-                outStream.close();
-            }
-        }
-    }
-    
-	/**
-	 * Copies jar file from zip 
-	 * @throws IOException 
-	 */
-	public static boolean copyFileFromZip(File zipResource, String jarFileNAme, File destFile) 
-	throws IOException {
-		
-		boolean jarCopied = false;
-		
-		ZipFile zipFile = new ZipFile(zipResource);
-		Enumeration<? extends ZipEntry> entries = zipFile.entries();
-
-		while (entries.hasMoreElements()) {
-	            ZipEntry zipEntry = (ZipEntry) entries.nextElement();
-	            if (zipEntry.getName().equals(jarFileNAme)) {
-	            	writeFile(zipFile.getInputStream(zipEntry), new BufferedOutputStream(new FileOutputStream(destFile)));
-	            	jarCopied = true; 
-	            }
-		}
-		zipFile.close();
-		
-		return jarCopied;
-		
-	}
-	
-	/**
-	 * Utility method to check for null conditions or empty strings.
-	 * @param name 
-	 * @return true if null or empty string
-	 */
-	public static boolean isNullOrEmpty(final String name) {
-		boolean isValid = false;
-		if (name == null || name.matches("\\s*")) {
-			isValid = true;
-		}
-		return isValid;
-	}
-
 }

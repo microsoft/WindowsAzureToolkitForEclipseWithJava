@@ -1,18 +1,18 @@
 /**
- * Copyright 2013 Persistent Systems Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.interopbridges.tools.windowsazure;
 
 public final class WindowsAzureConstants {
@@ -159,7 +159,7 @@ public final class WindowsAzureConstants {
 	public static final String CREATOR_VER = PROJ_PROPERTY
 			+ "/property[@name='creator.version']";
 	public static final String V17_VERSION = "1.7.0";
-	public static final String VERSION = "2.4.0";
+	public static final String VERSION = "2.4.1";
 	public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY
 			+ "/property[@name='project.%s.sessionaffinity.inputendpoint']";
 	public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY

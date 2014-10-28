@@ -35,6 +35,7 @@ import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
+import com.microsoftopentechnologies.propertypage.Azure;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
@@ -157,36 +158,23 @@ public class WAWinAzurePropertyPage extends PropertyPage {
 
     @Override
     public boolean performOk() {
-        try {
-            loadProject();
-            String serviceName = txtServiceName.getText();
-            if (waProjManager.isValidServiceName(serviceName)) {
-                waProjManager.setServiceName(serviceName);
-            }
-            String type = comboType.getText();
-            if (type.equalsIgnoreCase(Messages.proPageBFEmul)) {
-                waProjManager.setPackageType(WindowsAzurePackageType.LOCAL);
-            } else {
-                waProjManager.setPackageType(WindowsAzurePackageType.CLOUD);
-            }
-
-            for (OSFamilyType osType : OSFamilyType.values()) {
-            	if (osType.getName().equalsIgnoreCase(targetOSComboType.getText())) {
-            		waProjManager.setOSFamily(osType);
-            	}
-			}
-
-            waProjManager.save();
-            WAEclipseHelper.refreshWorkspace(
-            		Messages.proPageRefWarn, Messages.proPageRefMsg);
-        } catch (WindowsAzureInvalidProjectOperationException e) {
-            errorMessage = Messages.proPageErrMsgBox1
-            +
-            Messages.proPageErrMsgBox2;
-            PluginUtil.displayErrorDialogAndLog(this.getShell(),
-            		Messages.proPageErrTitle,
-            		errorMessage, e);
-        }
-        return super.performOk();
+    	try {
+    		loadProject();
+    		waProjManager = Azure.performOK(waProjManager,
+    				txtServiceName.getText(),
+    				comboType.getText(),
+    				targetOSComboType.getText());
+    		waProjManager.save();
+    		WAEclipseHelper.refreshWorkspace(
+    				Messages.proPageRefWarn, Messages.proPageRefMsg);
+    	} catch (WindowsAzureInvalidProjectOperationException e) {
+    		errorMessage = Messages.proPageErrMsgBox1
+    				+
+    				Messages.proPageErrMsgBox2;
+    		PluginUtil.displayErrorDialogAndLog(this.getShell(),
+    				Messages.proPageErrTitle,
+    				errorMessage, e);
+    	}
+    	return super.performOk();
     }
 }

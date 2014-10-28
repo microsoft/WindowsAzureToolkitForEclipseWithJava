@@ -1,18 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
+/**
+* Copyright 2014 Microsoft Open Technologies, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*	 http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 package com.gigaspaces.azure.wizards;
 
 import java.io.File;
@@ -49,26 +49,26 @@ import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.model.KeyName;
-import com.gigaspaces.azure.model.StorageService;
-import com.gigaspaces.azure.model.StorageServices;
-import com.gigaspaces.azure.model.Subscription;
 import com.gigaspaces.azure.propertypage.SubscriptionPropertyPage;
-import com.gigaspaces.azure.rest.WindowsAzureRestUtils;
 import com.gigaspaces.azure.runnable.AccountActionRunnable;
 import com.gigaspaces.azure.runnable.CacheAccountWithProgressBar;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressBar;
 import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
-import com.gigaspaces.azure.util.PublishData;
 import com.gigaspaces.azure.util.UIUtils;
-import com.gigaspaces.azure.util.WizardCache;
 import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
+import com.microsoftopentechnologies.deploy.util.PublishData;
+import com.microsoftopentechnologies.deploy.util.WizardCache;
+import com.microsoftopentechnologies.deploy.wizard.ConfigurationEventArgs;
+import com.microsoftopentechnologies.model.KeyName;
+import com.microsoftopentechnologies.model.StorageService;
+import com.microsoftopentechnologies.model.StorageServices;
+import com.microsoftopentechnologies.model.Subscription;
 import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
@@ -405,7 +405,7 @@ public class SignInPage extends WindowsAzurePage {
 				ConfigurationEventArgs.DEPLOY_MODE, deployMode));
 
 		fireConfigurationEvent(new ConfigurationEventArgs(this,
-				ConfigurationEventArgs.SUPSCRIPTION, publishData));
+				ConfigurationEventArgs.SUBSCRIPTION, publishData));
 		
 		fireConfigurationEvent(new ConfigurationEventArgs(this,
 				ConfigurationEventArgs.CONFIG_HTTPS_LINK, waProjManager.getSSLInfoIfUnique() != null? "true":"false"));
@@ -891,11 +891,10 @@ public class SignInPage extends WindowsAzurePage {
 				subscriptionCombo = UIUtils.
 						populateSubscriptionCombo(subscriptionCombo);
 				// update cache of publish data object
-				publishData = (PublishData) subscriptionCombo
-						.getData(subscriptionCombo.getText());
+				Object obj = subscriptionCombo.getData(subscriptionCombo.getText());
+				publishData = (PublishData) obj;
 				// enable and disable components.
-				setComponentState((subscriptionCombo.
-						getData(subscriptionCombo.getText()) != null));
+				setComponentState(obj != null);
 				setPageComplete(validatePageComplete());
 			}
 		});
@@ -1186,7 +1185,7 @@ public class SignInPage extends WindowsAzurePage {
 	private PublishData handlePfx(File file) {
 		PublishData data;
 		try {
-			data = WindowsAzureRestUtils.parsePfx(file);
+			data = com.microsoftopentechnologies.deploy.util.UIUtils.parsePfx(file);
 		} catch (Exception e) {
 			MessageUtil.displayErrorDialog(getShell(), Messages.importDlgTitle, String.format(Messages.importDlgMsg, file.getName(), Messages.failedToParse));
 			return null;
