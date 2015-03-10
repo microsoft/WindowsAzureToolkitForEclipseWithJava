@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -36,10 +36,10 @@ import org.osgi.framework.BundleContext;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.deploy.deploy.DeploymentEventArgs;
-import com.microsoftopentechnologies.deploy.deploy.DeploymentEventListener;
-import com.microsoftopentechnologies.deploy.deploy.UploadProgressEventArgs;
-import com.microsoftopentechnologies.deploy.deploy.UploadProgressEventListener;
+import com.microsoftopentechnologies.azurecommons.deploy.DeploymentEventArgs;
+import com.microsoftopentechnologies.azurecommons.deploy.DeploymentEventListener;
+import com.microsoftopentechnologies.azurecommons.deploy.UploadProgressEventArgs;
+import com.microsoftopentechnologies.azurecommons.deploy.UploadProgressEventListener;
 
 /**
  * The activator class controls the plug-in life cycle

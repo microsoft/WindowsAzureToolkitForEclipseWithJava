@@ -1,25 +1,24 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*	 http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-*/
+ * Copyright 2015 Microsoft Open Technologies, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *	 http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package com.microsoftopentechnologies.deploy.util;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -28,24 +27,21 @@ import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
-import com.microsoftopentechnologies.model.StorageServices;
+import com.microsoftopentechnologies.azuremanagementutil.model.StorageServices;
 import com.microsoftopentechnologies.model.Subscription;
-
+/* Class needs to be removed after 2.5.1 release.
+ * Class is added just to take care of project upgrade scenario.
+ */
 @XmlRootElement(name = "PublishData")
 public class PublishData implements Serializable, Cloneable {
-
 	private static final long serialVersionUID = -5687551495552719808L;
-
 	private PublishProfile publishProfile;
-
-	private AtomicBoolean initializing;
-
 	private transient Map<String, ArrayList<HostedService>> servicesPerSubscription;
 	private transient Map<String, StorageServices> storagesPerSubscription;
 	private transient Map<String, ArrayList<Location>> locationsPerSubscription;
 
 	private Subscription currentSubscription;
-    private Map<String, Configuration> configurationPerSubscription;
+	private Map<String, Configuration> configurationPerSubscription;
 
 	public Map<String, StorageServices> getStoragesPerSubscription() {
 		return storagesPerSubscription;
@@ -72,28 +68,24 @@ public class PublishData implements Serializable, Cloneable {
 		this.servicesPerSubscription = servicesPerSubscription;
 	}
 
-    public Configuration getCurrentConfiguration() {
-        return configurationPerSubscription.get(currentSubscription.getId());
-    }
+	public Configuration getCurrentConfiguration() {
+		return configurationPerSubscription.get(currentSubscription.getId());
+	}
 
-    public Configuration getConfiguration(String subscriptionId) {
-        return configurationPerSubscription.get(subscriptionId);
-    }
+	public Configuration getConfiguration(String subscriptionId) {
+		return configurationPerSubscription.get(subscriptionId);
+	}
 
-    public void setConfigurationPerSubscription(Map<String, Configuration> configurationPerSubscription) {
-        this.configurationPerSubscription = configurationPerSubscription;
-    }
+	public void setConfigurationPerSubscription(Map<String, Configuration> configurationPerSubscription) {
+		this.configurationPerSubscription = configurationPerSubscription;
+	}
 
-    public Subscription getCurrentSubscription() {
+	public Subscription getCurrentSubscription() {
 		return currentSubscription;
 	}
 
 	public void setCurrentSubscription(Subscription currentSubscription) {
 		this.currentSubscription = currentSubscription;
-	}
-
-	public PublishData() {
-		initializing = new AtomicBoolean(false);
 	}
 
 	@XmlElement(name = "PublishProfile")
@@ -116,65 +108,5 @@ public class PublishData implements Serializable, Cloneable {
 			return ids;
 		}
 		return null;
-	}
-
-	public List<String> getSubscriptionNames() {
-		List<String> ids = new ArrayList<String>();
-		if (publishProfile != null) {
-			List<Subscription> subscriptions = publishProfile
-					.getSubscriptions();
-			for (Subscription s : subscriptions) {
-				ids.add(s.getName());
-			}
-			return ids;
-		}
-		return null;
-	}
-
-	public AtomicBoolean isInitializing() {
-
-		if (initializing == null)
-			initializing = new AtomicBoolean(false);
-
-		return initializing;
-	}
-
-	public boolean isInitialized() {
-
-		boolean pojosNotNull = (locationsPerSubscription != null)
-				&& (servicesPerSubscription != null)
-				&& (storagesPerSubscription != null)
-				&& (publishProfile != null)
-				&& (publishProfile.getSubscriptions() != null);
-
-		boolean subscriptionIdsNotNull = true;
-		for (Subscription s : publishProfile.getSubscriptions()) {
-			if (s.getId() == null) {
-				subscriptionIdsNotNull = false;
-				break;
-			}
-		}
-
-		boolean subscriptionNamesNotNullAndDoesNotEqualId = true;
-		for (Subscription s : publishProfile.getSubscriptions()) {
-			if (s.getName() == null || s.getName().equals(s.getId())) {
-				subscriptionNamesNotNullAndDoesNotEqualId = false;
-				break;
-			}
-		}
-
-		return pojosNotNull && subscriptionIdsNotNull
-				&& subscriptionNamesNotNullAndDoesNotEqualId;
-	}
-
-	public void reset() {
-
-		List<Subscription> subscriptions = publishProfile.getSubscriptions();
-
-		if (subscriptions != null) {
-			for (Subscription s : subscriptions) {
-				s.setSubscriptionName(s.getSubscriptionID());
-			}
-		}
 	}
 }

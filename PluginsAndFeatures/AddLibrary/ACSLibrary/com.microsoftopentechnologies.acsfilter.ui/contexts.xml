@@ -18,5 +18,5 @@
      	and a file containing both the private and the public key (*.PFX).
 	 </description>
         <topic label="Enabling Remote Access in Azure Using Eclipse" href="http://go.microsoft.com/fwlink/?LinkID=262381"/>
-   </context>
+   </context> 
 </contexts>

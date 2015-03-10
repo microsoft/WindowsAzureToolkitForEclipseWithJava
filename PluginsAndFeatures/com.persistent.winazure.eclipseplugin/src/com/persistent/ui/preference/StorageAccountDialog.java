@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -45,12 +45,12 @@ import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.wizards.NewStorageAccountDialog;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
-import com.microsoftopentechnologies.model.StorageService;
-import com.microsoftopentechnologies.preference.PreferenceUtilMethods;
-import com.microsoftopentechnologies.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
+import com.microsoftopentechnologies.azurecommons.preference.PreferenceUtilMethods;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommonutil.PreferenceSetUtil;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.PreferenceSetUtil;
 
 public class StorageAccountDialog extends TitleAreaDialog {
 	private Text txtName;

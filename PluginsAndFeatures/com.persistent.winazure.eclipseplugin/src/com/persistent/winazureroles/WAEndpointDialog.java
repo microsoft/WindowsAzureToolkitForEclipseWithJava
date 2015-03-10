@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.roleoperations.WAEndpointDialogUtilMethods;
-import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.roleoperations.WAEndpointDialogUtilMethods;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 /**
@@ -67,8 +67,6 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
 
     private final static int DIALOG_WIDTH = 250;
     private final static int DIALOG_LEFT_MARGIN = 5;
-    private final static int RANGE_MIN = 1;
-    private final static int RANGE_MAX = 65535;
     private static String auto = "(auto)";
 
     /**

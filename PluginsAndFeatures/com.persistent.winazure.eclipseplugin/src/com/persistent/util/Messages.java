@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -122,6 +122,7 @@ public final class Messages extends NLS {
 	public static String dlgDlUrlErrMsg;
 	public static String dlgDlUrlErrTtl;
 	public static String dlgDlNtLblUrl;
+    public static String dlgNtLblHome;
 	public static String dplPageJdkChkBtn;
 	public static String dbgBrowseBtn;
 	public static String dplPageSerChkBtn;
@@ -144,6 +145,8 @@ public final class Messages extends NLS {
 	public static String cmhIdStrgAcc;
 	public static String cmhLblStrgAcc;
 	public static String autoDlJdkCldRdBtnLbl;
+	public static String noJdkDplyLbl;
+	public static String noSrvDplyLbl;
 	public static String cldRdBtnLbl;
 	public static String autoDlSrvCldRdBtnLbl;
 	public static String linkLblAcc;
@@ -153,6 +156,7 @@ public final class Messages extends NLS {
 	public static String expLocToAuto;
 	public static String emltrGrp;
 	public static String thrdPrtJdkLbl;
+	public static String thrdPrtSrvLbl;
 	public static String aggTtl;
 	public static String aggMsg;
 	public static String aggLnk;

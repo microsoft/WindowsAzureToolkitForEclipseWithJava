@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommonutil.CerPfxUtil;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil;
 
 public class SimplePfxPwdDlg extends org.eclipse.jface.dialogs.Dialog {
 	private Text txtPwd;

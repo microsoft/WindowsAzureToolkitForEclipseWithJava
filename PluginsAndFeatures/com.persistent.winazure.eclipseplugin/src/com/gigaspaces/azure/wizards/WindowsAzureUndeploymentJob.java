@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import org.eclipse.ui.console.MessageConsoleStream;
 import waeclipseplugin.Activator;
 import com.gigaspaces.azure.deploy.DeploymentManager;
 import com.gigaspaces.azure.util.CommandLineException;
-import com.microsoftopentechnologies.deploy.deploy.DeploymentEventArgs;
-import com.microsoftopentechnologies.deploy.deploy.DeploymentEventListener;
-import com.microsoftopentechnologies.exception.RestAPIException;
+import com.microsoftopentechnologies.azurecommons.deploy.DeploymentEventArgs;
+import com.microsoftopentechnologies.azurecommons.deploy.DeploymentEventListener;
+import com.microsoftopentechnologies.azurecommons.exception.RestAPIException;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
 public class WindowsAzureUndeploymentJob extends Job {

@@ -350,10 +350,24 @@
       class="com.persistent.util.WAPropertyTester">
     </propertyTester>
     <propertyTester
+      id="com.persistent.ui.property.isWebOrAzureProj"
+      type="org.eclipse.core.resources.IProject"
+      namespace="com.persistent.ui.property"
+      properties="isWebOrAzureProj"
+      class="com.persistent.util.WAPropertyTester">
+    </propertyTester>
+    <propertyTester
       id="com.persistent.ui.property.testProjFile"
       type="org.eclipse.ui.IEditorPart"
       namespace="com.persistent.ui.property"
       properties="isProjFile"
+      class="com.persistent.util.WAPropertyTester">
+    </propertyTester>
+    <propertyTester
+      id="com.persistent.ui.property.testIsWindows"
+      type="java.lang.Object"
+      namespace="com.persistent.ui.property"
+      properties="isWindows"
       class="com.persistent.util.WAPropertyTester">
     </propertyTester>
   </extension>
@@ -439,6 +453,9 @@
                    label="Run in Azure Emulator"
                    tooltip="Run in Azure Emulator"
                    style="push">
+                   <visibleWhen>
+                       <test property="com.persistent.ui.property.isWindows"/>
+                   </visibleWhen>
 			</command>
 
 			<command
@@ -447,6 +464,9 @@
                    label="Reset Azure Emulator"
                    tooltip="Reset Azure Emulator"
                    style="push">
+                   <visibleWhen>
+                       <test property="com.persistent.ui.property.isWindows"/>
+                   </visibleWhen>
 			</command>
 
 			<command
@@ -582,8 +602,13 @@
    </extension>
    
    <!-- fly menu on dynamic web project -->
-   <extension point="org.eclipse.ui.commands">
+	<extension point="org.eclipse.ui.commands">
 	  <command
+	  		description="Publish to Azure..."
+	        id="com.persistent.ui.role.publishpopup"
+	        name="Publish to Azure...">
+	  </command>
+	    <command
 	  		description="Package for Azure..."
 	        id="com.persistent.ui.role.popup"
 	        name="Package for Azure...">
@@ -593,26 +618,48 @@
    <extension point="org.eclipse.ui.menus">
   	<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
 	  	<menu 
-	         label="Azure" icon="icons/small/windowsAzure.png">
+	         label="Azure" icon="icons/small/windowsAzure.png" id="com.microsoftopentechnologies.ui.common.webprojmenu">
+	         	 <command icon="icons/publish.png"
+		           commandId="com.persistent.ui.role.publishpopup">
+			     </command>
 		    	 <command icon="icons/small/newCloudService.png"
 		           commandId="com.persistent.ui.role.popup">
 			     </command>
+			     
 			    <visibleWhen checkEnabled="false">
 			    <with 
 				variable="selection">
 				<count value="1"/> 
 				<iterate 
 					operator="or">
-					<test
-                      property="com.persistent.ui.property.isWebProj">
-                    </test> 
+					<adapt type="org.eclipse.core.resources.IProject">
+        				<test property="com.persistent.ui.property.isWebProj"/>
+            		</adapt>
 				</iterate> 
 		    	</with>
 			    </visibleWhen>
 	  	</menu>
     </menuContribution>
   </extension>
+  
   <extension point="org.eclipse.ui.handlers">
+  	  <handler
+	        class="com.persistent.contextmenu.PublishContextMenuHandler"
+	        commandId="com.persistent.ui.role.publishpopup">
+		<enabledWhen>
+			<with
+				variable="selection">
+				<count value="1"/>
+				<iterate
+					operator="or">
+            		<adapt type="org.eclipse.core.resources.IProject">
+        				<test property="com.persistent.ui.property.isWebProj"/>
+            		</adapt>
+				</iterate>
+		    </with>
+		</enabledWhen>
+	  </handler>
+
 	  <handler
 	        class="com.persistent.ui.projwizard.ContextMenuHandler"
 	        commandId="com.persistent.ui.role.popup">
@@ -622,14 +669,14 @@
 				<count value="1"/>
 				<iterate
 					operator="or">
-            		<test
-                      property="com.persistent.ui.property.isWebProj">
-                    </test> 
+            		<adapt type="org.eclipse.core.resources.IProject">
+        				<test property="com.persistent.ui.property.isWebProj"/>
+            		</adapt>
 				</iterate>
 		    </with>
 		</enabledWhen>
 	  </handler>
-	  </extension>
+	</extension>
 	  
    <!-- fly menu on Worker role folder -->
    <!-- Commands for fly menu on Worker role -->
@@ -860,9 +907,8 @@
 				<count value="1"/>
 				<iterate
 					operator="or">
-					<adapt type="org.eclipse.core.resources.IResource">
-        				<test property="org.eclipse.core.resources.projectNature"
-         				value="com.persistent.ui.projectnature"/>
+					<adapt type="org.eclipse.core.resources.IProject">
+        				<test property="com.persistent.ui.property.isWebOrAzureProj"/>
             		</adapt>
 				</iterate>
 		    </with>

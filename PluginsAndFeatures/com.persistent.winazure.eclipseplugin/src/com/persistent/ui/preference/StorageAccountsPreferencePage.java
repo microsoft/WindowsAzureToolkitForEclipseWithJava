@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -43,12 +43,12 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.UIUtils;
-import com.microsoftopentechnologies.preference.PreferenceUtilMethods;
-import com.microsoftopentechnologies.preference.StorageAccPrefPageTableElement;
-import com.microsoftopentechnologies.preference.StorageAccPrefPageTableElements;
-import com.microsoftopentechnologies.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.azurecommons.preference.PreferenceUtilMethods;
+import com.microsoftopentechnologies.azurecommons.preference.StorageAccPrefPageTableElement;
+import com.microsoftopentechnologies.azurecommons.preference.StorageAccPrefPageTableElements;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
 

@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -29,8 +29,7 @@ import waeclipseplugin.Activator;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 /**
- * This class handles the click event on custom context menu of role folder.
- *
+ * This class handles the click event on custom context menu of dynamic web project.
  */
 public class ContextMenuHandler extends AbstractHandler {
 

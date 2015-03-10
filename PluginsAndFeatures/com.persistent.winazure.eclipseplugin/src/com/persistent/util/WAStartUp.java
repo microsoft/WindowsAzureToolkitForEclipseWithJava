@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -25,9 +25,7 @@ import java.net.URI;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -35,7 +33,6 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.FileLocator;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.ui.IStartup;
 import org.eclipse.wst.xml.core.internal.XMLCorePlugin;
 import org.eclipse.wst.xml.core.internal.catalog.provisional.ICatalog;
@@ -44,11 +41,11 @@ import org.eclipse.wst.xml.core.internal.catalog.provisional.INextCatalog;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
-import com.microsoftopentechnologies.startup.WAStartUpUtilMethods;
-import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.startup.WAStartUpUtilMethods;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 /**
  * This class gets executed after the Workbench initialises.
@@ -58,7 +55,6 @@ public class WAStartUp implements IStartup {
     private static final int BUFF_SIZE = 1024;
     private static final String COMPONENTSETS_TYPE = "COMPONENTSETS";
     private static final String PREFERENCESETS_TYPE = "PREFERENCESETS";
-    private final static String AUTO = "auto";
     protected static File cmpntFile = new File(WAEclipseHelper.getTemplateFile(Messages.cmpntFileName));
     @Override
     public void earlyStartup() {
@@ -109,8 +105,6 @@ public class WAStartUp implements IStartup {
             PreferenceUtilStrg.save();
             //this code is for copying componentset.xml in plugins folder
             copyPluginComponents();
-            // remove unwanted preference entries
-            prefsCleanUp(projects);
             // refresh workspace as package.xml may have got changed.
             WAEclipseHelper.refreshWorkspace(Messages.resCLJobName,
             		Messages.resCLExWkspRfrsh);
@@ -119,40 +113,6 @@ public class WAStartUp implements IStartup {
                So user should not get any exception prompt.*/
             Activator.getDefault().log(Messages.expErlStrtUp, e);
         }
-    }
-
-    /**
-     * Publish wizard's subscription ID, storage account and cloud service
-     * is remembered using preference entry in preference file
-     * Where key will be as follows
-     * WAEclipsePlugin.project.<projectName>
-     * Method will compare azure project in
-     * workspace and corresponding key in file.
-     * If some extra keys are present then those will get removed.
-     * @param projects
-     */
-    private void prefsCleanUp(IProject[] projects) {
-    	try {
-    		List<String> winAzProjName = new ArrayList<String>();
-    		for (int i = 0; i < projects.length; i++) {
-    			IProject proj = projects[i];
-    			if (proj.isOpen()
-    					&& proj.hasNature(Messages.stUpProjNature)) {
-    				winAzProjName.add(proj.getName());
-    			}
-    		}
-    		List<String> keyList = PreferenceUtilPubWizard.getProjKeyList();
-    		for (int i = 0; i < keyList.size(); i++) {
-    			String key = keyList.get(i);
-    			String keyProjName = key.substring(
-    					key.lastIndexOf(".") + 1, key.length());
-    			if (!winAzProjName.contains(keyProjName)) {
-    				PreferenceUtilPubWizard.removePreference(key);
-    			}
-    		}
-    	} catch (Exception e) {
-    		Activator.getDefault().log(Messages.expClearPref, e);
-    	}
     }
 
     /**
@@ -286,10 +246,9 @@ public class WAStartUp implements IStartup {
      */
     private void copyPluginComponents() {
         try {
-            String pluginInstLoc = String.format("%s%s%s%s%s",
-            		Platform.getInstallLocation().getURL().getPath().toString(),
-                    File.separator, Messages.pluginFolder,
-                    File.separator, Messages.pluginId);
+        	String pluginInstLoc = String.format("%s%s%s",
+        			PluginUtil.pluginFolder,
+        			File.separator, Messages.pluginId);
             if (!new File(pluginInstLoc).exists()) {
                 new File(pluginInstLoc).mkdir();
             }
@@ -353,7 +312,7 @@ public class WAStartUp implements IStartup {
         		}
         	} catch(Exception e ) {
         		Activator.getDefault().log(
-        				"Error occured while getting version of plugin component "
+        				"Error occurred while getting version of plugin component "
         	+ componentType
         	+ ", considering version as null");
         	}

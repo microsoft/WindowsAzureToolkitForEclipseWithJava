@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 */
 package com.persistent.winazureroles;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -52,7 +53,7 @@ public class WARGeneral extends PropertyPage {
     private Text txtRoleName;
     private Combo comboVMSize;
     private Text txtNoOfInstances;
-    private String[] arrVMSize = {"A9", "A8",
+    private String[] arrVMSize = {"STANDARD_D1", "STANDARD_D2", "STANDARD_D3", "STANDARD_D4", "STANDARD_D11", "STANDARD_D12", "STANDARD_D13", "STANDARD_D14", "A9", "A8",
     		"A7", "A6", "A5",
     		"ExtraLarge", "Large",
     		"Medium", "Small", "ExtraSmall"};
@@ -126,8 +127,7 @@ public class WARGeneral extends PropertyPage {
 
         txtRoleName = new Text(container, SWT.SINGLE | SWT.BORDER);
         gridData = new GridData();
-        gridData.widthHint = 275;
-        gridData.horizontalAlignment = GridData.END;
+        gridData.horizontalAlignment = GridData.FILL;
         gridData.grabExcessHorizontalSpace = true;
         txtRoleName.setLayoutData(gridData);
         txtRoleName.addModifyListener(new ModifyListener() {
@@ -155,13 +155,11 @@ public class WARGeneral extends PropertyPage {
 
         comboVMSize = new Combo(container, SWT.READ_ONLY);
         gridData = new GridData();
-        gridData.widthHint = 260;
-        gridData.horizontalIndent = 5;
-        gridData.horizontalAlignment = GridData.END;
+        gridData.horizontalAlignment = GridData.FILL;
         gridData.grabExcessHorizontalSpace = true;
         comboVMSize.setLayoutData(gridData);
         comboVMSize.setItems(arrVMSize);
-        comboVMSize.setText(arrVMSize[8]);
+        comboVMSize.setText(arrVMSize[Arrays.asList(arrVMSize).indexOf("Small")]);
         comboVMSize.addSelectionListener(new SelectionListener() {
 
             @Override
@@ -196,8 +194,7 @@ public class WARGeneral extends PropertyPage {
 
         txtNoOfInstances = new Text(container, SWT.SINGLE | SWT.BORDER);
         gridData = new GridData();
-        gridData.widthHint = 275;
-        gridData.horizontalAlignment = GridData.END;
+        gridData.horizontalAlignment = GridData.FILL;
         gridData.grabExcessHorizontalSpace = true;
         txtNoOfInstances.setLayoutData(gridData);
         txtNoOfInstances.setText("1");

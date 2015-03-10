@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies Inc.
+ * Copyright 2015 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.microsoftopentechnologies.wacommon.commoncontrols;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,10 +41,10 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
-import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.Activator;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommonutil.Utils;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.Utils;
 
 public class NewCertificateDialog extends TitleAreaDialog {
 
@@ -183,7 +184,7 @@ public class NewCertificateDialog extends TitleAreaDialog {
             public void widgetSelected(SelectionEvent event) {
                 String location = browseBtnListener("*.pfx");
                 if (location != null) {
-                    if (location.endsWith(".pfx")) {
+                    if (location.endsWith(".pfx") || location.endsWith(".PFX")) {
                         txtPFXFile.setText(location);
                     } else {
                         StringBuffer stringBuffer = new StringBuffer(location);
@@ -195,7 +196,11 @@ public class NewCertificateDialog extends TitleAreaDialog {
                 // Set default value for cert text field
                 if ( (txtPFXFile.getText() != null  && 
                 		(txtCertFile.getText() == null || txtCertFile.getText().isEmpty()))) {
-                	txtCertFile.setText(Utils.replaceLastSubString(txtPFXFile.getText(), ".pfx", ".cer"));
+                	if (txtPFXFile.getText().endsWith(".pfx")) {
+                		txtCertFile.setText(Utils.replaceLastSubString(txtPFXFile.getText(), ".pfx", ".cer"));
+                	} else if (txtPFXFile.getText().endsWith(".PFX")) {
+                		txtCertFile.setText(Utils.replaceLastSubString(txtPFXFile.getText(), ".PFX", ".CER"));
+                	}
                 }
             }
 
@@ -240,7 +245,7 @@ public class NewCertificateDialog extends TitleAreaDialog {
             public void widgetSelected(SelectionEvent event) {
                 String location = browseBtnListener("*.cer");
                 if (location != null) {
-                    if (location.endsWith(".cer")) {
+                    if (location.endsWith(".cer") || location.endsWith(".CER")) {
                         txtCertFile.setText(location);
                     } else {
                         StringBuffer strBfr = new StringBuffer(location);
@@ -252,7 +257,11 @@ public class NewCertificateDialog extends TitleAreaDialog {
                 // Set default value for pfx text field
                 if ( (txtCertFile.getText() != null  && 
                 		(txtPFXFile.getText() == null || txtPFXFile.getText().isEmpty()))) {
-                	txtPFXFile.setText(Utils.replaceLastSubString(txtCertFile.getText(), ".cer", ".pfx"));
+                	if (txtCertFile.getText().endsWith(".cer")) {
+                		txtPFXFile.setText(Utils.replaceLastSubString(txtCertFile.getText(), ".cer", ".pfx"));
+                	} else if (txtCertFile.getText().endsWith(".CER")) {
+                		txtPFXFile.setText(Utils.replaceLastSubString(txtCertFile.getText(), ".CER", ".PFX"));
+                	}
                 }
             }
 
@@ -269,8 +278,9 @@ public class NewCertificateDialog extends TitleAreaDialog {
      */
     protected String browseBtnListener(String ext) {
         FileDialog dialog = new FileDialog(this.getShell(), SWT.SAVE);
-        String []extensions = new String [1];
-        extensions[0] = ext;
+        String []extensions = new String [2];
+        extensions[0] = ext.toLowerCase(Locale.US);
+        extensions[1] = ext.toUpperCase(Locale.US);
         dialog.setOverwrite(true);
         selProject = PluginUtil.getSelectedProject();
         if (selProject != null) {
@@ -300,6 +310,12 @@ public class NewCertificateDialog extends TitleAreaDialog {
             return;
         } else if (!(txtPwd.getText() == null)
                 && !(txtPwd.getText().isEmpty())) {
+        	// check for password length
+        	if (txtPwd.getText().length() < 6) {
+        		PluginUtil.displayErrorDialog(new Shell(),
+        				Messages.newCertDlgPwdWrng, Messages.newCertDlgPwLength);
+                return;
+        	}
             Pattern pattern = Pattern.compile("^\\S+$");
             Matcher match = pattern.matcher(txtPwd.getText());
             if (!match.find()) {
@@ -312,6 +328,12 @@ public class NewCertificateDialog extends TitleAreaDialog {
         }
         if (!(txtConfirmPwd.getText() == null)
                 && !(txtConfirmPwd.getText().isEmpty())) {
+        	// check for password length
+        	if (txtConfirmPwd.getText().length() < 6) {
+        		PluginUtil.displayErrorDialog(new Shell(),
+        				Messages.newCertDlgPwdWrng, Messages.newCertDlgPwLength);
+                return;
+        	}
             Pattern pattern = Pattern.compile("^\\S+$");
             Matcher match = pattern.matcher(txtConfirmPwd.getText());
             if (!match.find()) {
@@ -360,8 +382,8 @@ public class NewCertificateDialog extends TitleAreaDialog {
                     errorTitle, errorMessage);
             return;
         }
-        if ((!certFilePath.endsWith(".cer"))
-        		|| (!pfxFilePath.endsWith(".pfx"))) {
+        if ((!(certFilePath.endsWith(".cer") || certFilePath.endsWith(".CER")))
+        		|| (!(pfxFilePath.endsWith(".pfx") || pfxFilePath.endsWith(".PFX")))) {
             errorTitle = Messages.newCertDlgCrtErTtl;
             errorMessage = Messages.newCerDlgInvdFlExt;
             PluginUtil.displayErrorDialog(this.getShell(),
@@ -388,7 +410,7 @@ public class NewCertificateDialog extends TitleAreaDialog {
                 if (jdkPath == null || jdkPath.isEmpty()) {
                 	jdkPath = WAEclipseHelperMethods.jdkDefaultDirectory(null);
                 }
-                com.microsoftopentechnologies.wacommonutil.CerPfxUtil.createCertificate(txtCertFile.getText(),
+                com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil.createCertificate(txtCertFile.getText(),
                         txtPFXFile.getText(), alias , txtPwd.getText(), txtCNName.getText(), jdkPath);
                 
                 //At this point certificates are created , populate the values for caller

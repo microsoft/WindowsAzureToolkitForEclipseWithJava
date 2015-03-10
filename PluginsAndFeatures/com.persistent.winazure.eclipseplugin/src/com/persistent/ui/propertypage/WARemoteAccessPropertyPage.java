@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -60,14 +60,14 @@ import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
-import com.microsoftopentechnologies.exception.AzureCommonsException;
-import com.microsoftopentechnologies.propertypage.RemoteAccess;
-import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.exception.AzureCommonsException;
+import com.microsoftopentechnologies.azurecommons.propertypage.RemoteAccess;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommonutil.CerPfxUtil;
-import com.microsoftopentechnologies.wacommonutil.EncUtilHelper;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.EncUtilHelper;
 import com.persistent.util.WAEclipseHelper;
 
 
@@ -242,6 +242,16 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
             PluginUtil.displayErrorDialog(this.getShell(),
             		Messages.remAccErTxtTitle,
             		Messages.remAccDataInc);
+        }
+        /*
+         * Non windows OS then disable components,
+         * but keep values as it is
+         */
+        if (!Activator.IS_WINDOWS) {
+        	setComponentStatus(false);
+        	if (!remoteChkBtn.getSelection()) {
+        		remoteChkBtn.setEnabled(false);
+        	}
         }
         isPageDisplayed = true;
         return parent;
@@ -637,7 +647,7 @@ public class WARemoteAccessPropertyPage extends PropertyPage {
      */
     protected void browseBtnListener() {
         FileDialog dialog = new FileDialog(this.getShell());
-        String [] extensions = {"*.cer"};
+        String [] extensions = {"*.cer", "*.CER"};
         dialog.setText(Messages.certDlgBrowFldr);
         dialog.setFilterExtensions(extensions);
         String path 		= selProject.getLocation().toPortableString();

@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.preference.PreferenceNode;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
@@ -71,7 +72,11 @@ public class WAPropertyTester extends PropertyTester {
             } else if (property.equalsIgnoreCase("isProjFile")
                     && object instanceof IEditorPart) {
                 retVal = isProjFile(object);
-
+            } else if (property.equalsIgnoreCase("isWindows")) {
+                retVal = isWindows();
+            } else if(property.equalsIgnoreCase("isWebOrAzureProj")
+            		&& object instanceof IProject) {
+            	retVal = isWebOrAzureProj(object);
             }
         } catch (Exception ex) {
             //As this is not an user initiated method,
@@ -134,6 +139,20 @@ public class WAPropertyTester extends PropertyTester {
         }
         return retVal;
     }
+    
+    private boolean isWebOrAzureProj(Object object)
+    		throws CoreException, WindowsAzureInvalidProjectOperationException {
+    	boolean retVal = false;
+    	IProject project = (IProject) object;
+    	if (project.isOpen()) {
+    		ProjExportType type = ProjectNatureHelper.getProjectNature(project);
+    		if ((type != null && type.equals(ProjExportType.WAR))
+    				|| project.hasNature(WAProjectNature.NATURE_ID)){
+    			retVal = true;
+    		}
+    	}
+    	return retVal;
+    }
 
     /**
      * Method checks and returns true,
@@ -145,22 +164,28 @@ public class WAPropertyTester extends PropertyTester {
      */
     private boolean isProjFile(Object obj) throws CoreException {
     	boolean isProjFile = false;
-    	IWorkbenchPage page = PlatformUI.getWorkbench().
-    			getActiveWorkbenchWindow().getActivePage();
-    	/*
-    	 * To avoid null pointer exception when we close any file
-    	 * and as a result of which there is no active editor.
-    	 */
-    	if (page.getActiveEditor() != null) {
-    		IFile editFile = (IFile) page.getActiveEditor().
-    				getEditorInput().getAdapter(IFile.class);
-    		if (editFile != null) {
-    			if (editFile.getProject().
-    					hasNature(WAProjectNature.NATURE_ID)) {
-    				isProjFile = true;
+    	IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+    	if (window != null) {
+    		IWorkbenchPage page = window.getActivePage();
+    		/*
+    		 * To avoid null pointer exception when we close any file
+    		 * and as a result of which there is no active editor.
+    		 */
+    		if (page.getActiveEditor() != null) {
+    			IFile editFile = (IFile) page.getActiveEditor().
+    					getEditorInput().getAdapter(IFile.class);
+    			if (editFile != null) {
+    				if (editFile.getProject().
+    						hasNature(WAProjectNature.NATURE_ID)) {
+    					isProjFile = true;
+    				}
     			}
     		}
     	}
     	return isProjFile;
+    }
+
+    private boolean isWindows() {
+        return Activator.IS_WINDOWS;
     }
 }

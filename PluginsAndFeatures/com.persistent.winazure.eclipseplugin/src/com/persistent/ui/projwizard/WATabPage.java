@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -45,8 +45,9 @@ import org.eclipse.ui.PlatformUI;
 import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
+import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
 import com.persistent.util.AppCmpntParam;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.JdkSrvConfigListener;
@@ -74,6 +75,8 @@ public class WATabPage extends WizardPage {
 			getTemplateFile(Messages.cmpntFile));
 	private int prevTabIndex;
 	private static boolean accepted = false;
+	private static boolean srvAccepted = false;
+	private String srvPrevName;
 	private String jdkPrevName;
 
 	/**
@@ -166,11 +169,31 @@ public class WATabPage extends WizardPage {
 		 * enable JDK and Server components.
 		 */
 		if (Activator.getDefault().isContextMenu()) {
-			// populate third party JDKs whose status in not deprecated
-			JdkSrvConfigListener.jdkChkBoxChecked("");
-			JdkSrvConfigListener.srvChkBoxChecked(
-					Messages.dlNtLblDirSrv);
-			JdkSrvConfig.getSerCheckBtn().setSelection(true);
+			/*
+			 * In SDK mode, the behavior for Package for Azure is the same as today:
+			 * check the JDK and server check box and the first radio button is the default.
+			 * But for no-SDK, since the checkbox is off and disabled,
+			 * the first radio button says no-JDK, so it is not helpful to select it.
+			 * So in the non-SDK scenario, the second button (3rd party JDK) is selected. 
+			 */
+			String sdkVersion = WindowsAzureProjectManager.getLatestAzureVersionForSA();
+			if (sdkVersion == null || sdkVersion.isEmpty()) {
+				JdkSrvConfig.getJdkCheckBtn().setEnabled(false);
+				JdkSrvConfig.setEnableJDK(false);
+				JdkSrvConfig.getAutoDlRdCldBtn().setSelection(false);
+				JdkSrvConfig.getThrdPrtJdkBtn().setSelection(true);
+				JdkSrvConfigListener.thirdPartyJdkBtnSelected(
+						Messages.dlNtLblDir);
+				jdkPrevName = JdkSrvConfig.
+						getThrdPrtJdkCmb().getText();
+				JdkSrvConfig.getSerCheckBtn().setEnabled(true);
+				accepted = false;
+			} else {
+				JdkSrvConfigListener.jdkChkBoxChecked("");
+				JdkSrvConfigListener.srvChkBoxChecked(
+						Messages.dlNtLblDirSrv);
+				JdkSrvConfig.getSerCheckBtn().setSelection(true);
+			}
 			handlePageComplete();
 		}
 
@@ -193,22 +216,41 @@ public class WATabPage extends WizardPage {
 	}
 
 	private void changeToAppTab() {
-		if (displayLicenseAgreement()) {
-			getWizard().getPage(Messages.tbPg).
-			setDescription(Messages.dplPageAppMsg);
-			folder.setSelection(appTab);
-			prevTabIndex = 2;
-		} else {
-			folder.setSelection(jdkTab);
-			prevTabIndex = 0;
+		if (prevTabIndex == 0) {
+			// JDK to App tab navigation 
+			if (displayLicenseAgreement()) {
+				getWizard().getPage(Messages.tbPg).
+				setDescription(Messages.dplPageAppMsg);
+				folder.setSelection(appTab);
+				prevTabIndex = 2;
+			} else {
+				folder.setSelection(jdkTab);
+				prevTabIndex = 0;
+			}
+		} else if (prevTabIndex == 1) {
+			// Server to App tab navigation
+			if (displayServerLicenseAgreement()) {
+				getWizard().getPage(Messages.tbPg).
+				setDescription(Messages.dplPageAppMsg);
+				folder.setSelection(appTab);
+				prevTabIndex = 2;
+			} else {
+				folder.setSelection(srvTab);
+				prevTabIndex = 1;
+			}
 		}
 	}
 
 	private void changeToJdkTab() {
-		folder.setSelection(jdkTab);
-		getWizard().getPage(Messages.tbPg).
-		setDescription(Messages.dplPageJdkMsg);
-		prevTabIndex = 0;
+		if (displayServerLicenseAgreement()) {
+			folder.setSelection(jdkTab);
+			getWizard().getPage(Messages.tbPg).
+			setDescription(Messages.dplPageJdkMsg);
+			prevTabIndex = 0;
+		} else {
+			folder.setSelection(srvTab);
+			prevTabIndex = 1;
+		}
 	}
 
 	/**
@@ -236,14 +278,13 @@ public class WATabPage extends WizardPage {
 			 * Next button has been clicked.
 			 */
 			if (tabIndex == 0
-					&& isJdkChecked()
-					&& !getJdkLoc().isEmpty()) {
+					&& (isJdkChecked()
+					&& !getJdkLoc().isEmpty() || !isJdkAutoUploadChecked())) {
 				changeToSrvTab();
 			} else if (tabIndex == 1
-					&& isSrvChecked()
-					&& !getServerName().isEmpty()
-					&& !getServerLoc().isEmpty()
-					&& isJdkChecked()) {
+					&& (isSrvChecked()
+							&& !JdkSrvConfig.getServerName().isEmpty()
+							&& !getServerLoc().isEmpty() || !isSrvAutoUploadChecked())) {
 				changeToAppTab();
 			} else {
 				page = getWizard().getPage(Messages.keyPg);
@@ -298,65 +339,76 @@ public class WATabPage extends WizardPage {
 	 * Validates all the fields.
 	 */
 	public void handlePageComplete() {
-		boolean isJdkValid = false;
+		boolean isJdkValid = true;
 		inHandlePgComplete = true;
 		inHndlPgCmpltBackBtn = true;
-		// JDK
+		// JDK emulator group
 		if (JdkSrvConfig.getJdkCheckBtn().getSelection()) {
 			if (JdkSrvConfig.getTxtJdk().getText().isEmpty()) {
+				isJdkValid = false;
 				setErrorMessage(Messages.jdkPathErrMsg);
 				setPageComplete(false);
 			} else {
 				File file = new File(
 						JdkSrvConfig.getTxtJdk().getText());
 				if (!file.exists()) {
+					isJdkValid = false;
 					setErrorMessage(Messages.dplWrngJdkMsg);
 					setPageComplete(false);
-				} else {
-					// JDK download group
-					// cloud radio button selected
-					if (JdkSrvConfig.getDlRdCldBtn().getSelection()) {
-						// Validate JDK URL
-						String url = getJdkUrl();
-						if (url.isEmpty()) {
-							setErrorMessage(Messages.dlgDlUrlErrMsg);
-							setPageComplete(false);
-						} else {
-							try {
-								new URL(url);
-								if (WAEclipseHelperMethods.isBlobStorageUrl(url)) {
-									String javaHome = JdkSrvConfig.getTxtJavaHome().
-											getText().trim();
-									if (javaHome.isEmpty()) {
-										setPageComplete(false);
-										setErrorMessage(Messages.jvHomeErMsg);
-									} else {
-										setErrorMessage(null);
-										setPageComplete(true);
-										isJdkValid = true;
-									}
-								} else {
-									setErrorMessage(Messages.dlgDlUrlErrMsg);
-									setPageComplete(false);
-								}
-							} catch (MalformedURLException e) {
-								setErrorMessage(Messages.dlgDlUrlErrMsg);
-								setPageComplete(false);
-							}
-						}
-					}
-					// No Validation needed if auto upload or
-					// third party JDK is selected
-					// local radio button selected
-					else {
-						setErrorMessage(null);
-						setPageComplete(true);
-						isJdkValid = true;
-					}
 				}
 			}
-			// Server
-			if (isJdkValid && JdkSrvConfig.getSerCheckBtn().getSelection()) {
+		}
+
+		// JDK download group
+		// cloud radio button selected
+		if (isJdkValid) {
+		if (JdkSrvConfig.getDlRdCldBtn().getSelection()) {
+			// Validate JDK URL
+			String url = getJdkUrl();
+			if (url.isEmpty()) {
+				isJdkValid = false;
+				setErrorMessage(Messages.dlgDlUrlErrMsg);
+				setPageComplete(false);
+			} else {
+				try {
+					new URL(url);
+					if (WAEclipseHelperMethods.isBlobStorageUrl(url)) {
+						String javaHome = JdkSrvConfig.getTxtJavaHome().
+								getText().trim();
+						if (javaHome.isEmpty()) {
+							isJdkValid = false;
+							setPageComplete(false);
+							setErrorMessage(Messages.jvHomeErMsg);
+						} else {
+							setErrorMessage(null);
+							setPageComplete(true);
+							isJdkValid = true;
+						}
+					} else {
+						isJdkValid = false;
+						setErrorMessage(Messages.dlgDlUrlErrMsg);
+						setPageComplete(false);
+					}
+				} catch (MalformedURLException e) {
+					isJdkValid = false;
+					setErrorMessage(Messages.dlgDlUrlErrMsg);
+					setPageComplete(false);
+				}
+			}
+		}
+		// No Validation needed if auto upload or
+		// third party JDK is selected
+		// local radio button selected
+		else {
+			setErrorMessage(null);
+			setPageComplete(true);
+			isJdkValid = true;
+		}
+		}
+
+		// Server
+		if (JdkSrvConfig.getSerCheckBtn().getSelection()) {
+			if (isJdkValid) {
 				inHandlePgComplete = true;
 				inHndlPgCmpltBackBtn = true;
 				if (JdkSrvConfig.getComboServer().getText().isEmpty()) {
@@ -408,9 +460,6 @@ public class WATabPage extends WizardPage {
 					}
 				}
 			}
-		} else {
-			setErrorMessage(null);
-			setPageComplete(true);
 		}
 	}
 
@@ -426,13 +475,11 @@ public class WATabPage extends WizardPage {
 		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				if (JdkSrvConfig.getJdkCheckBtn().
-						getSelection()) {
+				if (JdkSrvConfig.getJdkCheckBtn().getSelection()) {
 					// populate third party JDKs whose status in not deprecated
 					JdkSrvConfigListener.jdkChkBoxChecked("");
 				} else {
 					JdkSrvConfigListener.jdkChkBoxUnChecked();
-					accepted = false;
 				}
 				handlePageComplete();
 			}
@@ -495,6 +542,7 @@ public class WATabPage extends WizardPage {
 							JdkSrvConfig.getUrl(
 									JdkSrvConfig.getCmbStrgAccJdk()));
 					JdkSrvConfigListener.jdkDeployBtnSelected();
+					JdkSrvConfig.getSerCheckBtn().setEnabled(true);
 				}
 				handlePageComplete();
 				accepted = false;
@@ -545,6 +593,7 @@ public class WATabPage extends WizardPage {
 					jdkPrevName = JdkSrvConfig.
 							getThrdPrtJdkCmb().getText();
 				}
+				JdkSrvConfig.getSerCheckBtn().setEnabled(true);
 			}
 		});
 
@@ -677,13 +726,7 @@ public class WATabPage extends WizardPage {
 
 			@Override
 			public void focusLost(FocusEvent arg0) {
-				// Update note below URL text box
-				String path = JdkSrvConfig.
-						getTxtDir().getText().trim();
-				JdkSrvConfigListener.
-				focusLostSrvText(path,
-						Messages.dlNtLblDirSrv,
-						Messages.dlNtLblUrlSrv);
+				JdkSrvConfigListener.updateSrvDlNote(Messages.dlNtLblDirSrv);
 			}
 
 			@Override
@@ -699,6 +742,7 @@ public class WATabPage extends WizardPage {
 				serBrowseBtnListener();
 				JdkSrvConfigListener.modifySrvText(
 						Messages.dlNtLblDirSrv);
+				JdkSrvConfigListener.enforceSameLocalCloudServer();
 			}
 			@Override
 			public void widgetDefaultSelected(SelectionEvent arg0) {
@@ -711,10 +755,18 @@ public class WATabPage extends WizardPage {
 
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				if (JdkSrvConfig.isSrvDownloadChecked()
-						|| JdkSrvConfig.isSrvAutoUploadChecked()) {
+				if (JdkSrvConfig.isSrvAutoUploadChecked()) {
 					JdkSrvConfig.updateServerHome(JdkSrvConfig.getTxtDir().getText());
+				} else if (JdkSrvConfig.getThrdPrtSrvBtn().getSelection()) {
+					JdkSrvConfig.updateServerHomeForThirdParty();
+				} else if (JdkSrvConfig.isSrvDownloadChecked()) {
+					if (JdkSrvConfig.getTxtUrlSrv().getText().isEmpty()) {
+						JdkSrvConfig.updateServerHome(JdkSrvConfig.getTxtDir().getText());
+					} else {
+						JdkSrvConfigListener.modifySrvUrlText();
+					}
 				}
+				JdkSrvConfigListener.enforceSameLocalCloudServer();
 				handlePageComplete();
 			}
 
@@ -737,6 +789,20 @@ public class WATabPage extends WizardPage {
 			}
 		});
 
+		// listener for Server customize link.
+		JdkSrvConfig.getThrdPrtSrvLink()
+		.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				JdkSrvConfig.custLinkListener(
+						Messages.dplSerBtnTtl,
+						Messages.dplSerBtnMsg,
+						isWizard,
+						getShell(),
+						pageObj, cmpntFile);
+			}
+		});
+
 		// Server download group
 		// listener for Server deploy radio button.
 		JdkSrvConfig.getDlRdCldBtnSrv().
@@ -745,10 +811,14 @@ public class WATabPage extends WizardPage {
 			public void widgetSelected(SelectionEvent arg0) {
 				if (JdkSrvConfig.getDlRdCldBtnSrv()
 						.getSelection()) {
+					JdkSrvConfig.getTxtUrlSrv().setText(
+							JdkSrvConfig.getUrl(
+									JdkSrvConfig.getCmbStrgAccSrv()));
 					JdkSrvConfigListener.srvDeployBtnSelected(
 							Messages.dlNtLblDirSrv);
 				}
 				handlePageComplete();
+				srvAccepted = false;
 			}
 			@Override
 			public void widgetDefaultSelected(SelectionEvent arg0) {
@@ -760,28 +830,40 @@ public class WATabPage extends WizardPage {
 		addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
-				if (JdkSrvConfig.getAutoDlRdCldBtnSrv()
-						.getSelection()) {
+				if (JdkSrvConfig.getAutoDlRdCldBtnSrv().getSelection()) {
 					// server auto upload radio button selected
 					JdkSrvConfigListener.
 					configureAutoUploadServerSettings(
 							Messages.dlNtLblDirSrv);
-				} else {
-					/*
-					 * server auto upload radio button unselected
-					 * and deploy button selected.
-					 */
-					if (JdkSrvConfig.getDlRdCldBtnSrv().getSelection()) {
-						JdkSrvConfig.getTxtUrlSrv().setText(
-								JdkSrvConfig.getUrl(
-										JdkSrvConfig.getCmbStrgAccSrv()));
-						return;
-					}
 				}
 				handlePageComplete();
+				srvAccepted = false;
 			}
 			@Override
 			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
+
+		// listener for third party server radio button.
+		JdkSrvConfig.getThrdPrtSrvBtn().
+		addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				/*
+				 * Check if third party radio button
+				 * is already selected
+				 * and user is selecting same radio button again
+				 * then do not do any thing.
+				 */
+				if (!JdkSrvConfig.getThrdPrtSrvCmb().isEnabled()) {
+					JdkSrvConfigListener.thirdPartySrvBtnSelected(Messages.dlNtLblDirSrv);
+					srvPrevName = JdkSrvConfig.getThrdPrtSrvCmb().getText();
+				}
 			}
 		});
 
@@ -826,8 +908,35 @@ public class WATabPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				JdkSrvConfig.updateServerDlURL();
-				JdkSrvConfig.updateServerHome(JdkSrvConfig.getTxtDir().getText());
+				if (JdkSrvConfig.isSrvDownloadChecked()
+						|| JdkSrvConfig.isSrvAutoUploadChecked()) {
+					JdkSrvConfig.updateServerHome(JdkSrvConfig.getTxtDir().getText());
+				} else if (JdkSrvConfig.getThrdPrtSrvBtn().getSelection()) {
+					JdkSrvConfig.updateServerHomeForThirdParty();
+				}
 				handlePageComplete();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
+
+		// listener for third party JDK combo box.
+		JdkSrvConfig.getThrdPrtSrvCmb().
+		addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				JdkSrvConfigListener.thirdPartySrvComboListener();
+				/*
+				 * If server name is changed by user then license
+				 * has to be accepted again.
+				 */
+				String currentName = JdkSrvConfig.getThrdPrtSrvCmb().getText();
+				if (!currentName.equalsIgnoreCase(srvPrevName)) {
+					srvAccepted = false;
+					srvPrevName = currentName;
+				}
 			}
 
 			@Override
@@ -951,7 +1060,7 @@ public class WATabPage extends WizardPage {
 
 		// By default disable server component
 		// as JDK not selected.
-		if (isJdkChecked()) {
+		if (isJdkChecked() || !isJdkAutoUploadChecked()) {
 			JdkSrvConfig.setEnableServer(true);
 		} else {
 			JdkSrvConfig.setEnableServer(false);
@@ -994,13 +1103,9 @@ public class WATabPage extends WizardPage {
 	public String getServerLoc() {
 		return JdkSrvConfig.getTxtDir().getText().trim();
 	}
-
-	/**
-	 * Gives server name selected by user.
-	 * @return serverName
-	 */
-	public String getServerName() {
-		return JdkSrvConfig.getComboServer().getText();
+	
+	public static String getThirdPartyServerName() {
+		return JdkSrvConfig.getThrdPrtSrvCmb().getText();
 	}
 
 	/**
@@ -1094,6 +1199,10 @@ public class WATabPage extends WizardPage {
 	public static boolean isJdkAutoUploadChecked() {
 		return JdkSrvConfig.getAutoDlRdCldBtn().getSelection();
 	}
+	
+	public static boolean isSrvAutoUploadChecked() {
+		return JdkSrvConfig.getAutoDlRdCldBtnSrv().getSelection();
+	}
 
 	/**
 	 * Returns whether third party radio button
@@ -1102,6 +1211,10 @@ public class WATabPage extends WizardPage {
 	 */
 	public static boolean isThirdPartyJdkChecked() {
 		return JdkSrvConfig.getThrdPrtJdkBtn().getSelection();
+	}
+
+	public static boolean isThirdPartySrvChecked() {
+		return JdkSrvConfig.getThrdPrtSrvBtn().getSelection();
 	}
 
 	/**
@@ -1170,6 +1283,10 @@ public class WATabPage extends WizardPage {
 	public static boolean isAccepted() {
 		return accepted;
 	}
+	
+	public static boolean isServerAccepted() {
+		return srvAccepted;
+	}
 
 	/**
 	 * If user is trying to move from JDK tab
@@ -1185,8 +1302,28 @@ public class WATabPage extends WizardPage {
 		if (prevTabIndex == 0
 				&& isThirdPartyJdkChecked()
 				&& !accepted) {
-			temp = JdkSrvConfig.createAccLicenseAggDlg();
+			temp = JdkSrvConfig.createAccLicenseAggDlg(true);
 			accepted =  temp;
+		}
+		return temp;
+	}
+
+	/**
+	 * If user is trying to move from server tab
+	 * and third party server is selected
+	 * but license is not accepted till now
+	 * then show license agreement dialog.
+	 * @return boolean
+	 * true : license accepted
+	 * false : license not accepted
+	 */
+	private boolean displayServerLicenseAgreement() {
+		boolean temp = true;
+		if (prevTabIndex == 1
+				&& isThirdPartySrvChecked()
+				&& !srvAccepted) {
+			temp = JdkSrvConfig.createAccLicenseAggDlg(false);
+			srvAccepted =  temp;
 		}
 		return temp;
 	}

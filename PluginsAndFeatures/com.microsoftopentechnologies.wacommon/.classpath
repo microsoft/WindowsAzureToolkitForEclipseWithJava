@@ -5,6 +5,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="lib" path="resources/AzureCommons.jar" sourcepath="/AzureCommons/src"/>
 	<classpathentry exported="true" kind="lib" path="resources/ProjectManagerLibrary.jar" sourcepath="/ProjectManagerLibrary/src"/>
-	<classpathentry exported="true" kind="lib" path="resources/AzureManagementUtil.jar" sourcepath="/AzureManagementUtil/src"/>
+	<classpathentry exported="true" kind="lib" path="resources/.cspack.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

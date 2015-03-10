@@ -1,5 +1,5 @@
 /*
- Copyright 2014 Microsoft Open Technologies, Inc.
+ Copyright 2015 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public class Component {
 	private String cloudAltSrc;
 	private CloudUpload cloudUpload = CloudUpload.NEVER;
 	private WorkerRole role;
+	private String type;
 	
 	/**
 	 * Constructor
@@ -126,10 +127,29 @@ public class Component {
 	public void setCloudSrc(String url) {
 		this.cloudSrc = url;
 	}
-	public URL getCloudSrc() {
-		if(this.cloudSrc == null || 0==this.cloudSrc.compareToIgnoreCase("auto")) {
+	
+	public String getCloudSrc() {
+		if(this.cloudSrc == null) {
+			return null;
+		} else  {
+			// Check validity of URL and ignore if value is auto
+			if (!this.cloudSrc.equals("auto")) {
+				try {
+					URI uri = new URI(this.cloudSrc);
+					uri.toURL();
+				} catch (Exception e) {
+					throw new BuildException("Cloud source URL not valid: " + this.cloudSrc);
+				}
+			}	
+		}
+		return this.cloudSrc;
+	}
+	
+	public URL getCloudSrcURL() {
+		if(this.cloudSrc == null || "auto".equals(this.cloudSrc)) {
 			return null;
 		}
+		
 		try {
 			URI uri = new URI(this.cloudSrc);
 			return uri.toURL();
@@ -137,6 +157,7 @@ public class Component {
 			throw new BuildException("Cloud source URL not valid: " + this.cloudSrc);
 		}
 	}
+	
 	
 	/**
 	 * Sets/gets the alternative URL to download component from when deploying in cloud (not local) and the download from cloudsrc fails
@@ -198,14 +219,17 @@ public class Component {
 	 */
 	public String getCloudDownloadAs() {
 		
-		final URI uri;
+		if (this.getCloudSrc() == null) {
+			return null;
+		}
+		
+		URI uri;
 		try {
-			if(null == (uri = this.getCloudSrc().toURI())) {
-				return null;
-			}
+			uri = new URI(this.getCloudSrc());
 		} catch (URISyntaxException e) {
 			return null;
 		}
+		
 
 		final String path = uri.getPath().substring(1);
 		final String[] pathParts = path.split("/");
@@ -324,7 +348,11 @@ public class Component {
 	 * @param type
 	 */
 	public void setType(String type) {
-		return;
+		this.type = type;
+	}
+
+	public String getType() {
+		return this.type;
 	}
 
 	/**
@@ -338,7 +366,9 @@ public class Component {
 		final String[] pathParts;
 		
 		try {
-			if(null == (url = this.getCloudSrc()) || this.getCloudKey() == null) {
+			if (null == this.getCloudSrc()) {
+				return null;
+			} else if(null == (url = this.getCloudSrcURL()) || this.getCloudKey() == null) {
 				return null;
 			} else if(null == (uri = url.toURI())) {
 				return null;
@@ -366,7 +396,7 @@ public class Component {
 		final String path, containerName;
 		
 		try {
-			if(null == (url = this.getCloudSrc()) || this.getCloudKey() == null) {
+			if(null == (url = this.getCloudSrcURL()) || this.getCloudKey() == null) {
 				return null;
 			} else if(null == (uri = url.toURI())) {
 				return null;
@@ -390,7 +420,7 @@ public class Component {
 		final String hostName;
 		final String[] hostNameParts;
 		
-		if(null == (url = this.getCloudSrc()) || this.getCloudKey() == null) {
+		if(null == (url = this.getCloudSrcURL()) || this.getCloudKey() == null) {
 			return null;
 		} else if(null == (hostName = url.getHost())) {
 			return null;
@@ -410,7 +440,7 @@ public class Component {
 		final URL url;
 		final String hostName;
 		final String[] hostNameParts;
-		if(null == (url = this.getCloudSrc()) || this.getCloudKey() == null) {
+		if(null == (url = this.getCloudSrcURL()) || this.getCloudKey() == null) {
 			return null;
 		} else if(null == (hostName = url.getHost())) {
 			return null;
@@ -438,7 +468,7 @@ public class Component {
 		final URL url;
 		final String hostName;
 		final String[] hostNameParts;
-		if(null == (url = this.getCloudSrc()) || this.getCloudKey() == null) {
+		if(null == (url = this.getCloudSrcURL()) || this.getCloudKey() == null) {
 			return null;
 		} else if(null == (hostName = url.getHost())) {
 			return null;
@@ -460,13 +490,13 @@ public class Component {
 	 */
 	private void verifyDownloadPublic() {
 		final WindowsAzurePackage waPackage = role.getPackage();
-		final URL cloudSrc = getCloudSrc();
+		final URL cloudSrc = getCloudSrcURL();
 		if(!waPackage.getVerifyDownloads()) {
 			return;
 		}
 		
 		waPackage.log("Verifying download availability (" + cloudSrc.toExternalForm() + ")...");
-		if(!WindowsAzurePackage.verifyURLAvailable(this.getCloudSrc())) {
+		if(!WindowsAzurePackage.verifyURLAvailable(this.getCloudSrcURL())) {
 			waPackage.log("warning: Failed to confirm download availability! Make sure the URL is correct (" + cloudSrc.toExternalForm() + ").", 1);			
 		}
 	}
@@ -476,7 +506,7 @@ public class Component {
 	 */
 	private void ensurePrivateDownload(WindowsAzureManager waManager) {
 		final WindowsAzurePackage waPackage = role.getPackage();
-		final URL cloudSrc = getCloudSrc();
+		final URL cloudSrc = getCloudSrcURL();
 		final URL cloudAltSrc = getCloudAltSrc();
 		String containerName, blobName, storageName;
 		final boolean isNetworkAvailable;
@@ -747,7 +777,7 @@ public class Component {
 		final String blobName = getCloudBlob();
 		final String fileName = this.getCloudDownloadAs();
 		if(containerName.isEmpty() || blobName.isEmpty() || storeName.isEmpty() || fileName.isEmpty()) {
-			throw new BuildException("\tNot a valid blob URL: " + getCloudSrc().toExternalForm());
+			throw new BuildException("\tNot a valid blob URL: " + getCloudSrc());
 		} 
 
 		return String.format("cmd /c %s blob upload \"%s\" \"%s\" %s %s \"%s\" \"%s\"", 
@@ -775,7 +805,7 @@ public class Component {
 		final String blobName = getCloudBlob();
 		final String fileName = this.getCloudDownloadAs();
 		if(containerName.isEmpty() || blobName.isEmpty() || storeName.isEmpty() || fileName.isEmpty()) {
-			throw new BuildException("\tNot a valid blob URL: " + getCloudSrc().toExternalForm());
+			throw new BuildException("\tNot a valid blob URL: " + getCloudSrc());
 		} 
 
 		final StringBuilder cmd = new StringBuilder();
@@ -824,7 +854,7 @@ public class Component {
 	 * @return
 	 */
 	public void ensureDownload(WindowsAzureManager waManager) {
-		final URL cloudSrc = getCloudSrc();
+		final String cloudSrc = getCloudSrc();
 		
 		if(cloudSrc == null) {
 			return;

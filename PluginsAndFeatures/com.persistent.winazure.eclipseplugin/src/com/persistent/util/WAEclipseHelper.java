@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies, Inc.
+ * Copyright 2015 Microsoft Open Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.preference.IPreferencePage;
 import org.eclipse.jface.preference.PreferenceDialog;
 import org.eclipse.jface.preference.PreferenceManager;
@@ -49,14 +48,17 @@ import org.eclipse.ui.PlatformUI;
 import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.propertypage.SubscriptionPropertyPage;
+import com.gigaspaces.azure.util.PreferenceUtilForProjectUpgrade;
+import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
+import com.gigaspaces.azure.util.WizardCache;
 import com.interopbridges.tools.windowsazure.WindowsAzureConstants;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.FileUtil;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommonutil.FileUtil;
 import com.persistent.ui.propertypage.WARemoteAccessPropertyPage;
 import com.persistent.ui.propertypage.WARolesPropertyPage;
 import com.persistent.ui.propertypage.WAWinAzurePropertyPage;
@@ -81,10 +83,8 @@ public class WAEclipseHelper {
 	 * @return Template(componentssets.xml)
 	 */
 	public static String getTemplateFile(String fileName) {
-		String file = String.format("%s%s%s%s%s%s%s", Platform
-				.getInstallLocation().getURL().getPath().toString(),
-				File.separator, Messages.pluginFolder, File.separator,
-				Messages.pluginId, File.separator, fileName);
+		String file = String.format("%s%s%s%s%s", PluginUtil.pluginFolder,
+				File.separator, Messages.pluginId, File.separator, fileName);
 		return file;
 	}
 
@@ -435,16 +435,45 @@ public class WAEclipseHelper {
 					null);
 			iProject.close(null);
 		} else {
+			// this method is mainly for upgrading the publish tasks in package.xml and may need to remove after release 2.5.1
+			projMngr.upgradePackageDoc();
+			
+			// update version in package.xml
 			projMngr.setVersion(WindowsAzureConstants.VERSION);
+			/*
+			 * Transfer the publish properties from prefs file to package.xml
+			 * Note : below changes will only work when, we have respective key in prefs file
+			 * i.e. same previous workspace is used even after plugin upgrade.
+			 */
+			String key = String.format("%s%s%s", Activator.PLUGIN_ID,
+					com.persistent.util.Messages.proj, iProject.getName());
+			if (PreferenceUtilPubWizard.getProjKeyList().contains(key)) {
+				WizardCache cacheObj = PreferenceUtilPubWizard.load(key);
+				if (cacheObj != null) {
+					String subscriptionName = cacheObj.getSubName();
+					if (!subscriptionName.isEmpty()) {
+						String subId = PreferenceUtilForProjectUpgrade.extractSubIdFromOldPublishData(subscriptionName);
+						if (!subId.isEmpty()) {
+							if (!cacheObj.getStorageName().isEmpty()) {
+								projMngr.setPublishStorageAccountName(cacheObj.getStorageName());
+							}
+							if (!cacheObj.getServiceName().isEmpty()) {
+								projMngr.setPublishCloudServiceName(cacheObj.getServiceName());
+							}
+							projMngr.setPublishSubscriptionId(subId);
+						}
+					}
+				}
+			}
 			projMngr.save();
 		}
-
 	}
-
+	
 	private static void upgradeWAPFiles(IProject iProject, File starterKitZip,
 			WindowsAzureProjectManager projMngr) throws IOException,
 			WindowsAzureInvalidProjectOperationException {
 		List<WindowsAzureRole> rolesList = projMngr.getRoles();
+		File projectLocation = iProject.getLocation().toFile();
 
 		for (WindowsAzureRole role : rolesList) {
 			// Copy session affinity files if SA is enabled
@@ -462,7 +491,7 @@ public class WAEclipseHelper {
 			// Copy or rewrite .wash script
 			FileUtil.copyFileFromZip(starterKitZip,
 					"%proj%/WorkerRole1/approot/util/" + Messages.washFileName,
-					new File(iProject.getLocation().toFile(), role.getName()
+					new File(projectLocation, role.getName()
 							+ "/approot/util/" + Messages.washFileName));
 		}
 
@@ -476,20 +505,31 @@ public class WAEclipseHelper {
 
 		// Copy or rewrite .templates/startup/.startup.cmd
 		FileUtil.copyFileFromZip(starterKitZip,
-				"%proj%/.templates/startup/.startup.cmd", new File(iProject
-						.getLocation().toFile(),
+				"%proj%/.templates/startup/.startup.cmd", new File(projectLocation,
 						".templates/startup/.startup.cmd"));
 
 		// Copy or rewrite .templates/startup/.startup.cmd
 		FileUtil.copyFileFromZip(starterKitZip,
 				"%proj%/.templates/emulatorTools/ResetEmulator.cmd", new File(
-						iProject.getLocation().toFile(),
-						".templates/emulatorTools/ResetEmulator.cmd"));
+						projectLocation, ".templates/emulatorTools/ResetEmulator.cmd"));
 
 		FileUtil.copyFileFromZip(starterKitZip,
-				"%proj%/.templates/emulatorTools/RunInEmulator.cmd", new File(
-						iProject.getLocation().toFile(),
+				"%proj%/.templates/emulatorTools/RunInEmulator.cmd", new File(projectLocation,
 						".templates/emulatorTools/RunInEmulator.cmd"));
+		
+		// Copy cloud tools - start - may need to remove after 2.5.1 release
+		FileUtil.copyFileFromZip(starterKitZip,	"%proj%/.templates/cloudTools/buildAndPublish.cmd",
+				new File(projectLocation, ".templates/cloudTools/buildAndPublish.cmd"));
+		
+		FileUtil.copyFileFromZip(starterKitZip,	"%proj%/.templates/cloudTools/buildAndPublish.sh",
+				new File(projectLocation, ".templates/cloudTools/buildAndPublish.sh"));
+		
+		FileUtil.copyFileFromZip(starterKitZip,	"%proj%/.templates/cloudTools/unpublish.cmd",
+				new File(projectLocation, ".templates/cloudTools/unpublish.cmd"));
+		
+		FileUtil.copyFileFromZip(starterKitZip,	"%proj%/.templates/cloudTools/unpublish.sh",
+				new File(projectLocation, ".templates/cloudTools/unpublish.sh"));
+		// Copy cloud tools - end.
 	}
 
 	/**
@@ -615,11 +655,9 @@ public class WAEclipseHelper {
 				strBfr.delete(10, strBfr.length());
 				strBfr.append(roleNo++);
 			}
-			String strKitLoc = String.format("%s%s%s%s%s%s", Platform
-					.getInstallLocation().getURL().getPath().toString(),
-					File.separator, Messages.pluginFolder, File.separator,
-					Messages.pluginId,
-					com.persistent.winazureroles.Messages.pWizStarterKit);
+			String strKitLoc = String.format("%s%s%s%s",
+					PluginUtil.pluginFolder, File.separator,
+					Messages.pluginId, com.persistent.winazureroles.Messages.pWizStarterKit);
 			windowsAzureRole = waProjManager.addRole(strBfr.toString(),
 					strKitLoc);
 			windowsAzureRole

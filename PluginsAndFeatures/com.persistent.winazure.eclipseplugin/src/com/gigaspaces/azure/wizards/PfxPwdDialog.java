@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import org.eclipse.swt.widgets.Text;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureCertificate;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommonutil.CerPfxUtil;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil;
 import com.persistent.util.WAEclipseHelper;
 
 /**
@@ -166,7 +166,7 @@ public class PfxPwdDialog extends Dialog {
 	 */
 	private void  browseBtnListener() {
 		FileDialog dialog = new FileDialog(this.getShell());
-		String [] extensions = {"*.pfx", "*.*"};
+		String [] extensions = {"*.pfx", "*.PFX", "*.*"};
 		dialog.setFilterExtensions(extensions);
 		String path = new File(projPath).getParent();
 		// Go to custom certificate location
@@ -218,7 +218,7 @@ public class PfxPwdDialog extends Dialog {
 		 * If it is directory or does not ends with .pfx
 		 * then give error.
 		 */
-		if (file.exists() && file.getPath().endsWith(".pfx")) {
+		if (file.exists() && (file.getPath().endsWith(".pfx") || file.getPath().endsWith(".PFX"))) {
 			String pwdTxt = passwordField.getText().trim();
 			/*
 			 * Validate password entered for PFX file.

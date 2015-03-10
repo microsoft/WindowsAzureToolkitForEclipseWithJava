@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies, Inc.
+ * Copyright 2015 Microsoft Open Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -667,8 +667,7 @@ public class ClasspathContainerPage extends WizardPage implements
      */
     private void browseBtnListener() {
         FileDialog dialog = new FileDialog(this.getShell());
-        String []extensions = new String [1];
-        extensions[0] = "*.CER";
+        String []extensions = {"*.CER", "*.cer"};
         dialog.setFilterExtensions(extensions);
         String file = dialog.open();
         if (file != null) {
@@ -806,8 +805,8 @@ public class ClasspathContainerPage extends WizardPage implements
             } else {
             	handler.removeParamsIfExists(Messages.certAttr);
             	if(!certTxt.getText().isEmpty() ) {
-            		String webinfLoc 	= ACSFilterUtil.getSelectedProject().getFolder(Messages.depDirLoc).getLocation().toOSString();
-            		String certLoc 		= String.format("%s%s%s", webinfLoc,File.separator, Messages.acsCertLoc);
+            		String srcLoc 	= ACSFilterUtil.getSelectedProject().getFolder(Messages.srcLoc).getLocation().toOSString();
+            		String certLoc 		= String.format("%s%s%s", srcLoc,File.separator, Messages.acsCertLoc);
             		File   destination  = new File(certLoc);
             		if(!destination.getParentFile().exists())
             			destination.getParentFile().mkdir();
@@ -823,8 +822,8 @@ public class ClasspathContainerPage extends WizardPage implements
             	String path = createWebXml();
             	//copy cert into WEB-INF/cert/_acs_signing.cer location if embed cert is selected 
             	if(embedCertCheck.getSelection()) {
-            		String webinfLoc 	= ACSFilterUtil.getSelectedProject().getFolder(Messages.depDirLoc).getLocation().toOSString();
-            		String certLoc 		= String.format("%s%s%s", webinfLoc,File.separator, Messages.acsCertLoc);
+            		String srcLoc 	= ACSFilterUtil.getSelectedProject().getFolder(Messages.srcLoc).getLocation().toOSString();
+            		String certLoc 		= String.format("%s%s%s", srcLoc,File.separator, Messages.acsCertLoc);
             		File   destination  = new File(certLoc);
             		if(!destination.getParentFile().exists())
             			destination.getParentFile().mkdir();
@@ -918,8 +917,8 @@ public class ClasspathContainerPage extends WizardPage implements
     }
     
     private String getEmbeddedCertInfo() {
-    	String webinfLoc 	= ACSFilterUtil.getSelectedProject().getFolder(Messages.depDirLoc).getLocation().toOSString();
-		String certLoc 		= String.format("%s%s%s", webinfLoc,File.separator, Messages.acsCertLoc);
+    	String srcLoc 	= ACSFilterUtil.getSelectedProject().getFolder(Messages.srcLoc).getLocation().toOSString();
+		String certLoc 		= String.format("%s%s%s", srcLoc,File.separator, Messages.acsCertLoc);
     	return getCertInfo(certLoc);
     }
 
@@ -987,8 +986,8 @@ public class ClasspathContainerPage extends WizardPage implements
     }
     
     public void removeEmbedCert(IProject iProject) {
-    	String webinfLoc 	= iProject.getFolder(Messages.depDirLoc).getLocation().toOSString();
-		String certLoc 		= String.format("%s%s%s", webinfLoc,File.separator, Messages.acsCertLoc);
+    	String srcLoc 	= iProject.getFolder(Messages.srcLoc).getLocation().toOSString();
+		String certLoc 		= String.format("%s%s%s", srcLoc, File.separator, Messages.acsCertLoc);
 		File   destination  = new File(certLoc);
 		if(destination.exists())
 			destination.delete();

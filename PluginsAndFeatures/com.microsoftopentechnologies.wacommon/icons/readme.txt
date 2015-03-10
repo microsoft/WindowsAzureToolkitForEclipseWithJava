@@ -1,0 +1,1 @@
+Copy a place holder icon with name certificate.png

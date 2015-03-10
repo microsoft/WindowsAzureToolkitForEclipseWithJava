@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import waeclipseplugin.Activator;
 import com.gigaspaces.azure.wizards.Messages;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse;
-import com.microsoftopentechnologies.deploy.tasks.AccountCachingExceptionEvent;
-import com.microsoftopentechnologies.deploy.util.PublishData;
-import com.microsoftopentechnologies.exception.InvalidThumbprintException;
+import com.microsoftopentechnologies.azurecommons.deploy.tasks.AccountCachingExceptionEvent;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
+import com.microsoftopentechnologies.azuremanagementutil.exception.InvalidThumbprintException;
 import com.persistent.util.MessageUtil;
 
 public class FetchDeploymentsForHostedServiceWithProgressWindow extends AccountActionRunnable implements Runnable {

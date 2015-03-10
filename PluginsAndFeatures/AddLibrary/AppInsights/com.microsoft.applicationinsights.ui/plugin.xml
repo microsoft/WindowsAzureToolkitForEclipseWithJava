@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.help.contexts">
+         <contexts file="contexts.xml">
+         </contexts>
+   </extension>
+   
+   
+   <extension point="org.eclipse.ui.commands">
+	  <command
+	  		description="Configure Application Insights"
+	        id="com.microsoft.ui.ai.config"
+	        name="Configure Application Insights...">
+	  </command>
+	</extension>
+	
+	<extension point="org.eclipse.ui.menus">
+  		<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+	  		<menu label="Azure" icon="icons/small/windowsAzure.png" id="com.microsoftopentechnologies.ui.common.webprojmenu">
+		   		<command 
+		           commandId="com.microsoft.ui.ai.config">
+			     </command>
+			    <visibleWhen checkEnabled="false">
+			    <with 
+				variable="selection">
+				<count value="1"/> 
+				<iterate 
+					operator="or">
+					<adapt type="org.eclipse.core.resources.IProject">
+        				<test property="com.microsoft.ui.ai.property.isWebProj"/>
+            		</adapt>
+				</iterate> 
+		    	</with>
+			    </visibleWhen>
+	  	</menu>
+    </menuContribution>
+  </extension>
+  <extension point="org.eclipse.ui.handlers">
+	  <handler
+	        class="com.microsoft.applicationinsights.ui.config.AIConfigCommandHandler"
+	        commandId="com.microsoft.ui.ai.config">
+		<enabledWhen>
+			<with
+				variable="selection">
+				<count value="1"/>
+				<iterate
+					operator="or">
+            		<adapt type="org.eclipse.core.resources.IProject">
+        				<test property="com.microsoft.ui.ai.property.isWebProj"/>
+            		</adapt>
+				</iterate>
+		    </with>
+		</enabledWhen>
+	  </handler>
+	  </extension>
+  
+   <!-- Property testers -->
+  <extension point="org.eclipse.core.expressions.propertyTesters">
+  	<propertyTester
+      id="com.microsoft.ui.ai.property.testWebProj"
+      type="org.eclipse.core.resources.IProject"
+      namespace="com.microsoft.ui.ai.property"
+      properties="isWebProj"
+      class="com.microsoft.applicationinsights.util.WAPropertyTester">
+    </propertyTester>
+  </extension>
+  <extension
+        point="org.eclipse.ui.startup">
+  </extension>
+ </plugin>

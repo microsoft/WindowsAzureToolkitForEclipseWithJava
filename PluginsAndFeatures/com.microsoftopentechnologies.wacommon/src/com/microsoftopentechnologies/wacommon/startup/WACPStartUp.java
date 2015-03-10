@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies Inc.
+ * Copyright 2015 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 package com.microsoftopentechnologies.wacommon.startup;
 
 import java.io.File;
-import org.eclipse.core.runtime.Platform;
+
 import org.eclipse.ui.IStartup;
+
 import com.microsoftopentechnologies.wacommon.Activator;
 import com.microsoftopentechnologies.wacommon.utils.FileUtil;
 import com.microsoftopentechnologies.wacommon.utils.Messages;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 /**
  * This class gets executed after the Workbench initializes.
@@ -35,11 +37,10 @@ public class WACPStartUp implements IStartup {
 
     private void copyPluginComponents() {
         try {
-            String pluginInstLoc = String.format("%s%s%s%s%s",
-            		Platform.getInstallLocation().getURL().getPath().toString(),
-                    File.separator, Messages.pluginFolder,
-                    File.separator, Messages.waCommonFolderID);
-            if (!new File(pluginInstLoc).exists()) {
+        	String pluginInstLoc = String.format("%s%s%s",
+        			PluginUtil.pluginFolder,
+        			File.separator, Messages.waCommonFolderID);
+        	if (!new File(pluginInstLoc).exists()) {
                 new File(pluginInstLoc).mkdir();
             }
             String enctFile = String.format("%s%s%s", pluginInstLoc,

@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies Inc.
+ * Copyright 2015 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -47,6 +47,8 @@ import com.microsoftopentechnologies.wacommon.Activator;
 
 public class PluginUtil {
 	
+	public static final String pluginFolder = getPluginFolderPathUsingBundle();
+
 	/**
      * This method returns currently selected project in workspace.
      * @return IProject
@@ -169,23 +171,51 @@ public class PluginUtil {
 	}
 
 	public static String getPrefFilePath() {
-		String prefFilePath = String.format("%s%s%s%s%s%s%s",
-				new File(Platform.getInstallLocation().getURL().
-						getFile()).getPath().toString(),
-						File.separator,
-						Messages.pluginFolder ,
-						File.separator,
-						Messages.waCommonFolderID,
-						File.separator,
+		String prefFilePath = String.format("%s%s%s%s%s",
+				pluginFolder,
+				File.separator,
+				Messages.waCommonFolderID,
+				File.separator,
 				"preferencesets.xml");
 		return prefFilePath;
 	}
 
 	public static String getEncPath() {
-		String encPath = String.format("%s%s%s%s%s", new File(
-				Platform.getInstallLocation().getURL().getFile()).getPath()
-				.toString(), File.separator, Messages.pluginFolder, File.separator,
+		String encPath = String.format("%s%s%s",
+				pluginFolder, File.separator,
 				Messages.waCommonFolderID);
 		return encPath;
+	}
+
+	public static String getPluginFolderPathUsingBundle() {
+		Bundle bundle = Activator.getDefault().getBundle();
+		URL url = bundle.getEntry("/");
+		String pluginFolderPath = "";
+		try {
+			@SuppressWarnings("deprecation")
+			URL resolvedURL = Platform.resolve (url);
+			File file = new File (resolvedURL.getFile());
+			String path = file.getParentFile().getAbsolutePath();
+
+			// Default values for Linux
+			String fileTxt = "file:";
+			int index = 5;
+			if (path.contains(fileTxt)) {
+				if (Activator.IS_WINDOWS) {
+					fileTxt = fileTxt + File.separator;
+					index = 6;
+				}
+				pluginFolderPath = path.substring(path.indexOf(fileTxt) + index);
+			} else {
+				// scenario when we run source code
+				pluginFolderPath = String.format("%s%s%s",
+						Platform.getInstallLocation().getURL().getPath().toString(),
+						File.separator, Messages.pluginFolder);
+			}
+			Activator.getDefault().log("Plugin folder path:" + pluginFolderPath);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return pluginFolderPath;
 	}
 }

@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -64,10 +64,10 @@ import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperation
 import com.interopbridges.tools.windowsazure.WindowsAzureNamedCache;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.exception.AzureCommonsException;
-import com.microsoftopentechnologies.roleoperations.WARCachingUtilMethods;
-import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.azurecommons.exception.AzureCommonsException;
+import com.microsoftopentechnologies.azurecommons.roleoperations.WARCachingUtilMethods;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.WAEclipseHelper;
@@ -120,19 +120,7 @@ public class WARCaching extends PropertyPage {
 	 * cache memory size is set to valid value or not.
 	 */
 	private Boolean isCachPerValid = true;
-	/**
-	 * End point range's minimum value.
-	 */
-	private final static int RANGE_MIN = 1;
-	/**
-	 * End point range's maximum value.
-	 */
-	private final static int RANGE_MAX = 65535;
 	private boolean isPageDisplayed = false;
-	/**
-	 * Default time to live value.
-	 */
-	private final static int DEFAULT_TTL = 10;
 
 	@Override
 	public String getTitle() {

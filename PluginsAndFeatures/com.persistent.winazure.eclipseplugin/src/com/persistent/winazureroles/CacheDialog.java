@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureCacheExpirationPolicy;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureNamedCache;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.exception.AzureCommonsException;
-import com.microsoftopentechnologies.roleoperations.CacheDialogUtilMethods;
+import com.microsoftopentechnologies.azurecommons.exception.AzureCommonsException;
+import com.microsoftopentechnologies.azurecommons.roleoperations.CacheDialogUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 /**
  * Class creates UI controls and respective listeners

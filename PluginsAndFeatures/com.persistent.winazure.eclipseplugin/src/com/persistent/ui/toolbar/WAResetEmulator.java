@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies, Inc.
+ * Copyright 2015 Microsoft Open Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.io.IOException;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.widgets.Shell;
 
 import waeclipseplugin.Activator;
@@ -36,13 +35,12 @@ public class WAResetEmulator extends AbstractHandler {
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		try {
-			String strKitLoc = String.format("%s%s%s%s%s%s", Platform
-					.getInstallLocation().getURL().getPath().toString(),
-					File.separator, Messages.pluginFolder, File.separator,
-					Messages.pluginId, Messages.pWizStarterKit);
+			String strKitLoc = String.format("%s%s%s%s",
+					PluginUtil.pluginFolder,
+					File.separator, Messages.pluginId, Messages.pWizStarterKit);
 			// copy elevate.vbs to temp location
 			String tmpPath = System.getProperty("java.io.tmpdir");
-			com.microsoftopentechnologies.roleoperations.WAResetEmulator.
+			com.microsoftopentechnologies.azurecommons.roleoperations.WAResetEmulator.
 			resetEmulator(strKitLoc,
 					"%proj%/.templates/emulatorTools/.elevate.vbs",
 					new File(String.format("%s%s%s", tmpPath, File.separator,

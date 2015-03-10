@@ -1,18 +1,18 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*	 http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-*/
+ * Copyright 2015 Microsoft Open Technologies, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *	 http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 
 package com.gigaspaces.azure.wizards;
 
@@ -57,29 +57,31 @@ import com.microsoft.windowsazure.management.compute.models.HostedServiceListRes
 import com.microsoft.windowsazure.management.compute.models.ServiceCertificateListResponse.Certificate;
 import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
 import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
-import com.microsoftopentechnologies.deploy.model.CertificateUpload;
-import com.microsoftopentechnologies.deploy.model.CertificateUploadList;
-import com.microsoftopentechnologies.deploy.model.DeployDescriptor;
-import com.microsoftopentechnologies.deploy.model.RemoteDesktopDescriptor;
-import com.microsoftopentechnologies.deploy.tasks.LoadingAccoutListener;
-import com.microsoftopentechnologies.deploy.tasks.LoadingHostedServicesTask;
-import com.microsoftopentechnologies.deploy.tasks.LoadingLocationsTask;
-import com.microsoftopentechnologies.deploy.tasks.LoadingStorageAccountTask;
-import com.microsoftopentechnologies.deploy.tasks.LoadingSubscriptionTask;
-import com.microsoftopentechnologies.deploy.tasks.LoadingTaskRunner;
-import com.microsoftopentechnologies.deploy.util.PublishData;
-import com.microsoftopentechnologies.deploy.wizard.ConfigurationEventArgs;
-import com.microsoftopentechnologies.deploy.wizard.ConfigurationEventListener;
-import com.microsoftopentechnologies.deploy.wizard.WizardCacheManagerUtilMethods;
-import com.microsoftopentechnologies.exception.RestAPIException;
-import com.microsoftopentechnologies.model.KeyName;
-import com.microsoftopentechnologies.model.StorageService;
-import com.microsoftopentechnologies.model.StorageServices;
-import com.microsoftopentechnologies.model.Subscription;
-import com.microsoftopentechnologies.rest.WindowsAzureRestUtils;
-import com.microsoftopentechnologies.rest.WindowsAzureServiceManagement;
-import com.microsoftopentechnologies.rest.WindowsAzureStorageServices;
-import com.microsoftopentechnologies.wacommonutil.PreferenceSetUtil;
+import com.microsoftopentechnologies.azurecommons.deploy.model.CertificateUpload;
+import com.microsoftopentechnologies.azurecommons.deploy.model.CertificateUploadList;
+import com.microsoftopentechnologies.azurecommons.deploy.model.DeployDescriptor;
+import com.microsoftopentechnologies.azurecommons.deploy.model.RemoteDesktopDescriptor;
+import com.microsoftopentechnologies.azurecommons.deploy.propertypages.CredentialsPropertyPageUtilMethods;
+import com.microsoftopentechnologies.azurecommons.deploy.tasks.LoadingAccoutListener;
+import com.microsoftopentechnologies.azurecommons.deploy.tasks.LoadingHostedServicesTask;
+import com.microsoftopentechnologies.azurecommons.deploy.tasks.LoadingLocationsTask;
+import com.microsoftopentechnologies.azurecommons.deploy.tasks.LoadingStorageAccountTask;
+import com.microsoftopentechnologies.azurecommons.deploy.tasks.LoadingSubscriptionTask;
+import com.microsoftopentechnologies.azurecommons.deploy.tasks.LoadingTaskRunner;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
+import com.microsoftopentechnologies.azurecommons.deploy.wizard.ConfigurationEventArgs;
+import com.microsoftopentechnologies.azurecommons.deploy.wizard.ConfigurationEventListener;
+import com.microsoftopentechnologies.azurecommons.deploy.wizard.WizardCacheManagerUtilMethods;
+import com.microsoftopentechnologies.azurecommons.exception.RestAPIException;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.PreferenceSetUtil;
+import com.microsoftopentechnologies.azuremanagementutil.model.KeyName;
+import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
+import com.microsoftopentechnologies.azuremanagementutil.model.StorageServices;
+import com.microsoftopentechnologies.azuremanagementutil.model.Subscription;
+import com.microsoftopentechnologies.azuremanagementutil.rest.WindowsAzureRestUtils;
+import com.microsoftopentechnologies.azuremanagementutil.rest.WindowsAzureServiceManagement;
+import com.microsoftopentechnologies.azuremanagementutil.rest.WindowsAzureStorageServices;
 import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
 
@@ -101,6 +103,8 @@ public final class WizardCacheManager {
 	private static RemoteDesktopDescriptor remoteDesktopDescriptor;
 	private static CertificateUploadList certList;
 	private static boolean displayHttpsLink = false;
+	private static Map<String, String> publishSettingsPerSubscriptionMap = new HashMap<String, String>();
+	private static Map<String, PublishData> pubDataPerFileMap = new HashMap<String, PublishData>();
 
 	public static WizardCacheManager getInstrance() {
 		return INSTANCE;
@@ -132,8 +136,8 @@ public final class WizardCacheManager {
 				getCurrentStorageAcount(), currentAccessKey,
 				getCurentHostedService(), deployFile, deployConfigFile,
 				deployState, remoteDesktopDescriptor,
-            checkSchemaVersionAndReturnUrl(),
-            unpublish, certList, displayHttpsLink, currentPublishData.getCurrentConfiguration());
+				checkSchemaVersionAndReturnUrl(),
+				unpublish, certList, displayHttpsLink, currentPublishData.getCurrentConfiguration());
 
 		remoteDesktopDescriptor = null;
 
@@ -200,6 +204,11 @@ public final class WizardCacheManager {
 				findPublishDataBySubscriptionId(subscriptionId, PUBLISHS);
 	}
 
+	public static String findSubscriptionNameBySubscriptionId(String subscriptionId) {
+		return WizardCacheManagerUtilMethods.
+				findSubscriptionNameBySubscriptionId(subscriptionId, PUBLISHS);
+	}
+
 	public static void removeSubscription(String subscriptionId) {
 
 		if (subscriptionId == null) {
@@ -220,7 +229,6 @@ public final class WizardCacheManager {
 			Subscription s = subs.get(i);
 
 			if (s.getSubscriptionID().equals(subscriptionId)) {
-
 				publishData.getPublishProfile().getSubscriptions().remove(i);
 				PUBLISHS.set(index, publishData);
 				if (publishData.getPublishProfile().getSubscriptions().size() == 0) {
@@ -264,7 +272,7 @@ public final class WizardCacheManager {
 	 */
 	public static List<Certificate> fetchUploadedCertificates() {
 		return WizardCacheManagerUtilMethods.
-		fetchUploadedCertificates(currentPublishData, currentHostedService);
+				fetchUploadedCertificates(currentPublishData, currentHostedService);
 	}
 
 	public static HostedService createHostedService(HostedServiceCreateParameters createHostedService)
@@ -422,7 +430,7 @@ public final class WizardCacheManager {
 		}
 		else if (ConfigurationEventArgs.CONFIG_HTTPS_LINK.equals(config.getKey())) {
 			String value = config.getValue().toString();
-			
+
 			if (value != null && !value.isEmpty()) {
 				displayHttpsLink = Boolean.parseBoolean(value.trim());
 			}
@@ -459,30 +467,53 @@ public final class WizardCacheManager {
 		boolean isNewSchema = schemaVer != null && !schemaVer.isEmpty() && schemaVer.equalsIgnoreCase("2.0");
 		// URL if schema version is 1.0
 		String url = publishData.getPublishProfile().getUrl();
-        Map<String, Configuration> configurationPerSubscription = new HashMap<String, Configuration>();
-        for (Subscription subscription : subscriptions) {
-        	if (isNewSchema) {
-        		// publish setting file is of schema version 2.0
-        		url = subscription.getServiceManagementUrl();
-        	}
-        	if (url == null || url.isEmpty()) {
-        		try {
-        			String prefFilePath = WAEclipseHelper.getTemplateFile(
-        					com.persistent.ui.preference.Messages.prefFileName);
-        			url = PreferenceSetUtil.getManagementURL(
-        					PreferenceSetUtil.getSelectedPreferenceSetName(prefFilePath),
-        					prefFilePath);
-        			url = url.substring(0, url.lastIndexOf("/"));
-        		} catch (Exception e) {
-        			Activator.getDefault().log(e.getMessage());
-        		}
-        	}
-        	Configuration configuration = (publishSettingsFile == null) ?
-                    WindowsAzureRestUtils.loadConfiguration(subscription.getId(), url) :
-                    WindowsAzureRestUtils.getConfiguration(publishSettingsFile, subscription.getId());
-            configurationPerSubscription.put(subscription.getId(), configuration);
-        }
-        publishData.setConfigurationPerSubscription(configurationPerSubscription);
+		Map<String, Configuration> configurationPerSubscription = new HashMap<String, Configuration>();
+		for (Subscription subscription : subscriptions) {
+			if (isNewSchema) {
+				// publish setting file is of schema version 2.0
+				url = subscription.getServiceManagementUrl();
+			}
+			if (url == null || url.isEmpty()) {
+				try {
+					String prefFilePath = WAEclipseHelper.getTemplateFile(
+							com.persistent.ui.preference.Messages.prefFileName);
+					url = PreferenceSetUtil.getManagementURL(
+							PreferenceSetUtil.getSelectedPreferenceSetName(prefFilePath),
+							prefFilePath);
+					url = url.substring(0, url.lastIndexOf("/"));
+				} catch (Exception e) {
+					Activator.getDefault().log(e.getMessage());
+				}
+			}
+			Configuration configuration = (publishSettingsFile == null) ?
+					WindowsAzureRestUtils.loadConfiguration(subscription.getId(), url) :
+						WindowsAzureRestUtils.getConfiguration(publishSettingsFile, subscription.getId());
+					configurationPerSubscription.put(subscription.getId(), configuration);
+
+					if (publishSettingsFile != null) {
+						//copy file to user home
+						String outFile = System.getProperty("user.home") + File.separator + ".azure" + File.separator + publishSettingsFile.getName();
+						try {
+							/*
+							 * copy file to user home only if
+							 * source and destination file path are not same
+							 * otherwise it results into invalid file of 0 KB
+							 */
+							if (!publishSettingsFile.getPath().equals(outFile)) {
+								WAEclipseHelperMethods.copyFile(publishSettingsFile, new File(outFile));
+							}
+							// put an entry into global cache - subId, File path
+							publishSettingsPerSubscriptionMap.put(subscription.getId(), outFile);
+						} catch (Exception e) {
+							// Ignore error
+							e.printStackTrace();
+						}
+					} else {
+						// subscription added via Add functionality
+						publishSettingsPerSubscriptionMap.put(subscription.getId(), "");
+					}
+		}
+		publishData.setConfigurationPerSubscription(configurationPerSubscription);
 
 		if (publishData.isInitialized() == false && publishData.isInitializing().compareAndSet(false, true)) {
 
@@ -628,7 +659,7 @@ public final class WizardCacheManager {
 
 	private static boolean empty(PublishData data) {
 		return WizardCacheManagerUtilMethods.empty(data);
-    }
+	}
 
 	public static StorageService getStorageAccountFromCurrentPublishData(String storageAccountName) {
 		return WizardCacheManagerUtilMethods.
@@ -637,5 +668,47 @@ public final class WizardCacheManager {
 
 	private static String checkSchemaVersionAndReturnUrl() {
 		return WizardCacheManagerUtilMethods.checkSchemaVersionAndReturnUrl(currentPublishData);
+	}
+
+	public static String getPublishSettingsPath(String subscriptionID) {
+		return publishSettingsPerSubscriptionMap.get(subscriptionID);
+	}
+
+	public static Map<String, String> getPublishSettingsPerSubscription() {
+		return publishSettingsPerSubscriptionMap;
+	}
+
+	public static void addPublishSettingsPerSubscription(Map<String, String> publishSettingsPerSubscription) {
+		publishSettingsPerSubscriptionMap.putAll(publishSettingsPerSubscription);
+	}
+
+	public static void preparePubDataPerFileMap() {
+		String emptyKeyStr = "empty";
+		int cnt = 1;
+		for (Map.Entry<String, String> entry : getPublishSettingsPerSubscription().entrySet()) {
+			// Key - SubId and Value - pubFile
+			String pubFilePath = entry.getValue();
+			String subId = entry.getKey();
+			if (pubFilePath.isEmpty() || !pubDataPerFileMap.containsKey(pubFilePath)) {
+				if (pubFilePath.isEmpty()) {
+					pubFilePath = emptyKeyStr + cnt;
+					cnt++;
+				}
+				pubDataPerFileMap.put(pubFilePath,
+						CredentialsPropertyPageUtilMethods.createPublishData(subId));
+			} else {
+				// Prepare subscription and put into existing publish data
+				Subscription s = new Subscription();
+				s.setSubscriptionID(subId);
+				PublishData data = pubDataPerFileMap.get(pubFilePath);
+				if (!data.getSubscriptionIds().contains(subId)) {
+					data.getPublishProfile().getSubscriptions().add(s);
+				}
+			}
+		}
+	}
+
+	public static Map<String, PublishData> getPubDataPerFileMap() {
+		return pubDataPerFileMap;
 	}
 }

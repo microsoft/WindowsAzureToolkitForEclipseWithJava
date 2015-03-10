@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
-import com.microsoftopentechnologies.propertypage.Azure;
+import com.microsoftopentechnologies.azurecommons.propertypage.Azure;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
@@ -85,17 +85,14 @@ public class WAWinAzurePropertyPage extends PropertyPage {
             		errorMessage, e);
         }
         GridData gridData = new GridData();
-        gridData.widthHint = 300;
         gridData.grabExcessHorizontalSpace = true;
+        gridData.horizontalAlignment = SWT.FILL;
         txtServiceName.setLayoutData(gridData);
 
         Label lblbuildFor = new Label(container, SWT.LEFT);
         lblbuildFor.setText(Messages.proPageBldForLbl);
 
         comboType = new Combo(container, SWT.READ_ONLY);
-        gridData = new GridData();
-        gridData.grabExcessHorizontalSpace = true;
-        gridData.widthHint = 150;
         comboType.setLayoutData(gridData);
         comboType.setItems(arrType);
 
@@ -103,9 +100,6 @@ public class WAWinAzurePropertyPage extends PropertyPage {
         lblTargetOS.setText(Messages.proPageTgtOSLbl);
 
         targetOSComboType = new Combo(container, SWT.READ_ONLY);
-        gridData = new GridData();
-        gridData.widthHint = 150;
-        gridData.grabExcessHorizontalSpace = true;
         targetOSComboType.setLayoutData(gridData);
 
         List<String> osNames = new ArrayList<String>();

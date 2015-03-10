@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -48,8 +48,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.model.RoleAndEndpoint;
-import com.microsoftopentechnologies.roleoperations.WARDebuggingUtilMethods;
+import com.microsoftopentechnologies.azurecommons.model.RoleAndEndpoint;
+import com.microsoftopentechnologies.azurecommons.roleoperations.WARDebuggingUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 
@@ -275,7 +275,6 @@ public class WARDebugging extends PropertyPage {
         comboEndPoint = new Combo(container, SWT.READ_ONLY);
         GridData gridData = new GridData();
         gridData.widthHint = 260;
-        gridData.heightHint = 12;
         gridData.horizontalAlignment = GridData.END;
         comboEndPoint.setLayoutData(gridData);
         try {

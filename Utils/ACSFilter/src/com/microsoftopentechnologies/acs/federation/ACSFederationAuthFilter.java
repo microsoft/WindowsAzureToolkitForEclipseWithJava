@@ -59,7 +59,7 @@ public class ACSFederationAuthFilter implements Filter {
 	private static final String SECRET_KEY = "SecretKey";
 	private static final String ALLOW_HTTP = "AllowHTTP";	
 	public static final String ACS_SAML = "ACSSAML";
-	public static final String EMBEDDED_CERT_LOC = "/WEB-INF/cert/_acs_signing.cer";
+	public static final String EMBEDDED_CERT_LOC = "cert/_acs_signing.cer";
 	
 	protected String passiveRequestorEndPoint;
 	protected String relyingPartyRealm;
@@ -93,7 +93,7 @@ public class ACSFederationAuthFilter implements Filter {
 		Utils.logInfo("Certificate path:" + certificatePath, LOG);
 		if (certificatePath == null) {  
 			//1. check for embedded cert and if exists set certPath to cert/acs_signing.cer
-			if(filterConfig.getServletContext().getResourceAsStream(EMBEDDED_CERT_LOC) != null )
+			if(getConfigurationAsInputStream(EMBEDDED_CERT_LOC) != null )
 				certificatePath = EMBEDDED_CERT_LOC;
 			else
 				throw new ServletException(CERTIFICATE_PATH + " init parameter not proivded in the filter configuration" +
@@ -212,7 +212,7 @@ public class ACSFederationAuthFilter implements Filter {
 			if(certFile.isAbsolute())
 				is = new FileInputStream(certificatePath);
 			else
-				is = filterConfig.getServletContext().getResourceAsStream(EMBEDDED_CERT_LOC); 
+				is = getConfigurationAsInputStream(EMBEDDED_CERT_LOC); 
 			BufferedInputStream bufferedInputStream = new BufferedInputStream(is);
 			CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
 			while (bufferedInputStream.available() > 0) {
@@ -234,6 +234,10 @@ public class ACSFederationAuthFilter implements Filter {
 		return certificate.getPublicKey();
 	}
 
+	private static InputStream getConfigurationAsInputStream(String fileName) {
+        ClassLoader classLoader = ACSFederationAuthFilter.class.getClassLoader();
+        return classLoader.getResourceAsStream(fileName);
+	}
 	private static String getCertificatePath(String rawPath) {
 		String certPath = null;
 		if (rawPath != null && rawPath.length() > 0) {

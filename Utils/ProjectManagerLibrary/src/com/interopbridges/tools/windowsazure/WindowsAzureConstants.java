@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -121,6 +121,9 @@ public final class WindowsAzureConstants {
 	public static final String PROJ_PROPERTY = "/project/target[@name='waprojectproperties']";
 	public static final String ROOT_ELEMENT = "/project";
 	public static final String PROJ_GLOBAL_PROPERTY = "/project/property[@name='%s']";
+	public static final String PROJ_GLOBAL_PROPERTY_LOCATION = "/project/property[@name='%s']/@location";
+	public static final String PROJ_GLOBAL_PROPERTY_VALUE = "/project/property[@name='%s']/@value";
+	public static final String PROJ_GLOBAL_TARGET = "/project/target[@name='%s']";
 	public static final String PROJ_PROPERTY_ELEMENT_NAME = "property";
 	public static final String PROJ_PROPERTIES = PROJ_PROPERTY + "/"
 			+ PROJ_PROPERTY_ELEMENT_NAME;
@@ -159,7 +162,7 @@ public final class WindowsAzureConstants {
 	public static final String CREATOR_VER = PROJ_PROPERTY
 			+ "/property[@name='creator.version']";
 	public static final String V17_VERSION = "1.7.0";
-	public static final String VERSION = "2.4.1";
+	public static final String VERSION = "2.5.2";
 	public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY
 			+ "/property[@name='project.%s.sessionaffinity.inputendpoint']";
 	public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY
@@ -243,15 +246,23 @@ public final class WindowsAzureConstants {
 	public static final String ATTR_MAXPORT = "max";
 	public static final String ATTR_PORTALURL = "portalurl";
 
-	public static final int MAX_LS_SIZE_EXTRASMALL = 20480;
-	public static final int MAX_LS_SIZE_SMALL = 230400;
-	public static final int MAX_LS_SIZE_MEDIUM = 501760;
-	public static final int MAX_LS_SIZE_LARGE = 1024000;
-	public static final int MAX_LS_SIZE_EXTRALARGE = 2088960;
+	public static final int MAX_LS_SIZE_EXTRASMALL = 19456;
+	public static final int MAX_LS_SIZE_SMALL = 229376;
+	public static final int MAX_LS_SIZE_MEDIUM = 500736;
+	public static final int MAX_LS_SIZE_LARGE = 1022976;
+	public static final int MAX_LS_SIZE_EXTRALARGE = 2087936;
 	public static final int MAX_LS_SIZE_A5 = 500736;
-	public static final int MAX_LS_SIZE_A6 = 1024000;
-	public static final int MAX_LS_SIZE_A7 = 2088960;
+	public static final int MAX_LS_SIZE_A6 = 1022976;
+	public static final int MAX_LS_SIZE_A7 = 2087936;
 	public static final int MAX_LS_SIZE_A8_A9 = 1855980;
+	public static final int MAX_LS_SIZE_STANDARD_D1 = 51200;
+	public static final int MAX_LS_SIZE_STANDARD_D2 = 102400;
+	public static final int MAX_LS_SIZE_STANDARD_D3 = 204800;
+	public static final int MAX_LS_SIZE_STANDARD_D4 = 409600;
+	public static final int MAX_LS_SIZE_STANDARD_D11 = 102400;
+	public static final int MAX_LS_SIZE_STANDARD_D12 = 204800;
+	public static final int MAX_LS_SIZE_STANDARD_D13 = 409600;
+	public static final int MAX_LS_SIZE_STANDARD_D14 = 819200;
 
 	public static final String COMPONENT = WA_PACK_NAME + "/component";
 
@@ -280,34 +291,36 @@ public final class WindowsAzureConstants {
 			+ "[@" + ATTR_IPATH + "='%s'][@" + ATTR_IMPORTAS + "='']";
 	public static final String COMPONENT_TYPE = COMPONENT + "[@" + ATTR_TYPE
 			+ "='%s']";
+	public static final String COMPONENT_TYPE_PATH = COMPONENT + "[@" + ATTR_TYPE
+			+ "='%s']" +"[@" + ATTR_IPATH + "='%s']";
 	public static final String COMPONENT_TYPE_IMPORTAS = COMPONENT_TYPE + "[@"
 			+ ATTR_IMPORTAS + "='%s']";
 
 	public static final String ENV_PROGRAMFILES = "ProgramFiles";
 	public static final String ENV_PROGRAMFILES_WOW64 = "ProgramFiles";
 
-	public static final String EXCP = "Exception occured: ";
+	public static final String EXCP = "Exception occurred: ";
 	public static final String DBG_NOT_ENABLED = "Debugging is not enabled";
 	public static final String DBG_STR = "-agentlib:jdwp=transport=dt_socket,server=y,address=";
 	public static final String DIR_NOT_CREATED = "Directory not created : ";
 	public static final String DIR_NOT_DELETED = "Directory not deleted : ";
-	public static final String EXCP_RETRIEVE_DATA = "Exception occured while retrieving data from ";
-	public static final String EXCP_SAVE = "Exception occured while saving ";
-	public static final String EXCP_ROLE_UPDATES = "Exception occured while doing role updates";
+	public static final String EXCP_RETRIEVE_DATA = "Exception occurred while retrieving data from ";
+	public static final String EXCP_SAVE = "Exception occurred while saving ";
+	public static final String EXCP_ROLE_UPDATES = "Exception occurred while doing role updates";
 	public static final String EXCP_EMPTY_ROLENAME = "Setting empty role name";
-	public static final String EXCP_SET_ROLENAME = "Exception occured while setting role name";
-	public static final String EXCP_GET_INSTANCES = "Exception occured while getting instance count";
-	public static final String EXCP_SET_INSTANCES = "Exception occured while setting instance count";
+	public static final String EXCP_SET_ROLENAME = "Exception occurred while setting role name";
+	public static final String EXCP_GET_INSTANCES = "Exception occurred while getting instance count";
+	public static final String EXCP_SET_INSTANCES = "Exception occurred while setting instance count";
 	public static final String EXCP_EMPTY_VMSIZE = "Empty VM Size";
-	public static final String EXCP_SET_VMSIZE = "Exception occured while setting VM Size";
-	public static final String EXCP_ADD_ENDPOINT = "Exception occured while adding endpoint";
-	public static final String EXCP_RETRIEVING_ENDPOINT_NAME = "Exception occured while retrieving endpoint name";
-	public static final String EXCP_DEL_ROLE = "Exception occured while deleting role";
-	public static final String EXCP_GET_INPUT_ENDPOINT_NAME = "Exception occured while getting input endpoint name";
-	public static final String EXCP_SET_INPUT_ENDPOINT_NAME = "Exception occured while setting input endpoint name";
-	public static final String EXCP_GET_INTERNAL_ENDPOINT_NAME = "Exception occured while getting internal endpoint name";
+	public static final String EXCP_SET_VMSIZE = "Exception occurred while setting VM Size";
+	public static final String EXCP_ADD_ENDPOINT = "Exception occurred while adding endpoint";
+	public static final String EXCP_RETRIEVING_ENDPOINT_NAME = "Exception occurred while retrieving endpoint name";
+	public static final String EXCP_DEL_ROLE = "Exception occurred while deleting role";
+	public static final String EXCP_GET_INPUT_ENDPOINT_NAME = "Exception occurred while getting input endpoint name";
+	public static final String EXCP_SET_INPUT_ENDPOINT_NAME = "Exception occurred while setting input endpoint name";
+	public static final String EXCP_GET_INTERNAL_ENDPOINT_NAME = "Exception occurred while getting internal endpoint name";
 	public static final String EXCP_EMPTY_INTERNAL_NAME = "internal endPoint name is empty";
-	public static final String EXCP_SET_INTERNAL_ENDPOINT_NAME = "Exception occured while setting internal endpoint name";
+	public static final String EXCP_SET_INTERNAL_ENDPOINT_NAME = "Exception occurred while setting internal endpoint name";
 	public static final String EXCP_EMPTY_PORT = "endPoint port is empty";
 	public static final String EXCP_EMPTY_PROTOCOL = "endPoint protocol is empty";
 	public static final String EXCP_EMPTY_CERT = "endPoint certificate is empty";
@@ -318,36 +331,38 @@ public final class WindowsAzureConstants {
 	public static final String EXCP_SSL_ENABLED = "Duplicate request : SSL configuration exists already for the endpoint ";
 	public static final String EXCP_SA_INVALID_PACKAGE = "Session affinity is supported only for package type# Cloud";
 	public static final String EXCP_SA_ENDPOINT_TYPE_CHANGE = "Changing the type of endpoint associated with session affinity is not allowed";
-	public static final String EXCP_SET_INPUT_PORT = "Exception occured while setting input port";
+	public static final String EXCP_SET_INPUT_PORT = "Exception occurred while setting input port";
 	public static final String EXCP_EMPTY_INPUT_LOCAL_PORT = "input endPoint local port is empty";
-	public static final String EXCP_SET_LOCAL_PORT = "Exception occured while setting local port";
+	public static final String EXCP_SET_LOCAL_PORT = "Exception occurred while setting local port";
 	public static final String EXCP_EMPTY_INTERNAL_PORT = "internal endPoint port is empty";
-	public static final String EXCP_SET_INTERNAL_PORT = "Exception occured while setting internal port";
+	public static final String EXCP_SET_INTERNAL_PORT = "Exception occurred while setting internal port";
 	public static final String EXCP_EMPTY_PRIVATE_PORT = "private endPoint port is empty";
 	public static final String EXCP_EMPTY_FIXED_PORT = "internal fixed port is empty";
-	public static final String EXCP_SET_INTERNAL_FIXED_PORT = "Exception occured while setting internal fix port";
-	public static final String EXCP_SET_TYPE = "Exception occured while setting endpoint Type";
-	public static final String EXCP_DEL_ENDPOINT = "Exception occured while deleting endpoint";
-	public static final String EXCP_INITIALIZE = "Exception occured while initializing the project";
-	public static final String EXCP_IS_AVAILABLE_ROLENAME = "Exception occured while validating role";
-	public static final String EXCP_IS_AVAILABLE_SERVICE_NAME = "Exception occured while validating service name";
-	public static final String EXCP_IS_AVAILABLE_PORT = "Exception occured while validating port";
-	public static final String EXCP_GET_SERVICE_NAME = "Exception occured while getting service name";
-	public static final String EXCP_SET_SERVICE_NAME = "Exception occured while setting service name";
-	public static final String EXCP_GET_TARGET_OS_NAME = "Exception occured while getting target os name";
-	public static final String EXCP_SET_TARGET_OS_NAME = "Exception occured while setting target os name";
-	public static final String EXCP_GET_ROLE = "Exception occured while getting roles";
+	public static final String EXCP_SET_INTERNAL_FIXED_PORT = "Exception occurred while setting internal fix port";
+	public static final String EXCP_SET_TYPE = "Exception occurred while setting endpoint Type";
+	public static final String EXCP_DEL_ENDPOINT = "Exception occurred while deleting endpoint";
+	public static final String EXCP_INITIALIZE = "Exception occurred while initializing the project";
+	public static final String EXCP_IS_AVAILABLE_ROLENAME = "Exception occurred while validating role";
+	public static final String EXCP_IS_AVAILABLE_SERVICE_NAME = "Exception occurred while validating service name";
+	public static final String EXCP_IS_AVAILABLE_PORT = "Exception occurred while validating port";
+	public static final String EXCP_GET_SERVICE_NAME = "Exception occurred while getting service name";
+	public static final String EXCP_SET_SERVICE_NAME = "Exception occurred while setting service name";
+	public static final String EXCP_GET_TARGET_OS_NAME = "Exception occurred while getting target os name";
+	public static final String EXCP_SET_TARGET_OS_NAME = "Exception occurred while setting target os name";
+	public static final String EXCP_GET_ROLE = "Exception occurred while getting roles";
 	public static final String EXCP_EMPTY_ROLE = "Role name should not be empty";
-	public static final String EXCP_ADD_ROLE = "Exception occured while adding role";
+	public static final String EXCP_ADD_ROLE = "Exception occurred while adding role";
 	public static final String EXCP_GET_PACKAGE_FILE = "Problem while reading package file";
 	public static final String EXCP_SET_PROJECT_NAME = "Exception while setting project name";
 	public static final String EXCP_GET_PROJECT_NAME = "Exception while getting project name";
 	public static final String EXCP_MOVE_PROJ_FROM_TEMP = "Problem while moving project";
 	public static final String EXCP_COPY_FILES = "Getting exception when copying SA files";
-	public static final String EXCP_SET_PACKAGE_TYPE = "Exception occured while setting project Type";
-	public static final String EXCP_GET_PACKAGE_TYPE = "Exception occured while getting project Type";
-	public static final String EXCP_GET_PORTAL_URL = "Exception occured while getting portal URL";
-	public static final String EXCP_SET_PORTAL_URL = "Exception occured while setting portal URL";
+	public static final String EXCP_SET_PACKAGE_TYPE = "Exception occurred while setting project Type";
+	public static final String EXCP_GET_PACKAGE_TYPE = "Exception occurred while getting project Type";
+	public static final String EXCP_GET_PORTAL_URL = "Exception occurred while getting portal URL";
+	public static final String EXCP_SET_PORTAL_URL = "Exception occurred while setting portal URL";
+	public static final String EXCP_GET_PROJECT_PROP = "Exception occurred while getting project properties";
+	public static final String EXCP_SET_PROJECT_PROP = "Exception occurred while setting project properties";
 	public static final String EXCP_ROLE_FROM_PATH = "Exception occurred while getting role from path.";
 	public static final String EXCP_PROJ_NAME_EMPTY = "project Name is empty or null";
 	public static final String EXCP_PROJ_LOC_EMPTY = "Project location should not be empty";
@@ -384,20 +399,21 @@ public final class WindowsAzureConstants {
 			+ "Remote access configuration";
 	public static final String EXCP_RA_SET_FPRINT = "Exception occurred while setting fingerprint of "
 			+ "Remote access configuration";
-	public static final String EXCP_GET_FP = "Exception occured while getting end points";
-	public static final String EXCP_SET_SESSION_AFFINITY = "Exception occured while configuring session affinity";
-	public static final String EXCP_FILE_OPERATION = "Error occured during file operation";
-	public static final String EXCP_ENDPOINT_RENAME = "Error occured while changing endpoint info in startup task";
-	public static final String EXCP_SA_NAME_CHANGE = "Internal Error occured while updating endpoint name in session affinity files";
+	public static final String EXCP_GET_FP = "Exception occurred while getting end points";
+	public static final String EXCP_SET_SESSION_AFFINITY = "Exception occurred while configuring session affinity";
+	public static final String EXCP_FILE_OPERATION = "Error occurred during file operation";
+	public static final String EXCP_ENDPOINT_RENAME = "Error occurred while changing endpoint info in startup task";
+	public static final String EXCP_SA_NAME_CHANGE = "Internal Error occurred while updating endpoint name in session affinity files";
 	public static final String EXCP_SAMPLE_CREAT = "Exception while creating sample dir";
 	public static final String EXCP_REPLACE_FILE = "Exception while replacing files for project upgrade";
 	public static final String EXCP_DISABLE_ALL_SA = "Exception while disabling all role";
 	public static final int IIS_ARR_PORT = 31221;
 
-	public static final String EXCP_UPDATE_OR_CREATE_ELEMENT = "Exception occured while updating or creating element";
-	public static final String EXCP_COMMENT_NODE = "Exception occured while creating comment node";
-	public static final String EXCP_COMMENT_NODE_DELETE = "Exception occured while deleting comment node";
-	public static final String EXCP_DELETE_ELEMENT = "Exception occured while updating or creating element";
+	public static final String EXCP_UPDATE_OR_CREATE_ELEMENT = "Exception occurred while updating or creating element";
+	public static final String EXCP_NODE_EXISTS_CHECK = "Exception occurred while checking if node is laready present or not";
+	public static final String EXCP_COMMENT_NODE = "Exception occurred while creating comment node";
+	public static final String EXCP_COMMENT_NODE_DELETE = "Exception occurred while deleting comment node";
+	public static final String EXCP_DELETE_ELEMENT = "Exception occurred while updating or creating element";
 
 	public static final int PACKAGE_DOC_SA_PROPERTIES = 1;
 	public static final int SA_FILES_COPIED = 2;
@@ -414,6 +430,7 @@ public final class WindowsAzureConstants {
 	public static final String PREFERENCESETS_VERSION = "/preferencesets/@version";
 	public static final String TEMP_STARTUPENV = "/componentsets/componentset[@type='%s']/component";
 	public static final String TEMP_SERVER_COMP = "/componentsets/componentset[@type='%s'][@name='%s']";
+	public static final String DOWNLOADSET = TEMP_SERVER_COMP + "/downloads/download";
 	public static final String SERVER_PROP_NAME = "project.%s.server";
 	public static final String SERVER_PROP_PATH = PROJ_PROPERTY
 			+ "/property[@name='project.%s.server']";
@@ -466,8 +483,9 @@ public final class WindowsAzureConstants {
 	public static final String SRV_LOCAL_HOME = "project.%s.server.home.local";
 
 	public static final String THRD_PARTY_JDK_NAME = "project.%s.jdk.name";
+	public static final String THRD_PARTY_SRV_NAME = "project.%s.server.name.cloud";
 
-	public static final String MIN_SDK_VERSION = "v2.4";
+	public static final String MIN_SDK_VERSION = "v2.5";
 	public static final String SA_NEW_VERSION_ATTR = "/configuration/runtime/assemblyBinding/dependentAssembly/bindingRedirect/@newVersion";
 
 	public static final String WR_CERTS = WORKER_ROLE
@@ -480,4 +498,12 @@ public final class WindowsAzureConstants {
 	public static final String DEF_FPRINT_ALL = WORKER_ROLE
 			+ "/Certificates/Certificate" + "[@name='"
 			+ WindowsAzureConstants.REMOTEACCESS_FINGERPRINT + "']";
+	
+	public static final String PROJ_GLOBAL_PROP_PUBLISH_SETTINGS_PATH_NAME = "publishsettingspath";
+	public static final String PROJ_GLOBAL_PROP_SUBSCRIPTION_ID_NAME = "subscriptionid";
+	public static final String PROJ_GLOBAL_PROP_CLOUD_SERVICE_NAME = "cloudservicename";
+	public static final String PROJ_GLOBAL_PROP_REGION_NAME = "region";
+	public static final String PROJ_GLOBAL_PROP_STORAGE_ACCOUNT_NAME = "storageaccountname";
+	public static final String PROJ_GLOBAL_PROP_DEPLOYMENT_SLOT_NAME = "deploymentslot";
+	public static final String PROJ_GLOBAL_PROP_OVERWRITE_PREV_DEPLOYMENT_NAME = "overwritepreviousdeployment";
 }

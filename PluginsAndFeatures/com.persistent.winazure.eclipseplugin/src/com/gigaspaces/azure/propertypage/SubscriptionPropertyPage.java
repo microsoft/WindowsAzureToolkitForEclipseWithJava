@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -51,9 +51,9 @@ import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.UIUtils;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
-import com.microsoftopentechnologies.deploy.propertypages.SubscriptionPropertyPageTableElement;
-import com.microsoftopentechnologies.deploy.propertypages.SubscriptionPropertyPageUtilMethods;
-import com.microsoftopentechnologies.deploy.util.PublishData;
+import com.microsoftopentechnologies.azurecommons.deploy.propertypages.SubscriptionPropertyPageTableElement;
+import com.microsoftopentechnologies.azurecommons.deploy.propertypages.SubscriptionPropertyPageUtilMethods;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
 import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
 
 public class SubscriptionPropertyPage extends PropertyPage {
@@ -292,6 +292,13 @@ public class SubscriptionPropertyPage extends PropertyPage {
 		String id = tableViewer.getTable().getItem(index).getText(1);
 
 		WizardCacheManager.removeSubscription(id);
+		/*
+		 * Remove from map as well,
+		 * Do not put this line inside removeSubscription method
+		 * as method gets called at removeDuplicateSubscriptions
+		 * also to update Publish data cache.
+		 */
+		WizardCacheManager.getPublishSettingsPerSubscription().remove(id);
 		PreferenceUtil.save();
 		tableViewer.refresh();
 	}

@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -337,10 +337,7 @@ public class WAApplicationDialog extends TitleAreaDialog {
      */
     private void browseBtnListener() {
         FileDialog dialog = new FileDialog(this.getShell());
-        String[] extensions = new String [3];
-        extensions[0] = "*.WAR";
-        extensions[1] = "*.JAR";
-        extensions[2] = "*.EAR";
+        String[] extensions = {"*.war", "*.WAR", "*.jar", "*.JAR", "*.ear", "*.EAR"};
         dialog.setFilterExtensions(extensions);
         String file = dialog.open();
         if (file != null) {

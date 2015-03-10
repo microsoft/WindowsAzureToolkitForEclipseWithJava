@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -107,6 +107,19 @@ public class WindowsAzureRoleComponent {
 	}
 
 	/**
+	 * Constructor to initialize project manager, Role object and type of component.
+	 * @param waProj
+	 * @param waRole
+	 * @param type
+	 */
+	public WindowsAzureRoleComponent(WindowsAzureProjectManager waProj,
+			WindowsAzureRole waRole, String type) {
+		wProj = waProj;
+		wRole = waRole;
+		this.type = type;
+	}
+
+	/**
 	 * This method is to find corresponding Component tag in package.xml.
 	 * 
 	 * @return Element
@@ -130,9 +143,19 @@ public class WindowsAzureRoleComponent {
 				// attribute is empty
 
 				// Case 1: importas attribute is not present
-				expr = String.format(
-						WindowsAzureConstants.COMPONENT_IPATH_NAME,
-						wRole.getName(), this.importPath);
+				/*
+				 * To take care of scenario when both,
+				 * JDK and server does not have local path specified,
+				 * rely on component type to identify element.
+				 */
+				if (this.importPath.isEmpty()) {
+					expr = String.format(WindowsAzureConstants.COMPONENT_TYPE_PATH,
+							wRole.getName(), this.type, this.importPath);
+				} else {
+					expr = String.format(
+							WindowsAzureConstants.COMPONENT_IPATH_NAME,
+							wRole.getName(), this.importPath);
+				}
 				component = (Element) xPath.evaluate(expr, doc,
 						XPathConstants.NODE);
 

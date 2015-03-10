@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.model.RoleAndEndpoint;
-import com.microsoftopentechnologies.roleoperations.WARLoadBalanceUtilMethods;
+import com.microsoftopentechnologies.azurecommons.model.RoleAndEndpoint;
+import com.microsoftopentechnologies.azurecommons.roleoperations.WARLoadBalanceUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
 /**
@@ -60,8 +60,6 @@ public class WARLoadBalance extends PropertyPage {
     private List<WindowsAzureEndpoint> endpointsList;
     private WindowsAzureEndpoint stcSelEndpoint;
     private boolean isPageDisplayed = false;
-    private final int HTTP_PRV_PORT = 8080;
-    private final int HTTP_PORT = 80;
 
     @Override
     public String getTitle() {
@@ -228,7 +226,6 @@ public class WARLoadBalance extends PropertyPage {
         comboEndpt = new Combo(grpSessionAff, SWT.READ_ONLY);
         gridData = new GridData();
         gridData.widthHint = 260;
-        gridData.heightHint = 12;
         gridData.horizontalAlignment = GridData.END;
         gridData.grabExcessHorizontalSpace = true;
         comboEndpt.setLayoutData(gridData);

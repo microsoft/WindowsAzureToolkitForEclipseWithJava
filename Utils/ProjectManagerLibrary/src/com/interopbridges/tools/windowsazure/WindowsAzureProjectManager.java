@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -69,11 +69,14 @@ public class WindowsAzureProjectManager {
 	private static final int BUFF_SIZE = 1024;
 
 	private static enum WAvmSize {
-		EXTRASMALL, SMALL, MEDIUM, LARGE, EXTRALARGE, A5, A6, A7, A8, A9
+		EXTRASMALL, SMALL, MEDIUM, LARGE, EXTRALARGE, A5, A6, A7, A8, A9, STANDARD_D1, STANDARD_D2, STANDARD_D3, STANDARD_D4,
+		STANDARD_D11, STANDARD_D12, STANDARD_D13, STANDARD_D14
 	};
 
 	private static String[] vmSize = { "extrasmall", "small", "medium",
-			"large", "extralarge", "a5", "a6", "a7", "a8", "a9" };
+			"large", "extralarge", "a5", "a6", "a7", "a8", "a9", 
+			"standard_d1", "standard_d2", "standard_d3", "standard_d4",
+			"standard_d11", "standard_d12", "standard_d13", "standard_d14"};
 	private static Set<String> waVmSize = new HashSet<String>(
 			Arrays.asList(vmSize));
 	private static final String ENV_PROGRAMFILES_WOW64 = "ProgramW6432";
@@ -83,6 +86,7 @@ public class WindowsAzureProjectManager {
 	WindowsAzureProjectManager(File projDirectoryPath)
 			throws WindowsAzureInvalidProjectOperationException {
 		XPath xPath = XPathFactory.newInstance().newXPath();
+		
 		packageFilePath = String.format("%s%s%s", projDirectoryPath,
 				File.separator, "package.xml");
 		packageFileDoc = ParserXMLUtility.parseXMLFile(packageFilePath);
@@ -122,14 +126,19 @@ public class WindowsAzureProjectManager {
 			throw new IllegalArgumentException(
 					WindowsAzureConstants.INVALID_ARG);
 		}
+		long startMiliseconds = System.currentTimeMillis();
 		ZipFile zipFile = new ZipFile(fileName);
 		String tmpPath = System.getProperty("java.io.tmpdir");
 		String projPath = String.format("%s%s%s", tmpPath, File.separator,
 				"%proj%");
+		System.out.println("...... StarterKit extraction - initialization :" + (System.currentTimeMillis() - startMiliseconds));
+    	startMiliseconds = System.currentTimeMillis();
 		File projFile = new File(projPath);
 		if (projFile != null) {
 			deleteDir(projFile);
 		}
+		System.out.println("...... StarterKit extraction - delete Directory :" + (System.currentTimeMillis() - startMiliseconds));
+    	startMiliseconds = System.currentTimeMillis();
 		Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		String entryName;
 		while (entries.hasMoreElements()) {
@@ -149,6 +158,8 @@ public class WindowsAzureProjectManager {
 					new BufferedOutputStream(new FileOutputStream(outputFile)));
 		}
 		zipFile.close();
+		System.out.println("...... StarterKit extraction - zip extraction :" + (System.currentTimeMillis() - startMiliseconds));
+    	startMiliseconds = System.currentTimeMillis();
 
 		tmpPath = System.getProperty("java.io.tmpdir");
 		try {
@@ -156,6 +167,7 @@ public class WindowsAzureProjectManager {
 					new File(String.format("%s%s%s", tmpPath, File.separator,
 							"%proj%")));
 			winAzureProjMgr.setWindowsAzureProjMgr(winAzureProjMgr);
+			System.out.println("...... StarterKit extraction - PMngr object creation  :" + (System.currentTimeMillis() - startMiliseconds));
 			return winAzureProjMgr;
 		} catch (Exception ex) {
 			throw new WindowsAzureInvalidProjectOperationException(
@@ -457,7 +469,7 @@ public class WindowsAzureProjectManager {
 					.hasNext();) {
 				WindowsAzureRole windowsAzureRole = iterator.next();
 				if (sdkVersion == null) {
-					sdkVersion = "2.4.0.0";
+					sdkVersion = "2.5.0.0";
 				}
 				// If Session affinity is enabled
 				if (sdkVersion != null
@@ -776,7 +788,7 @@ public class WindowsAzureProjectManager {
 			WindowsAzureRole role)
 			throws WindowsAzureInvalidProjectOperationException {
 		String jdkPath = role.getJDKSourcePath();
-		if (jdkPath != null && !jdkPath.isEmpty()) {
+		if (jdkPath != null) {
 			String jdkUrl = role.getJDKCloudURL();
 			if (jdkUrl != null && !jdkUrl.isEmpty()) {
 				if (packageType.equals(WindowsAzurePackageType.LOCAL)) {
@@ -811,7 +823,7 @@ public class WindowsAzureProjectManager {
 			throws WindowsAzureInvalidProjectOperationException {
 		String srvPath = role.getServerSourcePath();
 		String srvName = role.getServerName();
-		if (srvPath != null && !srvPath.isEmpty() && srvName != null
+		if (srvPath != null && srvName != null
 				&& !srvName.isEmpty()) {
 			String srvUrl = role.getServerCloudURL();
 			if (srvUrl != null && !srvUrl.isEmpty()) {
@@ -1919,7 +1931,7 @@ public class WindowsAzureProjectManager {
 					WindowsAzureConstants.CREATOR_VER + "/@value", version);
 		} catch (XPathExpressionException e) {
 			throw new WindowsAzureInvalidProjectOperationException(
-					"Error occured while setting project version");
+					"Error occurred while setting project version");
 		}
 	}
 
@@ -1930,7 +1942,7 @@ public class WindowsAzureProjectManager {
 					WindowsAzureConstants.CREATOR_VER + "/@value");
 		} catch (XPathExpressionException e) {
 			throw new WindowsAzureInvalidProjectOperationException(
-					"Error occured while setting project version");
+					"Error occurred while setting project version");
 		}
 	}
 
@@ -2134,32 +2146,56 @@ public class WindowsAzureProjectManager {
 		}
 		int maxLsSize = 0;
 		switch (WAvmSize.valueOf(vmSize.toUpperCase())) {
-		case EXTRASMALL:
-			maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_EXTRASMALL;
-			break;
-		case SMALL:
-			maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_SMALL;
-			break;
-		case MEDIUM:
-			maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_MEDIUM;
-			break;
-		case LARGE:
-			maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_LARGE;
-			break;
-		case EXTRALARGE:
-			maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_EXTRALARGE;
-			break;
-		case A5:
-			maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A5;
-			break;
-		case A6:
-			maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A6;
-			break;
-		case A7:
-			maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A7;
-			break;
-		default:
-			maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A8_A9;
+			case EXTRASMALL:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_EXTRASMALL;
+				break;
+			case SMALL:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_SMALL;
+				break;
+			case MEDIUM:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_MEDIUM;
+				break;
+			case LARGE:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_LARGE;
+				break;
+			case EXTRALARGE:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_EXTRALARGE;
+				break;
+			case A5:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A5;
+				break;
+			case A6:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A6;
+				break;
+			case A7:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A7;
+				break;
+			case STANDARD_D1:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_STANDARD_D1;
+				break;
+			case STANDARD_D2:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_STANDARD_D2;
+				break;			
+			case STANDARD_D3:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_STANDARD_D3;
+				break;
+			case STANDARD_D4:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_STANDARD_D4;
+				break;
+			case STANDARD_D11:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_STANDARD_D11;
+				break;
+			case STANDARD_D12:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_STANDARD_D12;
+				break;
+			case STANDARD_D13:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_STANDARD_D13;
+				break;
+			case STANDARD_D14:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_STANDARD_D14;
+				break;
+			default:
+				maxLsSize = WindowsAzureConstants.MAX_LS_SIZE_A8_A9;
 		}
 		return maxLsSize;
 	}
@@ -2202,7 +2238,7 @@ public class WindowsAzureProjectManager {
 				if (versionedSdkDir.isDirectory()) {
 
 					// Since we are iterating in descending manner , below if
-					// will be true only if SDK2.4 or greater version is not
+					// will be true only if SDK2.5 or greater version is not
 					// installed.
 					// If greater version is installed we always break loop and
 					// return the value.
@@ -2301,7 +2337,7 @@ public class WindowsAzureProjectManager {
 		if (storageEmulatorDir.exists()) {
 			return storageEmulatorDir.toString();
 		} else {
-			throw new IOException("Azure SDK v2.4 or later is not installed.");
+			throw new IOException("Azure SDK v2.5 or later is not installed.");
 		}
 	}
 
@@ -2561,6 +2597,234 @@ public class WindowsAzureProjectManager {
 					"Exception while getting third party JDK names", e);
 		}
 	}
+	
+	/**
+	 * API returns array of third party server names
+	 * from specific server componentset in the order they appear.
+	 * By default method won't include server's with status="deprecated"
+	 * but in special case where
+	 * user have already used deprecated server, we will add that to list.
+	 * @param templateFile
+	 * @param depSrvName - deprecated server name which should be added to list.
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static String[] getThirdPartySrvNames(File templateFile, String srvName, String depSrvName)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			ArrayList<String> thrdSrvList = new ArrayList<String>();
+			NodeList compSet = getComponentSets(templateFile, "server");
+			for (int i = 0; i < compSet.getLength(); i++) {
+				if (compSet.item(i).getAttributes().getLength() != 0) {
+					Element ele = (Element) compSet.item(i);
+					String name = ele.getAttribute("name");
+					if (name.equalsIgnoreCase(srvName)) {
+						NodeList downloadSet = getDownloadSets(templateFile, "server", srvName);
+						for (int j = 0; j < downloadSet.getLength(); j++) {
+							if (downloadSet.item(j).getAttributes().getLength() != 0) {
+								Element downloadEle = (Element) downloadSet.item(j);
+								String downloadName = downloadEle.getAttribute("name");
+								String status = downloadEle.getAttribute("status");
+								if (!status.equalsIgnoreCase("deprecated")) {
+									// not deprecated then simply add
+									thrdSrvList.add(downloadName);
+								} else if(status.equalsIgnoreCase("deprecated")
+										&& !depSrvName.isEmpty()
+										&& downloadName.equalsIgnoreCase(depSrvName)) {
+									/*
+									 * deprecated but it needs to be added
+									 * as user have used that server in project.
+									 */
+									thrdSrvList.add(depSrvName);
+								}
+							}
+						}
+						break;
+					}
+				}
+			}
+			String[] srvArr = thrdSrvList
+					.toArray(new String[thrdSrvList.size()]);
+			return srvArr;
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting third party server names", e);
+		}
+	}
+
+	public static boolean checkCloudAndLocalFamilyAreEqual(
+			File templateFile, String srvName, String cloudSrvName)
+					throws WindowsAzureInvalidProjectOperationException {
+		String[] srvArr = getThirdPartySrvNames(templateFile, srvName, "");
+		return Arrays.asList(srvArr).contains(cloudSrvName);
+	}
+	
+	public static String getServerNameUsingThirdPartyServerName(String thrdSrvName, File templateFile)
+			throws WindowsAzureInvalidProjectOperationException {
+		String name = "";
+		try {
+			NodeList compSet = getComponentSets(templateFile, "server");
+			for (int i = 0; i < compSet.getLength(); i++) {
+				if (compSet.item(i).getAttributes().getLength() != 0) {
+					Element ele = (Element) compSet.item(i);
+					name = ele.getAttribute("name");
+					NodeList downloadSet = getDownloadSets(templateFile, "server", name);
+					for (int j = 0; j < downloadSet.getLength(); j++) {
+						if (downloadSet.item(j).getAttributes().getLength() != 0) {
+							Element downloadEle = (Element) downloadSet.item(j);
+							if (downloadEle.getAttribute("name").equalsIgnoreCase(thrdSrvName)) {
+								return name;
+							}
+						}
+					}
+				}
+			}
+			return name;
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting server name with the help of third party server name", e);
+		}
+	}
+
+	/**
+	 * API returns array of all third party server names
+	 * from componentset in the order they appear.
+	 * By default method won't include server's with status="deprecated"
+	 * but in special case where
+	 * user have already used deprecated server, we will add that to list.
+	 * @param templateFile
+	 * @param depSrvName - deprecated server name which should be added to list.
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static String[] getAllThirdPartySrvNames(File templateFile, String depSrvName)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			ArrayList<String> thrdSrvList = new ArrayList<String>();
+			NodeList compSet = getComponentSets(templateFile, "server");
+			for (int i = 0; i < compSet.getLength(); i++) {
+				if (compSet.item(i).getAttributes().getLength() != 0) {
+					Element ele = (Element) compSet.item(i);
+					String name = ele.getAttribute("name");
+					NodeList downloadSet = getDownloadSets(templateFile, "server", name);
+					for (int j = 0; j < downloadSet.getLength(); j++) {
+						if (downloadSet.item(j).getAttributes().getLength() != 0) {
+							Element downloadEle = (Element) downloadSet.item(j);
+							String downloadName = downloadEle.getAttribute("name");
+							String status = downloadEle.getAttribute("status");
+							if (!status.equalsIgnoreCase("deprecated")) {
+								// not deprecated then simply add
+								thrdSrvList.add(downloadName);
+							} else if(status.equalsIgnoreCase("deprecated")
+									&& !depSrvName.isEmpty()
+									&& downloadName.equalsIgnoreCase(depSrvName)) {
+								/*
+								 * deprecated but it needs to be added
+								 * as user have used that server in project.
+								 */
+								thrdSrvList.add(depSrvName);
+							}
+						}
+					}
+				}
+			}
+			String[] srvArr = thrdSrvList
+					.toArray(new String[thrdSrvList.size()]);
+			return srvArr;
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting third party server names", e);
+		}
+	}
+
+	/**
+	 * Method returns default server name from specific server componentset
+	 * if exists else returns empty string.
+	 * @param templateFile
+	 * @param srvName
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static String getDefaultThirdPartySrvName(File templateFile, String srvName)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			NodeList compSet = getComponentSets(templateFile, "server");
+			for (int i = 0; i < compSet.getLength(); i++) {
+				if (compSet.item(i).getAttributes().getLength() != 0) {
+					Element ele = (Element) compSet.item(i);
+					String name = ele.getAttribute("name");
+					if (name.equalsIgnoreCase(srvName)) {
+						NodeList downloadSet = getDownloadSets(templateFile, "server", srvName);
+						for (int j = 0; j < downloadSet.getLength(); j++) {
+							if (downloadSet.item(j).getAttributes().getLength() != 0) {
+								Element downloadEle = (Element) downloadSet.item(j);
+								if (!downloadEle.getAttribute("status").equalsIgnoreCase("deprecated")
+										&& downloadEle.getAttribute("default").equalsIgnoreCase("true")) {
+									return downloadEle.getAttribute("name");
+								}
+							}
+						}
+					}
+				}
+			}	
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting default third party server name", e);
+		}
+		return "";
+	}
+	
+	/**
+	 * Method returns first default server name from componentset
+	 * if exists else returns empty string.
+	 * @param templateFile
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static String getFirstDefaultThirdPartySrvName(File templateFile)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			NodeList compSet = getComponentSets(templateFile, "server");
+			for (int i = 0; i < compSet.getLength(); i++) {
+				if (compSet.item(i).getAttributes().getLength() != 0) {
+					Element ele = (Element) compSet.item(i);
+					String name = ele.getAttribute("name");
+					NodeList downloadSet = getDownloadSets(templateFile, "server", name);
+					for (int j = 0; j < downloadSet.getLength(); j++) {
+						if (downloadSet.item(j).getAttributes().getLength() != 0) {
+							Element downloadEle = (Element) downloadSet.item(j);
+							if (!downloadEle.getAttribute("status").equalsIgnoreCase("deprecated")
+									&& downloadEle.getAttribute("default").equalsIgnoreCase("true")) {
+								return downloadEle.getAttribute("name");
+							}
+						}
+					}
+				}
+			}	
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting default third party server name", e);
+		}
+		return "";
+	}
+	
+	/**
+	 * API returns license URL of third party server.
+	 * 
+	 * @param srvName
+	 * @param templateFile
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static String getThirdPartyServerLicenseUrl(String srvName, File templateFile)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			return getThirdPartyServerAttribute(srvName, templateFile, WindowsAzureConstants.ATTR_LCNS_VAL);
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting third party server's license URL", e);
+		}
+	}
 
 	/**
 	 * API returns license URL of third party JDK as per JDK name.
@@ -2626,6 +2890,74 @@ public class WindowsAzureProjectManager {
 					"Exception while getting third party JDK cloud value", e);
 		}
 		return cloudValue;
+	}
+	
+	/**
+	 * API returns cloud alternative source of third party server.
+	 * @param srvName
+	 * @param templateFile
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static String getThirdPartyServerCloudAltSrc(String srvName, File templateFile)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			return getThirdPartyServerAttribute(srvName, templateFile, WindowsAzureConstants.ATTR_CLD_ALT_SRC);
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting third party server's cloud alternative source.", e);
+		}
+	}
+	
+	/**
+	 * API returns attribute value of third party server.
+	 * @param srvName
+	 * @param templateFile
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	private static String getThirdPartyServerAttribute(String srvName, File templateFile, String attribute)
+			throws WindowsAzureInvalidProjectOperationException {
+		String attributeVal = "";
+		try {
+			NodeList compSet = getComponentSets(templateFile, "server");
+			for (int i = 0; i < compSet.getLength(); i++) {
+				if (compSet.item(i).getAttributes().getLength() != 0) {
+					Element ele = (Element) compSet.item(i);
+					String name = ele.getAttribute("name");
+					NodeList downloadSet = getDownloadSets(templateFile, "server", name);
+					for (int j = 0; j < downloadSet.getLength(); j++) {
+						if (downloadSet.item(j).getAttributes().getLength() != 0) {
+							Element downloadEle = (Element) downloadSet.item(j);
+							if (downloadEle.getAttribute("name").equalsIgnoreCase(srvName)) {
+								return downloadEle.getAttribute(attribute);
+							}
+						}
+					}
+				}
+			}
+			return attributeVal;
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting third party server's attribute", e);
+		}
+	}
+	
+	/**
+	 * API returns home directory of third party server.
+	 * @param srvName
+	 * @param templateFile
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static String getThirdPartyServerHome(String srvName, File templateFile)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			return getThirdPartyServerAttribute(srvName, templateFile, "home");
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting third party server's home", e);
+		}
 	}
 
 	/**
@@ -2711,6 +3043,25 @@ public class WindowsAzureProjectManager {
 				type);
 		return (NodeList) xPath.evaluate(expr, compDoc, XPathConstants.NODESET);
 	}
+
+	/**
+	 * Returns NodeList of downloads elements.
+	 * @param templateFile
+	 * @param type - JDK or server
+	 * @param name - JDK or server name
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 * @throws XPathExpressionException
+	 */
+	private static NodeList getDownloadSets(File templateFile, String type, String name)
+			throws WindowsAzureInvalidProjectOperationException,
+			XPathExpressionException {
+		XPath xPath = XPathFactory.newInstance().newXPath();
+		Document compDoc = ParserXMLUtility.parseXMLFile(templateFile.getAbsolutePath());
+		String expr = String.format(WindowsAzureConstants.DOWNLOADSET, type, name);
+		return (NodeList) xPath.evaluate(expr, compDoc, XPathConstants.NODESET);
+	}
+	
 
 	/**
 	 * Returns the componentsets.xml version in plugins folder.
@@ -2936,47 +3287,65 @@ public class WindowsAzureProjectManager {
 			Document packageFileDoc = getPackageFileDoc();
 
 			XPath xPath = XPathFactory.newInstance().newXPath();
-			Element rootElement = (Element) xPath.evaluate(
-					WindowsAzureConstants.ROOT_ELEMENT, packageFileDoc,
-					XPathConstants.NODE);
 
 			// Add cspack location
-			Element cspackLoc = packageFileDoc.createElement("property");
-			cspackLoc.setAttribute("location", ".");
-			cspackLoc.setAttribute("name", "cspack.dir");
-			rootElement.appendChild(cspackLoc);
+			String nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY, "cspack.dir");
+			HashMap<String, String> nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("name", "cspack.dir");
+			nodeAttribites.put("location", ".");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr, "/project",
+					WindowsAzureConstants.PROJ_PROPERTY_ELEMENT_NAME, true, nodeAttribites);
 
 			// Add AzureLib location
-			Element azureLibLoc = packageFileDoc.createElement("property");
-			azureLibLoc.setAttribute("location", azureLibPath);
-			azureLibLoc.setAttribute("name", "azure.lib.dir");
-			rootElement.appendChild(azureLibLoc);
+			nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY, "azure.lib.dir");
+			nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("name", "azure.lib.dir");
+			nodeAttribites.put("location", azureLibPath);
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr, "/project",
+					WindowsAzureConstants.PROJ_PROPERTY_ELEMENT_NAME, true, nodeAttribites);
 
 			// Add build classpath
-			Element buildClassPath = packageFileDoc.createElement("path");
-			buildClassPath.setAttribute("id", "build.classpath");
-			rootElement.appendChild(buildClassPath);
-
-			Element fileSetForCSPack = packageFileDoc.createElement("fileset");
-			fileSetForCSPack.setAttribute("dir", "${cspack.dir}");
-			buildClassPath.appendChild(fileSetForCSPack);
-
-			Element includeCSPackJar = packageFileDoc.createElement("include");
-			includeCSPackJar.setAttribute("name", "**/*.jar");
-			fileSetForCSPack.appendChild(includeCSPackJar);
-
-			Element fileSetForAzureLibs = packageFileDoc
-					.createElement("fileset");
-			fileSetForAzureLibs.setAttribute("dir", "${azure.lib.dir}");
-			buildClassPath.appendChild(fileSetForAzureLibs);
-
-			Element includeAzureJar = packageFileDoc.createElement("include");
-			includeAzureJar.setAttribute("name", "*.jar");
-			fileSetForAzureLibs.appendChild(includeAzureJar);
-
-			Element includeAzureJars = packageFileDoc.createElement("include");
-			includeAzureJars.setAttribute("name", "dependencies/*.jar");
-			fileSetForAzureLibs.appendChild(includeAzureJars);
+			nodeExpr = "/project/path[@id='build.classpath']";
+			nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("id", "build.classpath");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr, "/project",
+					"path", false, nodeAttribites);
+			
+			nodeExpr = "/project/path[@id='build.classpath']/fileset[@dir='${cspack.dir}']";
+			nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("dir", "${cspack.dir}");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr,
+					"/project/path[@id='build.classpath']",
+					"fileset", true, nodeAttribites);
+			
+			
+			nodeExpr = "/project/path[@id='build.classpath']/fileset[@dir='${cspack.dir}']/include";
+			nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("name", "**/*.jar");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr,
+					"/project/path[@id='build.classpath']/fileset[@dir='${cspack.dir}']",
+					"include", true, nodeAttribites);
+			
+			// new fileset
+			nodeExpr = "/project/path[@id='build.classpath']/fileset[@dir='${azure.lib.dir}']";
+			nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("dir", "${azure.lib.dir}");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr, "/project/path",
+					"fileset", false, nodeAttribites);
+			
+			nodeExpr = "/project/path[@id='build.classpath']/fileset[@dir='${azure.lib.dir}']/include[@name='*.jar']";
+			nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("name", "*.jar");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr,
+					"/project/path[@id='build.classpath']/fileset[@dir='${azure.lib.dir}']",
+					"include", true, nodeAttribites);
+			
+			nodeExpr = "/project/path[@id='build.classpath']/fileset[@dir='${azure.lib.dir}']/include[@name='dependencies/*.jar']";
+			nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("name", "dependencies/*.jar");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr,
+					"/project/path[@id='build.classpath']/fileset[@dir='${azure.lib.dir}']",
+					"include", false, nodeAttribites);
 
 			// Update taskdef attributes
 			String taskDefExpr = WindowsAzureConstants.AZURE_PKG_TASK_DEF;
@@ -2989,5 +3358,228 @@ public class WindowsAzureProjectManager {
 			// ignore exception if there are any
 			e.printStackTrace();
 		}
+	}		
+	
+	public void setPublishSettingsPath(String publishSettingsPath) throws WindowsAzureInvalidProjectOperationException {
+		updateGlobalPropertyLocation(WindowsAzureConstants.PROJ_GLOBAL_PROP_PUBLISH_SETTINGS_PATH_NAME, publishSettingsPath);
 	}
+		
+	public String getPublishSettingsPath(String publishSettingsPath) throws WindowsAzureInvalidProjectOperationException {
+		return getGlobalPropertyLocation(WindowsAzureConstants.PROJ_GLOBAL_PROP_PUBLISH_SETTINGS_PATH_NAME);
+	}
+	
+	public void setPublishSubscriptionId(String subscriptionId) throws WindowsAzureInvalidProjectOperationException {
+		updateGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_SUBSCRIPTION_ID_NAME, subscriptionId);
+	}
+		
+	public String getPublishSubscriptionId() throws WindowsAzureInvalidProjectOperationException {
+		return getGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_SUBSCRIPTION_ID_NAME);
+	}
+	
+	public void setPublishCloudServiceName(String cloudServiceName) throws WindowsAzureInvalidProjectOperationException {
+		updateGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_CLOUD_SERVICE_NAME, cloudServiceName);
+	}
+		
+	public String getPublishCloudServiceName() throws WindowsAzureInvalidProjectOperationException {
+		return getGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_CLOUD_SERVICE_NAME);
+	}
+	
+	public void setPublishRegion(String region) throws WindowsAzureInvalidProjectOperationException {
+		updateGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_REGION_NAME, region);
+	}
+		
+	public String getPublishRegion() throws WindowsAzureInvalidProjectOperationException {
+		return getGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_REGION_NAME);
+	}
+	
+	public void setPublishStorageAccountName(String storageAccountName) throws WindowsAzureInvalidProjectOperationException {
+		updateGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_STORAGE_ACCOUNT_NAME, storageAccountName);
+	}
+		
+	public String getPublishStorageAccountName() throws WindowsAzureInvalidProjectOperationException {
+		return getGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_STORAGE_ACCOUNT_NAME);
+	}
+	
+	public void setPublishDeploymentSlot(DeploymentSlot deploymentSlot) throws WindowsAzureInvalidProjectOperationException {
+		updateGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_DEPLOYMENT_SLOT_NAME, deploymentSlot.toString());
+	}
+		
+	public DeploymentSlot getPublishDeploymentSlot() throws WindowsAzureInvalidProjectOperationException {
+		return DeploymentSlot.valueOf(getGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_DEPLOYMENT_SLOT_NAME));
+	}
+	
+	public void setPublishOverwritePreviousDeployment(boolean overwritePreviousDeployment) throws WindowsAzureInvalidProjectOperationException {
+		updateGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_OVERWRITE_PREV_DEPLOYMENT_NAME, overwritePreviousDeployment+"");
+	}
+		
+	public boolean getPublishOverwritePreviousDeployment() throws WindowsAzureInvalidProjectOperationException {
+		return Boolean.parseBoolean(getGlobalPropertyValue(WindowsAzureConstants.PROJ_GLOBAL_PROP_OVERWRITE_PREV_DEPLOYMENT_NAME));
+	}
+		
+	private void updateGlobalPropertyLocation(String propertyName, String value) throws WindowsAzureInvalidProjectOperationException {
+		try {
+			String nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY, propertyName);
+			HashMap<String, String> nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("name", propertyName);
+			nodeAttribites.put("location", value);
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr, "/project", WindowsAzureConstants.PROJ_PROPERTY_ELEMENT_NAME,
+													true, nodeAttribites);
+		} catch (Exception ex) {
+			throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_PROJECT_PROP, ex);
+			
+		}
+	}
+	
+	private void updateGlobalPropertyValue(String propertyName, String value) throws WindowsAzureInvalidProjectOperationException {
+		try {
+			String nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY, propertyName);
+			HashMap<String, String> nodeAttribites = new HashMap<String, String>();
+			nodeAttribites.put("name", propertyName);
+			nodeAttribites.put("value", value);
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr, "/project", WindowsAzureConstants.PROJ_PROPERTY_ELEMENT_NAME,
+													true, nodeAttribites);
+		} catch (Exception ex) {
+			throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_GET_PROJECT_PROP, ex);
+			
+		}
+	}
+	
+	private String getGlobalPropertyLocation(String propertyName) throws WindowsAzureInvalidProjectOperationException {
+		try {
+			String nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY_LOCATION, propertyName);
+			return ParserXMLUtility.getExpressionValue(packageFileDoc, nodeExpr);
+		} catch (Exception ex) {
+			throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_SET_PROJECT_PROP, ex);
+		}
+	}
+	
+	private String getGlobalPropertyValue(String propertyName) throws WindowsAzureInvalidProjectOperationException {
+		try {
+			String nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY_VALUE, propertyName);
+			return ParserXMLUtility.getExpressionValue(packageFileDoc, nodeExpr);
+		} catch (Exception ex) {
+			throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_SET_PROJECT_PROP, ex);
+		}
+	}
+	
+	/**
+	 * This method is for adding newly added xml elements into package.xml
+	 */
+	public void upgradePackageDoc() throws WindowsAzureInvalidProjectOperationException {
+		// Adding hardcoded values since these things are temporary for a release.
+		
+		// Insert global properties for first time
+		// Ideally node exists check logic can be separated.
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY,
+				WindowsAzureConstants.PROJ_GLOBAL_PROP_OVERWRITE_PREV_DEPLOYMENT_NAME))) {
+			setPublishOverwritePreviousDeployment(true);
+		}
+		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY,
+				WindowsAzureConstants.PROJ_GLOBAL_PROP_DEPLOYMENT_SLOT_NAME))) {
+			setPublishDeploymentSlot(DeploymentSlot.Staging);
+		}
+		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY,
+				WindowsAzureConstants.PROJ_GLOBAL_PROP_STORAGE_ACCOUNT_NAME))) {
+			setPublishStorageAccountName("");
+		}
+		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY,
+				WindowsAzureConstants.PROJ_GLOBAL_PROP_REGION_NAME))) {
+			setPublishRegion("");
+		}
+		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY,
+				WindowsAzureConstants.PROJ_GLOBAL_PROP_CLOUD_SERVICE_NAME))) {
+			setPublishCloudServiceName("");
+		}
+		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY,
+				WindowsAzureConstants.PROJ_GLOBAL_PROP_SUBSCRIPTION_ID_NAME))) {
+			setPublishSubscriptionId("");
+		}
+		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, String.format(WindowsAzureConstants.PROJ_GLOBAL_PROPERTY, 
+				WindowsAzureConstants.PROJ_GLOBAL_PROP_PUBLISH_SETTINGS_PATH_NAME))) { 
+			setPublishSettingsPath("");
+		}
+	
+		HashMap<String, String> nodeAttribites = new HashMap<String, String>();
+		String nodeExpr = null;
+		
+		// windowsazurepackage element
+		nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_TARGET, "createwapackage")+"/parallel/windowsazurepackage";
+		if (ParserXMLUtility.doesNodeExists(packageFileDoc, nodeExpr)) {
+			// Add additional attributes for windowsazurepackage element
+			nodeAttribites.clear();
+			nodeAttribites.put("publishsettingspath", "${publishsettingspath}");
+			nodeAttribites.put("region", "${region}");
+			nodeAttribites.put("storageaccountname", "${storageaccountname}");
+			nodeAttribites.put("subscriptionid", "${subscriptionid}");
+			String parentNodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_TARGET, "createwapackage")+"/parallel";
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, nodeExpr, parentNodeExpr, "windowsazurepackage", false, nodeAttribites);
+		}
+		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, String.format(WindowsAzureConstants.PROJ_GLOBAL_TARGET, "publish"))) { 
+			// Add publish target. 
+			nodeAttribites.clear();
+			nodeAttribites.put("name", "publish");
+			nodeAttribites.put("description", "Publish Azure project to cloud");
+			nodeAttribites.put("depends", "createwapackage");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, "/project", "target", false, nodeAttribites);
+			
+			// Insert child elements for target publish
+			nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_TARGET, "publish");
+			nodeAttribites.clear();
+			nodeAttribites.put("cloudservicename", "${cloudservicename}");
+			nodeAttribites.put("deploymentslot", "${deploymentslot}");
+			nodeAttribites.put("overwritepreviousdeployment", "${overwritepreviousdeployment}");
+			nodeAttribites.put("projectdir", "${basedir}");
+			nodeAttribites.put("publishsettingspath", "${publishsettingspath}");
+			nodeAttribites.put("region", "${region}");
+			nodeAttribites.put("storageaccountname", "${storageaccountname}");
+			nodeAttribites.put("subscriptionid", "${subscriptionid}");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, nodeExpr, "azurepublish", false, nodeAttribites);
+				
+			nodeAttribites.clear();
+			nodeAttribites.put("name", "azurepublish");
+			nodeAttribites.put("classpathref", "build.classpath");
+			nodeAttribites.put("classname", "com.microsoftopentechnologies.windowsazure.tools.build.AzurePublish");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, nodeExpr, "taskdef", true, nodeAttribites);
+		}
+		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, String.format(WindowsAzureConstants.PROJ_GLOBAL_TARGET, "unpublish"))) {
+			// Add unpublish target
+			nodeAttribites.clear();
+			nodeAttribites.put("name", "unpublish");
+			nodeAttribites.put("description", "Unpublish Azure project");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, "/project", "target", false, nodeAttribites);
+		
+		
+			// Insert child element for target unpublish
+			nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_TARGET, "unpublish");
+			nodeAttribites.clear();
+			nodeAttribites.put("cloudservicename", "${cloudservicename}");
+			nodeAttribites.put("deploymentslot", "${deploymentslot}");
+			nodeAttribites.put("publishsettingspath", "${publishsettingspath}");
+			nodeAttribites.put("subscriptionid", "${subscriptionid}");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, nodeExpr, "azureunpublish", false, nodeAttribites);
+			
+			nodeAttribites.clear();
+			nodeAttribites.put("name", "azureunpublish");
+			nodeAttribites.put("classpathref", "build.classpath");
+			nodeAttribites.put("classname", "com.microsoftopentechnologies.windowsazure.tools.build.AzureUnPublish");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, nodeExpr, "taskdef", true, nodeAttribites);
+
+		}
+		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, "/project/path[@id='build.classpath']/fileset[@dir='${cspack.dir}']")) {
+			// Insert element in build classpath
+			nodeAttribites.clear();
+			nodeAttribites.put("name", "*.jar");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, "/project/path[@id='build.classpath']/fileset[@dir='${cspack.dir}']", "include", true, nodeAttribites);
+		}
+	}
+	
 }

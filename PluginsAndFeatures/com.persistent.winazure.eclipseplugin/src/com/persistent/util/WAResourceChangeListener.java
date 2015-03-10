@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import org.eclipse.ui.PlatformUI;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
@@ -194,15 +193,6 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 							proj.getLocation().toFile());
 			projMngr.setProjectName(newName);
 			projMngr.save();
-			String oldKey = String.format("%s%s%s",
-					Activator.PLUGIN_ID,
-					Messages.proj,
-					oldName);
-			String newKey = String.format("%s%s%s",
-					Activator.PLUGIN_ID,
-					Messages.proj,
-					newName);
-			PreferenceUtilPubWizard.renamePreference(oldKey, newKey);
 		} catch (Exception e) {
 			//As project rename has been occurred already
 			//user should not get any exception prompt.

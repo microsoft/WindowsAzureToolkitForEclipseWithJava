@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies, Inc.
+ * Copyright 2015 Microsoft Open Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,9 +35,7 @@ public class CerPfxUtil {
 	 */
 	public static String importCerPfx(Shell shell, String path) {
 		FileDialog dialog = new FileDialog(shell);
-		String[] extensions = new String[2];
-		extensions[0] = "*.CER";
-		extensions[1] = "*.PFX";
+		String[] extensions = {"*.cer", "*.CER", "*.pfx", "*.PFX"};
 		dialog.setFilterExtensions(extensions);
 		dialog.setText("Select Certificate");
 		// Default directory should be the cert directory in the project, and if
@@ -63,7 +61,7 @@ public class CerPfxUtil {
 	 * @return
 	 */
 	public static X509Certificate getCert(String certURL, String password) {
-		return com.microsoftopentechnologies.wacommonutil.CerPfxUtil.getCert(certURL, password);
+		return com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil.getCert(certURL, password);
 	}
 
 	/**
@@ -74,6 +72,6 @@ public class CerPfxUtil {
 	 * @return
 	 */
 	public static String getCertificatePath(String rawPath) {
-		return com.microsoftopentechnologies.wacommonutil.CerPfxUtil.getCertificatePath(rawPath);
+		return com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil.getCertificatePath(rawPath);
 	}
 }

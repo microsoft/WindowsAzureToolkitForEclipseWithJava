@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies Inc.
+ * Copyright 2015 Microsoft Open Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class FileUtil {
 	        FileInputStream fis = new FileInputStream(file);
 	        File outputFile = new File(destFile);
 	        FileOutputStream fos = new FileOutputStream(outputFile);
-	        com.microsoftopentechnologies.wacommonutil.FileUtil.writeFile(fis , fos);
+	        com.microsoftopentechnologies.azurecommons.wacommonutil.FileUtil.writeFile(fis , fos);
 		} catch (IOException e) {
 			Activator.getDefault().log(e.getMessage(), e);
 		}

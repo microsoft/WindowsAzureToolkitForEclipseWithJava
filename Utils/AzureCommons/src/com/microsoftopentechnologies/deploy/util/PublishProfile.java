@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -24,8 +24,9 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 import com.microsoftopentechnologies.model.Subscription;
-
-
+/* Class needs to be removed after 2.5.1 release.
+ * Class is added just to take care of project upgrade scenario.
+ */
 @XmlType
 public class PublishProfile implements Serializable, Cloneable {
 	private static final long serialVersionUID = -6569753234382033009L;

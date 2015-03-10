@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -46,11 +46,12 @@ import org.eclipse.ui.ide.IDE;
 import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
+import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.roleoperations.JdkSrvConfigUtilMethods;
-import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
-import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.roleoperations.JdkSrvConfigUtilMethods;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
 import com.persistent.ui.preference.StorageAccountsPreferencePage;
 import com.persistent.ui.projwizard.WAProjectWizard;
 
@@ -76,6 +77,7 @@ public class JdkSrvConfig {
 	private static Label lblDlNoteUrl;
 	private static Label lblJavaHome;
 	private static Text txtJavaHome;
+    private static Label lblNoteJavaHome;
 	// Variables for Server Download group
 	private static Group dlSrvGrp;
 	private static Text txtUrlSrv;
@@ -83,11 +85,15 @@ public class JdkSrvConfig {
 	private static Link accLinkSrv;
 	private static Button dlRdCldBtnSrv;
 	private static Button autoDlRdCldBtnSrv;
+	private static Button thrdPrtSrvBtn;
+	private static Combo thrdPrtSrvCmb;
+	private static Link thrdPrtSrvLink;
 	private static Label lblUrlSrv;
 	private static Label lblKeySrv;
 	private static Label lblDlNoteUrlSrv;
 	private static Label lblHomeDir;
 	private static Text txtHomeDir;
+    private static Label lblNoteHomeDir;
 	// Variables for JDK group
 	private static Button jdkCheckBtn;
 	private static Button btnJdkLoc;
@@ -256,6 +262,18 @@ public class JdkSrvConfig {
 		return thrdPrtJdkLink;
 	}
 
+	public static Button getThrdPrtSrvBtn() {
+		return thrdPrtSrvBtn;
+	}
+
+	public static Combo getThrdPrtSrvCmb() {
+		return thrdPrtSrvCmb;
+	}
+
+	public static Link getThrdPrtSrvLink() {
+		return thrdPrtSrvLink;
+	}
+
 	/**
 	 * Method creates all components
 	 * required for JDK tab.
@@ -305,8 +323,7 @@ public class JdkSrvConfig {
 	public static Control createServerGrp(Composite parent) {
 		// Server container
 		Composite containerSrv = createContainer(parent);
-		Group srvEmGrp = createGroup(
-				containerSrv, 3, Messages.emltrGrp);
+		Composite srvEmGrp = createComposite(containerSrv, 3);
 
 		// Server checkbox
 		serCheckBtn = createCheckButton(srvEmGrp,
@@ -406,7 +423,9 @@ public class JdkSrvConfig {
 		gridData.widthHint = 95;
 		gridData.horizontalAlignment = SWT.FILL;
 		btnRemove.setLayoutData(gridData);
-
+		
+		enableApplicationTab(false);
+		
 		return appContainer;
 	}
 
@@ -417,7 +436,7 @@ public class JdkSrvConfig {
 	public static void createDownloadJdkGrp(Composite parent) {
 		dlJdkGrp = createGroup(parent, 3, Messages.dlgDownloadGrp);
 		autoDlRdCldBtn = createRadioButton(dlJdkGrp,
-				Messages.autoDlJdkCldRdBtnLbl);
+				Messages.noJdkDplyLbl);
 		thrdPrtJdkBtn = createRadioButton(dlJdkGrp,
 				Messages.thrdPrtJdkLbl);
 		thrdPrtJdkCmb = createThirdPartyJdkCombo(dlJdkGrp);
@@ -436,8 +455,23 @@ public class JdkSrvConfig {
 		lblJavaHome = createComponentLbl(dlJdkGrp,
 				Messages.lblJavaHome);
 		txtJavaHome = createComponentTxt(dlJdkGrp);
+        lblNoteJavaHome = createHomeNoteLabel(dlJdkGrp, Messages.dlgNtLblHome);
 		new Link(dlJdkGrp, SWT.NO);
 		setEnableDlGrp(false, false);
+		checkSDKPresenceAndEnable();
+		/*
+		 * the default radio button in the JDK screen should always be the first
+		 * one regardless of SDK or no-SDK. But disable JDK check box.
+		 */
+		selectButton(autoDlRdCldBtn);
+	}
+
+	public static void checkSDKPresenceAndEnable() {
+		String sdkVersion = WindowsAzureProjectManager.getLatestAzureVersionForSA();
+		if (sdkVersion == null || sdkVersion.isEmpty()) {
+			jdkCheckBtn.setEnabled(false);
+			setEnableJDK(false);
+		}
 	}
 
 	/**
@@ -447,7 +481,12 @@ public class JdkSrvConfig {
 	public static void createDownloadSrvGrp(Composite parent) {
 		dlSrvGrp = createGroup(parent, 3, Messages.dlgDownloadGrp);
 		autoDlRdCldBtnSrv = createRadioButton(dlSrvGrp,
-				Messages.autoDlSrvCldRdBtnLbl);
+				Messages.noSrvDplyLbl);
+		thrdPrtSrvBtn = createRadioButton(dlSrvGrp,
+				Messages.thrdPrtSrvLbl);
+		thrdPrtSrvCmb = createThirdPartyJdkCombo(dlSrvGrp);
+		thrdPrtSrvLink = createThirdPartyJdkLink(
+				dlSrvGrp, Messages.dplDlgSerBtn);
 		dlRdCldBtnSrv = createRadioButton(dlSrvGrp,
 				Messages.cldRdBtnLbl);
 		lblUrlSrv = createUrlComponentLbl(dlSrvGrp);
@@ -457,12 +496,14 @@ public class JdkSrvConfig {
 		lblKeySrv = createComponentLbl(dlSrvGrp,
 				Messages.dlgDlStrgAcc);
 		cmbStrgAccSrv = createCombo(dlSrvGrp, true);
-		accLinkSrv = createLink(dlSrvGrp, Messages.linkLblAcc, true);
+		accLinkSrv = createLink(dlSrvGrp, Messages.linkLblAcc, false);
 		lblHomeDir = createComponentLbl(dlSrvGrp,
 				Messages.lblHmDir);
 		txtHomeDir = createComponentTxt(dlSrvGrp);
+        lblNoteHomeDir = createHomeNoteLabel(dlSrvGrp, Messages.dlgNtLblHome);
 		new Link(dlSrvGrp, SWT.NO);
 		setEnableDlGrpSrv(false, false);
+		enableServerCloudBtns(false);
 	}
 
 	/**
@@ -492,7 +533,6 @@ public class JdkSrvConfig {
 			String lblText) {
 		Button checkBtn = new Button(parent, SWT.CHECK);
 		GridData groupGridData = new GridData();
-		groupGridData = new GridData();
 		groupGridData.horizontalSpan = 3;
 		groupGridData.horizontalAlignment = SWT.FILL;
 		checkBtn.setText(lblText);
@@ -520,6 +560,25 @@ public class JdkSrvConfig {
 		group.setLayout(groupGridLayout);
 		group.setLayoutData(groupGridData);
 		return group;
+	}
+
+	/**
+	 * Method creates invisible group.
+	 * @param parent
+	 * @return
+	 */
+	public static Composite createComposite(Composite parent, int numCol) {
+		Composite composite = new Composite(parent, SWT.NONE);
+		GridLayout groupGridLayout = new GridLayout();
+		GridData groupGridData = new GridData();
+		groupGridData.grabExcessHorizontalSpace = true;
+		groupGridData.horizontalAlignment = SWT.FILL;
+		groupGridData.horizontalSpan = 3;
+		groupGridLayout.numColumns = numCol;
+		groupGridLayout.verticalSpacing = 10;
+		composite.setLayout(groupGridLayout);
+		composite.setLayoutData(groupGridData);
+		return composite;
 	}
 
 	/**
@@ -724,18 +783,50 @@ public class JdkSrvConfig {
 		return label;
 	}
 
-	/**
-	 * Enable or disable components of JDK group according to status.
-	 * @param status
-	 */
-	public static void setEnableJDK(boolean status){
-		jdkCheckBtn.setSelection(status);
-		txtJdk.setEnabled(status);
-		btnJdkLoc.setEnabled(status);
-		if (!status) {
-			txtJdk.setText("");
-		}
-	}
+    /**
+     * Method creates home path note for JAVA_HOME and server home dir.
+     * @param group
+     * @param text
+     * @return
+     */
+    public static Label createHomeNoteLabel(Composite group, String text) {
+        // creating 2 temporary labels and setting it to not visible because
+        // note's indentation is not working properly in different
+        // resolutions.So added this
+        // dummy label for indentation to work properly.
+        Label lblTemp = new Label(group, SWT.LEFT);
+        GridData groupGridData = new GridData();
+        lblTemp.setText("Label");
+        lblTemp.setLayoutData(groupGridData);
+        lblTemp.setVisible(false);
+        lblTemp = new Label(group, SWT.LEFT);
+        groupGridData = new GridData();
+        lblTemp.setText("Label");
+        lblTemp.setLayoutData(groupGridData);
+        lblTemp.setVisible(false);
+
+        Label label = new Label(group, SWT.LEFT);
+        groupGridData = new GridData();
+        groupGridData.horizontalAlignment = SWT.FILL;
+        groupGridData.horizontalIndent = 10;
+        groupGridData.grabExcessHorizontalSpace = true;
+        label.setText(text);
+        label.setLayoutData(groupGridData);
+        return label;
+    }
+
+    /**
+     * Enable or disable components of JDK group according to status.
+     * @param status
+     */
+    public static void setEnableJDK(boolean status){
+    	jdkCheckBtn.setSelection(status);
+    	txtJdk.setEnabled(status);
+    	btnJdkLoc.setEnabled(status);
+    	if (!status) {
+    		txtJdk.setText("");
+    	}
+    }
 
 	/**
 	 * Enable or disable components of Server group according to status.
@@ -748,9 +839,9 @@ public class JdkSrvConfig {
 		custLink.setEnabled(status);
 		btnSrvLoc.setEnabled(status);
 		txtDir.setEnabled(status);
-		tblApp.setEnabled(status);
-		btnAdd.setEnabled(status);
+		dlRdCldBtnSrv.setEnabled(status);
 		if (!status) {
+			dlRdCldBtnSrv.setSelection(status);
 			serCheckBtn.setSelection(status);
 			comboServer.removeAll();
 			txtDir.setText("");
@@ -764,15 +855,22 @@ public class JdkSrvConfig {
 	 * @param status
 	 */
 	public static void setEnableDlGrp(boolean status, boolean applyAutoUlParams) {
-		dlRdCldBtn.setEnabled(status);
-		autoDlRdCldBtn.setEnabled(status);
-		thrdPrtJdkBtn.setEnabled(status);
-		cmbStrgAccJdk.setEnabled(status);
-		lblKey.setEnabled(status);
+		if (jdkCheckBtn.getSelection()) {
+			autoDlRdCldBtn.setText(Messages.autoDlJdkCldRdBtnLbl);
+		} else {
+			autoDlRdCldBtn.setText(Messages.noJdkDplyLbl);
+			JdkSrvConfigListener.showThirdPartyJdkNames(true, "");
+		}
+		// URL
 		lblUrl.setEnabled(status);
-		lblDlNoteUrl.setEnabled(status);
-		lblJavaHome.setEnabled(status);
 		txtUrl.setEnabled(status);
+		lblDlNoteUrl.setEnabled(status);
+		// storage account combo
+		lblKey.setEnabled(status);
+		cmbStrgAccJdk.setEnabled(status);
+		// labels
+		lblJavaHome.setEnabled(status);
+		lblNoteJavaHome.setEnabled(status);
 
 		if (status && applyAutoUlParams) {
 			// Always disable and auto-generate JDK url and derive Java home.
@@ -784,8 +882,6 @@ public class JdkSrvConfig {
 		}
 
 		if (!status) {
-			dlRdCldBtn.setSelection(false);
-			autoDlRdCldBtn.setSelection(false);
 			txtUrl.setText("");
 			cmbStrgAccJdk.removeAll();
 			txtJavaHome.setText("");
@@ -804,10 +900,7 @@ public class JdkSrvConfig {
 	 * cloud deployment and select local one.
 	 * @param defaultSelectButton
 	 */
-	public static void enableJdkRdButtons(Button defaultSelectButton) {
-		dlRdCldBtn.setEnabled(true);
-		autoDlRdCldBtn.setEnabled(true);
-		thrdPrtJdkBtn.setEnabled(true);
+	public static void selectButton(Button defaultSelectButton) {
 		defaultSelectButton.setSelection(true);
 	}
 
@@ -817,14 +910,24 @@ public class JdkSrvConfig {
 	 * @param status
 	 */
 	public static void setEnableDlGrpSrv(boolean status, boolean applyAutoUlParams) {
-		dlRdCldBtnSrv.setEnabled(status);
-		autoDlRdCldBtnSrv.setEnabled(status);
-		cmbStrgAccSrv.setEnabled(status);
-		lblKeySrv.setEnabled(status);
+		if (serCheckBtn.getSelection()) {
+			autoDlRdCldBtnSrv.setText(Messages.autoDlSrvCldRdBtnLbl);
+		} else {
+			autoDlRdCldBtnSrv.setText(Messages.noSrvDplyLbl);
+			// To do - need to pass local server name if selected
+			JdkSrvConfigListener.showThirdPartySrvNames(true, "", "");
+		}
+		
+		// URL
 		lblUrlSrv.setEnabled(status);
 		lblDlNoteUrlSrv.setEnabled(status);
-		lblHomeDir.setEnabled(status);
 		txtUrlSrv.setEnabled(status);
+		// storage account combo
+		cmbStrgAccSrv.setEnabled(status);
+		lblKeySrv.setEnabled(status);
+		// labels
+		lblHomeDir.setEnabled(status);
+		lblNoteHomeDir.setEnabled(status);
 
 		if (status && applyAutoUlParams) {
 			txtUrlSrv.setEditable(false);
@@ -834,12 +937,11 @@ public class JdkSrvConfig {
 			txtHomeDir.setEnabled(status);
 		}
 		if (!status) {
-			dlRdCldBtnSrv.setSelection(false);
-			autoDlRdCldBtnSrv.setSelection(false);
 			txtUrlSrv.setText("");
 			cmbStrgAccSrv.removeAll();
 			txtHomeDir.setText("");
 			lblDlNoteUrlSrv.setText(Messages.dlNtLblUrlSrv);
+			JdkSrvConfigListener.enableThirdPartySrvCombo(false);
 		} else {
 			cmbStrgAccSrv = JdkSrvConfig.populateStrgAccComboBox(
 					cmbStrgAccSrv.getText(),
@@ -847,16 +949,25 @@ public class JdkSrvConfig {
 					SRV_TXT, false);
 		}
 	}
+	
+	public static void enableServerCloudBtns(boolean status) {
+		autoDlRdCldBtnSrv.setEnabled(status);
+		thrdPrtSrvBtn.setEnabled(status);
+		if (status) {
+			if (!autoDlRdCldBtnSrv.getSelection()
+					&& !thrdPrtSrvBtn.getSelection()
+					&& !dlRdCldBtnSrv.getSelection()) {
+				autoDlRdCldBtnSrv.setSelection(status);
+			}
+		} else {
+			autoDlRdCldBtnSrv.setSelection(status);
+			thrdPrtSrvBtn.setSelection(status);
+		}
+	}
 
-	/**
-	 * Enable both radio buttons of server
-	 * cloud deployment and select local one.
-	 * @param defaultSelectButton
-	 */
-	public static void enableSrvRdButtons(Button defaultSelectButton) {
-		dlRdCldBtnSrv.setEnabled(true);
-		autoDlRdCldBtnSrv.setEnabled(true);
-		defaultSelectButton.setSelection(true);
+	public static void enableApplicationTab(boolean status) {
+		tblApp.setEnabled(status);
+		btnAdd.setEnabled(status);
 	}
 
 	/**
@@ -927,7 +1038,8 @@ public class JdkSrvConfig {
 								|| thrdPrtJdkBtn.getSelection());
 			} else if (SRV_TXT.equals(tabControl)) {
 				accNames = StorageRegistryUtilMethods.
-						getStorageAccountNames(autoDlRdCldBtnSrv.getSelection());
+						getStorageAccountNames(autoDlRdCldBtnSrv.getSelection()
+								|| thrdPrtSrvBtn.getSelection());
 			}
 		}
 		return accNames;
@@ -1004,7 +1116,8 @@ public class JdkSrvConfig {
 	 */
 	public static void accountsLinkOfSrvClicked() {
 		cmbStrgAccSrv = openAccLink(dlRdCldBtnSrv.getSelection() ? dlRdCldBtnSrv
-				: autoDlRdCldBtnSrv,
+				: autoDlRdCldBtnSrv.getSelection() ? autoDlRdCldBtnSrv
+						: thrdPrtSrvBtn,
 				cmbStrgAccSrv, SRV_TXT);
 		/*
 		 * Always update JDK combo box
@@ -1043,20 +1156,19 @@ public class JdkSrvConfig {
 		 * update server combo box as well even though
 		 * link on JDK tab is clicked.
 		 */
-		if (dlRdCldBtnSrv.getSelection() || autoDlRdCldBtnSrv.getSelection()) {
-			cmbStrgAccSrv = populateStrgAccComboBox(
-					cmbStrgAccSrv.getText(),
-					cmbStrgAccSrv,
-					SRV_TXT, false);
-			/*
-			 * If server auto button is selected then
-			 * update server URL as we may have set
-			 * combo box to (auto) by removing
-			 * selected storage account from registry.
-			 */
-			if (autoDlRdCldBtnSrv.getSelection()) {
-				updateServerDlURL();
-			}
+		cmbStrgAccSrv = populateStrgAccComboBox(
+				cmbStrgAccSrv.getText(),
+				cmbStrgAccSrv,
+				SRV_TXT, false);
+		/*
+		 * If server auto button is selected then
+		 * update server URL as we may have set
+		 * combo box to (auto) by removing
+		 * selected storage account from registry.
+		 */
+		if (autoDlRdCldBtnSrv.getSelection()
+				|| thrdPrtSrvBtn.getSelection()) {
+			updateServerDlURL();
 		}
 	}
 
@@ -1104,12 +1216,17 @@ public class JdkSrvConfig {
 			}
 
 			// For Server and auto upload option selected
-			if (tabControl != null && SRV_TXT.equals(tabControl)
-					&& autoDlRdCldBtnSrv.getSelection()) {
-				String value = JdkSrvConfigUtilMethods.
-						prepareCloudBlobURL(txtDir.getText() , newUrl);
-				urlTxt.setText(value);
-				return urlTxt;
+			if (tabControl != null && SRV_TXT.equals(tabControl)) {
+				if (autoDlRdCldBtnSrv.getSelection()) {
+					String value = JdkSrvConfigUtilMethods.
+							prepareCloudBlobURL(txtDir.getText() , newUrl);
+					urlTxt.setText(value);
+					return urlTxt;
+				} else if (thrdPrtSrvBtn.getSelection()) { 
+					urlTxt.setText(prepareUrlForThirdPartySrv(
+							thrdPrtSrvCmb.getText(), newUrl));
+					return urlTxt;
+				}	
 			}
 			/*
 			 * If URL is blank and new storage account selected
@@ -1129,7 +1246,12 @@ public class JdkSrvConfig {
 						getSubStrAccNmSrvcUrlFrmUrl(url);
 				String newVal = StorageRegistryUtilMethods.
 						getSubStrAccNmSrvcUrlFrmUrl(newUrl);
-				urlTxt.setText(url.replaceFirst(oldVal, newVal));
+				if (oldVal.equalsIgnoreCase(url)) {
+					// old URL is not correct blob storage URL then set new url
+					urlTxt.setText(newUrl);
+				} else {
+					urlTxt.setText(url.replaceFirst(oldVal, newVal));
+				}
 			}
 		} else if (index == 0) {
 			// index = 0 means none or auto is selected
@@ -1142,7 +1264,8 @@ public class JdkSrvConfig {
 			}
 			// For Server and auto upload option selected
 			if (tabControl != null && SRV_TXT.equals(tabControl)
-					&& autoDlRdCldBtnSrv.getSelection()) {
+					&& (autoDlRdCldBtnSrv.getSelection()
+							|| thrdPrtSrvBtn.getSelection())) {
 				urlTxt.setText(AUTO_TXT);
 				return urlTxt;
 			}
@@ -1162,6 +1285,16 @@ public class JdkSrvConfig {
 		try {
 			finalUrl = JdkSrvConfigUtilMethods.
 					prepareUrlForThirdPartyJdk(jdkName, url, cmpntFile);
+		} catch (Exception ex) {
+			Activator.getDefault().log(ex.getMessage());
+		}
+		return finalUrl;
+	}
+	
+	public static String prepareUrlForThirdPartySrv(String srvName, String url) {
+		String finalUrl = "";
+		try {
+			finalUrl = JdkSrvConfigUtilMethods.prepareUrlForThirdPartySrv(srvName, url, cmpntFile);
 		} catch (Exception ex) {
 			Activator.getDefault().log(ex.getMessage());
 		}
@@ -1214,7 +1347,7 @@ public class JdkSrvConfig {
 	public static String getUrl(Combo combo) {
 		int index = combo.getSelectionIndex();
 		String url = "";
-		if (index != 0) {
+		if (index > 0) {
 			url = StorageAccountRegistry.
 					getStrgList().get(index - 1).getStrgUrl();
 		}
@@ -1317,6 +1450,9 @@ public class JdkSrvConfig {
 			String dirName = file.getName();
 			getLblDlNoteUrl().setText(String.format(
 					label, dirName));
+		} else {
+			getLblDlNoteUrl().setText(
+					com.persistent.ui.projwizard.Messages.dlgDlNtLblUrl);
 		}
 	}
 
@@ -1331,6 +1467,9 @@ public class JdkSrvConfig {
 			String dirName = file.getName();
 			getLblDlNoteUrlSrv().setText(String.format(
 					label, dirName));
+		} else {
+			getLblDlNoteUrlSrv().setText(
+					com.persistent.ui.projwizard.Messages.dlNtLblUrlSrv);
 		}
 	}
 
@@ -1357,6 +1496,16 @@ public class JdkSrvConfig {
 					srvPath,
 					cmpntFile);
 			getTxtHomeDir().setText(srvHome);
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			Activator.getDefault().log(e.getMessage());
+		}
+	}
+	
+	public static void updateServerHomeForThirdParty() {
+		// set server home directory text box value
+		try {
+			getTxtHomeDir().setText(WindowsAzureProjectManager.getThirdPartyServerHome(
+					getThrdPrtSrvCmb().getText(), cmpntFile));
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			Activator.getDefault().log(e.getMessage());
 		}
@@ -1453,11 +1602,9 @@ public class JdkSrvConfig {
 						detectServer(new File(directory));
 				if (serverName != null
 						&& !serverName.isEmpty()) {
-					getComboServer().
-					setText(serverName);
+					getComboServer().setText(serverName);
 				} else {
-					getComboServer().
-					clearSelection();
+					getComboServer().clearSelection();
 				}
 			}
 		} catch (Exception e) {
@@ -1506,14 +1653,46 @@ public class JdkSrvConfig {
 	 * true : license accepted "Accept" button pressed
 	 * false : license not accepted "Cancel" button pressed
 	 */
-	public static boolean createAccLicenseAggDlg() {
+	public static boolean createAccLicenseAggDlg(boolean isForJdk) {
 		boolean licenseAccepted = false;
 		AcceptLicenseAgreementDlg dlg =
-				new AcceptLicenseAgreementDlg(new Shell());
+				new AcceptLicenseAgreementDlg(new Shell(), isForJdk);
 		int btnId = dlg.open();
 		if (btnId == Window.OK) {
 			licenseAccepted = true;
 		}
 		return licenseAccepted;
+	}
+	
+	/**
+	 * Gives server name selected by user.
+	 * @return serverName
+	 */
+	public static String getServerName() {
+		String serverName = "";
+		if (thrdPrtSrvBtn.getSelection()) {
+			try {
+				serverName = WindowsAzureProjectManager.
+						getServerNameUsingThirdPartyServerName(getThrdPrtSrvCmb().getText(), cmpntFile);
+			} catch (WindowsAzureInvalidProjectOperationException e) {
+				serverName = "";
+			}
+		} else {
+			serverName = getComboServer().getText();
+		}
+		return serverName;
+	}
+	
+	public static String getServerCloudAltSource() {
+		String url = "";
+		if (thrdPrtSrvBtn.getSelection()) {
+			try {
+				url = WindowsAzureProjectManager.
+						getThirdPartyServerCloudAltSrc(getThrdPrtSrvCmb().getText(), cmpntFile);
+			} catch (WindowsAzureInvalidProjectOperationException e) {
+				url = "";
+			}
+		}
+		return url;
 	}
 }

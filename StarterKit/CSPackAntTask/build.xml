@@ -9,6 +9,10 @@
 			<include name="*.jar"/>			
 			<include name="dependencies/*.jar"/>
 		</fileset>
+		<fileset dir="${cspack.dependant.lib.dir}">
+			<include name="*.jar"/>			
+			<include name="**/*.jar"/>
+		</fileset>		
 	</path>
 	
 	<target name="clean">
@@ -20,8 +24,15 @@
 		<mkdir dir="${basedir}\build" />
 		<mkdir dir="${basedir}\jar" />
 		<javac srcdir="src" destdir="build" source="1.6" target="1.6" classpathref="build.classpath"/>
-		<jar destfile="${basedir}\jar\.cspack.jar" basedir="${basedir}\build" />
+		<jar destfile="${basedir}\jar\.cspack.jar" basedir="${basedir}\build">
+            <fileset dir="${basedir}\src">
+                <include name="**/*.hbs"/>
+            </fileset>
+            <fileset dir="${basedir}\resources"/>
+        </jar>
 		<copy file="${basedir}\jar\.cspack.jar" tofile="${basedir}\..\WindowsAzureDeploymentProject\.cspack.jar" overwrite="true" />
+		<copy file="${basedir}\jar\.cspack.jar" tofile="${basedir}\..\..\Utils\AzureCommons\resources\.cspack.jar" overwrite="true" />
+		<copy file="${basedir}\jar\.cspack.jar" tofile="${basedir}\..\..\PluginsAndFeatures\com.microsoftopentechnologies.wacommon\resources\.cspack.jar" overwrite="true" />
 	</target>
 	
 	<target name="kit" description="Generates starter kit for eclipse" depends="clean, package">

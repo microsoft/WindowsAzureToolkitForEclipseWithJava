@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -44,12 +44,12 @@ import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureCertificate;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
-import com.microsoftopentechnologies.exception.AzureCommonsException;
-import com.microsoftopentechnologies.roleoperations.CertificateDialogUtilMethods;
+import com.microsoftopentechnologies.azurecommons.exception.AzureCommonsException;
+import com.microsoftopentechnologies.azurecommons.roleoperations.CertificateDialogUtilMethods;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialog;
 import com.microsoftopentechnologies.wacommon.commoncontrols.NewCertificateDialogData;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommonutil.CerPfxUtil;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil;
 import com.persistent.util.WAEclipseHelper;
 
 public class CertificateDialog extends TitleAreaDialog {
@@ -265,7 +265,7 @@ public class CertificateDialog extends TitleAreaDialog {
 				WAEclipseHelper.getSelectedProject().getLocation().toPortableString());
 		String password = null;
 		boolean proceed = true;
-		if (path != null && path.endsWith(".pfx")) {
+		if (path != null && (path.endsWith(".pfx") || path.endsWith(".PFX"))) {
 			SimplePfxPwdDlg dlg = new SimplePfxPwdDlg(this.getShell(), path);
 			if (dlg.open() == Window.OK) {
 				password = dlg.getPwd();

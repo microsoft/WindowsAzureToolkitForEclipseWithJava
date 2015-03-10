@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
- Copyright 2013 Microsoft Open Technologies, Inc.
+ Copyright 2015 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -15,65 +15,72 @@
  limitations under the License.
 --><project basedir="." default="createwapackage" name="WindowsAzureDeploymentProject">
 	<property location="." name="cspack.dir"/>
-	<property location="Replace with Azure SDK Java libraries path" name="azure.lib.dir"/>
+	<property location="./lib" name="azure.lib.dir"/>
+	<property location="" name="publishsettingspath"/>
+	<property name="subscriptionid" value=""/>
+	<property name="cloudservicename" value=""/>
+	<property name="region" value=""/>
+	<property name="storageaccountname" value=""/>
+	<property name="deploymentslot" value="Staging"/>
+	<property name="overwritepreviousdeployment" value="true"/>
 
 	<path id="build.classpath">
 		<!-- Setting cspack.jar in classpath -->
 		<fileset dir="${cspack.dir}">
+			<include name="*.jar"/>
 			<include name="**/*.jar"/>
 		</fileset>
-			
+
 		<!-- Setting azure libraries in classpath -->
-			<fileset dir="${azure.lib.dir}">
-				<include name="*.jar"/>			
-				<include name="dependencies/*.jar"/>
-			</fileset>
+		<fileset dir="${azure.lib.dir}">
+			<include name="*.jar"/>
+			<include name="dependencies/*.jar"/>
+		</fileset>
 	</path>
 
+	<!-- This task is used for storing properties specific to Azure cloud service project -->
+	<target description="Stores properties used by Azure project" name="waprojectproperties">
+		<property name="project.enableremoteaccess" value="true"/>
 
-  <!-- This task is used for storing properties specific to Azure cloud service project -->
-  <target description="Stores properties used by Azure project" name="waprojectproperties">
-    <property name="project.enableremoteaccess" value="true"/>
-
-    <!-- NOTE: The certificate with the thumbprint 875F1656A34D93B266E71BF19C116C39F16B6987 refers to 
+		<!-- NOTE: The certificate with the thumbprint 875F1656A34D93B266E71BF19C116C39F16B6987 refers to 
 		the SampleRemoteDesktopPrivate.pfx/.cer certificate files included with the Azure Starter Kit for Java. 
 		When you upload the .pfx certificate to Azure, you need to provide the following password: Password1
 		Note this certificate password is *publicly known* so you should not use this sample certificate for anything 
 		other than educational purposes only. To generate your own self-signed certificate (.pfx and .cer) you can use 
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
-    <property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-    <property name="creator.version" value="2.4.1"/>
-  </target>
+		<property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
+		<property name="creator.version" value="2.5.2"/>
+	</target>
 
-  <!-- Force emulator reset to ensure no locks on deploy directory -->
-  <target name="checkResetScript">
-	<available file="${basedir}\emulatorTools\ResetEmulator.cmd" property="fileExists"/>
-	<available file="${basedir}\emulatorTools\.WaitForReset.cmd" property="waitForResetExists"/>
-  </target>
+	<!-- Force emulator reset to ensure no locks on deploy directory -->
+	<target name="checkResetScript">
+		<available file="${basedir}\emulatorTools\ResetEmulator.cmd" property="fileExists"/>
+		<available file="${basedir}\emulatorTools\.WaitForReset.cmd" property="waitForResetExists"/>
+	</target>
 
-  <target depends="checkResetScript" if="fileExists" name="resetEmulator">
-    <exec executable="${basedir}\emulatorTools\ResetEmulator.cmd" failifexecutionfails="false"/>
-  </target>
-  
-  <target depends="resetEmulator" if="waitForResetExists" name="waitForReset">
-    <exec executable="${basedir}\emulatorTools\.WaitForReset.cmd" failifexecutionfails="false"/>
-  </target>
+	<target depends="checkResetScript" if="fileExists" name="resetEmulator">
+		<exec executable="${basedir}\emulatorTools\ResetEmulator.cmd" failifexecutionfails="false"/>
+	</target>
 
-  <!-- This task creates a Azure cloud service package -->
-  <target depends="waitForReset" description="Creates an Azure package" name="createwapackage">
-    <taskdef classname="com.microsoftopentechnologies.windowsazure.tools.build.WindowsAzurePackage" classpathref="build.classpath" name="windowsazurepackage"/>
+	<target depends="resetEmulator" if="waitForResetExists" name="waitForReset">
+		<exec executable="${basedir}\emulatorTools\.WaitForReset.cmd" failifexecutionfails="false"/>
+	</target>
 
-    <!-- This is the directory where the Azure deployment package or folder will be saved -->
-    <property location="${basedir}\deploy" name="wapackagedir"/>
+	<!-- This task creates a Azure cloud service package -->
+	<target depends="waitForReset" description="Creates an Azure package" name="createwapackage">
+		<taskdef classname="com.microsoftopentechnologies.windowsazure.tools.build.WindowsAzurePackage" classpathref="build.classpath" name="windowsazurepackage"/>
 
-    <move failonerror="false" file="${wapackagedir}" overwrite="true" tofile="${wapackagedir}.old"/>
-    <mkdir dir="${wapackagedir}"/>
+		<!-- This is the directory where the Azure deployment package or folder will be saved -->
+		<property location="${basedir}\deploy" name="wapackagedir"/>
 
-    <parallel failonany="true">
-      <delete dir="${wapackagedir}.old" includeemptydirs="true"/>
+		<move failonerror="false" file="${wapackagedir}" overwrite="true" tofile="${wapackagedir}.old"/>
+		<mkdir dir="${wapackagedir}"/>
 
-      <!-- Create a Azure deployment package
+		<parallel failonany="true">
+			<delete dir="${wapackagedir}.old" includeemptydirs="true"/>
+
+			<!-- Create a Azure deployment package
 		    
 			Attributes:
 
@@ -96,6 +103,11 @@
 			[emulatortoolsdir]:
 					The directory where the emulator tools will be created by the build process.
 					If not specified, the default "emulatorTools" directory in the project directory 
+					will be used.
+			
+			[cloudtoolsdir]:
+					The directory where the cloud tools will be created by the build process.
+					If not specified, the default "cloudTools" directory in the project directory 
 					will be used.
 
 			[packagedir]: 
@@ -131,14 +143,15 @@
 
 			[verifydownloads = {true | false}]
 					true:	(default) Verifies the download URLs of components that have cloudsrc specified when building for the cloud
-					false:	Disables download URL verification					
+					false:	Disables download URL verification
+
 			-->
-      <windowsazurepackage configurationfilename="ServiceConfiguration.cscfg" definitionfilename="ServiceDefinition.csdef" packagedir="${wapackagedir}" packagefilename="WindowsAzurePackage.cspkg" packagetype="local" portalurl="http://windows.azure.com" projectdir="${basedir}" rolepropertiesfilename=".rolePropertiesOS3">
+			<windowsazurepackage configurationfilename="ServiceConfiguration.cscfg" definitionfilename="ServiceDefinition.csdef" packagedir="${wapackagedir}" packagefilename="WindowsAzurePackage.cspkg" packagetype="local" portalurl="http://windows.azure.com" projectdir="${basedir}" publishsettingspath="${publishsettingspath}" region="${region}" rolepropertiesfilename=".rolePropertiesOS3" storageaccountname="${storageaccountname}" subscriptionid="${subscriptionid}">
 
-        <!-- Create a sample role -->
-        <workerrole approotdir="${basedir}\WorkerRole1\approot" name="WorkerRole1">
+				<!-- Create a sample role -->
+				<workerrole approotdir="${basedir}\WorkerRole1\approot" name="WorkerRole1">
 
-          <!-- Define an Azure role component. i.e. a file or directory to be included in the approot and deployed in 
+					<!-- Define an Azure role component. i.e. a file or directory to be included in the approot and deployed in 
 					Azure based on the specified settings. A component can also represent a commandline when used with deploymethod='exec'	    
 				
 					Attributes:
@@ -196,18 +209,29 @@
 					[cloudaltsrc]:
 							If a download from the URL in cloudsrc fails, a download from this alternative URL will be attempted.
 			-->
-          <component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importas="HelloWorld.war" type="server.app"/>
-        </workerrole>
+					<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importas="HelloWorld.war" type="server.app"/>
+				</workerrole>
 
-        <!-- $TODO: To add more roles, copy and paste the workerrole element for each new role 
+				<!-- $TODO: To add more roles, copy and paste the workerrole element for each new role 
 				 and modify the required settings:
 					name:		Must match the "name" attribute from WorkerRole element from the service definition (.csdef) file
 					approot:	The directory whose contents are to be included in the package. After deployment, the contents of this folder will be available 
 								in the role instance's approot directory.
 			-->
-      </windowsazurepackage>
-    </parallel>
+			</windowsazurepackage>
+		</parallel>
 
-  </target>
+	</target>
 
+	<!-- This task publishes Azure project to Cloud. -->
+	<target depends="createwapackage" description="Publish Azure project to cloud" name="publish">
+		<taskdef classname="com.microsoftopentechnologies.windowsazure.tools.build.AzurePublish" classpathref="build.classpath" name="azurepublish"/>
+		<azurepublish cloudservicename="${cloudservicename}" deploymentslot="${deploymentslot}" overwritepreviousdeployment="${overwritepreviousdeployment}" projectdir="${basedir}" publishsettingspath="${publishsettingspath}" region="${region}" storageaccountname="${storageaccountname}" subscriptionid="${subscriptionid}"/>
+	</target>
+
+	<!-- This task unpublishes Azure project. -->
+	<target description="Unpublish Azure project" name="unpublish">
+		<taskdef classname="com.microsoftopentechnologies.windowsazure.tools.build.AzureUnPublish" classpathref="build.classpath" name="azureunpublish"/>
+		<azureunpublish cloudservicename="${cloudservicename}" deploymentslot="${deploymentslot}" publishsettingspath="${publishsettingspath}" subscriptionid="${subscriptionid}"/>
+	</target>
 </project>

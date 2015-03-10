@@ -1,0 +1,45 @@
+{{!
+ Copyright 2015 Microsoft Open Technologies, Inc.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+}}<?xml version="1.0" encoding="utf-8"?>
+<ServiceDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="{{name}}" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition">{{#WorkerRole}}
+  <WorkerRole name="{{name}}" vmsize="{{vmsize}}">
+    <LocalResources>
+      <LocalStorage name="DiagnosticStore" sizeInMB="4096" cleanOnRoleRecycle="false" />
+    </LocalResources>
+    <ConfigurationSettings>{{#settings}}
+      <Setting name="{{name}}" />{{/settings}}
+    </ConfigurationSettings>
+    <Endpoints>{{#endpoints.inputEndpoint}}
+      <InputEndpoint name="{{name}}" protocol="{{protocol}}" port="{{port}}" localPort="{{localPort}}" {{#if certificate}}certificate="{{certificate}}"{{/if}}/>{{/endpoints.inputEndpoint}}{{#if remoteForwarder}}
+      <InputEndpoint name="Microsoft.WindowsAzure.Plugins.RemoteForwarder.RdpInput" protocol="tcp" port="3389" localPort="*" ignoreRoleInstanceStatus="true" />{{/if}}{{#if remoteAccess}}
+      <InternalEndpoint name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Rdp" protocol="tcp">
+        <FixedPortRange min="3389" max="3389" />
+      </InternalEndpoint>{{/if}}{{#endpoints.internalEndpoint}}
+      <InternalEndpoint name="{{name}}" protocol="{{protocol}}" >{{#if fixedPortRange}}
+              <FixedPortRange min="{{fixedPortRange.min}}" max="{{fixedPortRange.max}}" />{{/if}}{{#if fixedPort}}
+          <FixedPortRange min="{{fixedPort.port}}" max="{{fixedPort.port}}" />
+      {{/if}}</InternalEndpoint>{{/endpoints.internalEndpoint}}{{#endpoints.instanceInputEndpoint}}
+      <InstanceInputEndpoint name="{{name}}" localPort="{{localPort}}" protocol="tcp">
+          <AllocatePublicPortFrom>
+              <FixedPortRange min="{{AllocatePublicPortFrom.fixedPortRange.min}}" max="{{AllocatePublicPortFrom.fixedPortRange.max}}" />
+          </AllocatePublicPortFrom>
+      </InstanceInputEndpoint>{{/endpoints.instanceInputEndpoint}}
+    </Endpoints>
+    <Certificates>{{#certificates.certificate}}
+        <Certificate name="{{name}}" storeLocation="LocalMachine" storeName="My" />{{/certificates.certificate}}{{#if remoteAccess}}
+        <Certificate name="Microsoft.WindowsAzure.Plugins.RemoteAccess.PasswordEncryption" storeLocation="LocalMachine" storeName="My" />{{/if}}
+    </Certificates>
+  </WorkerRole>{{/WorkerRole}}
+</ServiceDefinition>

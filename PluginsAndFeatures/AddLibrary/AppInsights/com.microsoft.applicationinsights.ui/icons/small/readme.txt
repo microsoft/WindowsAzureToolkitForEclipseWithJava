@@ -1,0 +1,1 @@
+copy a place holder icon with name windowsAzure.png

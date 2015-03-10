@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -45,6 +45,13 @@ public final class Messages extends NLS {
 	public static String certPgId;
 	public static String sslCmdId;
 	public static String sslPgId;
+	public static String cmpntFileName;
+	public static String twoProjMsg;
+	public static String noProjMsg;
+	public static String noJdkSrvMsg;
+	public static String title;
+	public static String projErr;
+	public static String cntxtMenuErr;
 
 	static {
 		// initialize resource bundle

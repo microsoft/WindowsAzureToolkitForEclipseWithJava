@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.eclipse.swt.widgets.Shell;
 import waeclipseplugin.Activator;
 import com.gigaspaces.azure.wizards.Messages;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
-import com.microsoftopentechnologies.deploy.util.PublishData;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
 
 import java.io.File;
 

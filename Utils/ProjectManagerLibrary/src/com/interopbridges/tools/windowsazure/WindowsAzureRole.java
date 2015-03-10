@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -1239,7 +1239,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API is for enabling debugging by creating all the necessary XML
-	 * markup if it�s not already there.
+	 * markup if its not already there.
 	 * 
 	 * @param endpoint
 	 *            as debugging end point
@@ -1272,7 +1272,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API on WindowsAzureRole class to disable debugging by removing the
-	 * entire �agentlib:jdwp=� setting from the _JAVA_OPTIONS variable but
+	 * entire agentlib:jdwp= setting from the _JAVA_OPTIONS variable but
 	 * leaving others that the user may have put in there in place, unless there
 	 * are no other options specified in it, then also removing the
 	 * corresponding <Variable> element itself.
@@ -1316,14 +1316,14 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API is for determines whether debugging has been enabled. Returns
-	 * True by testing _JAVA_OPTIONS for the presence of: the �-agentlib:jdwp=�
-	 * option setting, AND the �transport=dt_socket� subsetting inside it AND
-	 * the �server=y� subsetting Else False.
+	 * True by testing _JAVA_OPTIONS for the presence of: the -agentlib:jdwp=
+	 * option setting, AND the transport=dt_socket subsetting inside it AND
+	 * the server=y subsetting Else False.
 	 * 
 	 * @return isEbabled .
 	 */
 	protected Boolean getDebuggingEnabled() {
-		// =�-agentlib:jdwp=transport=dt_socket,server=y,address=8081,suspend=n
+		// =-agentlib:jdwp=transport=dt_socket,server=y,address=8081,suspend=n
 		Boolean isEnabled = false;
 		try {
 			XPath xPath = XPathFactory.newInstance().newXPath();
@@ -1357,7 +1357,7 @@ public class WindowsAzureRole {
 	/**
 	 * This API is to return the WindowsAzureEndpoint object whose local port is
 	 * the same as the port inside the address subsetting form the _JAVA_OPTIONS
-	 * variable�s -agentlib:jdwp setting.
+	 * variables -agentlib:jdwp setting.
 	 * 
 	 * @return WindowsAzureEndpoint .
 	 * @throws WindowsAzureInvalidProjectOperationException .
@@ -1424,7 +1424,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API sets the local port of the WindowsAzureEndpoint object as the
-	 * address subsetting of the �agentlib:jdwp setting. Throws an exception if
+	 * address subsetting of the agentlib:jdwp setting. Throws an exception if
 	 * debugging is not enabled.
 	 * 
 	 * @param endPoint
@@ -1497,8 +1497,8 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API on WindowsAzureRole class to find whether the JVM should start
-	 * in suspended mode. This corresponds to the �suspend=y|n� subsetting of
-	 * the �agentlib:jdwp setting. Throws an exception if debugging is not
+	 * in suspended mode. This corresponds to the suspend=y|n subsetting of
+	 * the agentlib:jdwp setting. Throws an exception if debugging is not
 	 * enabled.
 	 * 
 	 * @return Boolean status
@@ -1546,8 +1546,8 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API on WindowsAzureRole class to specify whether the JVM should
-	 * start in suspended mode. This corresponds to the �suspend=y|n� subsetting
-	 * of the �agentlib:jdwp setting. Throws an exception if debugging is not
+	 * start in suspended mode. This corresponds to the suspend=y|n subsetting
+	 * of the agentlib:jdwp setting. Throws an exception if debugging is not
 	 * enabled.
 	 * 
 	 * @param status
@@ -2884,7 +2884,7 @@ public class WindowsAzureRole {
 			}
 		} catch (Exception e) {
 			throw new WindowsAzureInvalidProjectOperationException(
-					"Internal error occured while fetching property info from package.xml",
+					"Internal error occurred while fetching property info from package.xml",
 					e);
 		}
 
@@ -2957,7 +2957,8 @@ public class WindowsAzureRole {
 				if (components != null) {
 					for (int i = 0; i < components.getLength(); i++) {
 						Element compEle = (Element) components.item(i);
-						winCompList.add(getComponentObjFromEle(compEle));
+						winCompList.add(getComponentObjFromEle(compEle,
+								compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE)));
 					}
 				}
 			}
@@ -3105,7 +3106,7 @@ public class WindowsAzureRole {
 			}
 		} catch (Exception e) {
 			throw new WindowsAzureInvalidProjectOperationException(
-					"Exception occured in", e);
+					"Exception occurred in", e);
 		}
 		return preConFig;
 	}
@@ -3139,7 +3140,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API exposes the source path of the JDK if one is configured,
-	 * depending on the presence of Xpath component[@type=�jdk.deploy�] inside
+	 * depending on the presence of Xpath component[@type=jdk.deploy] inside
 	 * the appropriate <workerrole> element in package.xml. If no JDK
 	 * configured, the API shall return NULL. The return string comes directly
 	 * from @importsrc
@@ -3160,7 +3161,9 @@ public class WindowsAzureRole {
 			if (component != null) {
 				sourcePath = component
 						.getAttribute(WindowsAzureConstants.ATTR_IPATH);
-				if (sourcePath.isEmpty()) {
+				String importMethod = component.getAttribute(WindowsAzureConstants.ATTR_IMETHOD);
+				if (!importMethod.equals(WindowsAzureRoleComponentImportMethod.none.toString())
+						&& sourcePath.isEmpty()) {
 					sourcePath = null;
 				}
 			}
@@ -3206,6 +3209,10 @@ public class WindowsAzureRole {
 						String jdkDirName = new File(path).getName();
 						envVal = compEle.getAttribute("value");
 						envVal = envVal.replace("${placeholder}", jdkDirName);
+						// if path empty then remove'\'
+						if (path.isEmpty()) {
+							envVal = envVal.substring(0, envVal.lastIndexOf("%") + 1);
+						}
 					}
 				}
 			}
@@ -3253,6 +3260,10 @@ public class WindowsAzureRole {
 						envVal = compEle.getAttribute("value");
 						envVal = envVal.replace("${placeholder}",
 								"%DEPLOYROOT%\\" + srvDirName);
+						// if path empty then remove'\'
+						if (path.isEmpty()) {
+							envVal = envVal.substring(0, envVal.lastIndexOf("%") + 1);
+						}
 					}
 				}
 			}
@@ -3265,10 +3276,10 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API sets the JDK source path, adding the JDK configuration from the
-	 * template file (e.g. componentsets.xml ) if it�s not in package.xml yet.
+	 * template file (e.g. componentsets.xml ) if its not in package.xml yet.
 	 * Only one JDK can be configured per role. When set to NULL, all
 	 * <component> and <startupenv> XML with @type starting with the substring
-	 * �server.� shall be removed from <workerrole>
+	 * server. shall be removed from <workerrole>
 	 * 
 	 * @param path
 	 * @param templateFile
@@ -3339,6 +3350,11 @@ public class WindowsAzureRole {
 							String envVal = compEle.getAttribute("value");
 							envVal = envVal.replace("${placeholder}",
 									jdkDirName);
+							// if path empty then remove'\'
+							if (compEle.getAttribute("type").equalsIgnoreCase("jdk.home")
+									&& path.isEmpty()) {
+								envVal = envVal.substring(0, envVal.lastIndexOf("%") + 1);
+							}
 							ele.setAttribute("value", envVal);
 
 							preNode = role.insertBefore(ele, preNode);
@@ -3354,16 +3370,26 @@ public class WindowsAzureRole {
 							}
 							ele.setAttribute(WindowsAzureConstants.ATTR_IPATH,
 									path);
+							if (path.isEmpty()) {
+								ele.setAttribute(
+										WindowsAzureConstants.ATTR_IMETHOD,
+										WindowsAzureRoleComponentImportMethod.none.toString());
+							}
 							preNode = role.insertBefore(ele, preNode);
+
 							WindowsAzureRoleComponent comp = new WindowsAzureRoleComponent(
-									winProjMgr, this);
+									winProjMgr, this, compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE));
 							comp.setImportPath(path);
-							comp.setImportMethod(WindowsAzureRoleComponentImportMethod.valueOf(compEle
-									.getAttribute(WindowsAzureConstants.ATTR_IMETHOD)));
 							comp.setType(compEle
 									.getAttribute(WindowsAzureConstants.ATTR_TYPE));
 							comp.setDeployDir(compEle
 									.getAttribute(WindowsAzureConstants.ATTR_DDIR));
+							if (path.isEmpty()) {
+								comp.setImportMethod(WindowsAzureRoleComponentImportMethod.none);
+							} else {
+								comp.setImportMethod(WindowsAzureRoleComponentImportMethod.valueOf(compEle
+										.getAttribute(WindowsAzureConstants.ATTR_IMETHOD)));
+							}
 							// add JDK component at 0th position
 							comps.add(0, comp);
 						}
@@ -3415,11 +3441,11 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API sets the Server source path and name, finding the right
-	 * <componentset> based on the provided name and @type=�server�. It adds the
-	 * Server configuration from the template file if it�s not in package.xml
+	 * <componentset> based on the provided name and @type=server. It adds the
+	 * Server configuration from the template file if its not in package.xml
 	 * yet (or replacing whatever is there). Only one server can be configured
 	 * per role. When set to NULL, all <component> and <startupenv> XML with @type
-	 * starting with the substring �server.� shall be removed from <workerrole>
+	 * starting with the substring server. shall be removed from <workerrole>
 	 * 
 	 * @param name
 	 * @param path
@@ -3428,7 +3454,7 @@ public class WindowsAzureRole {
 	 */
 	public void setServer(String name, String path, File templateFile)
 			throws WindowsAzureInvalidProjectOperationException {
-		if (path == null || templateFile == null || path.isEmpty()) {
+		if (path == null || templateFile == null) {
 			throw new IllegalArgumentException();
 		}
 
@@ -3494,12 +3520,17 @@ public class WindowsAzureRole {
 					if (compEle.getNodeName().equalsIgnoreCase("startupenv")) {
 						String jdkDirName = new File(path).getName();
 						String envVal = compEle.getAttribute("value");
+						String type = compEle.getAttribute("type");
 						envVal = envVal.replace("${placeholder}",
 								"%DEPLOYROOT%\\" + jdkDirName);
+						if (type.equalsIgnoreCase("server.home")
+								&& path.isEmpty()) {
+							envVal = envVal.substring(0, envVal.lastIndexOf("%") + 1);
+						}
 						ele = pacDoc.createElement("startupenv");
 						ele.setAttribute("name", compEle.getAttribute("name"));
 						ele.setAttribute("value", envVal);
-						ele.setAttribute("type", compEle.getAttribute("type"));
+						ele.setAttribute("type", type);
 						if (jdkNode != null) {
 							role.insertBefore(ele, jdkNode);
 						} else {
@@ -3518,8 +3549,11 @@ public class WindowsAzureRole {
 								ele.setAttribute(map.item(j).getNodeName(), map
 										.item(j).getNodeValue());
 							}
-							ele.setAttribute(WindowsAzureConstants.ATTR_IPATH,
-									path);
+							ele.setAttribute(WindowsAzureConstants.ATTR_IPATH, path);
+							if (path.isEmpty()) {
+								ele.setAttribute(WindowsAzureConstants.ATTR_IMETHOD,
+										WindowsAzureRoleComponentImportMethod.none.toString());
+							}
 							Node jdkNxtNode = jdkNode.getNextSibling();
 							if (jdkNxtNode == null) {
 								role.appendChild(ele);
@@ -3527,7 +3561,12 @@ public class WindowsAzureRole {
 								role.insertBefore(ele, jdkNxtNode);
 							}
 							// Add server.deploy at 1st position
-							getComponents().add(1, getComponentObjFromEle(ele));
+							WindowsAzureRoleComponent cmpnt = getComponentObjFromEle(ele,
+									compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE));
+							if (path.isEmpty()) {
+								cmpnt.setImportMethod(WindowsAzureRoleComponentImportMethod.none);
+							}
+							getComponents().add(1, cmpnt);
 						} else if (type.equalsIgnoreCase("server.start")) {
 							NamedNodeMap map = compEle.getAttributes();
 							for (int j = 0; j < map.getLength(); j++) {
@@ -3577,7 +3616,8 @@ public class WindowsAzureRole {
 
 							}
 							// Add server.start at 2nd position
-							getComponents().add(2, getComponentObjFromEle(ele));
+							getComponents().add(2, getComponentObjFromEle(ele,
+									compEle.getAttribute(WindowsAzureConstants.ATTR_TYPE)));
 						}
 					}
 				}
@@ -3589,11 +3629,17 @@ public class WindowsAzureRole {
 		}
 	}
 
-	protected WindowsAzureRoleComponent getComponentObjFromEle(Element compEle)
+	protected WindowsAzureRoleComponent getComponentObjFromEle(Element compEle, String type)
 			throws WindowsAzureInvalidProjectOperationException {
 		try {
-			WindowsAzureRoleComponent compobj = new WindowsAzureRoleComponent(
-					winProjMgr, this);
+			WindowsAzureRoleComponent compobj;
+			if (type.isEmpty()) {
+				compobj = new WindowsAzureRoleComponent(
+						winProjMgr, this);
+			} else {
+				compobj = new WindowsAzureRoleComponent(
+						winProjMgr, this, type);
+			}
 			if (compEle.hasAttribute(WindowsAzureConstants.ATTR_IMPORTAS)
 					&& (!compEle.getAttribute(
 							WindowsAzureConstants.ATTR_IMPORTAS).isEmpty())) {
@@ -3728,7 +3774,7 @@ public class WindowsAzureRole {
 	 * This function expose the source path and the name of the server if one is
 	 * configured, depending on the presence of the special Ant property storing
 	 * the name of the server and then the presence of
-	 * component[@type=�server.deploy�] inside the appropriate <workerrole>
+	 * component[@type=server.deploy] inside the appropriate <workerrole>
 	 * element. If no server is configured, return NULL.
 	 * 
 	 * @return
@@ -3747,6 +3793,11 @@ public class WindowsAzureRole {
 					XPathConstants.NODE);
 			if (node != null) {
 				srcPath = node.getAttribute(WindowsAzureConstants.ATTR_IPATH);
+				String importMethod = node.getAttribute(WindowsAzureConstants.ATTR_IMETHOD);
+				if (!importMethod.equals(WindowsAzureRoleComponentImportMethod.none.toString())
+						&& srcPath.isEmpty()) {
+					srcPath = null;
+				}
 			}
 			return srcPath;
 		} catch (Exception e) {
@@ -3759,7 +3810,7 @@ public class WindowsAzureRole {
 	 * This function expose the source path and the name of the server if one is
 	 * configured, depending on the presence of the special Ant property storing
 	 * the name of the server and then the presence of
-	 * component[@type=�server.deploy�] inside the appropriate <workerrole>
+	 * component[@type=server.deploy] inside the appropriate <workerrole>
 	 * element. If no server is configured .
 	 * 
 	 * @param path
@@ -3767,7 +3818,7 @@ public class WindowsAzureRole {
 	 */
 	public void setServerSourcePath(String name, String path, File templateFile)
 			throws WindowsAzureInvalidProjectOperationException {
-		if (path == null || path.isEmpty()) {
+		if (path == null) {
 			throw new IllegalArgumentException();
 		}
 		try {
@@ -3804,6 +3855,10 @@ public class WindowsAzureRole {
 				if (winCompList.get(i).getType()
 						.equalsIgnoreCase("server.deploy")) {
 					getComponents().get(i).setImportPath(path);
+					if (path.isEmpty()) {
+						getComponents().get(i).setImportMethod
+						(WindowsAzureRoleComponentImportMethod.none);
+					}
 				}
 			}
 
@@ -3818,7 +3873,7 @@ public class WindowsAzureRole {
 	 * This function expose the source path and the name of the server if one is
 	 * configured, depending on the presence of the special Ant property storing
 	 * the name of the server and then the presence of
-	 * component[@type=�server.deploy�] inside the appropriate <workerrole>
+	 * component[@type=server.deploy] inside the appropriate <workerrole>
 	 * element. If no server is configured, return NULL.
 	 * 
 	 * @return
@@ -3846,9 +3901,9 @@ public class WindowsAzureRole {
 	}
 
 	/**
-	 * This finds the appropriate <component> template (@type=�server.app�)
+	 * This finds the appropriate <component> template (@type=server.app)
 	 * inside the provided componentsets.xml file, copies it over right before
-	 * the <component> element with @type=�server.start� in package.xml, and
+	 * the <component> element with @type=server.start in package.xml, and
 	 * sets its @importsrc, @importmethod (auto or copy), and @importas, as
 	 * figured out by the plugin depending on the user input.
 	 * 
@@ -3926,25 +3981,37 @@ public class WindowsAzureRole {
 
 			if (existingSerAppNodeList == null
 					|| existingSerAppNodeList.getLength() == 0) {
-				// depend on position of server.app in component set
-				if (comp.compareDocumentPosition(compServerStartElement) == 4) {
-					// server.app node is before server.start
-					role.insertBefore(app, serStartNode);
+				if (compServerStartElement != null) {
+					/*
+					 * server is configured.
+					 * check position of server.app in component set
+					 */
+					if (comp.compareDocumentPosition(compServerStartElement) == 4) {
+						// server.app node is before server.start
+						role.insertBefore(app, serStartNode);
+					} else {
+						role.insertBefore(app, serStartNode.getNextSibling());
+					}
 				} else {
-					role.insertBefore(app, serStartNode.getNextSibling());
+					// server is not configured yet, hence insert app node before workerrole node
+					role.insertBefore(app, null);
 				}
 			} else {
+				// server.app exists, hence just append new app to existing apps
 				Node lastAppNode = existingSerAppNodeList
-						.item(existingSerAppNodeList.getLength() - 1); // appendChild(app);
+						.item(existingSerAppNodeList.getLength() - 1);
 				role.insertBefore(app, lastAppNode.getNextSibling());
 			}
-			comps.add(getComponentObjFromEle(app));
-
+			if (comp != null) {
+				comps.add(getComponentObjFromEle(app,
+						comp.getAttribute(WindowsAzureConstants.ATTR_TYPE)));
+			} else {
+				comps.add(getComponentObjFromEle(app, "server.app"));
+			}
 		} catch (Exception e) {
 			throw new WindowsAzureInvalidProjectOperationException(
 					"Exception in addServerApplication", e);
 		}
-
 	}
 
 	/***
@@ -3975,7 +4042,7 @@ public class WindowsAzureRole {
 
 	/**
 	 * This API will remove an application from package.xml. This deletes the
-	 * <component> (@type=�server.app� and @name=�?�) inside the appropriate
+	 * <component> (@type=server.app and @name=?) inside the appropriate
 	 * <workerrole> element in package.xml.
 	 * 
 	 * @throws WindowsAzureInvalidProjectOperationException
@@ -4570,6 +4637,27 @@ public class WindowsAzureRole {
 	}
 
 	/**
+	 * Sets third party server name in the plugin property.
+	 * @param value
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public void setServerCloudName(String value)
+			throws WindowsAzureInvalidProjectOperationException {
+		setProperty(WindowsAzureConstants.THRD_PARTY_SRV_NAME, value);
+	}
+
+	/**
+	 * Returns third party server name from the plugin property.
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public String getServerCloudName()
+			throws WindowsAzureInvalidProjectOperationException {
+		String srvCloudName = getProperty(WindowsAzureConstants.THRD_PARTY_SRV_NAME);
+		return srvCloudName;
+	}
+
+	/**
 	 * Sets the JDK Cloud Home in the plugin property.
 	 * 
 	 * @param value
@@ -4788,7 +4876,7 @@ public class WindowsAzureRole {
 	 * getCacheMemoryPercent() returns 0, or name is null or in use by another
 	 * cache (case insensitive comparison) or port is not between 1-65535, or
 	 * already in use by anything else Create internal endpoint named
-	 * �memcache_name� and the supplied port Inject the new cache object into
+	 * memcache_name and the supplied port Inject the new cache object into
 	 * the JSON with the specified name and return a WindowsAzureNamedCache
 	 * object from the API.
 	 * 
@@ -5334,6 +5422,26 @@ public class WindowsAzureRole {
 				for (int i = 0; i < compList.size(); i++) {
 					WindowsAzureRoleComponent comp = compList.get(i);
 					if (comp.getType().equalsIgnoreCase("jdk.deploy")) {
+						comp.setCloudAltSrc(url);
+					}
+				}
+			}
+		} catch (Exception ex) {
+			throw new WindowsAzureInvalidProjectOperationException("", ex);
+		}
+	}
+
+	public void setServerCldAltSrc(String url)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			if (getServerSourcePath() == null) {
+				throw new WindowsAzureInvalidProjectOperationException(
+						"Server is not configured");
+			} else {
+				List<WindowsAzureRoleComponent> compList = getComponents();
+				for (int i = 0; i < compList.size(); i++) {
+					WindowsAzureRoleComponent comp = compList.get(i);
+					if (comp.getType().equalsIgnoreCase("server.deploy")) {
 						comp.setCloudAltSrc(url);
 					}
 				}

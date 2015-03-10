@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ final class ParserXMLUtility {
 	 * 
 	 * @param fileName
 	 *            .
-	 * @return XML document or <B>null</B> if error occured
+	 * @return XML document or <B>null</B> if error occurred
 	 * @throws WindowsAzureInvalidProjectOperationException
 	 */
 	protected static Document parseXMLFile(final String fileName)
@@ -79,7 +79,7 @@ final class ParserXMLUtility {
 	 * 
 	 * @param fileName
 	 *            .
-	 * @return XML document or <B>null</B> if error occured
+	 * @return XML document or <B>null</B> if error occurred
 	 * @throws WindowsAzureInvalidProjectOperationException
 	 */
 	protected static Document parseXMLResource(final InputStream inputStream)
@@ -105,7 +105,7 @@ final class ParserXMLUtility {
 	 * 
 	 * @param fileName
 	 * @param doc
-	 * @return XML document or <B>null</B> if error occured
+	 * @return XML document or <B>null</B> if error occurred
 	 * @throws IOException
 	 * @throws WindowsAzureInvalidProjectOperationException
 	 */
@@ -391,6 +391,34 @@ final class ParserXMLUtility {
 						WindowsAzureConstants.EXCP_UPDATE_OR_CREATE_ELEMENT, e);
 			}
 		}
+	}
+	
+	/**
+	 * API checks if a node is already present in the XML document
+	 * @param doc
+	 * @param nodeExpression
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static boolean doesNodeExists(Document doc, String nodeExpression) throws WindowsAzureInvalidProjectOperationException {
+		if (nodeExpression == null ) {
+			throw new IllegalArgumentException(WindowsAzureConstants.INVALID_ARG);
+		} else {
+			try {
+				XPath xPath = XPathFactory.newInstance().newXPath();
+				Element element = (Element) xPath.evaluate(nodeExpression, doc, XPathConstants.NODE);
+	
+				// If element doesn't exist create one
+				if (element == null) {
+					return false;
+				} else {
+					return true;
+				}
+			} catch (Exception e) {
+				throw new WindowsAzureInvalidProjectOperationException(WindowsAzureConstants.EXCP_NODE_EXISTS_CHECK, e);
+			}
+		}
+		
 	}
 
 }

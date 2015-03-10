@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusEvent;
@@ -55,20 +54,18 @@ import com.gigaspaces.azure.runnable.CacheAccountWithProgressBar;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressBar;
 import com.gigaspaces.azure.util.MethodUtils;
 import com.gigaspaces.azure.util.PreferenceUtil;
-import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
 import com.gigaspaces.azure.util.UIUtils;
 import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzurePackageType;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
-import com.microsoftopentechnologies.deploy.util.PublishData;
-import com.microsoftopentechnologies.deploy.util.WizardCache;
-import com.microsoftopentechnologies.deploy.wizard.ConfigurationEventArgs;
-import com.microsoftopentechnologies.model.KeyName;
-import com.microsoftopentechnologies.model.StorageService;
-import com.microsoftopentechnologies.model.StorageServices;
-import com.microsoftopentechnologies.model.Subscription;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
+import com.microsoftopentechnologies.azurecommons.deploy.wizard.ConfigurationEventArgs;
+import com.microsoftopentechnologies.azuremanagementutil.model.KeyName;
+import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
+import com.microsoftopentechnologies.azuremanagementutil.model.StorageServices;
+import com.microsoftopentechnologies.azuremanagementutil.model.Subscription;
 import com.microsoftopentechnologies.wacommon.commoncontrols.ImportSubscriptionDialog;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
@@ -113,6 +110,7 @@ public class SignInPage extends WindowsAzurePage {
 	private Button conToDplyChkBtn;
 	public ArrayList<String> newServices = new ArrayList<String>();
 	private Button unpublishChBox;
+	String[] items = { Messages.deplStaging, Messages.deplProd };
 
 	/**
 	 * Constructor.
@@ -240,30 +238,66 @@ public class SignInPage extends WindowsAzurePage {
 			txtUserName.setText("");
 			setEnableRemAccess(false);
 		}
+		/*
+		 * Non windows OS then disable components,
+		 * but keep values as it is
+		 */
+		if (!Activator.IS_WINDOWS) {
+			txtUserName.setEnabled(false);
+			txtPassword.setEnabled(false);
+			txtConfirmPassword.setEnabled(false);
+			passwordLabel.setEnabled(false);
+			confirmPasswordLbl.setEnabled(false);
+			conToDplyChkBtn.setEnabled(false);
+		}
 	}
 
 	private void loadDefaultWizardValues() {
-		WizardCache cacheObj = PreferenceUtilPubWizard.load(String.format("%s%s%s",
-				Activator.PLUGIN_ID,
-				com.persistent.util.Messages.proj,
-				selectedProject.getName()));
-		if (cacheObj != null
-				&& !cacheObj.getSubName().isEmpty()
-				&& !cacheObj.getServiceName().isEmpty()
-				&& !cacheObj.getStorageName().isEmpty()) {
-			UIUtils.selectByText(subscriptionCombo,
-					cacheObj.getSubName());
-			publishData = UIUtils.changeCurrentSubAsPerCombo(subscriptionCombo);
-			if (publishData != null) {
-				populateStorageAccounts();
-				populateHostedServices();
-				setComponentState((subscriptionCombo.
-						getData(subscriptionCombo.getText()) != null));
-				UIUtils.selectByText(hostedServiceCombo,
-						cacheObj.getServiceName());
-				UIUtils.selectByText(storageAccountCmb,
-						cacheObj.getStorageName());
+		try {
+			loadProject();
+			// Get global properties from package.xml
+			String subId = waProjManager.getPublishSubscriptionId();
+			String cloudServiceName = waProjManager.getPublishCloudServiceName();
+			String storageAccName = waProjManager.getPublishStorageAccountName();
+
+			if (subId != null && !subId.isEmpty()) {
+				String subName = WizardCacheManager.findSubscriptionNameBySubscriptionId(subId);
+				if (subName != null && !subName.isEmpty()) {
+					UIUtils.selectByText(subscriptionCombo, subName);
+					publishData = UIUtils.changeCurrentSubAsPerCombo(subscriptionCombo);
+					if (publishData != null) {
+						populateStorageAccounts();
+						populateHostedServices();
+						setComponentState((subscriptionCombo.
+								getData(subscriptionCombo.getText()) != null));
+						UIUtils.selectByText(hostedServiceCombo, cloudServiceName);
+						UIUtils.selectByText(storageAccountCmb, storageAccName);
+					}
+				}
 			}
+			
+			try {
+				String deploymentSlot = waProjManager.getPublishDeploymentSlot().toString();
+				if (deploymentSlot != null && !deploymentSlot.isEmpty()) {
+					UIUtils.selectByText(deployStateCmb, deploymentSlot);
+				}
+			} catch (Exception e) {
+				// ignore.
+				// Mostly it would be IllegalArgumentException if valid deployment string not specified
+			}
+
+			try {
+				if (deployStateCmb.getText().equalsIgnoreCase(Messages.deplStaging)) {
+					unpublishChBox.setSelection(true);
+				} else {
+					boolean overwriteDeployment = waProjManager.getPublishOverwritePreviousDeployment();
+					unpublishChBox.setSelection(overwriteDeployment);
+				}
+			} catch (Exception e) {
+				// ignore
+			}
+		} catch (Exception e) {
+			Activator.getDefault().log(Messages.error, e);
 		}
 	}
 
@@ -334,7 +368,6 @@ public class SignInPage extends WindowsAzurePage {
 					if ((subscriptionCombo.
 							getData(subscriptionCombo.getText()) != null)) {
 						loadDefaultWizardValues();
-						unpublishChBox.setSelection(true);
 						setPageComplete(validatePageComplete());
 					}
 				}
@@ -1039,7 +1072,6 @@ public class SignInPage extends WindowsAzurePage {
 	 * @param container
 	 */
 	private void createDeploymentStateWidget(Composite container) {
-		String[] items = { Messages.deplStaging, Messages.deplProd };
 		createLabel(container, Messages.deplState);
 		deployState = getFirstItem(items);
 
@@ -1136,12 +1168,15 @@ public class SignInPage extends WindowsAzurePage {
 			File file = new File(fileName);
 
 			PublishData publishDataToCache = null;
+			//TODO: Add check to see if it is publish settings file
+			publishDataToCache = handlePublishSettings(file);
+			/*
 			if (file.getName().endsWith(Messages.publishSettExt)) {
 				publishDataToCache = handlePublishSettings(file);
 			}
 			else {
 				publishDataToCache = handlePfx(file);
-			}
+			} */
 
 			if (publishDataToCache == null) {
 				return;
@@ -1180,43 +1215,6 @@ public class SignInPage extends WindowsAzurePage {
 			}
 		}
 		return 0;
-	}
-
-	private PublishData handlePfx(File file) {
-		PublishData data;
-		try {
-			data = com.microsoftopentechnologies.deploy.util.UIUtils.parsePfx(file);
-		} catch (Exception e) {
-			MessageUtil.displayErrorDialog(getShell(), Messages.importDlgTitle, String.format(Messages.importDlgMsg, file.getName(), Messages.failedToParse));
-			return null;
-		}
-		PfxDialog pfxDialog = new PfxDialog(file, getShell());
-		int result = pfxDialog.open();
-		if (result == 0) {
-			Subscription sub = new Subscription();
-
-			String subscriptionId = pfxDialog.getSubscriptionId();
-			sub.setId(subscriptionId);
-			sub.setName(subscriptionId);
-			data.setCurrentSubscription(sub);
-
-			data.getPublishProfile().getSubscriptions().add(sub);
-
-			String pfxPassword = pfxDialog.getPfxPassword();
-			data.getPublishProfile().setPassword(pfxPassword);
-
-			if (WizardCacheManager.findPublishDataBySubscriptionId(subscriptionId) != null) {
-                MessageDialog.openInformation(getShell(), Messages.loadingCred, Messages.credentialsExist);
-			}
-
-			data.reset();
-
-			AccountActionRunnable settings = new CacheAccountWithProgressBar(file, data, getShell(), null);
-
-			doLoad(file, settings);
-			return data;
-		}
-		return null;
 	}
 
 	private PublishData handlePublishSettings(File file) {

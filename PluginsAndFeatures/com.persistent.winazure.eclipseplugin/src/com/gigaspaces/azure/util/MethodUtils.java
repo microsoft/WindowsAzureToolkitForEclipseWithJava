@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import com.gigaspaces.azure.propertypage.Messages;
 import com.gigaspaces.azure.runnable.CacheAccountWithProgressWindow;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressWindow;
 import com.gigaspaces.azure.wizards.WizardCacheManager;
-import com.microsoftopentechnologies.deploy.util.PublishData;
-import com.microsoftopentechnologies.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
 /**
  * Class has common methods which
@@ -48,11 +48,9 @@ public class MethodUtils {
 		if (fileName != null && !fileName.isEmpty()) {
 			File file = new File(fileName);
 			PublishData publishDataToCache = null;
-			if (file.getName().
-					endsWith(Messages.publishSettExt)) {
-				publishDataToCache =
-						handlePublishSettings(file);
-			}
+			//TODO: Check if this is publish settings
+			publishDataToCache = handlePublishSettings(file);
+			
 
 			if (publishDataToCache == null) {
 				return;
@@ -93,7 +91,7 @@ public class MethodUtils {
 	public static void prepareListFromPublishData() {
 		List<StorageAccount> strgList = StorageAccountRegistry.getStrgList();
 		Collection<PublishData> publishDatas = WizardCacheManager.getPublishDatas();
-		strgList = com.microsoftopentechnologies.deploy.util.MethodUtils.
+		strgList = com.microsoftopentechnologies.azurecommons.deploy.util.MethodUtils.
 				prepareListFromPublishData(strgList, publishDatas);
 		PreferenceUtilStrg.save();
 	}

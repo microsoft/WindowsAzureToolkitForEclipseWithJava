@@ -1,0 +1,98 @@
+{{!
+ Copyright 2015 Microsoft Open Technologies, Inc.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+}}<?xml version="1.0" encoding="utf-8"?>
+<RoleModel xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="{{role.name}}" version="{{sdkVersion}}" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition">{{#if role.Startup}}
+  <Startup>{{#if role.remoteAccess}}
+    <Task commandLine="RemoteAccessAgent.exe" executionContext="elevated" taskType="background" relativePath="plugins\RemoteAccess">
+      <Environment>
+        <Variable name="RdModuleName" value="RemoteAccess" />
+        <Variable name="WaRoleType" value="WorkerRole" />
+      </Environment>
+    </Task>
+    <Task commandLine="RemoteAccessAgent.exe /blockStartup" executionContext="elevated" relativePath="plugins\RemoteAccess">
+      <Environment>
+        <Variable name="RdModuleName" value="RemoteAccess" />
+        <Variable name="WaRoleType" value="WorkerRole" />
+      </Environment>
+    </Task>{{/if}}{{#if role.remoteForwarder}}
+    <Task commandLine="install.cmd" executionContext="elevated" relativePath="plugins\RemoteForwarder">
+      <Environment>
+        <Variable name="IsEmulated">
+          <RoleInstanceValue xpath="/RoleEnvironment/Deployment/@emulated" />
+        </Variable>
+        <Variable name="RdModuleName" value="RemoteForwarder" />
+        <Variable name="WaRoleType" value="WorkerRole" />
+      </Environment>
+    </Task>{{/if}}{{#if role.caching}}
+    <Task commandLine="DotNetUpdate.cmd" executionContext="elevated" relativePath="plugins\Caching">
+      <Environment>
+        <Variable name="IsEmulated">
+          <RoleInstanceValue xpath="/RoleEnvironment/Deployment/@emulated" />
+        </Variable>
+        <Variable name="CachingLocalStorePath">
+          <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='DiagnosticStore']/@path" />
+        </Variable>
+        <Variable name="RdModuleName" value="Caching" />
+        <Variable name="WaRoleType" value="WorkerRole" />
+      </Environment>
+    </Task>
+    <Task commandLine="CacheInstaller.exe" executionContext="elevated" relativePath="plugins\Caching">
+      <Environment>
+        <Variable name="RdModuleName" value="Caching" />
+        <Variable name="WaRoleType" value="WorkerRole" />
+      </Environment>
+    </Task>{{/if}}{{#if role.webDeploy}}
+    <Task commandLine="ConfigureIIS.cmd &gt; WebDeployConfig.log" executionContext="elevated" relativePath="plugins\WebDeploy">
+      <Environment>
+        <Variable name="RdModuleName" value="WebDeploy" />
+        <Variable name="WaRoleType" value="WorkerRole" />
+      </Environment>
+    </Task>{{/if}}{{#role.startup.task}}
+    <Task commandLine="{{commandLine}}" executionContext="{{executionContext}}" relativePath="approot\">
+      <Environment>{{#environment.variable}}
+        <Variable name="{{name}}">
+          <RoleInstanceValue xpath="{{roleInstanceValue.xpath}}" />
+        </Variable>{{/environment.variable}}
+        <Variable name="WaRoleType" value="WorkerRole" />
+      </Environment>
+    </Task>{{/role.startup.task}}
+  </Startup>{{/if}}{{#if role.Runtime}}
+  <Runtime executionContext="{{role.Runtime.executionContext}}" protocolVersion="{{runtimeModel.protocolVersion}}">{{#if role.Runtime.Environment}}
+    <Environment>{{#role.Runtime.Environment.variable}}
+      <Variable name="{{name}}">{{#roleInstanceValue}}
+        <RoleInstanceValue xpath="{{xpath}}" />{{/roleInstanceValue}}
+      </Variable>{{/role.Runtime.Environment.variable}}
+    </Environment>{{/if}}{{#if role.Runtime.EntryPoint}}
+    <EntryPoint>{{#if role.Runtime.EntryPoint.ProgramEntryPoint}}
+      <ProgramEntryPoint commandLine="{{role.Runtime.EntryPoint.ProgramEntryPoint.commandLine}}" setReadyOnProcessStart="{{role.Runtime.EntryPoint.ProgramEntryPoint.setReadyOnProcessStart}}" />{{/if}}{{#if role.Runtime.EntryPoint.NetFxEntryPoint}}
+        <NetFxEntryPoint assemblyName="{{role.Runtime.EntryPoint.NetFxEntryPoint.assemblyName}}" targetFrameworkVersion="{{role.Runtime.EntryPoint.NetFxEntryPoint.targetFrameworkVersion}}" />{{/if}}
+        </EntryPoint>{{/if}}
+  </Runtime>{{else}}
+  <Runtime />{{/if}}
+  <ConfigurationSettings>{{#role.settings}}
+    <Setting name="{{shortName}}" nameSpace="{{prefix}}" />{{/role.settings}}
+  </ConfigurationSettings>
+  <Properties>
+    <Property name="TargetFrameworkVersion" value="{{runtimeModel.netFxVersion}}" />
+    <Property name="TargetRuntimeVersion" value="{{runtimeModel.netFxVersion}}" />
+  </Properties>{{#if role.Sites}}
+  <Sites>{{#role.Sites.Site}}
+    <Site name="{{$.name}}" physicalDirectory="approot">
+      <Bindings>{{#Bindings.Binding}}
+        <Binding name="{{name}}" endpointName="{{endpointName}}" />
+      </Bindings>{{/Bindings.Binding}}
+    </Site>{{/role.Sites.Site}}
+  </Sites>{{/if}}
+</RoleModel>

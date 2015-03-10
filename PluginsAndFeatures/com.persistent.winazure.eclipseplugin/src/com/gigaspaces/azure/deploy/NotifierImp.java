@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package com.gigaspaces.azure.deploy;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.microsoftopentechnologies.deploy.deploy.UploadProgressEventArgs;
-import com.microsoftopentechnologies.model.Notifier;
+import com.microsoftopentechnologies.azurecommons.deploy.UploadProgressEventArgs;
+import com.microsoftopentechnologies.azuremanagementutil.model.Notifier;
 
 import waeclipseplugin.Activator;
 

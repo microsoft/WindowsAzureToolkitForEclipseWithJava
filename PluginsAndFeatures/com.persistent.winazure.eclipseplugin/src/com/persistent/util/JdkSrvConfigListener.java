@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
-import com.microsoftopentechnologies.storageregistry.StorageRegistryUtilMethods;
-import com.microsoftopentechnologies.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
 import com.persistent.winazureroles.Messages;
 /**
  * Class has utility methods
@@ -44,23 +44,32 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 				WAEclipseHelperMethods.jdkDefaultDirectory(null);
 		getTxtJdk().setText(jdkDefaultDir);
 		setEnableJDK(true);
-		enableJdkRdButtons(getAutoDlRdCldBtn());
 		getSerCheckBtn().setEnabled(true);
-		configureAutoUploadJDKSettings(Messages.dlNtLblDir);
-		showThirdPartyJdkNames(true, depJdkName);
+		if (getAutoDlRdCldBtn().getSelection()) {
+			configureAutoUploadJDKSettings(Messages.dlNtLblDir);
+		} else if (getThrdPrtJdkBtn().getSelection()) {
+			thirdPartyJdkBtnSelected(Messages.dlNtLblDir);
+		} else {
+			jdkDeployBtnSelected();
+		}
 		return jdkDefaultDir;
 	}
+	
 	/**
 	 * Method is used when JDK check box is unchecked.
 	 */
 	public static void jdkChkBoxUnChecked() {
-		getSerCheckBtn().setSelection(false);
 		setEnableJDK(false);
-		setEnableServer(false);
-		setEnableDlGrp(false, false);
-		setEnableDlGrpSrv(false, false);
-		// un-checking check box hence no need to JDK name.
-		showThirdPartyJdkNames(false, "");
+		getLblDlNoteUrl().setText(Messages.dlgDlNtLblUrl);
+		if (getAutoDlRdCldBtn().getSelection()) {
+			getSerCheckBtn().setSelection(false);
+			setEnableServer(false);
+			setEnableDlGrpSrv(false, false);
+			configureAutoUploadJDKSettings(Messages.dlNtLblDir);
+		} else {
+			// incase of third party and custom download just change text
+			getAutoDlRdCldBtn().setText(com.persistent.util.Messages.noJdkDplyLbl);
+		}
 	}
 
 	/**
@@ -101,7 +110,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	}
 
 	/**
-	 * Method is used when JDK's deploy from download
+	 * Method is used when JDK's deploy from custom download
 	 * radio button is selected.
 	 * @param role
 	 */
@@ -111,6 +120,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		updateJDKDlNote(Messages.dlNtLblDir);
 		updateJDKHome(getTxtJdk().getText());
 		enableThirdPartyJdkCombo(false);
+		enableServerCloudBtns(true);
 	}
 
 	/**
@@ -124,6 +134,7 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		enableThirdPartyJdkCombo(true);
 		thirdPartyComboListener();
 		updateJDKDlNote(label);
+		enableServerCloudBtns(true);
 	}
 
 	/**
@@ -163,7 +174,6 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * Method is used when Server check box is checked.
 	 */
 	public static void srvChkBoxChecked(String label) {
-		enableSrvRdButtons(getAutoDlRdCldBtnSrv());
 		setEnableServer(true);
 		try {
 			String[] servList =
@@ -171,7 +181,13 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 					getServerTemplateNames(cmpntFile);
 			Arrays.sort(servList);
 			getComboServer().setItems(servList);
-			configureAutoUploadServerSettings(label);
+			if (getAutoDlRdCldBtnSrv().getSelection()) {
+				configureAutoUploadServerSettings(label);
+			} else if (getThrdPrtSrvBtn().getSelection()) {
+				thirdPartySrvBtnSelected(label);
+			} else {
+				srvDeployBtnSelected(label);
+			}
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			Activator.getDefault().log(e.getMessage());
 		}
@@ -181,8 +197,34 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * Method is used when Server check box is unchecked.
 	 */
 	public static void srvChkBoxUnChecked() {
+		/*
+		 * If first radio button was selected
+		 * and server check box has been unchecked
+		 * then disable complete server group
+		 * else just change text of first radio button.
+		 */
+		if (getAutoDlRdCldBtnSrv().getSelection()) {
+			setEnableDlGrpSrv(false, false);
+			getThrdPrtSrvBtn().setEnabled(true);
+			enableApplicationTab(false);
+		} else {
+			getAutoDlRdCldBtnSrv().setText(com.persistent.util.Messages.noSrvDplyLbl);
+		}
+		/*
+		 * As local server has been removed,
+		 * show all third party servers.
+		 */
+		if (getThrdPrtSrvBtn().getSelection()) {
+			String cloudSrv = getThrdPrtSrvCmb().getText();
+			showThirdPartySrvNames(true, "", "");
+			getThrdPrtSrvCmb().setText(cloudSrv);
+		} else if (getDlRdCldBtnSrv().getSelection()) {
+			getThrdPrtSrvBtn().setEnabled(true);
+			getAutoDlRdCldBtnSrv().setSelection(true);
+			setEnableDlGrpSrv(false, false);
+			enableApplicationTab(false);
+		}
 		setEnableServer(false);
-		setEnableDlGrpSrv(false, false);
 		getSerCheckBtn().setEnabled(true);
 	}
 
@@ -196,35 +238,14 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 			setTxtUrlSrv(cmbBoxListener(
 					getCmbStrgAccSrv(),
 					getTxtUrlSrv(), "SERVER"));
-			updateSrvDlNote(label);
 			updateServerHome(getTxtDir().getText());
+		} else if(getDlRdCldBtnSrv().getSelection()
+				&& !getTxtUrlSrv().getText().isEmpty()) {
+			modifySrvUrlText();
 		}
+		updateSrvDlNote(label);
 	}
 
-	/**
-	 * Method is used when focus is lost
-	 * from server directory text box.
-	 * @param srvPath
-	 * @param label
-	 * @param labelNext
-	 */
-	public static void focusLostSrvText(String srvPath,
-			String label,
-			String labelNext) {
-		File file = new File(srvPath);
-		if (getDlRdCldBtnSrv().
-				getSelection()
-				&& !srvPath.isEmpty()
-				&& file.exists()) {
-			String dirName = file.getName();
-			getLblDlNoteUrlSrv().
-			setText(String.format(
-					label, dirName));
-		} else {
-			getLblDlNoteUrlSrv().
-			setText(labelNext);
-		}
-	}
 	/**
 	 * Method is used when server's deploy from download
 	 * radio button is selected.
@@ -236,6 +257,22 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 		setEnableDlGrpSrv(true, false);
 		updateSrvDlNote(label);
 		updateServerHome(getTxtDir().getText());
+		enableThirdPartySrvCombo(false);
+		enableApplicationTab(true);
+	}
+	
+	/**
+	 * Method is used when third party JDK
+	 * radio button is selected.
+	 * @param role
+	 * @param label
+	 */
+	public static void thirdPartySrvBtnSelected(String label) {
+		setEnableDlGrpSrv(true, true);
+		enableThirdPartySrvCombo(true);
+		thirdPartySrvComboListener();
+		updateSrvDlNote(label);
+		enableApplicationTab(true);
 	}
 
 	/**
@@ -272,6 +309,9 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	public static void srvAccLinkClicked() {
 		accountsLinkOfSrvClicked();
 		updateServerDlURL();
+		if (getThrdPrtSrvBtn().getSelection()) {
+			updateServerHomeForThirdParty();
+		}
 	}
 
 	/**
@@ -281,26 +321,42 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	 * @param label
 	 */
 	public static void configureAutoUploadServerSettings(String label) {
-		setEnableDlGrpSrv(true, true);
-		populateDefaultStrgAccForSrvAuto();
-		updateServerDlURL();
-		updateSrvDlNote(label);
-		updateServerHome(getTxtDir().getText());
+		if (getSerCheckBtn().getSelection()) {
+			setEnableDlGrpSrv(true, true);
+			populateDefaultStrgAccForSrvAuto();
+			updateServerDlURL();
+			updateSrvDlNote(label);
+			updateServerHome(getTxtDir().getText());
+			enableThirdPartySrvCombo(false);
+			enableApplicationTab(true);
+		} else {
+			setEnableDlGrpSrv(false, false);
+			enableApplicationTab(false);
+		}
 	}
 
 	/**
-	 * Method used when JDK auto upload radio
-	 * button selected.
+	 * Method used when JDK auto upload/no JDK deployment
+	 * radio button selected.
 	 * @param role
 	 * @param label
 	 */
 	public static void configureAutoUploadJDKSettings(
 			String label) {
-		setEnableDlGrp(true, true);
-		updateJDKDlURL();
-		updateJDKDlNote(label);
-		updateJDKHome(getTxtJdk().getText());
-		enableThirdPartyJdkCombo(false);
+		if (getJdkCheckBtn().getSelection()) {
+			setEnableDlGrp(true, true);
+			updateJDKDlURL();
+			updateJDKDlNote(label);
+			updateJDKHome(getTxtJdk().getText());
+			enableThirdPartyJdkCombo(false);
+			enableServerCloudBtns(true);
+		} else {
+			JdkSrvConfig.setEnableServer(false);
+			JdkSrvConfig.setEnableDlGrpSrv(false, false);
+			setEnableDlGrp(false, false);
+			enableServerCloudBtns(false);
+			enableApplicationTab(false);
+		}
 	}
 
 	/**
@@ -311,6 +367,16 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	public static void enableThirdPartyJdkCombo(Boolean status) {
 		getThrdPrtJdkCmb().setEnabled(status);
 		getThrdPrtJdkBtn().setSelection(status);
+	}
+	
+	/**
+	 * Enable or disable third party JDK
+	 * related components.
+	 * @param status
+	 */
+	public static void enableThirdPartySrvCombo(Boolean status) {
+		getThrdPrtSrvCmb().setEnabled(status);
+		getThrdPrtSrvBtn().setSelection(status);
 	}
 
 	/**
@@ -338,6 +404,47 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 	}
 
 	/**
+	 * Method decides whether to
+	 * show third party JDK names or not.
+	 * @param status
+	 */
+	public static void showThirdPartySrvNames(Boolean status, String localSrvName, String depSrvName) {
+		if (status) {
+			try {
+				String [] thrdPrtSrvArr;
+				if (localSrvName.isEmpty()) {
+					thrdPrtSrvArr = WindowsAzureProjectManager.
+							getAllThirdPartySrvNames(cmpntFile, depSrvName);
+				} else {
+					thrdPrtSrvArr = WindowsAzureProjectManager.getThirdPartySrvNames(
+							cmpntFile, localSrvName, depSrvName);
+				}
+				// check at least one element is present else disable
+				if (thrdPrtSrvArr.length >= 1) {
+					getThrdPrtSrvCmb().setItems(thrdPrtSrvArr);
+					String valueToSet = "";
+					if (localSrvName.isEmpty()) {
+						valueToSet = WindowsAzureProjectManager.
+								getFirstDefaultThirdPartySrvName(cmpntFile);
+					} else {
+						valueToSet = WindowsAzureProjectManager.
+								getDefaultThirdPartySrvName(cmpntFile, localSrvName);
+					}
+					if (valueToSet.isEmpty()) {
+						valueToSet = thrdPrtSrvArr[0];
+					}
+					getThrdPrtSrvCmb().setText(valueToSet);
+				}
+			} catch (WindowsAzureInvalidProjectOperationException e) {
+				Activator.getDefault().log(e.getMessage());
+			}
+		} else {
+			getThrdPrtSrvCmb().removeAll();
+			getThrdPrtSrvCmb().setText("");
+		}
+	}
+
+	/**
 	 * Listener for third party JDK name combo box.
 	 * Updates URL and java home.
 	 */
@@ -351,11 +458,75 @@ public class JdkSrvConfigListener extends JdkSrvConfig {
 			Activator.getDefault().log(e.getMessage());
 		}
 	}
+	
+	/**
+	 * Listener for third party JDK name combo box.
+	 * Updates URL and java home.
+	 */
+	public static void thirdPartySrvComboListener() {
+		updateServerDlURL();
+		try {
+			getTxtHomeDir().setText(WindowsAzureProjectManager.getThirdPartyServerHome(
+					getThrdPrtSrvCmb().getText(), cmpntFile));
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			Activator.getDefault().log(e.getMessage());
+		}
+	}
 
 	public static void disableRemoveButton() {
 		if (JdkSrvConfig.getTblApp().getItemCount() == 0) {
 			// table is empty i.e. number of rows = 0
 			JdkSrvConfig.getBtnRemove().setEnabled(false);
+		}
+	}
+
+	public static void enforceSameLocalCloudServer() {
+		try {
+			String srvName = getComboServer().getText();
+			String cloudSrv = "";
+			if (getThrdPrtSrvBtn().getSelection()) {
+				cloudSrv = getThrdPrtSrvCmb().getText();
+			}
+			if (cloudSrv.isEmpty()) {
+				/*
+				 * user first selects a local server and
+				 * third party radio button is not selected.
+				 */
+				populateServerNames(srvName);
+			} else {
+				if (WindowsAzureProjectManager.checkCloudAndLocalFamilyAreEqual(
+						cmpntFile, srvName, cloudSrv)) {
+					/*
+					 * user first selects the cloud server
+					 * and then a local server that is compatible with cloud server. 
+					 */
+					showThirdPartySrvNames(true, srvName, "");
+					getThrdPrtSrvCmb().setText(cloudSrv);
+				} else {
+					/*
+					 * user first selects the cloud server
+					 * and then a local server that is different from cloud server. 
+					 */
+					populateServerNames(srvName);
+					getAutoDlRdCldBtnSrv().setSelection(true);
+					configureAutoUploadServerSettings(
+							com.persistent.ui.projwizard.Messages.dlNtLblDirSrv);
+				}
+			}
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			Activator.getDefault().log(e.getMessage());
+		}
+	}
+	
+	private static void populateServerNames(String srvName) {
+		showThirdPartySrvNames(false, "", "");
+		showThirdPartySrvNames(true, srvName, "");
+		if (getThrdPrtSrvCmb().getItemCount() <= 0) {
+			// if no third party servers available
+			enableThirdPartySrvCombo(false);
+			getThrdPrtSrvBtn().setEnabled(false);
+		} else {
+			getThrdPrtSrvBtn().setEnabled(true);
 		}
 	}
 }

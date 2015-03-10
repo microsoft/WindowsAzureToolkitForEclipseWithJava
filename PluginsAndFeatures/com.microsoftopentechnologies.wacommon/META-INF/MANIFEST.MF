@@ -2,45 +2,49 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Azure Common Plugin Library (by MS Open Tech)
 Bundle-SymbolicName: com.microsoftopentechnologies.wacommon;singleton:=true
-Bundle-Version: 2.4.1.qualifier
+Bundle-Version: 2.5.2.qualifier
 Bundle-Activator: com.microsoftopentechnologies.wacommon.Activator
 Require-Bundle: org.eclipse.ui;bundle-version="3.6.0",
  org.eclipse.core.runtime,
  org.eclipse.jdt.ui;bundle-version="3.6.0",
  org.eclipse.jdt.core;bundle-version="3.6.0",
  org.eclipse.core.resources;bundle-version="3.6.0",
- com.microsoftopentechnologies.windowsazure.tools.sdk;bundle-version="0.6.0"
+ com.microsoftopentechnologies.windowsazure.tools.sdk;bundle-version="0.7.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-Vendor: Microsoft Open Technologies Inc.
 Bundle-ClassPath: .,
  resources/AzureCommons.jar,
  resources/ProjectManagerLibrary.jar,
- resources/AzureManagementUtil.jar
-Export-Package: com.microsoftopentechnologies.wacommon,
+ resources/.cspack.jar
+Export-Package: com.interopbridges.tools.windowsazure,
+ com.microsoftopentechnologies.azurecommons.builder,
+ com.microsoftopentechnologies.azurecommons.deploy,
+ com.microsoftopentechnologies.azurecommons.deploy.model,
+ com.microsoftopentechnologies.azurecommons.deploy.propertypages,
+ com.microsoftopentechnologies.azurecommons.deploy.tasks,
+ com.microsoftopentechnologies.azurecommons.deploy.util,
+ com.microsoftopentechnologies.azurecommons.deploy.wizard,
+ com.microsoftopentechnologies.azurecommons.exception,
+ com.microsoftopentechnologies.azurecommons.messagehandler,
+ com.microsoftopentechnologies.azurecommons.model,
+ com.microsoftopentechnologies.azurecommons.preference,
+ com.microsoftopentechnologies.azurecommons.propertypage,
+ com.microsoftopentechnologies.azurecommons.roleoperations,
+ com.microsoftopentechnologies.azurecommons.startup,
+ com.microsoftopentechnologies.azurecommons.storageregistry,
+ com.microsoftopentechnologies.azurecommons.util,
+ com.microsoftopentechnologies.azurecommons.wacommonutil,
+ com.microsoftopentechnologies.azurecommons.xmlhandling,
+ com.microsoftopentechnologies.deploy.util,
+ com.microsoftopentechnologies.model,
+ com.microsoftopentechnologies.azuremanagementutil.exception,
+ com.microsoftopentechnologies.azuremanagementutil.model,
+ com.microsoftopentechnologies.azuremanagementutil.rest,
+ com.microsoftopentechnologies.azuremanagementutil.task,
+ com.microsoftopentechnologies.azuremanagementutil.util,
+ com.microsoftopentechnologies.wacommon,
  com.microsoftopentechnologies.wacommon.commoncontrols,
  com.microsoftopentechnologies.wacommon.startup,
  com.microsoftopentechnologies.wacommon.storageregistry,
- com.microsoftopentechnologies.wacommon.utils,
- com.microsoftopentechnologies.builder,
- com.microsoftopentechnologies.deploy.deploy,
- com.microsoftopentechnologies.deploy.model,
- com.microsoftopentechnologies.deploy.propertypages,
- com.microsoftopentechnologies.deploy.tasks,
- com.microsoftopentechnologies.deploy.util,
- com.microsoftopentechnologies.deploy.wizard,
- com.microsoftopentechnologies.exception,
- com.microsoftopentechnologies.messagehandler,
- com.microsoftopentechnologies.model,
- com.microsoftopentechnologies.preference,
- com.microsoftopentechnologies.propertypage,
- com.microsoftopentechnologies.roleoperations,
- com.microsoftopentechnologies.startup,
- com.microsoftopentechnologies.storageregistry,
- com.microsoftopentechnologies.util,
- com.microsoftopentechnologies.wacommonutil,
- com.microsoftopentechnologies.xmlhandling,
- com.interopbridges.tools.windowsazure,
- com.microsoftopentechnologies.rest
- 
- 
+ com.microsoftopentechnologies.wacommon.utils

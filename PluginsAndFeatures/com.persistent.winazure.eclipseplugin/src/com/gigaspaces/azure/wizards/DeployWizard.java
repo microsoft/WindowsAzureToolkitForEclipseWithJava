@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import waeclipseplugin.Activator;
 
-import com.gigaspaces.azure.util.PreferenceUtilPubWizard;
+import com.interopbridges.tools.windowsazure.DeploymentSlot;
 import com.interopbridges.tools.windowsazure.OSFamilyType;
 import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureCertificate;
@@ -54,23 +54,22 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 import com.microsoft.windowsazure.management.compute.models.ServiceCertificateListResponse.Certificate;
 import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
-import com.microsoftopentechnologies.deploy.model.AutoUpldCmpnts;
-import com.microsoftopentechnologies.deploy.model.CertificateUpload;
-import com.microsoftopentechnologies.deploy.model.CertificateUploadList;
-import com.microsoftopentechnologies.deploy.model.RemoteDesktopDescriptor;
-import com.microsoftopentechnologies.deploy.util.WizardCache;
-import com.microsoftopentechnologies.deploy.wizard.ConfigurationEventArgs;
-import com.microsoftopentechnologies.deploy.wizard.DeployWizardUtilMethods;
-import com.microsoftopentechnologies.model.StorageService;
-import com.microsoftopentechnologies.roleoperations.JdkSrvConfigUtilMethods;
-import com.microsoftopentechnologies.storageregistry.StorageAccount;
-import com.microsoftopentechnologies.storageregistry.StorageAccountRegistry;
+import com.microsoftopentechnologies.azurecommons.deploy.model.AutoUpldCmpnts;
+import com.microsoftopentechnologies.azurecommons.deploy.model.CertificateUpload;
+import com.microsoftopentechnologies.azurecommons.deploy.model.CertificateUploadList;
+import com.microsoftopentechnologies.azurecommons.deploy.model.RemoteDesktopDescriptor;
+import com.microsoftopentechnologies.azurecommons.deploy.wizard.ConfigurationEventArgs;
+import com.microsoftopentechnologies.azurecommons.deploy.wizard.DeployWizardUtilMethods;
+import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
+import com.microsoftopentechnologies.azurecommons.roleoperations.JdkSrvConfigUtilMethods;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccount;
+import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
-import com.microsoftopentechnologies.wacommonutil.CerPfxUtil;
-import com.microsoftopentechnologies.wacommonutil.EncUtilHelper;
-import com.microsoftopentechnologies.wacommonutil.PreferenceSetUtil;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.EncUtilHelper;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.PreferenceSetUtil;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
@@ -112,6 +111,18 @@ public class DeployWizard extends Wizard {
 			Activator.getDefault().log(Messages.error, e);
 		}
 	}
+	
+	public DeployWizard(IProject projectToPublish) {
+		super();
+		selectedProject = projectToPublish;
+		try {
+			setWindowTitle(Messages.publishWiz);
+			setDefaultPageImageDescriptor(Activator.
+					getImageDescriptor(Activator.DEPLOY_IMAGE));
+		} catch (IOException e) {
+			Activator.getDefault().log(Messages.error, e);
+		}
+	}
 
 	/**
 	 * Returns currently selected project.
@@ -142,6 +153,9 @@ public class DeployWizard extends Wizard {
 			WindowsAzureProjectManager waProjManager =
 					WindowsAzureProjectManager.load(
 							new File(selectedProject.getLocation().toOSString()));
+			
+			// Update global properties in package.xml
+			updateGlobalPropertiesinPackage(waProjManager);
 			
 			// Configure or remove remote access settings
 			boolean status = handleRDPSettings(waProjManager);
@@ -243,17 +257,6 @@ public class DeployWizard extends Wizard {
 			waProjManager = WindowsAzureProjectManager.
 					load(new File(selectedProject.getLocation().toOSString()));
 
-			// Cache selected subscription, cloud service & storage account
-			WizardCache cacheObj = new WizardCache(
-					WizardCacheManager.getCurrentPublishData().getCurrentSubscription().getName(),
-					WizardCacheManager.getCurentHostedService().getServiceName(),
-					WizardCacheManager.getCurrentStorageAcount().getServiceName());
-			PreferenceUtilPubWizard.save(String.format("%s%s%s",
-					Activator.PLUGIN_ID,
-					com.persistent.util.Messages.proj,
-					selectedProject.getName()),
-					cacheObj);
-
 			WAAutoStorageConfJob autoStorageConfJob = new WAAutoStorageConfJob(Messages.confStorageAccount);
 			autoStorageConfJob.setManager(waProjManager);
 			autoStorageConfJob.schedule();
@@ -352,6 +355,17 @@ public class DeployWizard extends Wizard {
 			return false;
 		}
 		return true;
+	}
+
+	private void updateGlobalPropertiesinPackage(WindowsAzureProjectManager waProjManager) throws WindowsAzureInvalidProjectOperationException {
+		String currentSubscriptionID = WizardCacheManager.getCurrentPublishData().getCurrentSubscription().getSubscriptionID();
+		waProjManager.setPublishSubscriptionId(currentSubscriptionID);
+		waProjManager.setPublishSettingsPath(WizardCacheManager.getPublishSettingsPath(currentSubscriptionID));		
+		waProjManager.setPublishCloudServiceName(WizardCacheManager.getCurentHostedService().getServiceName());
+		waProjManager.setPublishRegion(WizardCacheManager.getCurentHostedService().getProperties().getLocation());
+		waProjManager.setPublishStorageAccountName(WizardCacheManager.getCurrentStorageAcount().getServiceName());
+		waProjManager.setPublishDeploymentSlot(DeploymentSlot.valueOf(WizardCacheManager.getCurrentDeplyState()));
+		waProjManager.setPublishOverwritePreviousDeployment(Boolean.parseBoolean(WizardCacheManager.getUnpublish()));		
 	}
 
 	@Override
@@ -738,10 +752,19 @@ public class DeployWizard extends Wizard {
 								}
 							} else if (cmpntType.equals(
 									com.persistent.winazureroles.Messages.typeSrvDply)){
-								component.setCloudDownloadURL(JdkSrvConfigUtilMethods.
-										prepareCloudBlobURL(
-												component.getImportPath(),
-												accUrl));
+								String srvName = role.getServerCloudName();
+								if (srvName == null || srvName.isEmpty()) {
+									component.setCloudDownloadURL(JdkSrvConfigUtilMethods.
+											prepareCloudBlobURL(
+													component.getImportPath(),
+													accUrl));
+								} else {
+									component.setCloudDownloadURL(
+											JdkSrvConfig.prepareUrlForThirdPartySrv(
+													srvName,
+													accUrl));
+								}
+
 							} else {
 								component.setCloudDownloadURL(JdkSrvConfigUtilMethods.
 										prepareUrlForApp(

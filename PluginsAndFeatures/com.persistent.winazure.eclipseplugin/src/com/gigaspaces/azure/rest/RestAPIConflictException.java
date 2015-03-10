@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 */
 package com.gigaspaces.azure.rest;
 
-import com.microsoftopentechnologies.deploy.model.Response;
-import com.microsoftopentechnologies.exception.RestAPIException;
+import com.microsoftopentechnologies.azurecommons.deploy.model.Response;
+import com.microsoftopentechnologies.azurecommons.exception.RestAPIException;
 
 
 public class RestAPIConflictException extends RestAPIException {

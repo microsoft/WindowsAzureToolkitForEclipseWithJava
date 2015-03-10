@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?NLS TYPE="org.eclipse.help.contexts"?>
+<contexts>
+	<context id="ai_config_dialog">
+   	<description>
+		This wizard enables you to configure Application Insights Library.
+  	</description>
+  	<topic label="How to use Application Insights in Java" href="http://azure.microsoft.com/en-us/documentation/articles/app-insights-java-get-started/"/>
+   </context> 
+</contexts>

@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -41,11 +41,17 @@ import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 public class AcceptLicenseAgreementDlg extends Dialog {
 	private Button acceptBtn;
 	private Link urlLink;
+	/*
+	 * isForJdk : true = License dialog for JDK
+	 * isForJdk : false = License dialog for server
+	 */
+	private boolean isForJdk;
 	protected static File cmpntFile = new
 			File(WAEclipseHelper.getTemplateFile(Messages.cmpntFileName));
 
-	protected AcceptLicenseAgreementDlg(Shell parentShell) {
+	protected AcceptLicenseAgreementDlg(Shell parentShell, boolean isForJdk) {
 		super(parentShell);
+		this.isForJdk = isForJdk;
 	}
 
 	@Override
@@ -65,7 +71,22 @@ public class AcceptLicenseAgreementDlg extends Dialog {
 	}
 
 	protected Control createContents(Composite parent) {
-		String jdkName = JdkSrvConfig.getThrdPrtJdkCmb().getText();
+		String name = "";
+		String url = "";
+		try {
+			if (isForJdk) {
+				name = JdkSrvConfig.getThrdPrtJdkCmb().getText();
+				url = WindowsAzureProjectManager.
+						getLicenseUrl(name, cmpntFile);
+			} else {
+				name = JdkSrvConfig.getThrdPrtSrvCmb().getText();
+				url = WindowsAzureProjectManager.
+						getThirdPartyServerLicenseUrl(name, cmpntFile);
+			}
+		} catch (WindowsAzureInvalidProjectOperationException e) {
+			Activator.getDefault().log(e.getMessage());
+		}
+		
 		Composite container = new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout(1, false);
 		container.setLayout(gridLayout);
@@ -73,14 +94,8 @@ public class AcceptLicenseAgreementDlg extends Dialog {
 		gridData.horizontalIndent = 5;
 		container.setLayoutData(gridData);
 		Label lblName = new Label(container, SWT.LEFT);
-		lblName.setText(String.format(Messages.aggMsg, jdkName));
-		String url = "";
-		try {
-			url = WindowsAzureProjectManager.
-					getLicenseUrl(jdkName, cmpntFile);
-		} catch (WindowsAzureInvalidProjectOperationException e) {
-			Activator.getDefault().log(e.getMessage(), e);
-		}
+		lblName.setText(String.format(Messages.aggMsg, name));
+		
 		urlLink = new Link(container, SWT.LEFT);
 		urlLink.setText(String.format(Messages.aggLnk, url, url));
 		gridData = new GridData();

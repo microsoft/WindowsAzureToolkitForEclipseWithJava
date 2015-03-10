@@ -1,5 +1,5 @@
 /*
- Copyright 2014 Microsoft Open Technologies, Inc.
+ Copyright 2015 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.microsoftopentechnologies.windowsazure.tools.build;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Vector;
 
+import com.microsoftopentechnologies.windowsazure.tools.cspack.*;
 import org.apache.tools.ant.BuildException;
 
 /**
@@ -243,11 +243,17 @@ public class WorkerRole {
                 throw new BuildException("The required StorageClient.dll cannot be found. Make sure you have installed the latest Azure SDK for .NET");
             } else {
                 wapackage.copyFile(storageClientSrcFile, storageClientDestFile);
-            }
-        } else {
-            // copy dll from 'sdkKit' directory - for linux and Mac
-            storageClientSrcFile = new File(String.format("%s%s%s", wapackage.getSdkKit(), File.separator, WindowsAzurePackage.STORAGEDLL_FILENAME));
-            wapackage.copyFile(storageClientSrcFile, storageClientDestFile);
-        }
+			}
+		} else {
+			// copy dll from 'sdkKit' directory - for linux and Mac
+			try {
+				com.microsoftopentechnologies.windowsazure.tools.cspack.Utils.copyJarEntry(
+						String.format("%s%s%s%s", "/", wapackage.getSdkKit(), File.separator, WindowsAzurePackage.STORAGEDLL_FILENAME), storageClientDestFile);
+			} catch (IOException e) {
+				throw new BuildException("The required StorageClient.dll cannot be found.", e);
+			}
+//		storageClientSrcFile = new File(String.format("%s%s%s", wapackage.getSdkKit(), File.separator, WindowsAzurePackage.STORAGEDLL_FILENAME));
+//            wapackage.copyFile(storageClientSrcFile, storageClientDestFile);
+		}
 	}
 }

@@ -7,6 +7,8 @@
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <modules>
+    <module>AddLibrary/AppInsights/com.microsoft.applicationinsights.feature</module>
+	<module>AddLibrary/AppInsights/com.microsoft.applicationinsights.ui</module>
 	<module>AddLibrary/AzureLibraries/com.microsoftopentechnologies.windowsazure.tools.sdk</module>
     <module>AddLibrary/AzureLibraries/com.microsoftopentechnologies.windowsazure.tools.sdk.feature</module>
 	<module>AddLibrary/AzureLibraries/com.microsoftopentechnologies.windowsazure.tools.wasdkjava.ui</module>

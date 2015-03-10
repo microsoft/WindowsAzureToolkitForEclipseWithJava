@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -31,7 +31,8 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.dialogs.IPageChangedListener;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.PageChangedEvent;
@@ -55,11 +56,12 @@ import org.eclipse.ui.dialogs.WorkingSetGroup;
 
 import waeclipseplugin.Activator;
 
+import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
-import com.microsoftopentechnologies.roleoperations.WizardUtilMethods;
+import com.microsoftopentechnologies.azurecommons.roleoperations.WizardUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.builder.WADependencyBuilder;
 import com.persistent.ui.propertypage.WAProjectNature;
@@ -85,32 +87,43 @@ implements INewWizard, IPageChangedListener {
     		+ Messages.pWizToolBuilder
     		+ File.separator
             + Messages.pWizLaunchFile;
-
     /**
      * Default constructor.
      */
     public WAProjectWizard() {
+    	long startMiliseconds = System.currentTimeMillis();
         setWindowTitle(Messages.pWizWindowTitle);
-        		
+        Activator.getDefault().log("\n\nWizard setting title - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
+        startMiliseconds = System.currentTimeMillis();
         String zipFile = "";
         try {
-        	zipFile  = String.format("%s%s%s%s%s%s%s",
-        			Platform.getInstallLocation().getURL()
-        			.getPath().toString(),
-        			File.separator, Messages.pluginFolder,
+        	zipFile  = String.format("%s%s%s%s%s",
+        			PluginUtil.pluginFolder,
         			File.separator, Messages.pluginId,
         			File.separator,
         			Messages.starterKitFileName);
-
+        	
         	//Extract the WAStarterKitForJava.zip to temp dir
         	waProjMgr = WindowsAzureProjectManager.create(zipFile);
+        	Activator.getDefault().log("Total Elapsed time in millisec - StarterKit extraction :" + (System.currentTimeMillis() - startMiliseconds));
+        	startMiliseconds = System.currentTimeMillis();
         	//	By deafult - disabling remote access
         	//  when creating new project
         	waProjMgr.setRemoteAccessAllRoles(false);
+        	Activator.getDefault().log("Remote access configuration - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
+        	startMiliseconds = System.currentTimeMillis();
         	waProjMgr.setClassPathInPackage("azure.lib.dir", PluginUtil.getAzureLibLocation());
+        	Activator.getDefault().log("Setting Azure lib in classpath - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
+        	startMiliseconds = System.currentTimeMillis();
         	waRole = waProjMgr.getRoles().get(0);
+        	Activator.getDefault().log("Getting role - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
+        	startMiliseconds = System.currentTimeMillis();
         	// remove http endpoint
-        	waRole.getEndpoint(Messages.httpEp).delete();
+        	WindowsAzureEndpoint endpoint = waRole.getEndpoint(Messages.httpEp);
+        	if (endpoint != null) {
+        		endpoint.delete();
+        	}
+        	Activator.getDefault().log("Getting endpoint - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
         } catch (IOException e) {
         	PluginUtil.displayErrorDialogAndLog(this.getShell(),
         			Messages.pWizErrTitle, Messages.pWizErrMsg, e);
@@ -181,13 +194,17 @@ implements INewWizard, IPageChangedListener {
         };
         try {
         	/*
-        	 * Check if third party JDK is selected
+        	 * Check if third party JDK and server is selected
         	 * then license is accepted or not.
         	 */
         	boolean tempAccepted = true;
         	if (WATabPage.isThirdPartyJdkChecked()
         			&& !WATabPage.isAccepted()) {
-        		tempAccepted = JdkSrvConfig.createAccLicenseAggDlg();
+        		tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(true);
+        	}
+        	if (WATabPage.isThirdPartySrvChecked()
+        			&& !WATabPage.isServerAccepted()) {
+        		tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(false);
         	}
         	if (tempAccepted) {
         		getContainer().run(true, false, runnable);
@@ -238,7 +255,7 @@ implements INewWizard, IPageChangedListener {
             //logic for handling deploy page components and their values.
             if (!depMap.isEmpty()) {
             	File templateFile = new File(depMap.get("tempFile"));
-            	WizardUtilMethods.configureJDKServer(role, depMap);
+            	role = WizardUtilMethods.configureJDKServer(role, depMap);
                 /*
                  * Handling adding server application
                  * without configuring server/JDK.
@@ -277,7 +294,7 @@ implements INewWizard, IPageChangedListener {
                     }
                 }
             }
-            WizardUtilMethods.configureKeyFeatures(role, ftrMap);
+            role = WizardUtilMethods.configureKeyFeatures(role, ftrMap);
 
             waProjMgr.save();
             WindowsAzureProjectManager.moveProjFromTemp(projName, projLocation);
@@ -464,7 +481,7 @@ implements INewWizard, IPageChangedListener {
     	// Server
     	values.put("serChecked" , Boolean.valueOf(
     			tabPg.isSrvChecked()).toString());
-    	values.put("servername", tabPg.getServerName());
+    	values.put("servername", JdkSrvConfig.getServerName());
     	values.put("serLoc", tabPg.getServerLoc());
     	values.put("tempFile", WAEclipseHelper.
     			getTemplateFile(Messages.cmpntFile));
@@ -473,6 +490,10 @@ implements INewWizard, IPageChangedListener {
     			JdkSrvConfig.isSrvDownloadChecked()).toString());
     	values.put("srvAutoDwnldChecked" , Boolean.valueOf(
     			JdkSrvConfig.isSrvAutoUploadChecked()).toString());
+    	values.put("srvThrdPartyChecked" , Boolean.valueOf(
+    			tabPg.isThirdPartySrvChecked()).toString());
+    	values.put("srvThrdPartyName", tabPg.getThirdPartyServerName());
+    	values.put("srvThrdAltSrc", JdkSrvConfig.getServerCloudAltSource());
     	values.put("srvUrl" , tabPg.getSrvUrl());
     	values.put("srvKey" , tabPg.getSrvKey());
     	values.put("srvHome", tabPg.getSrvHomeDir());
@@ -513,6 +534,9 @@ implements INewWizard, IPageChangedListener {
         if (element instanceof IProject) {
             resource = (IResource) element;
             selProject = resource.getProject();
+        } else if (element instanceof IJavaProject) {
+            IJavaProject proj = ((IJavaElement) element).getJavaProject();
+            selProject = proj.getProject();
         }
         return selProject;
     }

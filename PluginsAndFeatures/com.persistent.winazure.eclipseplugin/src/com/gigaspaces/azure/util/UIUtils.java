@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -32,8 +32,9 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 
 import com.gigaspaces.azure.wizards.WizardCacheManager;
-import com.microsoftopentechnologies.deploy.util.PublishData;
-import com.microsoftopentechnologies.model.Subscription;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
+import com.microsoftopentechnologies.azuremanagementutil.model.Subscription;
+import com.microsoftopentechnologies.azuremanagementutil.rest.WindowsAzureRestUtils;
 import com.persistent.util.MessageUtil;
 
 public class UIUtils {
@@ -144,7 +145,7 @@ public class UIUtils {
 		GridData gridData = new GridData();
 		gridData.horizontalIndent = 3;
 		gridData.horizontalSpan = horiSpan;
-		gridData.widthHint = 260;
+		gridData.widthHint = 280;
 		importBtn.setText(Messages.impFrmPubSetLbl);
 		importBtn.setLayoutData(gridData);
 		return importBtn;
@@ -160,7 +161,7 @@ public class UIUtils {
 			File file) {
 		PublishData data;
 		try {
-			data = com.microsoftopentechnologies.deploy.util.UIUtils.parse(file);
+			data = com.microsoftopentechnologies.azurecommons.deploy.util.UIUtils.parse(file);
 		} catch (JAXBException e) {
 			MessageUtil.displayErrorDialog(new Shell(),
 					Messages.importDlgTitle,
@@ -169,9 +170,9 @@ public class UIUtils {
 							Messages.failedToParse));
 			return null;
 		}
-		String subscriptionId;
 		try {
-			subscriptionId = com.microsoftopentechnologies.deploy.util.UIUtils.installPublishSettings(file, data.getSubscriptionIds().get(0), null);
+			// I am of the opinion that this can be completely removed - need to revisit
+			WindowsAzureRestUtils.getConfiguration(file, data.getSubscriptionIds().get(0));
 		} catch (Exception e) {
             String errorMessage;
             Throwable cause = e.getCause();
@@ -188,7 +189,7 @@ public class UIUtils {
 							Messages.failedToParse));
 			return null;
 		}
-		if (WizardCacheManager.findPublishDataBySubscriptionId(subscriptionId) != null) {
+		if (WizardCacheManager.findPublishDataBySubscriptionId(data.getSubscriptionIds().get(0)) != null) {
             MessageDialog.openInformation(new Shell(), Messages.loadingCred, Messages.credentialsExist);
 		}
 		data.setCurrentSubscription(data.getPublishProfile().

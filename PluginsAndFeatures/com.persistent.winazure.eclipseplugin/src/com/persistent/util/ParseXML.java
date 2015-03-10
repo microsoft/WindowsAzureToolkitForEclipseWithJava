@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies, Inc.
+ * Copyright 2015 Microsoft Open Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import com.microsoftopentechnologies.xmlhandling.ParseXMLUtilMethods;
+import com.microsoftopentechnologies.azurecommons.xmlhandling.ParseXMLUtilMethods;
 
 public class ParseXML {
 

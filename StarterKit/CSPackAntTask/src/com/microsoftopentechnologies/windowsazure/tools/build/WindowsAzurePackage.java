@@ -1,5 +1,5 @@
 /*
- Copyright 2014 Microsoft Open Technologies, Inc.
+ Copyright 2015 Microsoft Open Technologies, Inc.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -24,6 +24,16 @@ import java.net.SocketException;
 import java.net.URL;
 import java.util.*;
 
+import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
+import com.microsoftopentechnologies.azuremanagementutil.rest.WindowsAzureRestUtils;
+import com.microsoftopentechnologies.azuremanagementutil.rest.WindowsAzureServiceManagement;
+import com.microsoftopentechnologies.windowsazure.tools.cspack.Configuration;
+import com.microsoftopentechnologies.windowsazure.tools.cspack.PackageCreator;
+import com.microsoftopentechnologies.windowsazure.tools.build.Utils;
+import com.microsoftopentechnologies.windowsazure.tools.cspack.domain.xsd.serviceconfiguration.ConfigurationSettings.Setting;
+import com.microsoftopentechnologies.windowsazure.tools.cspack.domain.xsd.serviceconfiguration.Role;
+import com.microsoftopentechnologies.windowsazure.tools.cspack.domain.xsd.serviceconfiguration.ServiceConfiguration;
+
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
@@ -31,6 +41,7 @@ import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.taskdefs.Zip;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.selectors.FilenameSelector;
+import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 /**
@@ -44,12 +55,14 @@ public class WindowsAzurePackage extends Task {
 	private static final String DEFAULT_CONFIGURATION_FILE_NAME = "ServiceConfiguration.cscfg";
 	private static final String DEFAULT_PACKAGE_SUBDIR = "deploy";
 	private static final String DEFAULT_EMULATOR_TOOLS_SUBDIR = "emulatorTools";
+	private static final String DEFAULT_CLOUD_TOOLS_SUBDIR = "cloudTools";
 	private static final String BUILD_ERROR_FILENAME = "BuildFailure.txt";
 	public static final String DEFAULT_UTIL_SUBDIR = "util"; // relative to approot
 	public static final String UTIL_UNZIP_FILENAME = "unzip.vbs";
 	public static final String UTIL_DOWNLOAD_FILENAME = "download.vbs";
 	public static final String UTIL_WASH_FILENAME = "wash.cmd";
 	public static final String UTIL_WASH_PATH = DEFAULT_UTIL_SUBDIR + "\\" + UTIL_WASH_FILENAME;
+    private static final String SDK_PROPERTIES = "sdk.properties";
 
 	public static final String INTERNAL_STARTUP_FILE_NAME = ".startup.cmd";
 	private static final String INTERNAL_STARTUP_SUBDIR = "startup";
@@ -74,9 +87,11 @@ public class WindowsAzurePackage extends Task {
 	public static final String TEMPLATE_TOKEN_VARIABLES_SCRIPT = "${Variables}";
 	public static final String TEMPLATE_TOKEN_USER_STARTUP_SCRIPT = "${UserStartup}";
 	private static final String TEMPLATE_TOKEN_PORTALURL = "${PortalURL}";
-	// Xpath expression to get names of workerroles whose cache config is referring to development storage
+	// Roles whose cache configuration is development storage
 	private static final String DEV_CACHE_CONFIG = "/ServiceConfiguration/Role[ConfigurationSettings/Setting[" +
-			"@name='Microsoft.WindowsAzure.Plugins.Caching.ConfigStoreConnectionString' and @value='UseDevelopmentStorage=true']]/@name";
+								"@name='Microsoft.WindowsAzure.Plugins.Caching.ConfigStoreConnectionString' and @value='UseDevelopmentStorage=true']]/@name";
+	private String cacheSettingStr = "/ServiceConfiguration/Role[@name='%s']/ConfigurationSettings/Setting[@name='%s']";
+	public static final String SET_CONFIGCONN_VAL_CLOULD = "BlobEndpoint=%s;AccountName=%s;AccountKey=%s";
     public static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
 
 	public static String newline = System.getProperty("line.separator");
@@ -93,6 +108,7 @@ public class WindowsAzurePackage extends Task {
 	private String definitionFileName;
 	private String configurationFileName;
 	private String emulatorToolsDir;
+	private String cloudToolsDir;
 	private String templatesDir;
 	private String portalURL;
 	private String rolePropertiesFileName = null;
@@ -102,6 +118,17 @@ public class WindowsAzurePackage extends Task {
 	
 	private DownloadManager downloadManager;
 	
+	// To support auto storage in Ant task
+	private String publishSettingsPath;
+	private String subscriptionId;
+	private String storageAccountName;
+	private String region;
+	private final String auto = "auto";
+	List<AutoUpldCmpnts> mdfdCmpntList = new ArrayList<AutoUpldCmpnts>();
+	List<String> roleMdfdCache = new ArrayList<String>();
+	String settingName = "Microsoft.WindowsAzure.Plugins.Caching.ConfigStoreConnectionString";
+	String valueName = "UseDevelopmentStorage=true";
+
 	/**
 	 * WindowsAzurePackage constructor
 	 */
@@ -110,6 +137,49 @@ public class WindowsAzurePackage extends Task {
 		this.packageType = PackageType.cloud;
 		this.definitionFileName = DEFAULT_DEFINITION_FILE_NAME;
 		this.configurationFileName = DEFAULT_CONFIGURATION_FILE_NAME;
+        try {
+            InputStream input = getClass().getClassLoader().getResourceAsStream(SDK_PROPERTIES);
+            Properties properties = new Properties();
+            properties.load(input);
+            for (String propertyName : properties.stringPropertyNames()) {
+                String propertyValue = properties.getProperty(propertyName);
+                System.setProperty(propertyName, propertyValue);
+            }
+        } catch (IOException ex) {
+            log(ex, Project.MSG_WARN);
+        }
+	}
+
+	public String getPublishSettingsPath() {
+		return publishSettingsPath;
+	}
+
+	public void setPublishSettingsPath(String publishSettingsPath) {
+		this.publishSettingsPath = publishSettingsPath;
+	}
+
+	public String getSubscriptionId() {
+		return subscriptionId;
+	}
+
+	public void setSubscriptionId(String subscriptionId) {
+		this.subscriptionId = subscriptionId;
+	}
+
+	public String getStorageAccountName() {
+		return storageAccountName;
+	}
+
+	public void setStorageAccountName(String storageAccountName) {
+		this.storageAccountName = storageAccountName;
+	}
+
+	public String getRegion() {
+		return region;
+	}
+
+	public void setRegion(String region) {
+		this.region = region;
 	}
 
 	/**
@@ -207,10 +277,6 @@ public class WindowsAzurePackage extends Task {
 		return new File(this.packageDir);
 	}
 
-    public void setSdkKit(String sdkKit) {
-        this.sdkKit = sdkKit;
-    }
-
     public String getSdkKit() {
         return sdkKit;
     }
@@ -248,6 +314,14 @@ public class WindowsAzurePackage extends Task {
 	}
 	
 	/**
+	 * Sets cloudtoolsdir attribute
+	 * @param emulatorToolsDir
+	 */
+	public void setCloudToolsDir(String cloudToolsDir) {
+		this.cloudToolsDir = cloudToolsDir;
+	}
+	
+	/**
 	 * Sets verifydownloads attribute
 	 * @param verifyDownloads
 	 */
@@ -257,11 +331,254 @@ public class WindowsAzurePackage extends Task {
 	public boolean getVerifyDownloads() {
 		return this.verifyDownloads;
 	}
+	
+	private String getThrdPartyJdkCloudValue(WorkerRole role) {
+		String cldVal = "";
+		Vector<StartupEnv> envList = role.getVariables();
+		for (int j = 0; j < envList.size(); j++) {
+			StartupEnv env = envList.get(j);
+			if (env.getName().equalsIgnoreCase("JAVA_HOME")) {
+				cldVal = env.getCloudValue();
+				if (cldVal != null && !cldVal.isEmpty() && cldVal.contains("zulu")) {
+					return cldVal;
+				}
+			}
+		}
+		return cldVal;
+	}
+	
+	private String getThrdPartyServerCloudValue(String roleName)
+	throws Exception {
+		String packageXmlPath = this.projectDir + File.separator + "package.xml";
+		Document doc = XMLUtil.parseXMLFile(new File(packageXmlPath));
+		return XMLUtil.getThrdPartyServerCloudValue(doc, roleName);
+	}
+
+	/**
+	 * API to configure caching settings for storage account if mode is 'auto' 
+	 * @param roleName
+	 * @param storageName
+	 * @param curAcc
+	 * @throws Exception
+	 */
+	private void configureAutoCacheStorageAccount(String roleName,	StorageService curAcc) throws Exception {
+		String cscfgPath = projectDir + File.separator + DEFAULT_CONFIGURATION_FILE_NAME;
+		Document doc = XMLUtil.parseXMLFile(new File(cscfgPath));
+		ServiceConfiguration serviceConfiguration = com.microsoftopentechnologies.windowsazure.tools.cspack.Utils.
+					parseXmlFile(ServiceConfiguration.class, cscfgPath);
+		
+		Role role = serviceConfiguration.getRole(roleName);
+		if (role != null && role.getConfigurationSettings() != null && role.getConfigurationSettings().getSetting() != null) {
+			// Iterate over config settings
+			for (Setting setting : role.getConfigurationSettings().getSetting()) {
+				if (setting.getName().equalsIgnoreCase(settingName) && setting.getValue().equalsIgnoreCase(valueName)) {
+					// Get storage account and create if needed
+					if (curAcc == null) {
+						if (!Utils.isValidFilePath(publishSettingsPath)) {
+							throw new BuildException("Storage account is specified as 'auto', ensure project contains valid Publish information");
+						}
+						curAcc = createStorageAccountIfNotExists();
+					}
+					
+					roleMdfdCache.add(roleName);
+					String value = String.format(SET_CONFIGCONN_VAL_CLOULD,
+							curAcc.getStorageAccountProperties().getEndpoints().get(0).toString(),
+							curAcc.getServiceName(), curAcc.getPrimaryKey());
+					String exp = String.format(cacheSettingStr, role.getName(), setting.getName());
+					HashMap<String, String> nodeAttribites = new HashMap<String, String>();
+					nodeAttribites.put("name", settingName);
+					nodeAttribites.put("value", value);
+					XMLUtil.updateElementAttributeValue(doc, exp, nodeAttribites);
+					this.log(roleName + " : Temporarily replaced caching 'auto' settings.");
+				}
+			}
+			XMLUtil.saveXMLDocument(cscfgPath, doc);
+		}
+	}
+
+	/**
+	 * API to configure settings for storage account if mode is 'auto'
+	 * @throws Exception
+	 */
+	private void configureAutoCloudUrl() throws Exception {
+		mdfdCmpntList.clear();
+		roleMdfdCache.clear();
+		
+		// Applicable only for package type 'cloud'
+		if (this.packageType == PackageType.local) {
+			// Previous when cloudsrc=auto, starter kit used to consider it as null but now for selected components 
+			// need to replace auto with storage account URL. Resetting back to null for emulator.
+			replaceAutoURLWithNull();
+			return;
+		}
+		
+		StorageService curAcc = null;
+		String curKey = null;
+		String accUrl = null;
+		
+		// Iterate over role list.
+		Vector<WorkerRole> roles = this.roles;
+		if (roles != null && roles.size() > 0) {
+			for (int i = 0; i < roles.size(); i++) {
+				WorkerRole role = roles.get(i);
+	
+				// Iterate over component definitions.
+				Vector<Component> cmpnntsList = role.getComponents();
+				if (cmpnntsList != null && cmpnntsList.size() > 0) {
+					for (int j = 0; j < cmpnntsList.size(); j++) {
+						Component component = cmpnntsList.get(j);
+						CloudUpload mode = component.getCloudUpload();
+						// Just to be on the safe side
+						boolean replaceAutoURLWithNull=true;
+						
+						if (mode != null) {
+							String cmpntType = component.getType();
+							
+							if (cmpntType != null) {
+							
+								if (((cmpntType.equals("jdk.deploy") || cmpntType.equals("server.deploy")) && mode == CloudUpload.AUTO)
+																		|| (cmpntType.equals("server.app") && mode == CloudUpload.ALWAYS)) {
+									// Check storage account is not specified, i.e URL is auto
+									if (component.getCloudSrc() != null && component.getCloudSrc().equalsIgnoreCase("auto")) {
+										replaceAutoURLWithNull = false;
+										// Get storage account and create if needed.
+										if (curAcc == null) {
+											// In next release validate rest of the parameters as well.
+											if (!Utils.isValidFilePath(publishSettingsPath)) {
+												throw new BuildException("Storage account is specified as 'auto', ensure project contains valid Publish information");
+											}
+											curAcc = createStorageAccountIfNotExists();
+											curKey = curAcc.getPrimaryKey();
+											accUrl = curAcc.getStorageAccountProperties().getEndpoints().get(0).toString();
+										}
+									
+										if (cmpntType.equals("jdk.deploy")) {
+											String cloudValue = getThrdPartyJdkCloudValue(role);
+											if (cloudValue != null && !cloudValue.isEmpty() && component.getCloudAltSrc() != null) {
+												component.setCloudSrc(Utils.prepareUrlForThirdPartyJdk(cloudValue, accUrl));
+											} else {
+												component.setCloudSrc(Utils.prepareCloudBlobURL(component.getImportSrc(), accUrl));
+											}
+										} else if (cmpntType.equals("server.deploy")){
+											String cloudValue = getThrdPartyServerCloudValue(role.getName());
+											if (component.getCloudAltSrc() != null && cloudValue != null) {
+												component.setCloudSrc(Utils.prepareUrlForThirdPartyJdk(cloudValue, accUrl));
+											} else {
+												component.setCloudSrc(Utils.prepareCloudBlobURL(component.getImportSrc(), accUrl));
+											}
+										} else {
+											component.setCloudSrc(Utils.prepareUrlForApp(component.getImportAs(), accUrl));
+										}
+					
+										component.setCloudKey(curKey);
+									
+										// Save components that are modified
+										AutoUpldCmpnts obj = new AutoUpldCmpnts(role.getName());
+									
+										/*
+										 * Check list contains entry with this role name,
+										 * if yes then just add index of entry to list else create new object.
+										 */
+										if (mdfdCmpntList.contains(obj)) {
+											int index = mdfdCmpntList.indexOf(obj);
+											AutoUpldCmpnts presentObj =	mdfdCmpntList.get(index);
+											if (!presentObj.getCmpntIndices().contains(j)) {
+												presentObj.getCmpntIndices().add(j);
+											}
+										} else {
+											mdfdCmpntList.add(obj);
+											obj.getCmpntIndices().add(j);
+										}
+										this.log(role.getName() + " - " + cmpntType + " : Temporarily replaced 'auto' settings.");
+									}
+								}
+							}
+						} 
+						
+						if (replaceAutoURLWithNull) {
+							replaceAutoURLWithNull(component);
+						}
+					}
+				}
+				// replace -auto cache storage account
+				configureAutoCacheStorageAccount(role.getName(), curAcc);
+			}
+		}
+	}
+	
+	/**
+	 * Replaces components cloudsrc with null in all roles if cloudsrc=auto
+	 */
+	private void replaceAutoURLWithNull() {
+		// Iterate over role list.
+		Vector<WorkerRole> roles = this.roles;
+		
+		for (int i = 0; i < roles.size(); i++) {
+			WorkerRole role = roles.get(i);
+
+			// Iterate over component definitions.
+			Vector<Component> cmpnntsList = role.getComponents();
+			if (cmpnntsList != null) {
+				for (int j = 0; j < cmpnntsList.size(); j++) {
+					replaceAutoURLWithNull(cmpnntsList.get(j));
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Replaces components cloudsrc with null if cloudsrc=AUTO_URL
+	 */
+	private void replaceAutoURLWithNull(Component component) {
+		if (component.getCloudSrc() != null && component.getCloudSrc().equals("auto")) {
+			component.setCloudSrc(null);
+		}
+	}
+	
+	
+
+	private StorageService createStorageAccountIfNotExists() throws Exception {
+		File pubFile =  new File(this.publishSettingsPath);
+		if (Utils.isNullOrEmpty(subscriptionId)) {
+			try {
+				subscriptionId = XMLUtil.getDefaultSubscription(pubFile);
+			} catch (Exception e) {
+				throw new BuildException(e);
+			}
+		}
+		
+		StorageService storageAccount = null;
+		ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+		try {
+			WindowsAzureServiceManagement instance = Utils.getServiceInstance();
+			
+			Thread.currentThread().setContextClassLoader(WindowsAzurePackage.class.getClassLoader());
+			
+			com.microsoft.windowsazure.Configuration configuration =
+					WindowsAzureRestUtils.getConfiguration(pubFile, subscriptionId);
+			
+			storageAccount = Utils.createStorageAccountIfNotExists(
+					configuration, instance, storageAccountName, region);
+		} finally {
+			Thread.currentThread().setContextClassLoader(currentClassLoader);
+		}
+		
+		return storageAccount;
+	}
 
 	/**
 	 * Executes the task
 	 */
-	public void execute() throws BuildException {		
+	public void execute() throws BuildException {
+		try {
+			
+		// To support auto storage in Ant task
+		try {
+			configureAutoCloudUrl();
+		} catch (Exception e) {
+			reportBuildError(e);
+		}
+
 		// Initialize and verify attributes
 		this.initialize();
 
@@ -271,6 +588,10 @@ public class WindowsAzurePackage extends Task {
 		} catch (IOException e) {
 			reportBuildError(e);
 		}
+
+		// Validate Azure Project Configuration
+		checkProjectConfiguration();
+		this.log("Verified attributes.");
 
 		// Start verifying downloads if needed, on a separate thread
 		startDownloadManagement();
@@ -296,8 +617,9 @@ public class WindowsAzurePackage extends Task {
                 List<String> csPackCmdLine = this.createCSPackCommandLine();
                 this.runCommandLine(csPackCmdLine);
             } else {
-                throw new IllegalArgumentException("Azure SDK not found, cannot build non-CTP package");
-            }
+                Configuration configuration = initConfiguration(this);
+				new PackageCreator(configuration).createPackage();
+			}
         } catch (Exception e) {
             reportBuildError(e);
         }
@@ -312,17 +634,91 @@ public class WindowsAzurePackage extends Task {
 		}
 
 		// Wait for the download verifier thread
-		try { 
+		try {
 			finishDownloadManagement();
 		} catch(Exception e) {
 			reportBuildError(e);
 		}
+
+		/*
+		 * Restore components which are updated during build
+		 * to original state i.e. again updates cloudurl to "auto"
+		 * and removes cloudkey attribute.
+		 */
+		if (mdfdCmpntList.size() > 0) {
+			addAutoCloudUrl();
+		}
+		if (roleMdfdCache.size() > 0) {
+			addAutoSettingsForCache();
+		}
+		} catch(Exception e) {
+			reportBuildError(e);
+		} 
 	}
+
+	private void addAutoCloudUrl() {
+		Vector<WorkerRole> roles = this.roles;
+		for (int i = 0; i < roles.size(); i++) {
+			WorkerRole role = roles.get(i);
+			AutoUpldCmpnts obj = new AutoUpldCmpnts(role.getName());
+			// check list has entry with this role name
+			if (mdfdCmpntList.contains(obj)) {
+				List<Component> cmpnntsList = role.getComponents();
+				// get index of components which needs to be updated.
+				int index = mdfdCmpntList.indexOf(obj);
+				AutoUpldCmpnts presentObj = mdfdCmpntList.get(index);
+				List<Integer> indices = presentObj.getCmpntIndices();
+				// iterate over indices and update respective components.
+				for (int j = 0; j < indices.size(); j++) {
+					Component cmpnt = cmpnntsList.get(indices.get(j));
+					cmpnt.setCloudSrc(auto);
+					cmpnt.setCloudKey("");
+				}
+			}
+		}
+	}
+
+	private void addAutoSettingsForCache() throws Exception {
+		String cscfgPath = projectDir + File.separator + DEFAULT_CONFIGURATION_FILE_NAME;
+		Document doc = XMLUtil.parseXMLFile(new File(cscfgPath));
+		Vector<WorkerRole> roles = this.roles;
+		for (int i = 0; i < roles.size(); i++) {
+			String roleName = roles.get(i).getName();
+			if (roleMdfdCache.contains(roleName)) {
+				String exp = String.format(cacheSettingStr, roleName, settingName);
+				HashMap<String, String> nodeAttribites = new HashMap<String, String>();
+				nodeAttribites.put("name", settingName);
+				nodeAttribites.put("value", valueName);
+				XMLUtil.updateElementAttributeValue(doc, exp, nodeAttribites);
+			}
+		}
+		XMLUtil.saveXMLDocument(cscfgPath, doc);
+	}
+
+	private Configuration initConfiguration(WindowsAzurePackage waPackage) {
+		Configuration configuration = new Configuration(waPackage);
+        configuration.setConfigurationFileName(configurationFileName);
+        configuration.setDefinitionFileName(definitionFileName);
+        configuration.setEmulatorDir(emulatorDir);
+        configuration.setEmulatorToolsDir(emulatorToolsDir);
+        configuration.setCloudToolsDir(cloudToolsDir);
+        configuration.setPackageDir(packageDir);
+        configuration.setPackageFileName(packageFileName);
+        configuration.setProjectDir(projectDir);
+        configuration.setSdkDir(sdkDir);
+        configuration.setSdkKit(sdkKit);
+        configuration.setTemplatesDir(templatesDir);
+
+        configuration.init();
+
+        return configuration;
+    }
 
 	/**
 	 * Reports build error
 	 */
 	private void reportBuildError(Exception e) {
+		e.printStackTrace();
 		final File deployPathFile = new File(this.packageDir);
 		final File buildLogFile = new File(deployPathFile, BUILD_ERROR_FILENAME);
 		if(e == null) {
@@ -419,13 +815,14 @@ public class WindowsAzurePackage extends Task {
 		if (this.emulatorToolsDir == null) {
 			this.emulatorToolsDir = String.format("%s%s%s", this.projectDir, File.separatorChar, DEFAULT_EMULATOR_TOOLS_SUBDIR);
 		}
+		
+		// Set cloudToolsDir to a default (based on projectDir) if not set
+		if (this.cloudToolsDir == null) {
+			this.cloudToolsDir = String.format("%s%s%s", this.projectDir, File.separatorChar, DEFAULT_CLOUD_TOOLS_SUBDIR);
+		}
 
 		// Initialize templateDir
 		this.templatesDir = String.format("%s%s%s", this.projectDir, File.separator, TEMPLATES_SUBDIR);
-		
-		// Validate Azure Project Configuration
-		checkProjectConfiguration();
-		this.log("Verified attributes.");
 		
 		// Determine whether to verify downloads depending on network availability
 		if(!isNetworkAvailable()) {
@@ -567,6 +964,9 @@ public class WindowsAzurePackage extends Task {
 
 		// Prepare emulator tools
 		prepareEmulatorTools();
+		
+		// Prepare cloud tools
+		prepareCloudTools();
 
 		// Prepare the dev-portal html page 
 		createPortalLink();
@@ -640,6 +1040,41 @@ public class WindowsAzurePackage extends Task {
 			}
 		}
 	}
+	
+	/**
+	 * Prepares cloud tools directory
+	 * @throws IOException
+	 */
+	private void prepareCloudTools() throws IOException {
+		File cloudToolsDirectory = new File(this.cloudToolsDir);
+
+		if (this.packageType == PackageType.cloud) {
+			File cloudTemplateDirectory = new File(this.templatesDir, DEFAULT_CLOUD_TOOLS_SUBDIR);
+
+			if (!cloudTemplateDirectory.exists() || !cloudTemplateDirectory.isDirectory()) {
+				throw new IOException("Bad cloud template directory");
+			}
+
+			// Create the cloud tools directory if it doesn't exist
+			if (!cloudToolsDirectory.exists()) {
+				cloudToolsDirectory.mkdir();
+			}
+
+			// Go through all templates in the directory, and use them to generate scripts
+			for (String templateFileName : cloudTemplateDirectory.list()) {
+				File templateFile = new File(cloudTemplateDirectory, templateFileName);
+				File destFile = new File(cloudToolsDirectory, templateFileName);
+				// call replace and copy, so that in future if there are any tokens it will be automatically taken care.
+				copyFileReplaceTokens(templateFile, destFile);
+			}
+		} else {
+			// Delete the cloud tools directory for local/emulator package
+			if (cloudToolsDirectory.exists()) {
+				deleteDirectory(cloudToolsDirectory);
+			}
+		}
+	}
+
 
 	/**
 	 * Prepares component imports for all roles

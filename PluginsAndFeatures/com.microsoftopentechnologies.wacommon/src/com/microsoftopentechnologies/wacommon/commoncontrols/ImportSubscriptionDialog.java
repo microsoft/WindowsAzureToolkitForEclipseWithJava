@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -15,8 +15,14 @@
 */
 package com.microsoftopentechnologies.wacommon.commoncontrols;
 
+//import java.awt.*;
 import java.io.File;
+import java.net.URI;
 
+import java.net.URL;
+
+import com.microsoftopentechnologies.wacommon.Activator;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -33,6 +39,9 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.PreferenceSetUtil;
+import org.eclipse.ui.PlatformUI;
+
 /**
  * Class constructs dialog which has facility
  * to download and import publish settings file.
@@ -212,9 +221,10 @@ public class ImportSubscriptionDialog extends Dialog {
 	 */
 	private void browseBtnListener() {
 		FileDialog dialog = new FileDialog(this.getShell());
-		String[] extensions = new String [2];
+		String[] extensions = new String [3];
 		extensions[0] = "*.publishsettings";
-		extensions[1] = "*.*";
+		extensions[1] = "*.PUBLISHSETTINGS";
+		extensions[2] = "*.*";
 		dialog.setFilterExtensions(extensions);
 		String file = dialog.open();
 		if (file != null) {
@@ -227,8 +237,26 @@ public class ImportSubscriptionDialog extends Dialog {
 	 * publish settings file selection using file system.
 	 */
 	private void downloadBtnListener() {
-		PublishSettingsDialog dialog =
-				new PublishSettingsDialog(getShell());
-		dialog.open();
+		if (Activator.IS_WINDOWS) {
+			PublishSettingsDialog dialog =
+					new PublishSettingsDialog(getShell());
+			dialog.open();
+		} else {
+			try {
+				String filePath = PluginUtil.getPrefFilePath();
+				String publishSettingsURL = PreferenceSetUtil.
+						getSelectedPublishSettingsURL(PreferenceSetUtil.getSelectedPreferenceSetName(filePath), filePath);
+				
+				PlatformUI.getWorkbench().getBrowserSupport().
+				getExternalBrowser().openURL(new URL(publishSettingsURL));
+				/*
+				String filePath = PluginUtil.getPrefFilePath();
+				Desktop.getDesktop().browse(URI.create(PreferenceSetUtil.
+						getSelectedPublishSettingsURL(PreferenceSetUtil.getSelectedPreferenceSetName(filePath), filePath))); */
+			} catch (Exception e1) {
+				PluginUtil.displayErrorDialogAndLog(getShell(), com.microsoftopentechnologies.wacommon.utils.Messages.err,
+						com.microsoftopentechnologies.wacommon.utils.Messages.err, e1);
+			}
+		} 
 	}
 }

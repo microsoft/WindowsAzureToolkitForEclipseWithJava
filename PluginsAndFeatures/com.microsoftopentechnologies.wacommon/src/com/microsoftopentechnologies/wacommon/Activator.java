@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ public class Activator extends AbstractUIPlugin {
 
 	// The plug-in ID
 	public static final String PLUGIN_ID = "WACommon"; //$NON-NLS-1$
+
+	public static boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
 
 	// The shared instance
 	private static Activator plugin;
@@ -84,7 +86,10 @@ public class Activator extends AbstractUIPlugin {
      * @param excp : exception.
      */
     public void log(String message, Exception excp) {
-        getLog().log(new Status(IStatus.ERROR, PLUGIN_ID, message, excp));
+    	getLog().log(new Status(IStatus.ERROR, PLUGIN_ID, message, excp));
     }
 
+    public void log(String message) {
+    	getLog().log(new Status(IStatus.ERROR, PLUGIN_ID, message));
+    }
 }

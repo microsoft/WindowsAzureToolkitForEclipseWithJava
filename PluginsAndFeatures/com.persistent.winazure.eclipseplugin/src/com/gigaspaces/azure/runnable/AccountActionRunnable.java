@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.widgets.Shell;
 
-import com.microsoftopentechnologies.deploy.tasks.AccountCachingExceptionEvent;
-import com.microsoftopentechnologies.deploy.tasks.LoadingAccoutListener;
-import com.microsoftopentechnologies.deploy.util.PublishData;
+import com.microsoftopentechnologies.azurecommons.deploy.tasks.AccountCachingExceptionEvent;
+import com.microsoftopentechnologies.azurecommons.deploy.tasks.LoadingAccoutListener;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
 
 public abstract class AccountActionRunnable implements IRunnableWithProgress , LoadingAccoutListener {
 

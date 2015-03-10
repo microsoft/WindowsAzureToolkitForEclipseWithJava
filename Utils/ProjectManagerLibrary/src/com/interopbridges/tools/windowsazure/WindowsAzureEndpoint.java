@@ -1,5 +1,5 @@
 /**
-* Copyright 2014 Microsoft Open Technologies, Inc.
+* Copyright 2015 Microsoft Open Technologies, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -457,7 +457,7 @@ public class WindowsAzureEndpoint {
 			this.localPort = endPointPort;
 		} catch (Exception e) {
 			throw new WindowsAzureInvalidProjectOperationException(
-					"Exception occured", e);
+					"Exception occurred", e);
 		}
 	}
 
@@ -485,7 +485,7 @@ public class WindowsAzureEndpoint {
 			}
 		} catch (Exception e) {
 			throw new WindowsAzureInvalidProjectOperationException(
-					"Exception occured", e);
+					"Exception occurred", e);
 		}
 		return type;
 	}

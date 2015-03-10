@@ -2,7 +2,7 @@
 <feature
       id="com.persistent.winazure.eclipseplugin.feature"
       label="Azure Plugin for Eclipse with Java (by MS Open Tech)"
-      version="2.4.1.qualifier"
+      version="2.5.2.qualifier"
       provider-name="Microsoft Open Technologies Inc.">
 
    <description>
@@ -10,11 +10,11 @@
    </description>
 
    <copyright>
-      Copyright 2014 Microsoft Open Technologies, Inc.
+      Copyright 2015 Microsoft Open Technologies, Inc.
    </copyright>
 
    <license>
-MICROSOFT OPEN TECHNOLOGIES SOFTWARE LICENSE TERMS
+      MICROSOFT OPEN TECHNOLOGIES SOFTWARE LICENSE TERMS
 AZURE PLUGIN FOR ECLIPSE WITH JAVA
 
 These license terms are an agreement between Microsoft Open Technologies, Inc. (“Microsoft Open Tech”) and you. Please read them. They apply to the software named above, which includes the media on which you received it, if any. The terms also apply to any Microsoft Open Tech

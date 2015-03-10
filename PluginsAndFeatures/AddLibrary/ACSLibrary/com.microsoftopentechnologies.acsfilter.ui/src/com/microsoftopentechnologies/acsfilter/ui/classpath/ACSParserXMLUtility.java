@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Microsoft Open Technologies, Inc.
+ * Copyright 2015 Microsoft Open Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ final class ACSParserXMLUtility {
     }
     /** Parses XML file and returns XML document.
      * @param fileName .
-     * @return XML document or <B>null</B> if error occured
+     * @return XML document or <B>null</B> if error occurred
      * @throws WindowsAzureInvalidProjectOperationException
      */
     protected static Document parseXMLFile(final String fileName)
@@ -66,7 +66,7 @@ final class ACSParserXMLUtility {
     /** save XML file and saves XML document.
      * @param fileName
      * @param doc
-     * @return XML document or <B>null</B> if error occured
+     * @return XML document or <B>null</B> if error occurred
      * @throws IOException
      * @throws WindowsAzureInvalidProjectOperationException
      */
