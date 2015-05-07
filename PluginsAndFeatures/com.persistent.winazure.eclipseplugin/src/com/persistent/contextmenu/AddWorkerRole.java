@@ -51,7 +51,7 @@ public class AddWorkerRole extends AbstractHandler {
 					prepareRoleToAdd(waProjManager);
 			int btnID = WAEclipseHelper.
 					openRolePropertyDialog(windowsAzureRole,
-							Messages.genPgId);
+							Messages.genPgId, "");
 			if (btnID == Window.CANCEL) {
 				listRoles.remove(windowsAzureRole);
 			}

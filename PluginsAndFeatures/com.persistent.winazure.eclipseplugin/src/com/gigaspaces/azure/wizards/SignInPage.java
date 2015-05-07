@@ -17,6 +17,7 @@ package com.gigaspaces.azure.wizards;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,6 +97,7 @@ public class SignInPage extends WindowsAzurePage {
 	private String defaultLocation;
 	private IProject selectedProject;
 	private Button btnImpFrmPubSetFile;
+	private Link azureTrialLink;
 	// Remote Access group
 	private Group rdGrp;
 	private Label userNameLabel;
@@ -143,6 +145,7 @@ public class SignInPage extends WindowsAzurePage {
 		setEnabledState(container, true);
 		// create Import From Publish settings file button
 		createImportBtnCmpnt(container);
+		createLink(container);
 		ImportSubscriptionDialog.
 		createHorizontalSeparator(container);
 		createSubscriptionIdWidget(container);
@@ -771,7 +774,7 @@ public class SignInPage extends WindowsAzurePage {
 	 */
 	private void createImportBtnCmpnt(Composite parent) {
 		btnImpFrmPubSetFile = UIUtils.
-				createImportFromPublishSettingsFileBtn(parent, 3);
+				createImportFromPublishSettingsFileBtn(parent, 2);
 		btnImpFrmPubSetFile.addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
@@ -786,6 +789,29 @@ public class SignInPage extends WindowsAzurePage {
 			@Override
 			public void widgetDefaultSelected(SelectionEvent arg0) {
 
+			}
+		});
+	}
+
+	private void createLink(Composite parent) {
+		azureTrialLink = new Link(parent, SWT.LEFT);
+		azureTrialLink.setText(Messages.tryAzureLnk);
+		azureTrialLink.addSelectionListener(new SelectionAdapter() {
+
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				try {
+					PlatformUI.getWorkbench().getBrowserSupport().
+					getExternalBrowser().openURL(new URL(event.text));
+				}
+				catch (Exception ex) {
+					/*
+					 * only logging the error in log file
+					 * not showing anything to end user
+					 */
+					Activator.getDefault().log(
+							com.persistent.ui.projwizard.Messages.lnkOpenErrMsg, ex);
+				}
 			}
 		});
 	}

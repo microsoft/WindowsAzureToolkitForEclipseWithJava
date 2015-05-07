@@ -27,6 +27,7 @@ import java.util.*;
 import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
 import com.microsoftopentechnologies.azuremanagementutil.rest.WindowsAzureRestUtils;
 import com.microsoftopentechnologies.azuremanagementutil.rest.WindowsAzureServiceManagement;
+import com.microsoftopentechnologies.windowsazure.tools.cspack.BinaryPackageCreator;
 import com.microsoftopentechnologies.windowsazure.tools.cspack.Configuration;
 import com.microsoftopentechnologies.windowsazure.tools.cspack.PackageCreator;
 import com.microsoftopentechnologies.windowsazure.tools.build.Utils;
@@ -618,7 +619,8 @@ public class WindowsAzurePackage extends Task {
                 this.runCommandLine(csPackCmdLine);
             } else {
                 Configuration configuration = initConfiguration(this);
-				new PackageCreator(configuration).createPackage();
+//				new PackageCreator(configuration).createPackage();
+                new BinaryPackageCreator(configuration).createPackage();
 			}
         } catch (Exception e) {
             reportBuildError(e);
@@ -1285,7 +1287,7 @@ public class WindowsAzurePackage extends Task {
 		if (storageEmulatorDir.exists()) {
 			return storageEmulatorDir.toString();
 		} else {
-			throw new IOException("Azure SDK v2.4 or later is not installed.");
+			throw new IOException("Azure SDK v2.6 or later is not installed.");
 		}
 	}
 
@@ -1306,7 +1308,7 @@ public class WindowsAzurePackage extends Task {
 
 		// Check if the SDK folder exists
 		if (!sdkDir.exists()) {
-			throw new IOException("Azure SDK v2.4 or later is not installed.");
+			throw new IOException("Azure SDK v2.6 or later is not installed.");
 		}
 		
 		String[] versionedSDKDirs = sdkDir.list();
@@ -1328,7 +1330,7 @@ public class WindowsAzurePackage extends Task {
 		}
 
 		if (latestVersionSdkDir == null) {
-			throw new IOException("Azure SDK v2.4 or later is not installed.");
+			throw new IOException("Azure SDK v2.6 or later is not installed.");
 		}
 
 		return String.format("%s%sbin", latestVersionSdkDir, File.separatorChar);
@@ -1338,6 +1340,11 @@ public class WindowsAzurePackage extends Task {
 	 * @return
 	 */
 	public static boolean isNetworkAvailable() {
+		return true; 
+		// The previously used algorithm below is not reliable and it's not clear what's a good way to test for network connectivity without 
+		// actually pinging some address, which we do not want to do
+		
+		/*
         if (IS_WINDOWS) {
             Enumeration<NetworkInterface> networkInterfaces;
             InetAddress inetAddress;
@@ -1366,7 +1373,7 @@ public class WindowsAzurePackage extends Task {
             return false;
         } else {
             return true;
-        }
+        } */
 	}
 	
 

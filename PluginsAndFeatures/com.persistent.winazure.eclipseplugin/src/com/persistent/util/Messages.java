@@ -121,13 +121,12 @@ public final class Messages extends NLS {
 	public static String dlgDlStrgAcc;
 	public static String dlgDlUrlErrMsg;
 	public static String dlgDlUrlErrTtl;
-	public static String dlgDlNtLblUrl;
     public static String dlgNtLblHome;
 	public static String dplPageJdkChkBtn;
 	public static String dbgBrowseBtn;
 	public static String dplPageSerChkBtn;
-	public static String dplDlgSelLbl;
 	public static String dplDlgSerBtn;
+	public static String srvPathTxt;
 	public static String dplPageNameLbl;
 	public static String rolsAddBtn;
 	public static String rolsRemoveBtn;
@@ -135,7 +134,6 @@ public final class Messages extends NLS {
 	public static String washFileName;
 	public static String lblJavaHome;
 	public static String lblHmDir;
-	public static String dlNtLblUrlSrv;
 	public static String remAccErPwdNtStrg;
 	public static String remAccErrTitle;
 	public static String remAccErPwd;
@@ -146,7 +144,6 @@ public final class Messages extends NLS {
 	public static String cmhLblStrgAcc;
 	public static String autoDlJdkCldRdBtnLbl;
 	public static String noJdkDplyLbl;
-	public static String noSrvDplyLbl;
 	public static String cldRdBtnLbl;
 	public static String autoDlSrvCldRdBtnLbl;
 	public static String linkLblAcc;
@@ -168,6 +165,9 @@ public final class Messages extends NLS {
 	public static String cmhLblCert;
 	public static String cmhIdSsl;
 	public static String cmhLblSsl;
+	public static String srvTtl;
+	public static String srvNoDetectionMsg;
+	public static String srvWrngDetectionMsg;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

@@ -1,5 +1,5 @@
 <!--
-Copyright 2015 Microsoft Open Technologies, Inc.
+Copyright Microsoft Open Technologies, Inc.
  
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@ limitations under the License.
 
 -->
 
-<componentsets version="2.5.2">
+<componentsets version="2.6.0">
 <!-- 
 *******************************************************************************
 HOW TO CREATE A NEW JDK PACKAGE DEPLOYMENT TEMPLATE:
@@ -47,6 +47,12 @@ of order will likely produce faulty logic.
 		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 	</componentset>
 	
+	<componentset name="Azul Zulu, OpenJDK 1.8.0_u40" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.8.0_40-8.6.0.1-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.8.0_40-8.6.0.1-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
 	<componentset name="Azul Zulu, OpenJDK 1.8.0_u31" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.8.0_31-8.5.0.1-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>

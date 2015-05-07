@@ -159,6 +159,7 @@ public final class Messages extends NLS {
 	public static String unMatchMsg;
 	public static String deployErr;
 	public static String dfltImprted;
+	public static String tryAzureLnk;
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

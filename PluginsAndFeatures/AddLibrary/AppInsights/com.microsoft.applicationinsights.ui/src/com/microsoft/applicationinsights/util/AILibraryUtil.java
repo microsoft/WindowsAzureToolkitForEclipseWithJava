@@ -154,6 +154,11 @@ public class AILibraryUtil {
 		try {
 			String cmpntFileLoc = getSelectedProject()
 					.getFolder(relDirLocation).getLocation().toOSString();
+			File fileObject = new File(cmpntFileLoc);
+			if (!fileObject.exists()) {
+				// to create immediate parent directory of web.xml or ApplicationInsights.xml
+				fileObject.mkdir();
+			}
 			String cmpntFile = String.format("%s%s%s", cmpntFileLoc,
 					File.separator, fileName);
 			if (!new File(cmpntFile).exists()) {

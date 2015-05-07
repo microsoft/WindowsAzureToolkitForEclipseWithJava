@@ -13,29 +13,22 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-
-
 package com.microsoftopentechnologies.windowsazure.tools.cspack.domain;
 
-public class ContentType {
-    private final String partName;
-    private String contentType;
-    private final String CONTENT_TYPE = "application/octet-stream";      // so far default value
+public class FileWithHash {
+    private String name;
+    private String hashValue;
 
-    public ContentType(String partName) {
-        this.partName = partName;
+    public FileWithHash(String name, String hashValue) {
+        this.name = name;
+        this.hashValue = hashValue;
     }
 
-    public ContentType(String partName, String contentType) {
-        this.partName = partName;
-        this.contentType = contentType;
+    public String getName() {
+        return name;
     }
 
-    public String getPartName() {
-        return partName;
-    }
-
-    public String getContentType() {
-        return contentType == null ? CONTENT_TYPE : contentType;
+    public String getHashValue() {
+        return hashValue;
     }
 }

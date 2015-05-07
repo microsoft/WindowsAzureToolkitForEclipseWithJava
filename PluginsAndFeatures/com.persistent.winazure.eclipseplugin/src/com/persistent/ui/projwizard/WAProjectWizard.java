@@ -91,10 +91,7 @@ implements INewWizard, IPageChangedListener {
      * Default constructor.
      */
     public WAProjectWizard() {
-    	long startMiliseconds = System.currentTimeMillis();
         setWindowTitle(Messages.pWizWindowTitle);
-        Activator.getDefault().log("\n\nWizard setting title - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
-        startMiliseconds = System.currentTimeMillis();
         String zipFile = "";
         try {
         	zipFile  = String.format("%s%s%s%s%s",
@@ -105,25 +102,16 @@ implements INewWizard, IPageChangedListener {
         	
         	//Extract the WAStarterKitForJava.zip to temp dir
         	waProjMgr = WindowsAzureProjectManager.create(zipFile);
-        	Activator.getDefault().log("Total Elapsed time in millisec - StarterKit extraction :" + (System.currentTimeMillis() - startMiliseconds));
-        	startMiliseconds = System.currentTimeMillis();
         	//	By deafult - disabling remote access
         	//  when creating new project
         	waProjMgr.setRemoteAccessAllRoles(false);
-        	Activator.getDefault().log("Remote access configuration - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
-        	startMiliseconds = System.currentTimeMillis();
         	waProjMgr.setClassPathInPackage("azure.lib.dir", PluginUtil.getAzureLibLocation());
-        	Activator.getDefault().log("Setting Azure lib in classpath - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
-        	startMiliseconds = System.currentTimeMillis();
         	waRole = waProjMgr.getRoles().get(0);
-        	Activator.getDefault().log("Getting role - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
-        	startMiliseconds = System.currentTimeMillis();
         	// remove http endpoint
         	WindowsAzureEndpoint endpoint = waRole.getEndpoint(Messages.httpEp);
         	if (endpoint != null) {
         		endpoint.delete();
         	}
-        	Activator.getDefault().log("Getting endpoint - Elapsed time in millisec :" + (System.currentTimeMillis() - startMiliseconds));
         } catch (IOException e) {
         	PluginUtil.displayErrorDialogAndLog(this.getShell(),
         			Messages.pWizErrTitle, Messages.pWizErrMsg, e);

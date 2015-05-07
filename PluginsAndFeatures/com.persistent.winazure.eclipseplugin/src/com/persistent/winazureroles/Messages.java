@@ -349,8 +349,6 @@ public final class Messages extends NLS {
 	public static String dlgDlUrlErrMsg;
 	public static String urlKeySetErrMsg;
 	public static String urlKeySetErMsgSrv;
-	public static String dlNtLblDir;
-	public static String dlgDlNtLblUrl;
 	public static String urlKeyGetErMsg;
 	public static String moveUpBtn;
 	public static String moveDnBtn;

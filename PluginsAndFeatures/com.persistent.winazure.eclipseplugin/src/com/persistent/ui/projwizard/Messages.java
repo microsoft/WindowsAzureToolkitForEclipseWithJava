@@ -112,8 +112,6 @@ public final class Messages extends NLS {
     public static String projWizPg;
     public static String jvHomeErMsg;
     public static String srvHomeErMsg;
-    public static String dlNtLblDirSrv;
-    public static String dlNtLblUrlSrv;
     public static String dlgAutoDlJDKUrlErrMsg;
     public static String dlgAutoDlSrvUrlErrMsg;
     public static String jdkPathErrMsg;

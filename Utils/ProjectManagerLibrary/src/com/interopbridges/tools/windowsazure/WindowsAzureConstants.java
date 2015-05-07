@@ -137,6 +137,8 @@ public final class WindowsAzureConstants {
 			+ "/startupenv[@name='%s']";
 	public static final String WA_PACK_SENV_TYPE = WA_PACK_ROLE
 			+ "/startupenv[@type='%s']";
+	public static final String WA_PACK_SENV_NAME_VALUE = WA_PACK_ROLE
+			+ "/startupenv[@name='%s'][@value='%s']";
 	public static final String EMULATORTOOLSDIR = CREATE_PKG_TARGET
 			+ "/parallel/windowsazurepackage/@emulatortoolsdir";
 	public static final String PACKAGEDIR = CREATE_PKG_TARGET
@@ -162,7 +164,7 @@ public final class WindowsAzureConstants {
 	public static final String CREATOR_VER = PROJ_PROPERTY
 			+ "/property[@name='creator.version']";
 	public static final String V17_VERSION = "1.7.0";
-	public static final String VERSION = "2.5.2";
+	public static final String VERSION = "2.6.0";
 	public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY
 			+ "/property[@name='project.%s.sessionaffinity.inputendpoint']";
 	public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY
@@ -485,7 +487,7 @@ public final class WindowsAzureConstants {
 	public static final String THRD_PARTY_JDK_NAME = "project.%s.jdk.name";
 	public static final String THRD_PARTY_SRV_NAME = "project.%s.server.name.cloud";
 
-	public static final String MIN_SDK_VERSION = "v2.5";
+	public static final String MIN_SDK_VERSION = "v2.6";
 	public static final String SA_NEW_VERSION_ATTR = "/configuration/runtime/assemblyBinding/dependentAssembly/bindingRedirect/@newVersion";
 
 	public static final String WR_CERTS = WORKER_ROLE

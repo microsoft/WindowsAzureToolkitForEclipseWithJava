@@ -128,6 +128,9 @@ public final class Messages extends NLS {
 	public static String encFileName;
 	public static String encFileEntry;
 	public static String srcLoc;
+	public static String natMaven;
+	public static String webxmlPathMaven;
+	public static String depDirLocMaven;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

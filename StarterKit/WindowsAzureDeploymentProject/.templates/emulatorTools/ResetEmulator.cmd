@@ -16,7 +16,7 @@ exit
 :Shutdown
 SET _ELEVATED=
 "${EmulatorDir}\csrun.exe" /removeAll /devfabric:clean 2>nul
-taskkill /im WAStorageEmulator.exe /f
+taskkill /im AzureStorageEmulator.exe /f
 taskkill /im DFService.exe /f
 taskkill /im DFUI.exe /f
 

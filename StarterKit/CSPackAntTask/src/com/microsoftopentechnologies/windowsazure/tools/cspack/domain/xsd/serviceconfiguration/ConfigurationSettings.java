@@ -47,6 +47,13 @@ public class ConfigurationSettings {
         @XmlAttribute
         protected String value;
 
+        public Setting() {
+        }
+
+        public Setting(String name) {
+            this.name = name;
+        }
+
         public String getName() {
             return name;
         }

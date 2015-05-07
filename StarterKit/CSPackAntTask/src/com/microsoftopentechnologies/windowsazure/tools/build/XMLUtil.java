@@ -186,6 +186,42 @@ public class XMLUtil {
 		return roleList;
 	}
 
+	public static String getFirstApplicationName(Document doc) throws XPathExpressionException {
+		XPath xPath = XPathFactory.newInstance().newXPath();
+		String roleExpr = "/project/target/parallel/windowsazurepackage/workerrole";
+		NodeList roleList = (NodeList) xPath.evaluate(roleExpr, doc, XPathConstants.NODESET);
+		for (int i = 0; i < roleList.getLength(); i++) {
+			Element workerRole = (Element) roleList.item(i);
+			String cmpntExpr = String.format(
+					"/project/target/parallel/windowsazurepackage/workerrole[@name='%s']/component",
+					workerRole.getAttribute("name"));
+			NodeList componentList = (NodeList) xPath.evaluate(cmpntExpr, doc, XPathConstants.NODESET);
+			if (componentList != null) {
+				boolean isJdkPresent = false;
+				boolean isServerPresent = false;
+				for (int j = 0; j < componentList.getLength(); j++) {
+					Element compEle = (Element) componentList.item(j);
+					String type = compEle.getAttribute("type");
+					if (type.equalsIgnoreCase("jdk.deploy")) {
+						isJdkPresent = true;
+					} else if (type.equalsIgnoreCase("server.deploy")) {
+						isServerPresent = true;
+					}
+				}
+				if (isJdkPresent && isServerPresent) {
+					for (int j = 0; j < componentList.getLength(); j++) {
+						Element compEle = (Element) componentList.item(j);
+						if (compEle.getAttribute("type").equalsIgnoreCase("server.app")) {
+							String deployName = compEle.getAttribute("importas");
+							return deployName.substring(0, deployName.lastIndexOf("."));
+						}
+					}
+				}
+			}
+		}
+		return "";
+	}
+
 	/**
 	 * Generic API to update DOM elements
 	 * @param doc

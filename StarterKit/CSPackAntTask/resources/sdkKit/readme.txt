@@ -1,4 +1,4 @@
-Following content from Azure SDK 2.5 should be under this directory:
+Following content from Azure SDK 2.6 should be under this directory:
 
 base/
 plugins/

@@ -13,29 +13,24 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-
-
 package com.microsoftopentechnologies.windowsazure.tools.cspack.domain;
 
-public class ContentType {
-    private final String partName;
-    private String contentType;
-    private final String CONTENT_TYPE = "application/octet-stream";      // so far default value
+import java.util.HashMap;
+import java.util.Map;
 
-    public ContentType(String partName) {
-        this.partName = partName;
+public class ContentTypes {
+    private static Map<String, String> types = new HashMap<String, String>();
+    static {
+        types.put("cssx", "binary/software");
+        types.put("rels", "application/vnd.openxmlformats-package.relationships+xml");
+        types.put("csman", "text/ucmanifest");
+        types.put("csdef", "text/servicedescription");
+        types.put("rd", "text/servicemodel");
+        types.put("rdsc", "text/servicecontract");
+        types.put("other", "user/user");
     }
 
-    public ContentType(String partName, String contentType) {
-        this.partName = partName;
-        this.contentType = contentType;
-    }
-
-    public String getPartName() {
-        return partName;
-    }
-
-    public String getContentType() {
-        return contentType == null ? CONTENT_TYPE : contentType;
+    public static String getType(String extension) {
+        return types.get(extension);
     }
 }

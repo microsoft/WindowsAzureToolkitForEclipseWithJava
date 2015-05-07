@@ -36,6 +36,8 @@ import com.microsoft.windowsazure.management.compute.models.DeploymentCreatePara
 import com.microsoft.windowsazure.management.compute.models.DeploymentGetResponse;
 import com.microsoft.windowsazure.management.compute.models.DeploymentSlot;
 import com.microsoft.windowsazure.management.compute.models.DeploymentUpdateStatusParameters;
+import com.microsoft.windowsazure.management.compute.models.DeploymentUpgradeMode;
+import com.microsoft.windowsazure.management.compute.models.DeploymentUpgradeParameters;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceCheckNameAvailabilityResponse;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceCreateParameters;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse;
@@ -323,22 +325,17 @@ public class WindowsAzureServiceManagement extends WindowsAzureServiceImpl {
 		} catch (ServiceException ex) {
 			/*
 			 * If delete deployment option is selected and
-			 * conflicting deployment exists then unpublish
-			 * deployment first and then again try to publish.
+			 * conflicting deployment exists then upgrade deployment.
 			 */
 			if (unpublish.equalsIgnoreCase("true") && ex.getHttpStatusCode() == 409) {
-				HostedServiceGetDetailedResponse hostedServiceDetailed = getHostedServiceWithProperties(configuration, serviceName);
-				List<HostedServiceGetDetailedResponse.Deployment> list = hostedServiceDetailed.getDeployments();
-				String deploymentName = "";
-				for (int i = 0; i < list.size(); i++) {
-					HostedServiceGetDetailedResponse.Deployment deployment = list.get(i);
-					if (deployment.getDeploymentSlot().name().equalsIgnoreCase(slotName)) {
-						deploymentName = deployment.getName();
-					}
-				}
-				deleteDeployment(configuration, serviceName, deploymentName);
-				response = WindowsAzureRestUtils.createDeployment(configuration, serviceName, deploymentSlot, parameters);
-
+				DeploymentUpgradeParameters upgradeParameters = new DeploymentUpgradeParameters();
+				upgradeParameters.setConfiguration(parameters.getConfiguration());
+				upgradeParameters.setForce(true);
+				upgradeParameters.setLabel(parameters.getName());
+				upgradeParameters.setMode(DeploymentUpgradeMode.Auto);
+				upgradeParameters.setPackageUri(parameters.getPackageUri());
+				response = WindowsAzureRestUtils.upgradeDeployment(
+						configuration, serviceName, deploymentSlot, upgradeParameters);
 				return response.getRequestId();
 			} else {
 				throw ex;

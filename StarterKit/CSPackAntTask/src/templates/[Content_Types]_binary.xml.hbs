@@ -12,7 +12,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
-}}<?xml version="1.0" encoding="utf-8"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">{{#this}}
-    <Relationship Type="{{typeId.type}}" Target="{{target}}" {{#if external}}TargetMode="External" {{/if}}Id="{{typeId.id}}"/>{{/this}}
-</Relationships>
+}}<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">{{#contentType}}
+    <Default Extension="{{partName}}" ContentType="{{contentType}}"/>{{/contentType}}{{#override}}
+    <Override PartName="{{partName}}" ContentType="{{contentType}}"/>{{/override}}
+</Types>

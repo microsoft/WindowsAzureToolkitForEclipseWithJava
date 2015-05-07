@@ -3716,6 +3716,16 @@ public class WindowsAzureRole {
 				if (property != null) {
 					property.getParentNode().removeChild(property);
 				}
+				// Below condition will hold true only in case of liberty server
+				// liberty has third startupenv without type attribute.
+				// Hence delete it checking its name and value.
+				String startUpName = "JVM_ARGS";
+				String startUpExpr = String.format(WindowsAzureConstants.WA_PACK_SENV_NAME_VALUE,
+						getName(), startUpName, "-DdefaultHostName=*");
+				Element element = (Element) xPath.evaluate(startUpExpr, doc, XPathConstants.NODE);
+				if (element != null) {
+					renameRuntimeEnv(startUpName, "");
+				}
 			}
 
 			// remove component and start env

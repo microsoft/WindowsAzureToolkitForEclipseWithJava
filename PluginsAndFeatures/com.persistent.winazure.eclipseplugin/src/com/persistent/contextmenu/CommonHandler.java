@@ -41,47 +41,47 @@ public class CommonHandler extends AbstractHandler {
 		if (commandName.equals(Messages.cachCmdId)) {
 			// Caching
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.cachPgId);
+					Messages.cachPgId, "");
 		} else if (commandName.equals(Messages.certCmdId)) {
 			// Certificates
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.certPgId);
+					Messages.certPgId, "");
 		} else if (commandName.equals(Messages.cmpntCmdId)) {
 			// Components
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.cmpntPgId);
+					Messages.cmpntPgId, "");
 		} else if (commandName.equals(Messages.dbgCmdId)) {
 			// Debugging
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.dbgPgId);
+					Messages.dbgPgId, "");
 		} else if (commandName.equals(Messages.endPtCmdId)) {
 			// Endpoints
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.endPtPgId);
+					Messages.endPtPgId, "");
 		} else if (commandName.equals(Messages.envVarCmdId)) {
 			// Environment Variables
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.envVarPgId);
+					Messages.envVarPgId, "");
 		} else if (commandName.equals(Messages.ldBalCmdId)) {
 			// Load Balancing
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.ldBalPgId);
+					Messages.ldBalPgId, "");
 		} else if (commandName.equals(Messages.lclStrCmdId)) {
 			// Local Storage
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.lclStrPgId);
+					Messages.lclStrPgId, "");
 		} else if (commandName.equals(Messages.srvConfCmdId)) {
 			// Server Configuration
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.srvConfPgId);
+					Messages.srvConfPgId, "JDK");
 		} else if (commandName.equals(Messages.sslCmdId)) {
 			// Server Configuration
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.sslPgId);
+					Messages.sslPgId, "");
 		} else {
 			// General
 			WAEclipseHelper.openRolePropertyDialog(wARole,
-					Messages.genPgId);
+					Messages.genPgId, "");
 		}
 		return null;
 	}

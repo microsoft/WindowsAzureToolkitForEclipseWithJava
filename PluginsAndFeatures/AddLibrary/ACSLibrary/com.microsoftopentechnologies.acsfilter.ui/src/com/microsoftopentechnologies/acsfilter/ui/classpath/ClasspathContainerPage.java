@@ -101,6 +101,9 @@ public class ClasspathContainerPage extends WizardPage implements
     private Button embedCertCheck;
     private static final int BUFF_SIZE = 1024;
     private HashMap<String,String> paramMap;
+    String xmlPath;
+    String depDirLoc;
+    String certificateLocation;
 
     /**
      * Default constructor.
@@ -231,12 +234,20 @@ public class ClasspathContainerPage extends WizardPage implements
                 setErrorMessage(Messages.acsInvProjMsg);
                 disableAll();
                 setPageComplete(false);
+            } else {
+            	if (proj.hasNature(Messages.natMaven)) {
+            		xmlPath = Messages.webxmlPathMaven;
+            		depDirLoc = Messages.depDirLocMaven;
+            		certificateLocation = Messages.depDirLocMaven;
+            	} else {
+            		xmlPath = Messages.xmlPath;
+            		depDirLoc = Messages.depDirLoc;
+            		certificateLocation = Messages.depDirLoc;
+            	}
             }
-
         } catch (CoreException e) {
             finishVal = false;
             setErrorMessage(Messages.acsInvProjMsg);
-
         }
 
         if (isEdit()) {
@@ -281,7 +292,7 @@ public class ClasspathContainerPage extends WizardPage implements
                 }
                 ACSFilterHandler editHandler =
                 		new ACSFilterHandler(ACSFilterUtil.getSelectedProject().
-                				getFile(Messages.xmlPath).
+                				getFile(xmlPath).
                 				getLocation().toOSString());
                 paramMap = editHandler.getAcsFilterParams();
                 acsTxt.setText(paramMap.get(Messages.acsAttr));
@@ -793,9 +804,9 @@ public class ClasspathContainerPage extends WizardPage implements
         ACSFilterHandler handler = null;
         try {
             IProject proj = ACSFilterUtil.getSelectedProject();
-        if (proj.getFile(Messages.xmlPath).exists()) {
+        if (proj.getFile(xmlPath).exists()) {
             handler = new ACSFilterHandler(proj.
-            		getFile(Messages.xmlPath).getLocation().toOSString());
+            		getFile(xmlPath).getLocation().toOSString());
             handler.setAcsFilterParams(Messages.acsAttr, acsTxt.getText());
             handler.setAcsFilterParams(Messages.relAttr, relTxt.getText());
             if(!embedCertCheck.getSelection()) {
@@ -805,7 +816,7 @@ public class ClasspathContainerPage extends WizardPage implements
             } else {
             	handler.removeParamsIfExists(Messages.certAttr);
             	if(!certTxt.getText().isEmpty() ) {
-            		String srcLoc 	= ACSFilterUtil.getSelectedProject().getFolder(Messages.srcLoc).getLocation().toOSString();
+            		String srcLoc = ACSFilterUtil.getSelectedProject().getFolder(certificateLocation).getLocation().toOSString();
             		String certLoc 		= String.format("%s%s%s", srcLoc,File.separator, Messages.acsCertLoc);
             		File   destination  = new File(certLoc);
             		if(!destination.getParentFile().exists())
@@ -819,10 +830,10 @@ public class ClasspathContainerPage extends WizardPage implements
             boolean choice = MessageDialog.openQuestion(this.getShell(),
                     Messages.depDescTtl, Messages.depDescMsg);
             if (choice) {
-            	String path = createWebXml();
+            	String path = createWebXml(depDirLoc);
             	//copy cert into WEB-INF/cert/_acs_signing.cer location if embed cert is selected 
             	if(embedCertCheck.getSelection()) {
-            		String srcLoc 	= ACSFilterUtil.getSelectedProject().getFolder(Messages.srcLoc).getLocation().toOSString();
+            		String srcLoc 	= ACSFilterUtil.getSelectedProject().getFolder(certificateLocation).getLocation().toOSString();
             		String certLoc 		= String.format("%s%s%s", srcLoc,File.separator, Messages.acsCertLoc);
             		File   destination  = new File(certLoc);
             		if(!destination.getParentFile().exists())
@@ -885,15 +896,19 @@ public class ClasspathContainerPage extends WizardPage implements
      * if does not present already.
      * @return String
      */
-    private String createWebXml() {
+    private String createWebXml(String depDirLoc) {
         String path = null;
         try {
-            String cmpntFileLoc = ACSFilterUtil.getSelectedProject().
-            		getFolder(Messages.depDirLoc).
-            		getLocation().toOSString();
-            String cmpntFile = String.format("%s%s%s", cmpntFileLoc,
-            		File.separator, Messages.depFileName);
-            if (!new File(cmpntFile).exists()) {
+        	String cmpntFileLoc = ACSFilterUtil.getSelectedProject().
+        			getFolder(depDirLoc).getLocation().toOSString();
+        	File fileObject = new File(cmpntFileLoc);
+        	if (!fileObject.exists()) {
+        		// to create immediate parent directory of web.xml
+        		fileObject.mkdir();
+        	}
+        	String cmpntFile = String.format("%s%s%s", cmpntFileLoc,
+        			File.separator, Messages.depFileName);
+        	if (!new File(cmpntFile).exists()) {
                 URL url = Activator.getDefault().getBundle()
                         .getEntry(Messages.resFileLoc);
                 URL fileURL = FileLocator.toFileURL(url);
@@ -917,7 +932,7 @@ public class ClasspathContainerPage extends WizardPage implements
     }
     
     private String getEmbeddedCertInfo() {
-    	String srcLoc 	= ACSFilterUtil.getSelectedProject().getFolder(Messages.srcLoc).getLocation().toOSString();
+    	String srcLoc 	= ACSFilterUtil.getSelectedProject().getFolder(certificateLocation).getLocation().toOSString();
 		String certLoc 		= String.format("%s%s%s", srcLoc,File.separator, Messages.acsCertLoc);
     	return getCertInfo(certLoc);
     }
@@ -986,7 +1001,7 @@ public class ClasspathContainerPage extends WizardPage implements
     }
     
     public void removeEmbedCert(IProject iProject) {
-    	String srcLoc 	= iProject.getFolder(Messages.srcLoc).getLocation().toOSString();
+    	String srcLoc 	= iProject.getFolder(certificateLocation).getLocation().toOSString();
 		String certLoc 		= String.format("%s%s%s", srcLoc, File.separator, Messages.acsCertLoc);
 		File   destination  = new File(certLoc);
 		if(destination.exists())

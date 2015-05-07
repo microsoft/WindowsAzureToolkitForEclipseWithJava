@@ -121,53 +121,65 @@ public class WindowsAzureProjectManager {
 	 */
 	public static WindowsAzureProjectManager create(String fileName)
 			throws WindowsAzureInvalidProjectOperationException, IOException {
-
 		if ((fileName == null) || (fileName.isEmpty())) {
 			throw new IllegalArgumentException(
 					WindowsAzureConstants.INVALID_ARG);
 		}
-		long startMiliseconds = System.currentTimeMillis();
 		ZipFile zipFile = new ZipFile(fileName);
 		String tmpPath = System.getProperty("java.io.tmpdir");
-		String projPath = String.format("%s%s%s", tmpPath, File.separator,
-				"%proj%");
-		System.out.println("...... StarterKit extraction - initialization :" + (System.currentTimeMillis() - startMiliseconds));
-    	startMiliseconds = System.currentTimeMillis();
-		File projFile = new File(projPath);
-		if (projFile != null) {
-			deleteDir(projFile);
-		}
-		System.out.println("...... StarterKit extraction - delete Directory :" + (System.currentTimeMillis() - startMiliseconds));
-    	startMiliseconds = System.currentTimeMillis();
-		Enumeration<? extends ZipEntry> entries = zipFile.entries();
-		String entryName;
-		while (entries.hasMoreElements()) {
-			ZipEntry zipEntry = (ZipEntry) entries.nextElement();
-			entryName = zipEntry.getName();
-			if (zipEntry.isDirectory()) {
-				(new File(tmpPath.concat(File.separator).concat(entryName)))
-						.mkdir();
-				continue;
+		try {
+			String projPath = String.format("%s%s%s", tmpPath, File.separator,
+					"%proj%");
+			File projFile = new File(projPath);
+			if (projFile != null) {
+				File[] files = projFile.listFiles();
+				if (files != null) {
+					for (File file : files) {
+						String tmpFileName = file.getName();
+						if (!(tmpFileName.equalsIgnoreCase(".externalToolBuilders")
+								|| tmpFileName.equalsIgnoreCase(".templates")
+								|| tmpFileName.equals("deploy")
+								|| tmpFileName.equalsIgnoreCase(".cspack.jar")
+								|| tmpFileName.equalsIgnoreCase("lib")
+								|| tmpFileName.equalsIgnoreCase("cert"))) {
+							// delete
+							if (file.isDirectory()) {
+								deleteDir(file);
+							} else {
+								file.delete();
+							}
+						}
+					}
+				}
 			}
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			String entryName;
+			while (entries.hasMoreElements()) {
+				ZipEntry zipEntry = (ZipEntry) entries.nextElement();
+				entryName = zipEntry.getName();
+				String outputPath = tmpPath.concat(File.separator).concat(entryName);
+				File outputFile = new File(outputPath);
 
-			String outputPath = tmpPath.concat(File.separator)
-					.concat(entryName);
-
-			File outputFile = new File(outputPath);
-			dataTransfer(zipFile.getInputStream(zipEntry),
-					new BufferedOutputStream(new FileOutputStream(outputFile)));
+				if (!outputFile.exists()) {
+					if (zipEntry.isDirectory()) {
+						(new File(tmpPath.concat(File.separator).concat(entryName))).mkdir();
+						continue;
+					}
+					dataTransfer(zipFile.getInputStream(zipEntry),
+							new BufferedOutputStream(new FileOutputStream(outputFile)));
+				}
+			}
+		} catch (IOException e) {
+			throw new IOException();
+		} finally {
+			zipFile.close();
 		}
-		zipFile.close();
-		System.out.println("...... StarterKit extraction - zip extraction :" + (System.currentTimeMillis() - startMiliseconds));
-    	startMiliseconds = System.currentTimeMillis();
 
-		tmpPath = System.getProperty("java.io.tmpdir");
 		try {
 			WindowsAzureProjectManager winAzureProjMgr = new WindowsAzureProjectManager(
 					new File(String.format("%s%s%s", tmpPath, File.separator,
 							"%proj%")));
 			winAzureProjMgr.setWindowsAzureProjMgr(winAzureProjMgr);
-			System.out.println("...... StarterKit extraction - PMngr object creation  :" + (System.currentTimeMillis() - startMiliseconds));
 			return winAzureProjMgr;
 		} catch (Exception ex) {
 			throw new WindowsAzureInvalidProjectOperationException(
@@ -469,7 +481,7 @@ public class WindowsAzureProjectManager {
 					.hasNext();) {
 				WindowsAzureRole windowsAzureRole = iterator.next();
 				if (sdkVersion == null) {
-					sdkVersion = "2.5.0.0";
+					sdkVersion = "2.6.0.0";
 				}
 				// If Session affinity is enabled
 				if (sdkVersion != null
@@ -921,6 +933,7 @@ public class WindowsAzureProjectManager {
 					}
 					winAzureRole.setVMSize(vmSize);
 					winAzureRole.setEndpoints(winAzureRole.getEndpoints());
+					winAzureRole.getComponents();
 					roleList.add(winAzureRole);
 				}
 			}
@@ -2238,7 +2251,7 @@ public class WindowsAzureProjectManager {
 				if (versionedSdkDir.isDirectory()) {
 
 					// Since we are iterating in descending manner , below if
-					// will be true only if SDK2.5 or greater version is not
+					// will be true only if SDK2.6 or greater version is not
 					// installed.
 					// If greater version is installed we always break loop and
 					// return the value.
@@ -2337,7 +2350,7 @@ public class WindowsAzureProjectManager {
 		if (storageEmulatorDir.exists()) {
 			return storageEmulatorDir.toString();
 		} else {
-			throw new IOException("Azure SDK v2.5 or later is not installed.");
+			throw new IOException("Azure SDK v2.6 or later is not installed.");
 		}
 	}
 
@@ -2514,15 +2527,24 @@ public class WindowsAzureProjectManager {
 
 	private static void dataTransfer(InputStream inputStream,
 			BufferedOutputStream buffOutputStream) throws IOException {
-		byte[] buffer = new byte[BUFF_SIZE];
-		int transferLen = inputStream.read(buffer);
+		try {
+			byte[] buffer = new byte[BUFF_SIZE];
+			int transferLen = inputStream.read(buffer);
 
-		while (transferLen >= 0) {
-			buffOutputStream.write(buffer, 0, transferLen);
-			transferLen = inputStream.read(buffer);
+			while (transferLen >= 0) {
+				buffOutputStream.write(buffer, 0, transferLen);
+				transferLen = inputStream.read(buffer);
+			}
+		} catch(IOException e) {
+			throw new IOException();
+		} finally {
+			try {
+				inputStream.close();
+				buffOutputStream.close();
+			} catch (IOException e) {
+				// neglect
+			}
 		}
-		inputStream.close();
-		buffOutputStream.close();
 	}
 
 	/**
@@ -2598,6 +2620,35 @@ public class WindowsAzureProjectManager {
 		}
 	}
 	
+	/**
+	 * Method returns first default JDK name from componentset
+	 * if exists else returns empty string.
+	 * @param templateFile
+	 * @return
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public static String getFirstDefaultThirdPartyJdkName(File templateFile)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			NodeList compSet = getComponentSets(templateFile, "JDK");
+			for (int i = 0; i < compSet.getLength(); i++) {
+				if (compSet.item(i).getAttributes().getLength() != 0) {
+					Element ele = (Element) compSet.item(i);
+					String name = ele.getAttribute("name");
+					if (!name.equalsIgnoreCase("JDK")
+							&& ele.getAttribute("default").equalsIgnoreCase("true")
+							&& !ele.getAttribute("status").equalsIgnoreCase("deprecated")) {
+						return name;
+					}
+				}
+			}
+		} catch (Exception e) {
+			throw new WindowsAzureInvalidProjectOperationException(
+					"Exception while getting default third party JDK name", e);
+		}
+		return "";
+	}
+
 	/**
 	 * API returns array of third party server names
 	 * from specific server componentset in the order they appear.

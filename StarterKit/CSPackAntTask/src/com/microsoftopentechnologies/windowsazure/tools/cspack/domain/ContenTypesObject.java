@@ -13,29 +13,25 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-
-
 package com.microsoftopentechnologies.windowsazure.tools.cspack.domain;
 
-public class ContentType {
-    private final String partName;
-    private String contentType;
-    private final String CONTENT_TYPE = "application/octet-stream";      // so far default value
+import java.util.Collection;
+import java.util.List;
 
-    public ContentType(String partName) {
-        this.partName = partName;
-    }
+public class ContenTypesObject {
+    private Collection<ContentType> contentType;
+    private List<ContentType> override;
 
-    public ContentType(String partName, String contentType) {
-        this.partName = partName;
+    public ContenTypesObject(Collection<ContentType> contentType, List<ContentType> override) {
         this.contentType = contentType;
+        this.override = override;
     }
 
-    public String getPartName() {
-        return partName;
+    public Collection<ContentType> getContentType() {
+        return contentType;
     }
 
-    public String getContentType() {
-        return contentType == null ? CONTENT_TYPE : contentType;
+    public List<ContentType> getOverride() {
+        return override;
     }
 }

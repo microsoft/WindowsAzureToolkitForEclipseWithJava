@@ -77,8 +77,7 @@ public class WizardUtilMethods {
 			}
 
 			// Server
-			if (!(depMap.get("serChecked").equalsIgnoreCase("false")
-					&& depMap.get("srvAutoDwnldChecked").equalsIgnoreCase("true"))) {
+			if (depMap.get("serChecked").equalsIgnoreCase("true")) {
 				String srvName = depMap.get("servername");
 				if (!srvName.isEmpty()) {
 					String srvPriPort = WindowsAzureProjectManager.

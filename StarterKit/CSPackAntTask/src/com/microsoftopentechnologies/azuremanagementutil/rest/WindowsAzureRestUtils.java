@@ -36,6 +36,7 @@ import com.microsoft.windowsazure.management.compute.models.DeploymentCreatePara
 import com.microsoft.windowsazure.management.compute.models.DeploymentGetResponse;
 import com.microsoft.windowsazure.management.compute.models.DeploymentSlot;
 import com.microsoft.windowsazure.management.compute.models.DeploymentUpdateStatusParameters;
+import com.microsoft.windowsazure.management.compute.models.DeploymentUpgradeParameters;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceCheckNameAvailabilityResponse;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceCreateParameters;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse;
@@ -299,6 +300,19 @@ public class WindowsAzureRestUtils {
 		}
 	}
 
+	public static DeploymentGetResponse getDeploymentBySlot(Configuration configuration, String serviceName, DeploymentSlot deploymentSlot)
+			throws ServiceException, Exception {
+		try {
+			ComputeManagementClient client = ComputeManagementService.create(configuration);
+			DeploymentGetResponse response = client.getDeploymentsOperations().getBySlot(serviceName, deploymentSlot);
+			return response;
+		} catch (ServiceException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw ex;
+		}
+	}
+
 	public static OperationResponse updateDeploymentStatus(Configuration configuration, String serviceName, String deploymentName,
 			DeploymentUpdateStatusParameters deploymentStatus) throws ServiceException, Exception {
 		try {
@@ -385,6 +399,26 @@ public class WindowsAzureRestUtils {
 			throw new Exception("Exception when create deployment", ex);
 		} catch (Exception ex) {
 			throw new Exception("Exception when create deployment", ex);
+		}
+	}
+
+	public static OperationStatusResponse upgradeDeployment(Configuration configuration,
+			String serviceName, DeploymentSlot deploymentSlot,
+			DeploymentUpgradeParameters parameters) throws ServiceException, Exception {
+		try {
+			ComputeManagementClient client = ComputeManagementService.create(configuration);
+			OperationStatusResponse response = client.getDeploymentsOperations().upgradeBySlot(serviceName, deploymentSlot, parameters);
+			return response;
+		} catch (ServiceException ex) {
+			throw ex;
+		} catch (ExecutionException ex) {
+			Throwable cause = ex.getCause();
+			if (cause instanceof ServiceException) {
+				throw (ServiceException)cause;
+			}
+			throw new Exception("Exception when upgrading deployment", ex);
+		} catch (Exception ex) {
+			throw new Exception("Exception when upgrading deployment", ex);
 		}
 	}
 

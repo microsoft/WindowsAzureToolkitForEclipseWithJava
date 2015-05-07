@@ -44,6 +44,8 @@ import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.core.OperationStatus;
 import com.microsoft.windowsazure.core.OperationStatusResponse;
 import com.microsoft.windowsazure.management.compute.models.DeploymentGetResponse;
+import com.microsoft.windowsazure.management.compute.models.DeploymentSlot;
+import com.microsoft.windowsazure.management.compute.models.DeploymentStatus;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceCreateParameters;
 import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
 import com.microsoft.windowsazure.management.compute.models.RoleInstance;
@@ -114,7 +116,7 @@ public final class DeploymentManager {
 			openWindowsAzureActivityLogView(deploymentDesc);
 
 			if (deploymentDesc.getDeployMode() == WindowsAzurePackageType.LOCAL) {
-				deployToLocalEmulator(selectedProject, deploymentDesc);
+				deployToLocalEmulator(selectedProject);
 				notifyProgress(deploymentDesc.getDeploymentId(), null, 100,
 						OperationStatus.Succeeded, Messages.deplCompleted);
 				return;
@@ -234,7 +236,7 @@ public final class DeploymentManager {
 
 			DeploymentGetResponse deployment = waitForDeployment(
 					deploymentDesc.getConfiguration(),
-					hostedService.getServiceName(), service, deploymentName);
+					hostedService.getServiceName(), deployState);
 
 			boolean displayHttpsLink = deploymentDesc.getDisplayHttpsLink();
 			WindowsAzureProjectManager waProjManager = WindowsAzureProjectManager
@@ -293,6 +295,12 @@ public final class DeploymentManager {
 			}
 		} catch (Throwable t) {
 			String msg = (t != null ? t.getMessage() : "");
+			if (msg.equalsIgnoreCase("sleep interrupted")
+					|| msg.equalsIgnoreCase("java.lang.InterruptedException: sleep interrupted")
+					|| msg.equalsIgnoreCase("java.lang.InterruptedException")
+					|| msg.equalsIgnoreCase("Exception when create deployment")) {
+				msg = "Deployment cancelled";
+			}
 			if (!msg.startsWith(OperationStatus.Failed.toString())) {
 				msg = OperationStatus.Failed.toString() + " : " + msg;
 			}
@@ -352,39 +360,50 @@ public final class DeploymentManager {
 
 	private DeploymentGetResponse waitForDeployment(
 			Configuration configuration, String serviceName,
-			WindowsAzureServiceManagement service, String deploymentName)
-			throws Exception {
+			String deployState)
+					throws Exception {
 		DeploymentGetResponse deployment = null;
 		String status = null;
+		DeploymentSlot deploymentSlot;
+		if (DeploymentSlot.Staging.toString().equalsIgnoreCase(deployState)) {
+			deploymentSlot = DeploymentSlot.Staging;
+		} else if (DeploymentSlot.Production.toString().equalsIgnoreCase(deployState)) {
+			deploymentSlot = DeploymentSlot.Production;
+		} else {
+			throw new Exception("Invalid deployment slot name");
+		}
+		// check role status
 		do {
 			Thread.sleep(5000);
-			deployment = service.getDeployment(configuration, serviceName,
-					deploymentName);
+			deployment = WindowsAzureRestUtils.getDeploymentBySlot(configuration, serviceName, deploymentSlot);
 
 			for (RoleInstance instance : deployment.getRoleInstances()) {
 				status = instance.getInstanceStatus();
 				if (InstanceStatus.ReadyRole.getInstanceStatus().equals(status)
-						|| InstanceStatus.CyclingRole.getInstanceStatus()
-								.equals(status)
-						|| InstanceStatus.FailedStartingVM.getInstanceStatus()
-								.equals(status)
-						|| InstanceStatus.UnresponsiveRole.getInstanceStatus()
-								.equals(status)) {
+						|| InstanceStatus.CyclingRole.getInstanceStatus().equals(status)
+						|| InstanceStatus.FailedStartingVM.getInstanceStatus().equals(status)
+						|| InstanceStatus.UnresponsiveRole.getInstanceStatus().equals(status)) {
 					break;
 				}
 			}
 		} while (status != null
-				&& !(InstanceStatus.ReadyRole.getInstanceStatus()
-						.equals(status)
-						|| InstanceStatus.CyclingRole.getInstanceStatus()
-								.equals(status)
-						|| InstanceStatus.FailedStartingVM.getInstanceStatus()
-								.equals(status) || InstanceStatus.UnresponsiveRole
-						.getInstanceStatus().equals(status)));
+				&& !(InstanceStatus.ReadyRole.getInstanceStatus().equals(status)
+						|| InstanceStatus.CyclingRole.getInstanceStatus().equals(status)
+						|| InstanceStatus.FailedStartingVM.getInstanceStatus().equals(status)
+						|| InstanceStatus.UnresponsiveRole.getInstanceStatus().equals(status)));
 
 		if (!InstanceStatus.ReadyRole.getInstanceStatus().equals(status)) {
 			throw new DeploymentException(status);
 		}
+		// check deployment status. And let Transitioning phase to finish
+		DeploymentStatus deploymentStatus = null;
+		do {
+			Thread.sleep(10000);
+			deployment = WindowsAzureRestUtils.getDeploymentBySlot(configuration, serviceName, deploymentSlot);
+			deploymentStatus = deployment.getStatus();
+		} while(deploymentStatus != null
+				&& (deploymentStatus.equals(DeploymentStatus.RunningTransitioning)
+						|| deploymentStatus.equals(DeploymentStatus.SuspendedTransitioning)));
 		return deployment;
 	}
 
@@ -421,8 +440,7 @@ public final class DeploymentManager {
 		return cspkgName;
 	}
 
-	private void deployToLocalEmulator(IProject selectedProject,
-			DeployDescriptor deploymentDesc) throws DeploymentException {
+	private void deployToLocalEmulator(IProject selectedProject) throws DeploymentException {
 
 		WindowsAzureProjectManager waProjManager;
 		try {

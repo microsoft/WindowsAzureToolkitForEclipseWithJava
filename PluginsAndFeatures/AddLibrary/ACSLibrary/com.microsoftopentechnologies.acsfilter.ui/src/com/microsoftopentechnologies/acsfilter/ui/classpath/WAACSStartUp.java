@@ -21,6 +21,7 @@ import org.eclipse.jdt.core.IElementChangedListener;
 import org.eclipse.jdt.core.IJavaElementDelta;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.ui.IStartup;
+
 import com.microsoftopentechnologies.acsfilter.ui.activator.Activator;
 
 /**
@@ -47,24 +48,27 @@ public class WAACSStartUp implements IStartup {
         
     }
 
-	/**
+    /**
      * Method removes entries from web.xml.
      * @param proj
      */
     private void removeACSEntries(IProject proj) {
-        if (proj.getFile(Messages.xmlPath).exists()) {
-            try {
-            	ACSFilterHandler handler =
-            			new ACSFilterHandler(proj.
-            					getFile(Messages.xmlPath).getLocation().toOSString());
-                handler.remove();
-                handler.save();
-            } catch (Exception e) {
-                Activator.getDefault().log(e.getMessage(), e);
-            }
-        }
-       
-        new ClasspathContainerPage().removeEmbedCert(proj);
+    	try {
+    		String xmlPath = Messages.xmlPath;
+    		if (proj.hasNature(Messages.natMaven)) {
+    			xmlPath = Messages.webxmlPathMaven;
+    		}
+    		if (proj.getFile(xmlPath).exists()) {
+    			ACSFilterHandler handler =
+    					new ACSFilterHandler(proj.
+    							getFile(xmlPath).getLocation().toOSString());
+    			handler.remove();
+    			handler.save();
+    		}
 
+    		new ClasspathContainerPage().removeEmbedCert(proj);
+    	} catch (Exception e) {
+    		Activator.getDefault().log(e.getMessage(), e);
+    	}
     }
 }

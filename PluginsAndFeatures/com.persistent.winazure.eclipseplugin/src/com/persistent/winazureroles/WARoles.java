@@ -325,7 +325,7 @@ public class WARoles {
 
                 int btnID = WAEclipseHelper.
                 		openRolePropertyDialog(windowsAzureRole,
-                		Messages.cmhIdGeneral);
+                		Messages.cmhIdGeneral, "");
                 if (btnID == Window.OK) {
                     tableViewer.refresh();
                 }
@@ -386,7 +386,7 @@ public class WARoles {
              */
             int btnID = WAEclipseHelper.
             		openRolePropertyDialog(windowsAzureRole,
-            				Messages.cmhIdGeneral);
+            				Messages.cmhIdGeneral, "");
             if (btnID == Window.OK) {
             	tableViewer.refresh();
             } else {

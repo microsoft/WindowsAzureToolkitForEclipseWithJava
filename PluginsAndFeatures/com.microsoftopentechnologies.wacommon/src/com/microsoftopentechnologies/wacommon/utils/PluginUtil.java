@@ -211,6 +211,9 @@ public class PluginUtil {
 				pluginFolderPath = String.format("%s%s%s",
 						Platform.getInstallLocation().getURL().getPath().toString(),
 						File.separator, Messages.pluginFolder);
+				if (Activator.IS_WINDOWS) {
+					pluginFolderPath = pluginFolderPath.substring(1);
+				}
 			}
 			Activator.getDefault().log("Plugin folder path:" + pluginFolderPath);
 		} catch (Exception e) {

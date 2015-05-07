@@ -92,6 +92,11 @@ public final class Messages extends NLS {
 	public static String aiWebFilterClassName;
 	public static String filterJarLocation;
 	public static String aiRemoveErr;
+	public static String webxmlPathMaven;
+	public static String aiXMLPathMaven;
+	public static String natMaven;
+	public static String depDirLocMaven;
+	public static String aiConfRelDirLocMaven;
 
 	static {
 		// initialize resource bundle

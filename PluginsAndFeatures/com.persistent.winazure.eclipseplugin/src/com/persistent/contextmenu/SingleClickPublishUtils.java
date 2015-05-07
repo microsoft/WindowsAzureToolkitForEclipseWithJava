@@ -41,6 +41,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.builder.WADependencyBuilder;
 import com.persistent.ui.propertypage.WAProjectNature;
@@ -131,13 +132,15 @@ public class SingleClickPublishUtils {
 					isCloudServerJdkPresent = false;
 				}
 			}
-
-			String[] thrdPrtJdkArr = WindowsAzureProjectManager.getThirdPartyJdkNames(cmpntFile, "");
-			String jdkName = "";
-			if (thrdPrtJdkArr.length >= 1) {
-				jdkName = thrdPrtJdkArr[0];
-			} else {
-				isCloudServerJdkPresent = false;
+			String jdkName = WindowsAzureProjectManager.getFirstDefaultThirdPartyJdkName(cmpntFile);
+			if (jdkName.isEmpty()) {
+				// if default JDK not specified then get first one
+				String[] thrdPrtJdkArr = WindowsAzureProjectManager.getThirdPartyJdkNames(cmpntFile, "");
+				if (thrdPrtJdkArr.length >= 1) {
+					jdkName = thrdPrtJdkArr[0];
+				} else {
+					isCloudServerJdkPresent = false;
+				}
 			}
 
 			if (isCloudServerJdkPresent) {
@@ -196,7 +199,7 @@ public class SingleClickPublishUtils {
 			}
 
 			// configure third party JDK
-			role.setJDKSourcePath("", cmpntFile, jdkName);
+			role.setJDKSourcePath(returnJDKPathAsPerSDK(), cmpntFile, jdkName);
 			role.setJDKCloudName(jdkName);
 			role.setJDKCloudUploadMode(WARoleComponentCloudUploadMode.auto);
 			role.setJDKCloudURL(auto);
@@ -290,4 +293,12 @@ public class SingleClickPublishUtils {
 		}
 	}
 
+	private static String returnJDKPathAsPerSDK() {
+		String jdkPath = "";
+		String sdkVersion = WindowsAzureProjectManager.getLatestAzureVersionForSA();
+		if (sdkVersion != null && !sdkVersion.isEmpty()) {
+			jdkPath = WAEclipseHelperMethods.jdkDefaultDirectory(null);
+		}
+		return jdkPath;
+	}
 }

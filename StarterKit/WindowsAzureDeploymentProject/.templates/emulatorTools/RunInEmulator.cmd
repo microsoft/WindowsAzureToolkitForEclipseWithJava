@@ -11,7 +11,7 @@ exit
 :: Deploy the package to emulator
 :Deploy
 SET _ELEVATED=
-"${StorageEmulatorDir}\WAStorageEmulator.exe" start
+"${StorageEmulatorDir}\AzureStorageEmulator.exe" start
 "${EmulatorDir}\csrun.exe" "${PackageDir}\${PackageFileName}" "${PackageDir}\${ConfigurationFileName}"
 
 :: Ensure that emulator UI is running

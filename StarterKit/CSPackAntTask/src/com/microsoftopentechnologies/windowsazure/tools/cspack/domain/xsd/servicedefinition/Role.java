@@ -59,6 +59,8 @@ public class Role {
 
     @XmlTransient
     private List<ConfigurationSettings.Setting> settings = new ArrayList<ConfigurationSettings.Setting>();
+    @XmlTransient
+    private String filename;
 
     public String getName() {
         return name;
@@ -97,6 +99,14 @@ public class Role {
 
     public List<ConfigurationSettings.Setting> getSettings() {
         return settings;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
+
+    public String getFilename() {
+        return filename;
     }
 
     public boolean isRemoteAccess() {

@@ -239,7 +239,15 @@ public class AzurePublish extends Task {
 				DeploymentGetResponse deployment = waitForDeployment(configuration,
 						cloudServiceName, instance, deploymentName);
 				this.log("Status : " + deployment.getStatus().toString());
-				this.log("Site URL : " + deployment.getUri().toString());
+				String deploymentURL = deployment.getUri().toString();
+				String serverAppName = XMLUtil.getFirstApplicationName(doc);
+				if (!serverAppName.isEmpty()) {
+					if (!deploymentURL.endsWith("/")) {
+						deploymentURL += "/";
+					}
+					deploymentURL += serverAppName + "/";
+				}
+				this.log("Site URL : " + deploymentURL);
 			}
 		} catch (Exception e) {
 			throw new BuildException(e);

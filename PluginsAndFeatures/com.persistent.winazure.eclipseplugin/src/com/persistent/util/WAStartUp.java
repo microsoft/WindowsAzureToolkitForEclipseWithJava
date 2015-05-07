@@ -27,6 +27,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.commons.io.FileDeleteStrategy;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IWorkspace;
@@ -108,6 +109,13 @@ public class WAStartUp implements IStartup {
             // refresh workspace as package.xml may have got changed.
             WAEclipseHelper.refreshWorkspace(Messages.resCLJobName,
             		Messages.resCLExWkspRfrsh);
+            // delete %proj% directory from temporary folder during eclipse start
+            String tmpPath = System.getProperty("java.io.tmpdir");
+            String projPath = String.format("%s%s%s", tmpPath, File.separator, "%proj%");
+            File projFile = new File(projPath);
+            if (projFile != null) {
+            	FileDeleteStrategy.FORCE.delete(projFile);
+            }
         } catch (Exception e) {
             /* This is not a user initiated task
                So user should not get any exception prompt.*/

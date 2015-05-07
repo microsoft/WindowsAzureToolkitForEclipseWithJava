@@ -84,6 +84,7 @@ public class PackageCreator {
             if (settings != null) {
                 role.getSettings().addAll(settings);
             }
+            role.setFilename(UUID.nameUUIDFromBytes(role.getName().getBytes()).toString());
         }
         return serviceDefinition;
     }
@@ -130,7 +131,10 @@ public class PackageCreator {
 
     private void createRels() throws IOException {
         Utils.createDirectory(configuration.getPackageDir() + File.separator + "_rels");
-        Utils.applyTemplateWithPath("_rels/.rels", null, configuration.getPackageDir());
+        List<Relationship> rels = new ArrayList<Relationship>();
+        RelationshipTypes.TypeId typeId = RelationshipTypes.get("package.xml");
+        rels.add(new Relationship(typeId, "/package.xml", true));
+        Utils.applyTemplateWithPath("_rels/.rels", rels, configuration.getPackageDir());
     }
 
     private void createContentTypes() throws IOException {

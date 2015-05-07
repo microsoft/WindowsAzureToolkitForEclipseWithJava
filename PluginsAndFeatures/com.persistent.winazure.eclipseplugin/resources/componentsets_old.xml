@@ -15,7 +15,7 @@ limitations under the License.
 
 -->
 
-<componentsets version="2.5.1">
+<componentsets version="2.5.2">
 <!-- 
 *******************************************************************************
 HOW TO CREATE A NEW JDK PACKAGE DEPLOYMENT TEMPLATE:
@@ -47,6 +47,12 @@ of order will likely produce faulty logic.
 		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 	</componentset>
 	
+	<componentset name="Azul Zulu, OpenJDK 1.8.0_u31" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.8.0_31-8.5.0.1-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.8.0_31-8.5.0.1-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
 	<componentset name="Azul Zulu, OpenJDK 1.8.0_u25" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.8.0_25-8.4.0.1-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
@@ -71,6 +77,12 @@ of order will likely produce faulty logic.
         <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.8.0_05-8.1.0.6-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
 	</componentset>
 	
+	<componentset name="Azul Zulu, OpenJDK 1.7.0_u76" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_76-7.8.0.3-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_76-7.8.0.3-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
 	<componentset name="Azul Zulu, OpenJDK 1.7.0_u72" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_72-7.7.0.1-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
@@ -112,7 +124,13 @@ of order will likely produce faulty logic.
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
         <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_25-7.0.0.0-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
 	</componentset>
-	
+		
+	<componentset name="Azul Zulu, OpenJDK 1.6.0_u59" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.6.0_59-6.7.0.2-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.6.0_59-6.7.0.2-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
 	<componentset name="Azul Zulu, OpenJDK 1.6.0_u56" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.6.0_56-6.6.0.1-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
@@ -211,37 +229,20 @@ process will output startup script commands based on each component in the
 exact order the components are listed in the compomnentset template, so getting
 them out of order will likely produce faulty logic.
  -->	
- 
- 	<componentset name="Jetty 7" type="server" detectpath="lib/jetty-server-7.*" httpport="8080">
-		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
-		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
-		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
-		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
-	</componentset>
-
-	<componentset name="Jetty 8" type="server" detectpath="lib/jetty-server-8.*" httpport="8080">
-		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
-		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
-		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
-		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
-	</componentset>
-
-	<componentset name="Jetty 9" type="server" detectpath="lib/jetty-server-9.*" httpport="8080">
-		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
-		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
-		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
-		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
-		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
-	</componentset>
-	
 	<componentset name="Apache Tomcat 8" type="server" detectpath="RUNNING.txt" detecttext="Running The Apache Tomcat 8\." httpport="8080">
 		<startupenv name="CATALINA_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%CATALINA_HOME%\webapps" type="server.app.loc"/>
 		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%CATALINA_HOME%\bin" importas="startup.bat" type="server.start"/>
+		<downloads>
+			<download 
+				name="Tomcat v8.0.20"
+				licenseurl="http://www.apache.org/licenses/LICENSE-2.0"
+				cloudaltsrc="https://azuredownloads.blob.core.windows.net/tomcat/apache-tomcat-8.0.20.zip"
+				home="%DEPLOYROOT%\apache-tomcat-8.0.20"
+				default="true"/>			
+		</downloads>
 	</componentset>
 
 	<componentset name="Apache Tomcat 7" type="server" detectpath="RUNNING.txt" detecttext="Running The Apache Tomcat 7\." httpport="8080">
@@ -250,6 +251,13 @@ them out of order will likely produce faulty logic.
 		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%CATALINA_HOME%\bin" importas="startup.bat" type="server.start"/>
+		<downloads>
+			<download 
+				name="Tomcat v7.0.59"
+				licenseurl="http://www.apache.org/licenses/LICENSE-2.0"
+				cloudaltsrc="https://azuredownloads.blob.core.windows.net/tomcat/apache-tomcat-7.0.59.zip"
+				home="%DEPLOYROOT%\apache-tomcat-7.0.59"/>						
+		</downloads>
 	</componentset>
 
 	<componentset name="Apache Tomcat 6" type="server" detectpath="RUNNING.txt" detecttext="Running The Apache Tomcat 6\." httpport="8080">
@@ -258,8 +266,60 @@ them out of order will likely produce faulty logic.
 		<component importsrc="${placeholder}" importmethod="copy" type="server.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
 		<component deploymethod="exec" deploydir="%CATALINA_HOME%\bin" importas="startup.bat" type="server.start"/>
+		<downloads>
+			<download 
+				name="Tomcat v6.0.43"
+				licenseurl="http://www.apache.org/licenses/LICENSE-2.0"
+				cloudaltsrc="https://azuredownloads.blob.core.windows.net/tomcat/apache-tomcat-6.0.43.zip"
+				home="%DEPLOYROOT%\apache-tomcat-6.0.43"/>						
+		</downloads>
+	</componentset>
+	 
+	<componentset name="Jetty 9" type="server" detectpath="lib/jetty-server-9.*" httpport="8080">
+		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
+		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
+		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
+		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
+		<downloads>
+			<download 
+				name="Jetty v9.2.9"
+				licenseurl="http://www.eclipse.org/jetty/licenses.php"
+				cloudaltsrc="https://azuredownloads.blob.core.windows.net/jetty/jetty-distribution-9.2.9.v20150224.zip"
+				home="%DEPLOYROOT%\jetty-distribution-9.2.9.v20150224"/>
+		</downloads>
 	</componentset>
 	
+	<componentset name="Jetty 8" type="server" detectpath="lib/jetty-server-8.*" httpport="8080">
+		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
+		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
+		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
+		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
+		<downloads>
+			<download 
+				name="Jetty v8.1.16"
+				licenseurl="http://www.eclipse.org/jetty/licenses.php"
+				cloudaltsrc="https://azuredownloads.blob.core.windows.net/jetty/jetty-distribution-8.1.16.v20140903.zip"
+				home="%DEPLOYROOT%\jetty-distribution-8.1.16.v20140903"/>
+		</downloads>
+	</componentset>
+
+ 	<componentset name="Jetty 7" type="server" detectpath="lib/jetty-server-7.*" httpport="8080">
+		<startupenv name="JETTY_HOME" value="${placeholder}" type="server.home"/>
+		<startupenv name="SERVER_APPS_LOCATION" value="%JETTY_HOME%\webapps" type="server.app.loc"/>
+		<component importsrc="${placeholder}" importmethod="zip" deploymethod="unzip" deploydir="%DEPLOYROOT%" type="server.deploy"/>
+		<component deploydir="%SERVER_APPS_LOCATION%" deploymethod="copy" importsrc="${placeholder}" importmethod="${placeholder}" importas="${placeholder}" type="server.app"/>
+		<component deploymethod="exec" deploydir="%JETTY_HOME%" importas="%JAVA_HOME%\bin\java.exe -jar start.jar" type="server.start"/>
+		<downloads>
+			<download 
+				name="Jetty v7.6.16"
+				licenseurl="http://www.eclipse.org/jetty/licenses.php"
+				cloudaltsrc="https://azuredownloads.blob.core.windows.net/jetty/jetty-distribution-7.6.16.v20140903.zip"
+				home="%DEPLOYROOT%\jetty-distribution-7.6.16.v20140903"/>				
+		</downloads>
+	</componentset>
+
 	<componentset name="IBM WebSphere Application Server V8 Liberty profile" httpport="9080" type="server" detectpath="bin/server.bat" detecttext="WebSphere Application Server liberty">
 		<startupenv name="WLS_LIBERTY_HOME" value="${placeholder}" type="server.home"/>
 		<startupenv name="SERVER_APPS_LOCATION" value="%WLS_LIBERTY_HOME%\usr\servers\defaultServer\dropins" type="server.app.loc"/>

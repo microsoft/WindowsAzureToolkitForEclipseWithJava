@@ -164,10 +164,12 @@ public class WAEclipseHelper {
 	 *            : worker role
 	 * @param pageToDisplay
 	 *            : property page Id which should be active after opening dialog
+	 * @param tabToSelect : In case pageToDisplay is Server Configuration page then
+	 * 						provide tab which should be selected.
 	 * @return integer
 	 */
 	public static int openRolePropertyDialog(WindowsAzureRole windowsAzureRole,
-			String pageToDisplay) {
+			String pageToDisplay, String tabToSelect) {
 		int retVal = Window.CANCEL; // value corresponding to cancel
 		try {
 			// Node creation
@@ -226,7 +228,7 @@ public class WAEclipseHelper {
 			PreferenceNode nodeSrvCnfg = new PreferenceNode(
 					Messages.cmhIdSrvCnfg, Messages.cmhLblSrvCnfg, null,
 					WAServerConfiguration.class.toString());
-			nodeSrvCnfg.setPage(new WAServerConfiguration());
+			nodeSrvCnfg.setPage(new WAServerConfiguration(tabToSelect));
 			nodeSrvCnfg.getPage().setTitle(Messages.cmhLblSrvCnfg);
 
 			PreferenceNode nodeSslOff = new PreferenceNode(Messages.cmhIdSsl,

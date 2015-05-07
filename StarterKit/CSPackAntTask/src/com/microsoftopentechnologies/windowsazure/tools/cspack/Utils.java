@@ -40,6 +40,15 @@ import java.util.zip.ZipOutputStream;
 
 public class Utils {
 
+    private static String convertByteArrayToHexString(byte[] arrayBytes) {
+        StringBuffer stringBuffer = new StringBuffer();
+        for (int i = 0; i < arrayBytes.length; i++) {
+            stringBuffer.append(Integer.toString((arrayBytes[i] & 0xff) + 0x100, 16)
+                    .substring(1));
+        }
+        return stringBuffer.toString();
+    }
+
     /**
      * Calculate Sha256 hash
      */
@@ -60,6 +69,31 @@ public class Utils {
             hash = new byte[digest.getDigestLength()];
             hash = digest.digest();
             output = new Base64Converter().encode(hash);
+        } catch (FileNotFoundException e) {
+            throw new BuildException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new BuildException(e);
+        }
+        return output;
+    }
+
+    public static String calcHexHash(File file) throws IOException {
+        int bufferSize = 16384;
+        String output;
+        try {
+            BufferedInputStream is = new BufferedInputStream(new FileInputStream(file));
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte [] buffer = new byte[bufferSize];
+            int sizeRead = -1;
+            while ((sizeRead = is.read(buffer)) != -1) {
+                digest.update(buffer, 0, sizeRead);
+            }
+            is.close();
+
+            byte [] hash = null;
+            hash = new byte[digest.getDigestLength()];
+            hash = digest.digest();
+            output = convertByteArrayToHexString(hash).toUpperCase();
         } catch (FileNotFoundException e) {
             throw new BuildException(e);
         } catch (NoSuchAlgorithmException e) {
@@ -199,7 +233,7 @@ public class Utils {
         }
     }
 
-    private static void delete(File f) {
+    public static void delete(File f) {
         if (f.isDirectory()) {
             for (File c : f.listFiles())
                 delete(c);

@@ -76,10 +76,10 @@
       </maps>
       <components>{{#WorkerRole}}
         <groupHascomponents>
-          <role name="{{name}}" generation="1" functional="0" release="0" software="{{name}}_295bdef1-1c9f-42ab-b9a4-fbf73803b631.cssx" entryPoint="base\x64\WaHostBootstrapper.exe" parameters="base\x64\WaWorkerHost.exe " memIndex="-1" hostingEnvironment="consoleroleadmin" hostingEnvironmentVersion="2">
+          <role name="{{name}}" generation="1" functional="0" release="0" software="{{name}}_{{filename}}.cssx" entryPoint="base\x64\WaHostBootstrapper.exe" parameters="base\x64\WaWorkerHost.exe " memIndex="-1" hostingEnvironment="consoleroleadmin" hostingEnvironmentVersion="2">
             <componentports>{{#endpoints.inputEndpoint}}
               <inPort name="{{name}}" protocol="{{protocol}}" portRanges="{{localPort}}" />{{/endpoints.inputEndpoint}}{{#endpoints.internalEndpoint}}
-              <inPort name="{{name}}" protocol="{{protocol}}" {{#if fixedPortRange}}portRanges="[{{fixedPortRange.min}}-{{fixedPortRange.max}}]"{{/if}}/>{{/endpoints.internalEndpoint}}{{#endpoints.internalEndpoint}}
+              <inPort name="{{name}}" protocol="{{protocol}}" {{#if fixedPortRange}}portRanges="[{{fixedPortRange.min}}-{{fixedPortRange.max}}]"{{/if}}{{#fixedPort}}portRanges="{{port}}"{{/fixedPort}}/>{{/endpoints.internalEndpoint}}{{#endpoints.internalEndpoint}}
               <outPort name="{{../name}}:{{name}}" protocol="{{protocol}}">
                   <outToChannel>
                       <sFSwitchChannelMoniker name="/{{../../name}}/{{../../name}}Group/SW:{{../name}}:{{name}}" />

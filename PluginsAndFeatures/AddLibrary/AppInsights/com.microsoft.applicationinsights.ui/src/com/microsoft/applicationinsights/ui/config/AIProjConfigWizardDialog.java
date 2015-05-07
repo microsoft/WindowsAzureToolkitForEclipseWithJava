@@ -71,9 +71,13 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 	private Text txtInstrumentationKey;
 	private Link lnkInstrumentationKey;
 	private Link lnkAIPrivacy;
-	
+
 	AILibraryHandler handler;
 	IProject proj;
+	String webxmlPath;
+	String aiXMLPath;
+	String depDirLoc;
+	String aiConfRelDirLoc;
 
 	public AIProjConfigWizardDialog(Shell parentShell) {
 		super(parentShell);
@@ -82,12 +86,24 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		proj = getSelectedProject();
 
 		try {
-			if (proj.getFile(Messages.webxmlPath).exists()) {
-				handler.parseWebXmlPath(proj.getFile(Messages.webxmlPath)
+			// check if its maven project or simple dynamic web project
+			if (proj.hasNature(Messages.natMaven)) {
+				webxmlPath = Messages.webxmlPathMaven;
+				aiXMLPath = Messages.aiXMLPathMaven;
+				depDirLoc = Messages.depDirLocMaven;
+				aiConfRelDirLoc = Messages.aiConfRelDirLocMaven;
+			} else {
+				webxmlPath = Messages.webxmlPath;
+				aiXMLPath = Messages.aiXMLPath;
+				depDirLoc = Messages.depDirLoc;
+				aiConfRelDirLoc = Messages.aiConfRelDirLoc;
+			}
+			if (proj.getFile(webxmlPath).exists()) {
+				handler.parseWebXmlPath(proj.getFile(webxmlPath)
 						.getLocation().toOSString());
 			}
-			if (proj.getFile(Messages.aiXMLPath).exists()) {
-				handler.parseAIConfXmlPath(proj.getFile(Messages.aiXMLPath)
+			if (proj.getFile(aiXMLPath).exists()) {
+				handler.parseAIConfXmlPath(proj.getFile(aiXMLPath)
 						.getLocation().toOSString());
 			}
 		} catch (Exception e) {
@@ -304,8 +320,8 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 
 	private void handleWebXML(IProject proj, AILibraryHandler handler)
 			throws Exception {
-		if (proj.getFile(Messages.webxmlPath).exists()) {
-			handler.parseWebXmlPath(proj.getFile(Messages.webxmlPath)
+		if (proj.getFile(webxmlPath).exists()) {
+			handler.parseWebXmlPath(proj.getFile(webxmlPath)
 					.getLocation().toOSString());
 			handler.setAIFilterConfig();
 		} else { // create web.xml
@@ -313,7 +329,7 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 					Messages.depDescTtl, Messages.depDescMsg);
 			if (choice) {
 				String path = AILibraryUtil.createFileIfNotExists(
-						Messages.depFileName, Messages.depDirLoc,
+						Messages.depFileName, depDirLoc,
 						Messages.resFileLoc);
 				handler.parseWebXmlPath(path);
 			} else {
@@ -325,13 +341,13 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 
 	private void handleAppInsightsXML(IProject proj, AILibraryHandler handler)
 			throws Exception {
-		if (proj.getFile(Messages.aiXMLPath).exists()) {
-			handler.parseAIConfXmlPath(proj.getFile(Messages.aiXMLPath)
+		if (proj.getFile(aiXMLPath).exists()) {
+			handler.parseAIConfXmlPath(proj.getFile(aiXMLPath)
 					.getLocation().toOSString());
 			handler.disableAIFilterConfiguration(false);
 		} else { // create ApplicationInsights.xml
 			String path = AILibraryUtil.createFileIfNotExists(
-					Messages.aiConfFileName, Messages.aiConfRelDirLoc,
+					Messages.aiConfFileName, aiConfRelDirLoc,
 					Messages.aiConfResFileLoc);
 			handler.parseAIConfXmlPath(path);
 		}

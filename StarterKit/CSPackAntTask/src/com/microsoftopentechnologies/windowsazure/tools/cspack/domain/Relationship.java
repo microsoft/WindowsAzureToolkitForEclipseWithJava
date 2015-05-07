@@ -13,29 +13,32 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-
-
 package com.microsoftopentechnologies.windowsazure.tools.cspack.domain;
 
-public class ContentType {
-    private final String partName;
-    private String contentType;
-    private final String CONTENT_TYPE = "application/octet-stream";      // so far default value
+public class Relationship {
+    private RelationshipTypes.TypeId typeId;
+    private String target;
+    private boolean external;
 
-    public ContentType(String partName) {
-        this.partName = partName;
+    public Relationship(RelationshipTypes.TypeId typeId, String target) {
+        this.typeId = typeId;
+        this.target = target;
     }
 
-    public ContentType(String partName, String contentType) {
-        this.partName = partName;
-        this.contentType = contentType;
+    public Relationship(RelationshipTypes.TypeId typeId, String target, boolean external) {
+        this(typeId, target);
+        this.external = external;
     }
 
-    public String getPartName() {
-        return partName;
+    public RelationshipTypes.TypeId getTypeId() {
+        return typeId;
     }
 
-    public String getContentType() {
-        return contentType == null ? CONTENT_TYPE : contentType;
+    public String getTarget() {
+        return target;
+    }
+
+    public boolean isExternal() {
+        return external;
     }
 }
