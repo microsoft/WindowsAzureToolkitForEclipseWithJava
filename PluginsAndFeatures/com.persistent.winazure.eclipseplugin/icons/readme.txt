@@ -8,3 +8,4 @@ publish.png
 ResetEmulatorIcon.png
 RoleFolder.gif
 RunEmulatorIcon.png
+unpublish.png
