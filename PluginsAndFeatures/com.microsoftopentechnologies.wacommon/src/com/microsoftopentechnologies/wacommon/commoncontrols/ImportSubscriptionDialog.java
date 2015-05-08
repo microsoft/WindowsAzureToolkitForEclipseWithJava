@@ -17,12 +17,8 @@ package com.microsoftopentechnologies.wacommon.commoncontrols;
 
 //import java.awt.*;
 import java.io.File;
-import java.net.URI;
-
 import java.net.URL;
 
-import com.microsoftopentechnologies.wacommon.Activator;
-import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -39,8 +35,11 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import com.microsoftopentechnologies.azurecommons.wacommonutil.PreferenceSetUtil;
 import org.eclipse.ui.PlatformUI;
+
+import com.microsoftopentechnologies.azurecommons.wacommonutil.PreferenceSetUtil;
+import com.microsoftopentechnologies.wacommon.Activator;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 /**
  * Class constructs dialog which has facility

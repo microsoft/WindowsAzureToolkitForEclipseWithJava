@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.namespace.QName;
 import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -35,7 +34,6 @@ import org.w3c.dom.NodeList;
 
 import com.microsoftopentechnologies.acs.util.NamespaceContextImpl;
 import com.microsoftopentechnologies.acs.util.Utils;
-import com.microsoftopentechnologies.acs.xmldsig.CustomIdentifiedElement;
 import com.microsoftopentechnologies.acs.xmldsig.SignatureValidationException;
 import com.microsoftopentechnologies.acs.xmldsig.SignatureValidationResult;
 import com.microsoftopentechnologies.acs.xmldsig.SignatureValidator;
