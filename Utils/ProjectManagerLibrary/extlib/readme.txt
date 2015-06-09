@@ -1,4 +1,4 @@
-Copy below .jar files here
+Folder contains below .jar files
 
 jettison-1.1.jar
 commons-lang3-3.3.2.jar

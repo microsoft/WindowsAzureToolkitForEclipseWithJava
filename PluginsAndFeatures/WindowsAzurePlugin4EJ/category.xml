@@ -12,13 +12,13 @@
    <feature url="features/com.microsoftopentechnologies.windowsazure.tools.sdk.feature_0.7.0.qualifier.jar" id="com.microsoftopentechnologies.windowsazure.tools.sdk.feature" version="0.7.0.qualifier">
       <category name="com.persistent.winazure.eclipseplugin.category"/>
    </feature>
-   <feature url="features/com.microsoft.applicationinsights.feature_0.9.1.qualifier.jar" id="com.microsoft.applicationinsights.feature" version="0.9.1.qualifier">
-      <category name="com.persistent.winazure.eclipseplugin.category"/>
-   </feature>
    <feature url="features/com.microsoftopentechnologies.wacommon.feature_2.6.0.qualifier.jar" id="com.microsoftopentechnologies.wacommon.feature" version="2.6.0.qualifier">
       <category name="com.persistent.winazure.eclipseplugin.category"/>
    </feature>
    <feature url="features/com.persistent.winazure.eclipseplugin.feature_2.6.0.qualifier.jar" id="com.persistent.winazure.eclipseplugin.feature" version="2.6.0.qualifier">
+      <category name="com.persistent.winazure.eclipseplugin.category"/>
+   </feature>
+   <feature url="features/com.microsoft.applicationinsights.feature_0.9.5.qualifier.jar" id="com.microsoft.applicationinsights.feature" version="0.9.5.qualifier">
       <category name="com.persistent.winazure.eclipseplugin.category"/>
    </feature>
    <category-def name="com.persistent.winazure.eclipseplugin.category" label="Azure Toolkit for Java">

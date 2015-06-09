@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry exported="true" kind="lib" path="dependencies/applicationinsights-core-0.9.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="dependencies/applicationinsights-web-0.9.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/azure-management-0.7.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/azure-management-compute-0.7.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/azure-management-media-0.7.0.jar"/>
@@ -38,5 +36,8 @@
 	<classpathentry exported="true" kind="lib" path="azure-core-0.7.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/annotation-detector-3.0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/applicationinsights-core-0.9.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/applicationinsights-web-0.9.5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

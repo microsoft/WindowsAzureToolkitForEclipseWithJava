@@ -28,6 +28,8 @@ import org.apache.tools.ant.Task;
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.management.compute.models.DeploymentCreateParameters;
 import com.microsoft.windowsazure.management.compute.models.DeploymentGetResponse;
+import com.microsoft.windowsazure.management.compute.models.DeploymentSlot;
+import com.microsoft.windowsazure.management.compute.models.DeploymentStatus;
 import com.microsoft.windowsazure.management.compute.models.RoleInstance;
 import com.microsoft.windowsazure.management.compute.models.ServiceCertificateListResponse.Certificate;
 import com.microsoftopentechnologies.azuremanagementutil.model.InstanceStatus;
@@ -237,7 +239,7 @@ public class AzurePublish extends Task {
 				String deploymentName = createDeploymentService(configuration, instance, storageAccount);
 				this.log("Waiting for deployment to be ready...");
 				DeploymentGetResponse deployment = waitForDeployment(configuration,
-						cloudServiceName, instance, deploymentName);
+						cloudServiceName);
 				this.log("Status : " + deployment.getStatus().toString());
 				String deploymentURL = deployment.getUri().toString();
 				String serverAppName = XMLUtil.getFirstApplicationName(doc);
@@ -402,8 +404,7 @@ public class AzurePublish extends Task {
 	}
 
 	private DeploymentGetResponse waitForDeployment(Configuration configuration,
-			String cloudservicename, WindowsAzureServiceManagement service,
-			String deploymentName) throws Exception {
+			String cloudservicename) throws Exception {
 		// Start showing progress bar
 		ProgressBar progressBar = new ProgressBar(20000, "Waiting for instances to be ready");
 		Thread progressBarThread = new Thread(progressBar);
@@ -411,10 +412,18 @@ public class AzurePublish extends Task {
 
 		DeploymentGetResponse deployment = null;
 		String status = null;
+		DeploymentSlot deploymentSlotTemp;
+		if (DeploymentSlot.Staging.toString().equalsIgnoreCase(deploymentSlot)) {
+			deploymentSlotTemp = DeploymentSlot.Staging;
+		} else if (DeploymentSlot.Production.toString().equalsIgnoreCase(deploymentSlot)) {
+			deploymentSlotTemp = DeploymentSlot.Production;
+		} else {
+			throw new Exception("Invalid deployment slot name");
+		}
 		do {
 			Thread.sleep(20000);
-			deployment = service.getDeployment(configuration, cloudservicename, deploymentName);
-
+			deployment = WindowsAzureRestUtils.getDeploymentBySlot(
+					configuration, cloudservicename, deploymentSlotTemp);
 			for (RoleInstance instance : deployment.getRoleInstances()) {
 				status = instance.getInstanceStatus();
 				if (isRoleStatus(status)) {
@@ -422,6 +431,7 @@ public class AzurePublish extends Task {
 				}
 			}
 		} while (status != null && !(isRoleStatus(status)));
+
 		if (!InstanceStatus.ReadyRole.getInstanceStatus().equals(status)) {
 			// Stop the progress bar in case of exception also
 			progressBarThread.interrupt();
@@ -432,6 +442,17 @@ public class AzurePublish extends Task {
 			}
 			throw new Exception(status);
 		}
+
+		// check deployment status. And let Transitioning phase to finish
+		DeploymentStatus deploymentStatus = null;
+		do {
+			Thread.sleep(10000);
+			deployment = WindowsAzureRestUtils.getDeploymentBySlot(
+					configuration, cloudservicename, deploymentSlotTemp);
+			deploymentStatus = deployment.getStatus();
+		} while(deploymentStatus != null
+				&& (deploymentStatus.equals(DeploymentStatus.RunningTransitioning)
+						|| deploymentStatus.equals(DeploymentStatus.SuspendedTransitioning)));
 
 		// Stop the progress bar
 		progressBarThread.interrupt();

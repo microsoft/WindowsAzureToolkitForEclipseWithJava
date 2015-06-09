@@ -2,7 +2,7 @@
 <feature
       id="com.microsoft.applicationinsights.feature"
       label="Application Insights Plugin for Java"
-      version="0.9.1.qualifier"
+      version="0.9.5.qualifier"
       provider-name="Microsoft Open Technologies, Inc.">
 
    <description>

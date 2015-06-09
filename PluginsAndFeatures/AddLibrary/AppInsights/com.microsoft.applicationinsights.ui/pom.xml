@@ -10,6 +10,6 @@
   </parent>
   <groupId>com.microsoftopentechnologies.wap4ej.build</groupId>
   <artifactId>com.microsoft.applicationinsights.ui</artifactId>
-  <version>0.9.1-SNAPSHOT</version>
+  <version>0.9.5-SNAPSHOT</version>
   <packaging>eclipse-plugin</packaging>
 </project>
