@@ -6,6 +6,9 @@
          <contexts file="contexts.xml">
          </contexts>
    </extension>
+   <extension point="org.eclipse.ui.startup">
+     <startup class="com.microsoft.applicationinsights.ui.config.AIStartup"/>
+   </extension>
    
    
    <extension point="org.eclipse.ui.commands">
@@ -19,7 +22,7 @@
 	<extension point="org.eclipse.ui.menus">
   		<menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
 	  		<menu label="Azure" icon="icons/small/windowsAzure.png" id="com.microsoftopentechnologies.ui.common.webprojmenu">
-		   		<command 
+		   		<command icon="icons/small/applicationInsights.png"
 		           commandId="com.microsoft.ui.ai.config">
 			     </command>
 			    <visibleWhen checkEnabled="false">
@@ -69,4 +72,14 @@
   <extension
         point="org.eclipse.ui.startup">
   </extension>
+
+  <!-- Application Insights preference page -->
+  <extension point = "org.eclipse.ui.preferencePages">
+     <page
+       	id="com.microsoft.ui.preferencepage.applicationinsights"
+       	class="com.microsoft.applicationinsights.preference.ApplicationInsightsPreferencePage"
+       	name="Application Insights"
+       	category="com.persistent.ui.preferencepage.windowsazure">
+     </page>
+ </extension>
  </plugin>

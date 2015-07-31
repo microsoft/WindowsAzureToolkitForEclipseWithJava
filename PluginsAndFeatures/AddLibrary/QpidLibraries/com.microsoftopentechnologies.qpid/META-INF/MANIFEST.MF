@@ -1,13 +1,13 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Package for Apache Qpid Client Libraries for JMS Library (by MS Open Tech)
+Bundle-Name: Package for Apache Qpid Client Libraries for JMS Library
 Bundle-SymbolicName: com.microsoftopentechnologies.qpid;singleton:=true
 Bundle-Version: 0.19.0.qualifier
 Bundle-ClassPath: geronimo-jms_1.1_spec-1.0.jar,
  qpid-amqp-1-0-client-0.19.jar,
  qpid-amqp-1-0-client-jms-0.19.jar,
  qpid-amqp-1-0-common-0.19.jar
-Bundle-Vendor: Microsoft Open Technologies Inc.
+Bundle-Vendor: Microsoft Corp.
 Export-Package: javax.jms,
  org.apache.qpid.amqp_1_0.client,
  org.apache.qpid.amqp_1_0.codec,

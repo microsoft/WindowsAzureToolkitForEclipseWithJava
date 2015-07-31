@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Microsoft Open Technologies, Inc.
+ * Copyright Microsoft Corp.
  * All rights reserved.
  *
  * MIT License
@@ -35,6 +35,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.IWorkbench;
@@ -182,4 +183,22 @@ public class AILibraryUtil {
 		return new File(path).getPath();
 	}
 
+	/**
+	 * Method prepares image to display it in dialog.
+	 * @return
+	 */
+	public static Image getImage() {
+		Image image = null;
+		try {
+			URL imgUrl = Activator.getDefault().getBundle()
+					.getEntry(com.microsoft.applicationinsights.ui.config.Messages.dlgImgPath);
+			URL imgFileURL = FileLocator.toFileURL(imgUrl);
+			URL path = FileLocator.resolve(imgFileURL);
+			String imgpath = path.getFile();
+			image = new Image(null, new FileInputStream(imgpath));
+		} catch (Exception e){
+			Activator.getDefault().log(e.getMessage(), e);
+		}
+		return image;
+	}
 }

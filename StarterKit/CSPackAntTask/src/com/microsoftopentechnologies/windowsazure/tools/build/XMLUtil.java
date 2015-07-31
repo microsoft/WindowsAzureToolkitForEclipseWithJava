@@ -1,5 +1,5 @@
 /*
- Copyright 2015 Microsoft Open Technologies, Inc.
+ Copyright Microsoft Corp.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -123,7 +123,35 @@ public class XMLUtil {
 		
        	throw new IllegalArgumentException("Publish settings file " +publishSettingsFile.getAbsolutePath() + " is not valid");
 	}
-	
+
+	public static String getManagementUrl(File publishSettingsFile,
+			String subscriptionId) throws IOException, XPathExpressionException {
+		Document publishSettingsDoc = null;
+		String url = "";
+		try {
+			publishSettingsDoc = parseXMLFile(publishSettingsFile);
+		} catch (Exception e) {
+			throw new IOException("Exception occurred while parsing publish settings file " +
+					publishSettingsFile.getAbsolutePath() + ", ensure that it is valid");
+		}
+
+		NodeList publishProfileNodeList = publishSettingsDoc.getElementsByTagName("PublishProfile");
+		if (publishProfileNodeList != null) {
+			Element publishProfileElement = (Element) publishProfileNodeList.item(0);
+			String schemaVer = publishProfileElement.getAttribute("SchemaVersion");
+			if (schemaVer != null && !schemaVer.isEmpty() && schemaVer.equalsIgnoreCase("2.0")) {
+				XPath xPath = XPathFactory.newInstance().newXPath();
+				String expr = String.format(
+						"/PublishData/PublishProfile/Subscription[@Id='%s']/@ServiceManagementUrl",
+						subscriptionId);
+				url = xPath.evaluate(expr, publishSettingsDoc);
+			} else {
+				url = publishProfileElement.getAttribute("Url");
+			}
+		}
+		return url;
+	}
+
 	/**
 	 * Gets package type.
 	 * @param doc
@@ -172,7 +200,8 @@ public class XMLUtil {
 		XPath xPath = XPathFactory.newInstance().newXPath();
 		String expr = "/project/target[@name='createwapackage']/parallel/windowsazurepackage/workerrole[@name='%s']/startupenv[@type='%s']";
 		String exprWithVal = String.format(expr, roleName, "server.home");
-		return xPath.evaluate(exprWithVal, doc);
+		Element element = (Element) xPath.evaluate(exprWithVal, doc, XPathConstants.NODE);
+		return element.getAttribute("cloudvalue");
 	}
 
 	public static List<String> getRoleList(final String expr, final File xmlFile)

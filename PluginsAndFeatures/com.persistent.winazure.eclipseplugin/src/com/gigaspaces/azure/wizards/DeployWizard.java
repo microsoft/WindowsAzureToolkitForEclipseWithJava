@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -35,12 +35,7 @@ import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.Wizard;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
-
-import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.DeploymentSlot;
 import com.interopbridges.tools.windowsazure.OSFamilyType;
@@ -60,19 +55,21 @@ import com.microsoftopentechnologies.azurecommons.deploy.model.CertificateUpload
 import com.microsoftopentechnologies.azurecommons.deploy.model.RemoteDesktopDescriptor;
 import com.microsoftopentechnologies.azurecommons.deploy.wizard.ConfigurationEventArgs;
 import com.microsoftopentechnologies.azurecommons.deploy.wizard.DeployWizardUtilMethods;
-import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
 import com.microsoftopentechnologies.azurecommons.roleoperations.JdkSrvConfigUtilMethods;
 import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccount;
 import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccountRegistry;
-import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
-import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
-import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 import com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil;
 import com.microsoftopentechnologies.azurecommons.wacommonutil.EncUtilHelper;
 import com.microsoftopentechnologies.azurecommons.wacommonutil.PreferenceSetUtil;
+import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
+import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
+
+import waeclipseplugin.Activator;
 
 /**
  * Class responsible for deploying Azure project
@@ -149,7 +146,7 @@ public class DeployWizard extends Wizard {
 	@Override
 	public boolean performFinish() {
 		try {
-			showBusy(true);
+			PluginUtil.showBusy(true);
 			WindowsAzureProjectManager waProjManager =
 					WindowsAzureProjectManager.load(
 							new File(selectedProject.getLocation().toOSString()));
@@ -160,12 +157,12 @@ public class DeployWizard extends Wizard {
 			// Configure or remove remote access settings
 			boolean status = handleRDPSettings(waProjManager);
 			if (!status) {
-				showBusy(false);
+				PluginUtil.showBusy(false);
 				return false;
 			}
 			// certificate upload configuration
 			List<WindowsAzureCertificate> certToUpload = handleCertUpload(waProjManager);
-			showBusy(false);
+			PluginUtil.showBusy(false);
 			if (certToUpload != null && certToUpload.size() > 0) {
 				List<CertificateUpload> certUploadList = new ArrayList<CertificateUpload>();
 				for (int i = 0; i < certToUpload.size(); i++) {
@@ -217,7 +214,7 @@ public class DeployWizard extends Wizard {
 						ConfigurationEventArgs.CERTIFICATES,
 						new CertificateUploadList(certUploadList)));
 			}
-			showBusy(true);
+			PluginUtil.showBusy(true);
 			// clear new service array
 			signInPage.getNewServices().clear();
 
@@ -445,7 +442,7 @@ public class DeployWizard extends Wizard {
 				 */
 				waProjManager = removeAutoCloudUrl(waProjManager);
 				waProjManager.save();
-				showBusy(false);
+				PluginUtil.showBusy(false);
 			} catch (Exception e) {
 				Activator.getDefault().log(Messages.error, e);
 				super.setName("");
@@ -856,28 +853,5 @@ public class DeployWizard extends Wizard {
 			Activator.getDefault().log(Messages.autoUploadEr, e);
 		}
 		return projMngr;
-	}
-
-	/**
-	 * Method will change cursor type whenever required.
-	 * @param busy
-	 * true : Wait cursor
-	 * false : Normal arrow cursor
-	 */
-	private void showBusy(final boolean busy) {
-		Display.getDefault().syncExec(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				Shell shell = Display.getDefault().getActiveShell();
-				if (busy) { //show Busy Cursor
-					Cursor cursor = Display.getDefault().getSystemCursor(SWT.CURSOR_WAIT);          
-					shell.setCursor(cursor);
-				} else {
-					shell.setCursor(null);
-				}
-			}
-		});
 	}
 }

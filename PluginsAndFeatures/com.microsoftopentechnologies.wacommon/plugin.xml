@@ -9,5 +9,12 @@
    <extension point="org.eclipse.ui.startup">
      <startup class="com.microsoftopentechnologies.wacommon.startup.WACPStartUp"/>
    </extension>
-
+    <!-- Azure preference page -->
+   <extension point = "org.eclipse.ui.preferencePages">
+    <page
+       	id="com.persistent.ui.preferencepage.windowsazure"
+       	class="com.microsoftopentechnologies.wacommon.preference.WindowsAzurePreferencePage"
+       	name="Azure">
+    </page>
+   </extension>
 </plugin>

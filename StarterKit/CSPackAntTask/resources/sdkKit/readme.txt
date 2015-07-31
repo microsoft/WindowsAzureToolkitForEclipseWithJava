@@ -1,4 +1,4 @@
-Because Azure SDK cannot be installed on Linux machines, following files from Azure SDK 2.6 need to be placed under this directory:
+Because Azure SDK cannot be installed on Linux machines, following files from Azure SDK 2.7 need to be placed under this directory:
 
 Microsoft.WindowsAzure.StorageClient.dll
 

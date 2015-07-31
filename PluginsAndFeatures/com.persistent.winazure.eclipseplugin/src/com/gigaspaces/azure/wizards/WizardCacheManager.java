@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -287,8 +287,9 @@ public final class WizardCacheManager {
 	public static StorageService createStorageAccount(StorageAccountCreateParameters accountParameters)
 			throws Exception {
 		Subscription subscription = currentPublishData.getCurrentSubscription();
+		String prefFilePath = WAEclipseHelper.getTemplateFile(com.persistent.ui.preference.Messages.prefFileName);
 		StorageService storageAccount = WizardCacheManagerUtilMethods.
-				createStorageAccount(accountParameters, currentPublishData);
+				createStorageAccount(accountParameters, currentPublishData, prefFilePath);
 		// remove previous mock if existed
 		currentPublishData.getStoragesPerSubscription().get(subscription.getId()).remove(accountParameters.getName());
 		currentPublishData.getStoragesPerSubscription().get(subscription.getId()).add(storageAccount);
@@ -467,6 +468,8 @@ public final class WizardCacheManager {
 		boolean isNewSchema = schemaVer != null && !schemaVer.isEmpty() && schemaVer.equalsIgnoreCase("2.0");
 		// URL if schema version is 1.0
 		String url = publishData.getPublishProfile().getUrl();
+		String prefFilePath = WAEclipseHelper.getTemplateFile(
+				com.persistent.ui.preference.Messages.prefFileName);
 		Map<String, Configuration> configurationPerSubscription = new HashMap<String, Configuration>();
 		for (Subscription subscription : subscriptions) {
 			if (isNewSchema) {
@@ -475,8 +478,6 @@ public final class WizardCacheManager {
 			}
 			if (url == null || url.isEmpty()) {
 				try {
-					String prefFilePath = WAEclipseHelper.getTemplateFile(
-							com.persistent.ui.preference.Messages.prefFileName);
 					url = PreferenceSetUtil.getManagementURL(
 							PreferenceSetUtil.getSelectedPreferenceSetName(prefFilePath),
 							prefFilePath);
@@ -515,7 +516,8 @@ public final class WizardCacheManager {
 		}
 		publishData.setConfigurationPerSubscription(configurationPerSubscription);
 
-		if (publishData.isInitialized() == false && publishData.isInitializing().compareAndSet(false, true)) {
+		if (publishData.isInitialized() == false) {
+//				&& publishData.isInitializing().compareAndSet(false, true)) {
 
 			List<Future<?>> loadServicesFutures = null;
 			Future<?> loadSubscriptionsFuture = null;
@@ -583,20 +585,28 @@ public final class WizardCacheManager {
 					future.get(OPERATIONS_TIMEOUT, TimeUnit.SECONDS);
 				}
 
-				for (Subscription sub : publishData.getPublishProfile().getSubscriptions()) {
-					/*
-					 * Get collection of storage services in each subscription.
-					 */
-					StorageServices services = publishData.getStoragesPerSubscription().get(sub.getId());
-					for (StorageService strgService : services) {
-						List<URI> endpoints = strgService.getStorageAccountProperties().getEndpoints();
-						for (int i = 0; i < endpoints.size(); i++) {
-							String uri = endpoints.get(i).toString();
-							if (uri.startsWith("https://")) {
-								endpoints.set(i, URI.create(uri.replaceFirst("https://", "http://")));
+				try {
+					String chinaMngmntUrl = PreferenceSetUtil.getManagementURL("windowsazure.cn (China)", prefFilePath);
+					chinaMngmntUrl = chinaMngmntUrl.substring(0, chinaMngmntUrl.lastIndexOf("/"));
+					if (url.equals(chinaMngmntUrl)) {
+						for (Subscription sub : publishData.getPublishProfile().getSubscriptions()) {
+							/*
+							 * Get collection of storage services in each subscription.
+							 */
+							StorageServices services = publishData.getStoragesPerSubscription().get(sub.getId());
+							for (StorageService strgService : services) {
+								List<URI> endpoints = strgService.getStorageAccountProperties().getEndpoints();
+								for (int i = 0; i < endpoints.size(); i++) {
+									String uri = endpoints.get(i).toString();
+									if (uri.startsWith("https://")) {
+										endpoints.set(i, URI.create(uri.replaceFirst("https://", "http://")));
+									}
+								}
 							}
 						}
 					}
+				} catch (Exception e) {
+					Activator.getDefault().log(e.getMessage());
 				}
 			}
 			catch (InterruptedException e) {

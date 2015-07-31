@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -47,8 +47,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
-import waeclipseplugin.Activator;
-
 import com.gigaspaces.azure.propertypage.SubscriptionPropertyPage;
 import com.gigaspaces.azure.runnable.AccountActionRunnable;
 import com.gigaspaces.azure.runnable.CacheAccountWithProgressBar;
@@ -73,6 +71,8 @@ import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.ui.propertypage.WARemoteAccessPropertyPage;
 import com.persistent.util.MessageUtil;
 import com.persistent.util.WAEclipseHelper;
+
+import waeclipseplugin.Activator;
 /**
  * Class creates UI components and their respective
  * listeners of publish wizard page.
@@ -190,16 +190,19 @@ public class SignInPage extends WindowsAzurePage {
 		}
 	}
 
-	private void doLoadPreferences() {
+	private boolean doLoadPreferences() {
+		boolean isLoadingSuccessful = true;
 		try {
 			getContainer().run(true, true,
 					new LoadAccountWithProgressBar(null,
 							this.getShell()));
 		} catch (InvocationTargetException e) {
+			isLoadingSuccessful = false;
 			MessageUtil.displayErrorDialog(getShell(),
 					Messages.importDlgTitle,e.getMessage());
 		} catch (InterruptedException e) {
 		}
+		return isLoadingSuccessful;
 	}
 
 	/**
@@ -361,11 +364,15 @@ public class SignInPage extends WindowsAzurePage {
 			@Override
 			public void run() {
 				if (!PreferenceUtil.isLoaded()) {
-					doLoadPreferences();
+					boolean isSuccessful = doLoadPreferences();
 					// reload information if its new eclipse session.
 					PreferenceUtilStrg.load();
 					MethodUtils.prepareListFromPublishData();
-					PreferenceUtil.setLoaded(true);
+					if (isSuccessful) {
+						PreferenceUtil.setLoaded(true);
+					} else {
+						PreferenceUtil.setLoaded(false);
+					}
 					subscriptionCombo = UIUtils.
 							populateSubscriptionCombo(subscriptionCombo);
 					if ((subscriptionCombo.
@@ -699,7 +706,7 @@ public class SignInPage extends WindowsAzurePage {
 		// open remote access dialog
 		Object remoteAccess =
 				new WARemoteAccessPropertyPage();
-		int btnId = WAEclipseHelper.
+		int btnId = PluginUtil.
 				openPropertyPageDialog(
 						com.persistent.util.Messages.cmhIdRmtAces,
 						com.persistent.util.Messages.cmhLblRmtAces,
@@ -934,7 +941,7 @@ public class SignInPage extends WindowsAzurePage {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
 				Object subscription = new SubscriptionPropertyPage();
-				WAEclipseHelper.
+				PluginUtil.
 				openPropertyPageDialog(
 						com.persistent.util.Messages.cmhIdCrdntls,
 						com.persistent.util.Messages.cmhLblSubscrpt,

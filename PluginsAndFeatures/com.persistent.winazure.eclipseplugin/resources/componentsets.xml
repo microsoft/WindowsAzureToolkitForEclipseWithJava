@@ -1,5 +1,5 @@
 <!--
-Copyright Microsoft Open Technologies, Inc.
+Copyright Microsoft Corp.
  
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@ limitations under the License.
 
 -->
 
-<componentsets version="2.6.0">
+<componentsets version="2.7.0">
 <!-- 
 *******************************************************************************
 HOW TO CREATE A NEW JDK PACKAGE DEPLOYMENT TEMPLATE:
@@ -47,6 +47,12 @@ of order will likely produce faulty logic.
 		<component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy"/>
 	</componentset>
 	
+	<componentset name="Azul Zulu, OpenJDK 1.8.0_u45" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.8.0_45-8.7.0.5-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.8.0_45-8.7.0.5-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
 	<componentset name="Azul Zulu, OpenJDK 1.8.0_u40" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.8.0_40-8.6.0.1-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
@@ -77,12 +83,18 @@ of order will likely produce faulty logic.
         <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.8.0_11-8.2.0.1-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
 	</componentset>
 	
-	<componentset name="Azul Zulu, OpenJDK 1.8.0_u05" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+	<componentset name="Azul Zulu, OpenJDK 1.8.0_u05" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html" status="deprecated">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.8.0_05-8.1.0.6-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
         <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.8.0_05-8.1.0.6-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
 	</componentset>
 	
+	<componentset name="Azul Zulu, OpenJDK 1.7.0_u80" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_80-7.10.0.1-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_80-7.10.0.1-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
 	<componentset name="Azul Zulu, OpenJDK 1.7.0_u76" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_76-7.8.0.3-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
@@ -119,7 +131,7 @@ of order will likely produce faulty logic.
         <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_45-7.2.1.5-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
 	</componentset>
 
-	<componentset name="Azul Zulu, OpenJDK 1.7.0_u40" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+	<componentset name="Azul Zulu, OpenJDK 1.7.0_u40" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html" status="deprecated">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.7.0_40-7.1.0.0-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
         <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_40-7.1.0.0-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
@@ -131,6 +143,12 @@ of order will likely produce faulty logic.
         <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.7.0_25-7.0.0.0-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
 	</componentset>
 		
+	<componentset name="Azul Zulu, OpenJDK 1.6.0_u63" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
+		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.6.0_63-6.8.0.1-win64" type="jdk.home"/>
+		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>
+        <component importmethod="copy" importsrc="${placeholder}" type="jdk.deploy" deploydir="%DEPLOYROOT%" deploymethod="copy" cloudaltsrc="http://azure.azulsystems.com/zulu/zulu1.6.0_63-6.8.0.1-win64.zip?eclipse" cloudmethod="unzip" cloudsrc="auto" cloudupload="auto" />
+	</componentset>
+
 	<componentset name="Azul Zulu, OpenJDK 1.6.0_u59" type="JDK" licenseurl="http://openjdk.java.net/legal/gplv2+ce.html">
 		<startupenv name="JAVA_HOME" value="%DEPLOYROOT%\${placeholder}" cloudvalue="%DEPLOYROOT%\zulu1.6.0_59-6.7.0.2-win64" type="jdk.home"/>
 		<startupenv name="PATH" value="%JAVA_HOME%\bin;%PATH%" type="jdk.path"/>

@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -964,11 +964,18 @@ public class WAServerConfiguration extends PropertyPage {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				JdkSrvConfig.updateServerDlURL();
-				if (JdkSrvConfig.isSrvDownloadChecked()
-						|| JdkSrvConfig.isSrvAutoUploadChecked()) {
+				if (JdkSrvConfig.isSrvAutoUploadChecked()) {
 					JdkSrvConfig.updateServerHome(JdkSrvConfig.getTxtDir().getText());
 				} else if (JdkSrvConfig.getThrdPrtSrvBtn().getSelection()) {
 					JdkSrvConfig.updateServerHomeForThirdParty();
+				} else if (JdkSrvConfig.isSrvDownloadChecked()) {
+					String url = JdkSrvConfig.getTxtUrlSrv().getText().trim();
+					if (WAEclipseHelperMethods.isBlobStorageUrl(url) && url.endsWith(".zip")) {
+						url = url.substring(0, url.indexOf(".zip"));
+						JdkSrvConfig.updateServerHome(url);
+					} else {
+						JdkSrvConfig.updateServerHome("");
+					}
 				}
 				handlePageComplete();
 			}
@@ -1720,6 +1727,7 @@ public class WAServerConfiguration extends PropertyPage {
 							windowsAzureRole.setServerCldAltSrc(JdkSrvConfig.getServerCloudAltSource());
 							windowsAzureRole.setServerCloudName(
 									JdkSrvConfig.getThrdPrtSrvCmb().getText());
+							windowsAzureRole.setServerCloudValue(srvHome);
 						}
 						windowsAzureRole.setServerCloudUploadMode(WARoleComponentCloudUploadMode.auto);
 					}

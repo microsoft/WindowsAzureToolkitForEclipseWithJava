@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Microsoft Open Technologies, Inc.
+ * Copyright Microsoft Corp.
  * All rights reserved.
  *
  * MIT License
@@ -20,12 +20,34 @@
 
 package com.microsoft.applicationinsights.ui.config;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.ui.IStartup;
 
-public class AIStartup  implements IStartup {
+import com.microsoft.applicationinsights.preference.ApplicationInsightsPreferences;
+import com.microsoft.applicationinsights.ui.activator.Activator;
+
+public class AIStartup implements IStartup {
 
 	@Override
 	public void earlyStartup() {
+		try {
+			IWorkspace workspace = ResourcesPlugin.getWorkspace();
+			IWorkspaceRoot root = workspace.getRoot();
+			// register resource change listener
+			AIResourceChangeListener listener = new AIResourceChangeListener();
+			workspace.addResourceChangeListener(listener, IResourceChangeEvent.POST_CHANGE);
+			// load application insights preferences
+			ApplicationInsightsPreferences.load();
+			for (IProject iProject : root.getProjects()) {
+				AIResourceChangeListener.initializeAIRegistry(iProject);
+			}
+			ApplicationInsightsPreferences.save();
+		} catch(Exception ex) {
+			Activator.getDefault().log(Messages.startUpErr, ex);
+		}
 	}
-
 }

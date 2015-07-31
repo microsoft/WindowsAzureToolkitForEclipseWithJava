@@ -1117,14 +1117,8 @@
     </page>
  </extension>
  
- <!-- Azure preference page -->
  <extension
       point = "org.eclipse.ui.preferencePages">
-      <page
-       	id="com.persistent.ui.preferencepage.windowsazure"
-       	class="com.persistent.ui.preference.WindowsAzurePreferencePage"
-       	name="Azure">
-       </page>
         <!-- Service Endpoints preference page -->
         <page
        	id="com.persistent.ui.preferencepage.serviceendpoints"

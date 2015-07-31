@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
-import org.eclipse.jface.preference.IPreferencePage;
 import org.eclipse.jface.preference.PreferenceDialog;
 import org.eclipse.jface.preference.PreferenceManager;
 import org.eclipse.jface.preference.PreferenceNode;
@@ -44,8 +43,6 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
-
-import waeclipseplugin.Activator;
 
 import com.gigaspaces.azure.propertypage.SubscriptionPropertyPage;
 import com.gigaspaces.azure.util.PreferenceUtilForProjectUpgrade;
@@ -73,6 +70,8 @@ import com.persistent.winazureroles.WARLoadBalance;
 import com.persistent.winazureroles.WARLocalStorage;
 import com.persistent.winazureroles.WASSLOffloading;
 import com.persistent.winazureroles.WAServerConfiguration;
+
+import waeclipseplugin.Activator;
 
 /**
  * This class contains common utility methods.
@@ -338,57 +337,6 @@ public class WAEclipseHelper {
 	}
 
 	/**
-	 * Method opens property dialog with only desired property page.
-	 * 
-	 * @param nodeId
-	 *            : Node ID of property page
-	 * @param nodeLbl
-	 *            : Property page name
-	 * @param classObj
-	 *            : Class object of property page
-	 * @return
-	 */
-	public static int openPropertyPageDialog(String nodeId, String nodeLbl,
-			Object classObj) {
-		int retVal = Window.CANCEL; // value corresponding to cancel
-		// Node creation
-		try {
-			PreferenceNode nodePropPg = new PreferenceNode(nodeId, nodeLbl,
-					null, classObj.getClass().toString());
-			nodePropPg.setPage((IPreferencePage) classObj);
-			nodePropPg.getPage().setTitle(nodeLbl);
-
-			PreferenceManager mgr = new PreferenceManager();
-			mgr.addToRoot(nodePropPg);
-			// Dialog creation
-			PreferenceDialog dialog = new PreferenceDialog(PlatformUI
-					.getWorkbench().getDisplay().getActiveShell(), mgr);
-			// make desired property page active.
-			dialog.setSelectedNode(nodeLbl);
-			dialog.create();
-			/*
-			 * If showing storage accounts preference page, don't show
-			 * properties for title as its common repository.
-			 */
-			String dlgTitle = "";
-			if (nodeLbl.equals(Messages.cmhLblStrgAcc)) {
-				dlgTitle = nodeLbl;
-			} else {
-				dlgTitle = String.format(Messages.cmhPropFor,
-						getSelectedProject().getName());
-			}
-			dialog.getShell().setText(dlgTitle);
-			dialog.open();
-			// return whether user has pressed OK or Cancel button
-			retVal = dialog.getReturnCode();
-		} catch (Exception e) {
-			PluginUtil.displayErrorDialogAndLog(new Shell(),
-					Messages.rolsDlgErr, Messages.projDlgErrMsg, e);
-		}
-		return retVal;
-	}
-
-	/**
 	 * If project name present in package.xml and
 	 * WindowsAzureProjectBuilder.launch does not match with the actual one then
 	 * correct it accordingly.
@@ -437,7 +385,7 @@ public class WAEclipseHelper {
 					null);
 			iProject.close(null);
 		} else {
-			// this method is mainly for upgrading the publish tasks in package.xml and may need to remove after release 2.5.1
+			// this method is mainly for upgrading the publish tasks in package.xml and may need to remove after release 2.7.0
 			projMngr.upgradePackageDoc();
 			
 			// update version in package.xml
@@ -519,7 +467,7 @@ public class WAEclipseHelper {
 				"%proj%/.templates/emulatorTools/RunInEmulator.cmd", new File(projectLocation,
 						".templates/emulatorTools/RunInEmulator.cmd"));
 		
-		// Copy cloud tools - start - may need to remove after 2.5.1 release
+		// Copy cloud tools - start - may need to remove after 2.7.0 release
 		FileUtil.copyFileFromZip(starterKitZip,	"%proj%/.templates/cloudTools/buildAndPublish.cmd",
 				new File(projectLocation, ".templates/cloudTools/buildAndPublish.cmd"));
 		
@@ -531,6 +479,12 @@ public class WAEclipseHelper {
 		
 		FileUtil.copyFileFromZip(starterKitZip,	"%proj%/.templates/cloudTools/unpublish.sh",
 				new File(projectLocation, ".templates/cloudTools/unpublish.sh"));
+
+		FileUtil.copyFileFromZip(starterKitZip,	"%proj%/.templates/cloudTools/publish.cmd",
+				new File(projectLocation, ".templates/cloudTools/publish.cmd"));
+
+		FileUtil.copyFileFromZip(starterKitZip,	"%proj%/.templates/cloudTools/publish.sh",
+				new File(projectLocation, ".templates/cloudTools/publish.sh"));
 		// Copy cloud tools - end.
 	}
 

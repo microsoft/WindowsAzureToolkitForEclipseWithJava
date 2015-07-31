@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -43,8 +43,6 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 
-import waeclipseplugin.Activator;
-
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
@@ -52,8 +50,11 @@ import com.microsoftopentechnologies.azurecommons.roleoperations.JdkSrvConfigUti
 import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.azurecommons.storageregistry.StorageRegistryUtilMethods;
 import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.ui.preference.StorageAccountsPreferencePage;
 import com.persistent.ui.projwizard.WAProjectWizard;
+
+import waeclipseplugin.Activator;
 
 /**
  * Class creates all the UI components
@@ -1034,7 +1035,7 @@ public class JdkSrvConfig {
 	public static Combo openAccLink(Button btn, Combo combo, String tabControl) {
 		Combo updatedCmb = combo;
 		Object storageAcc = new StorageAccountsPreferencePage();
-		WAEclipseHelper.
+		PluginUtil.
 		openPropertyPageDialog(
 				com.persistent.util.Messages.cmhIdStrgAcc,
 				com.persistent.util.Messages.cmhLblStrgAcc,

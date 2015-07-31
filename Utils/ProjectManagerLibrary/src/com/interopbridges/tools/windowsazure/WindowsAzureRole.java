@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -5488,6 +5488,37 @@ public class WindowsAzureRole {
 				} else {
 					strenv.setAttribute(WindowsAzureConstants.ATTR_CLD_VAL,
 							value);
+				}
+			}
+		} catch (Exception ex) {
+			throw new WindowsAzureInvalidProjectOperationException("", ex);
+		}
+	}
+
+	/**
+	 * This API will set cloud value attribute of server home if server is not set
+	 * will throw exception if value is null, api will remove the attribute from xml
+	 * @param value
+	 * @throws WindowsAzureInvalidProjectOperationException
+	 */
+	public void setServerCloudValue(String value)
+			throws WindowsAzureInvalidProjectOperationException {
+		try {
+			if (getServerName() == null) {
+				throw new WindowsAzureInvalidProjectOperationException(
+						"Server is not configured");
+			} else {
+				XPath xPath = XPathFactory.newInstance().newXPath();
+				Document doc = winProjMgr.getPackageFileDoc();
+				String expr = String.format(
+						WindowsAzureConstants.WA_PACK_SENV_TYPE, getName(),
+						"server.home");
+				Element strenv = (Element) xPath.evaluate(expr, doc,
+						XPathConstants.NODE);
+				if (value == null) {
+					strenv.removeAttribute(WindowsAzureConstants.ATTR_CLD_VAL);
+				} else {
+					strenv.setAttribute(WindowsAzureConstants.ATTR_CLD_VAL, value);
 				}
 			}
 		} catch (Exception ex) {

@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -34,9 +34,11 @@ import com.microsoft.windowsazure.management.compute.models.ServiceCertificateLi
 import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
 import com.microsoft.windowsazure.management.storage.models.StorageAccountCreateParameters;
 import com.microsoft.windowsazure.management.storage.models.StorageAccountProperties;
+import com.microsoftopentechnologies.azurecommons.deploy.util.MethodUtils;
 import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
 import com.microsoftopentechnologies.azuremanagementutil.exception.InvalidThumbprintException;
 import com.microsoftopentechnologies.azurecommons.exception.RestAPIException;
+import com.microsoftopentechnologies.azurecommons.wacommonutil.PreferenceSetUtil;
 import com.microsoftopentechnologies.azuremanagementutil.model.KeyName;
 import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
 import com.microsoftopentechnologies.azuremanagementutil.model.StorageServices;
@@ -247,7 +249,8 @@ public final class WizardCacheManagerUtilMethods {
 	}
 
 	public static StorageService createStorageAccount(StorageAccountCreateParameters accountParameters,
-			PublishData currentPublishData)
+			PublishData currentPublishData,
+			String prefFilePath)
 					throws Exception, RestAPIException,
 					InterruptedException, ServiceException {
 		WindowsAzureServiceManagement service;
@@ -260,11 +263,19 @@ public final class WizardCacheManagerUtilMethods {
 			waitForStatus(configuration, service, requestId);
 
 			StorageService storageAccount = service.getStorageAccount(configuration, accountParameters.getName());
-			List<URI> endpoints = storageAccount.getStorageAccountProperties().getEndpoints();
-			if (endpoints.get(0).toString().startsWith("https://")) {
-				endpoints.set(0, URI.create(endpoints.get(0).toString().replaceFirst("https://", "http://")));
-				endpoints.set(1, URI.create(endpoints.get(1).toString().replaceFirst("https://", "http://")));
-				endpoints.set(2, URI.create(endpoints.get(2).toString().replaceFirst("https://", "http://")));
+
+			String mngmntUrl = MethodUtils.getManagementUrlAsPerPubFileVersion(currentPublishData,
+					currentPublishData.getCurrentSubscription(), prefFilePath);
+			String chinaMngmntUrl = PreferenceSetUtil.getManagementURL("windowsazure.cn (China)", prefFilePath);
+			chinaMngmntUrl = chinaMngmntUrl.substring(0, chinaMngmntUrl.lastIndexOf("/"));
+			if (mngmntUrl.equals(chinaMngmntUrl)) {
+				List<URI> endpoints = storageAccount.getStorageAccountProperties().getEndpoints();
+				for (int i = 0; i < endpoints.size(); i++) {
+					String uri = endpoints.get(i).toString();
+					if (uri.startsWith("https://")) {
+						endpoints.set(i, URI.create(uri.replaceFirst("https://", "http://")));
+					}
+				}
 			}
 			return storageAccount;
 		}

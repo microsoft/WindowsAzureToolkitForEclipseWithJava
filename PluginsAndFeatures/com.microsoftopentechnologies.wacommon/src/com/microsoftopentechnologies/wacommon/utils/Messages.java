@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Microsoft Open Technologies Inc.
+* Copyright Microsoft Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,12 @@ public final class Messages extends NLS {
 	public static String SDKLocErrMsg;
 	public static String sdkLibBaseJar;
 	public static String cmdUtilErrMsg;
+	public static String resCLExWkspRfrsh;
+	public static String cmhLblStrgAcc;
+	public static String cmhPropFor;
+	public static String rolsDlgErr;
+	public static String projDlgErrMsg;
+	public static String aiTxt;
 	
     static {
         // initialize resource bundle

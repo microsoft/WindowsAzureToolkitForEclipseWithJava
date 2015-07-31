@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -55,7 +55,15 @@ public final class Messages extends NLS {
     public static String dwnlPubSetFile;
     public static String pathLbl;
     public static String mgmtPortalShell;
-    
+    /* New resource group dialog messages - end*/
+    public static String newResGrpTtl;
+    public static String newResGrpMsg;
+    public static String name;
+    public static String sub;
+    public static String location;
+    public static String noSubErrMsg;
+    public static String newResErrMsg;
+    public static String getValuesErrMsg;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

@@ -1,5 +1,5 @@
 /*
- Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class AzurePublish extends Task {
 	private String PACKAGE_TYPE = WINAZURE_PACKAGE + "/@packagetype";
 	private String ROLE = "/ServiceConfiguration/Role";
 	private String containerName = "antdeploy";
-	private String cspckDefaultFileName = "WindowsAzurePackage.cspkg";
+	private String cspkgDefaultFileName = "WindowsAzurePackage.cspkg";
 	private String cscfgDefaultFileName = "ServiceConfiguration.cscfg";
 	private String samplePfxFileName = "SampleRemoteAccessPrivate.pfx";
 	private String deployFolder = "deploy";
@@ -141,6 +141,30 @@ public class AzurePublish extends Task {
 		// Set projectDir to a default (based on basedir) if not set
 		if (Utils.isNullOrEmpty(projectDir)) {
 			projectDir = getProject().getBaseDir().getAbsolutePath();
+		}
+
+		// check if 'deploy' folder is missing
+		File deployFolder = new File(constructDeployFolderPath());
+		if (deployFolder.exists() && deployFolder.isDirectory()) {
+			File cscfgFile = new File(constructDeployCscfgFilePath());
+			if (cscfgFile.exists() && cscfgFile.isFile()) {
+				File cspkgFile = new File(constructCspkgFilePath());
+				if (!cspkgFile.exists() || cspkgFile.isDirectory()) {
+					throw new BuildException("The package file (WindowsAzurePackage.cspkg) is missing "
+							+ "from the 'deploy' directory. "
+							+ "Make sure to build the project first or specify the correct path to the "
+							+ "'deploy' directory containing this and the ServiceConfiguration.cscfg files.");
+				}
+			} else {
+				throw new BuildException("The configuration file (ServiceConfiguration.cscfg) is missing "
+						+ "from the 'deploy' directory. "
+						+ "Make sure to include it there or specify the correct path to the "
+						+ "'deploy' directory containing this and the WindowsAzurePackage.cspkg files.");
+			}
+		} else {
+			throw new BuildException("The 'deploy' folder is missing. "
+					+ "Rebuild the project or specify the correct path to a 'deploy' directory "
+					+ "containing the WindowsAzurePackage.cspkg and ServiceConfiguration.cscfg files.");
 		}
 
 		if (Utils.isNotNullOrEmpty(publishSettingsPath)) {
@@ -234,8 +258,9 @@ public class AzurePublish extends Task {
 				this.log("Creating cloud service : '" + cloudServiceName + "' if does not exists");
 				instance.createCloudServiceIfNotExists(configuration, cloudServiceName, region);
 				uploadSampleCertIfNotPresent(configuration, instance);
+				String managementUrl = XMLUtil.getManagementUrl(pubFile, subscriptionId);
 				StorageService storageAccount = Utils.createStorageAccountIfNotExists(
-						configuration, instance, storageAccountName, region);
+						configuration, instance, storageAccountName, region, managementUrl);
 				String deploymentName = createDeploymentService(configuration, instance, storageAccount);
 				this.log("Waiting for deployment to be ready...");
 				DeploymentGetResponse deployment = waitForDeployment(configuration,
@@ -278,7 +303,7 @@ public class AzurePublish extends Task {
 		// create cspkg target name and uploadPackageService
 		this.log("Uploading deployment package to storage account.");
 		storageservices.putBlob(containerName, cspckgTargetName,
-				new File(constructCspckFilePath()), null);
+				new File(constructCspkgFilePath()), null);
 		this.log("Uploaded deployment package.");
 	}
 
@@ -355,9 +380,14 @@ public class AzurePublish extends Task {
 				+ "using portal, else deployment may fail.");
 	}
 
-	private String constructCspckFilePath() {
+	private String constructDeployFolderPath() {
 		String projectLocation = this.projectDir;
-		return projectLocation + File.separator + deployFolder + File.separator + cspckDefaultFileName;
+		return projectLocation + File.separator + deployFolder;
+	}
+
+	private String constructCspkgFilePath() {
+		String projectLocation = this.projectDir;
+		return projectLocation + File.separator + deployFolder + File.separator + cspkgDefaultFileName;
 	}
 
 	private String constructPfxFilePath() {

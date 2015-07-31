@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Microsoft Open Technologies, Inc.
+ * Copyright Microsoft Corp.
  * All rights reserved.
  *
  * MIT License
@@ -34,7 +34,6 @@ public class Activator extends AbstractUIPlugin {
 
 	// The shared instance
 	private static Activator plugin;
-	public static boolean dplyState;
 
 	/**
 	 * The constructor
@@ -80,21 +79,7 @@ public class Activator extends AbstractUIPlugin {
         getLog().log(new Status(IStatus.ERROR, PLUGIN_ID, message, excp));
     }
     
-    /**
-     * Save the Deployment Assembly check box state
-     * which will be used in case of immediate edit.
-     * @param state
-     */
-    public static void setDeploymentAssemblyState(boolean state) {
-    	dplyState = state;
-    }
-
-    /**
-     * Returns Deployment Assembly check box state
-     * which will be used in case of immediate edit.
-     * @return
-     */
-    public static boolean geteploymentAssemblyState() {
-    	return dplyState;
-    }
+    public void log(String message) {
+		getLog().log(new Status(IStatus.ERROR, PLUGIN_ID, message));
+	}
 }

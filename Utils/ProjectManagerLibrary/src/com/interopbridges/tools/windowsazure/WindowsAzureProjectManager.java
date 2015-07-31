@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -137,7 +137,6 @@ public class WindowsAzureProjectManager {
 					for (File file : files) {
 						String tmpFileName = file.getName();
 						if (!(tmpFileName.equalsIgnoreCase(".externalToolBuilders")
-								|| tmpFileName.equalsIgnoreCase(".templates")
 								|| tmpFileName.equals("deploy")
 								|| tmpFileName.equalsIgnoreCase(".cspack.jar")
 								|| tmpFileName.equalsIgnoreCase("lib")
@@ -481,7 +480,7 @@ public class WindowsAzureProjectManager {
 					.hasNext();) {
 				WindowsAzureRole windowsAzureRole = iterator.next();
 				if (sdkVersion == null) {
-					sdkVersion = "2.6.0.0";
+					sdkVersion = "2.7.0.0";
 				}
 				// If Session affinity is enabled
 				if (sdkVersion != null
@@ -2251,7 +2250,7 @@ public class WindowsAzureProjectManager {
 				if (versionedSdkDir.isDirectory()) {
 
 					// Since we are iterating in descending manner , below if
-					// will be true only if SDK2.6 or greater version is not
+					// will be true only if SDK2.7 or greater version is not
 					// installed.
 					// If greater version is installed we always break loop and
 					// return the value.
@@ -2350,7 +2349,7 @@ public class WindowsAzureProjectManager {
 		if (storageEmulatorDir.exists()) {
 			return storageEmulatorDir.toString();
 		} else {
-			throw new IOException("Azure SDK v2.6 or later is not installed.");
+			throw new IOException("Azure SDK v2.7 or later is not installed.");
 		}
 	}
 
@@ -3625,6 +3624,34 @@ public class WindowsAzureProjectManager {
 
 		}
 		
+		if (!ParserXMLUtility.doesNodeExists(packageFileDoc,
+				String.format(WindowsAzureConstants.PROJ_GLOBAL_TARGET, "publishonly"))) {
+			// Add publishonly target.
+			nodeAttribites.clear();
+			nodeAttribites.put("name", "publishonly");
+			nodeAttribites.put("description", "Publish only (do not rebuild) Azure project to cloud");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, "/project", "target", false, nodeAttribites);
+
+			// Insert child elements for target publishonly
+			nodeExpr = String.format(WindowsAzureConstants.PROJ_GLOBAL_TARGET, "publishonly");
+			nodeAttribites.clear();
+			nodeAttribites.put("cloudservicename", "${cloudservicename}");
+			nodeAttribites.put("deploymentslot", "${deploymentslot}");
+			nodeAttribites.put("overwritepreviousdeployment", "${overwritepreviousdeployment}");
+			nodeAttribites.put("projectdir", "${basedir}");
+			nodeAttribites.put("publishsettingspath", "${publishsettingspath}");
+			nodeAttribites.put("region", "${region}");
+			nodeAttribites.put("storageaccountname", "${storageaccountname}");
+			nodeAttribites.put("subscriptionid", "${subscriptionid}");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, nodeExpr, "azurepublish", false, nodeAttribites);
+
+			nodeAttribites.clear();
+			nodeAttribites.put("name", "azurepublish");
+			nodeAttribites.put("classpathref", "build.classpath");
+			nodeAttribites.put("classname", "com.microsoftopentechnologies.windowsazure.tools.build.AzurePublish");
+			ParserXMLUtility.updateOrCreateElement(packageFileDoc, null, nodeExpr, "taskdef", true, nodeAttribites);
+		}
+
 		if (!ParserXMLUtility.doesNodeExists(packageFileDoc, "/project/path[@id='build.classpath']/fileset[@dir='${cspack.dir}']")) {
 			// Insert element in build classpath
 			nodeAttribites.clear();

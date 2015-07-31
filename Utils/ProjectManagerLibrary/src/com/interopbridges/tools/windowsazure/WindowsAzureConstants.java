@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -164,7 +164,7 @@ public final class WindowsAzureConstants {
 	public static final String CREATOR_VER = PROJ_PROPERTY
 			+ "/property[@name='creator.version']";
 	public static final String V17_VERSION = "1.7.0";
-	public static final String VERSION = "2.6.0";
+	public static final String VERSION = "2.7.0";
 	public static final String SA_INPUT_ENDPOINT = PROJ_PROPERTY
 			+ "/property[@name='project.%s.sessionaffinity.inputendpoint']";
 	public static final String SA_INTERNAL_ENDPOINT = PROJ_PROPERTY
@@ -192,7 +192,6 @@ public final class WindowsAzureConstants {
 	public static final String SSL_CERT_NAME_PROP = "project.%s.ssloffloading.cert.name";
 	public static final String SSL_CERT_FINGERPRINT_PROP = "project.%s.ssloffloading.cert.fingerprint";
 
-	public static final String SDK_VERSION = "v1.5";
 	public static final String BLANK_RNAME = "Role name is blank in Definition file";
 	public static final String PMGR_NULL = "Project Manager instance is null";
 	public static final String EP_NOT_FOUND = "Not able to find EndPoint with specified port";
@@ -487,7 +486,7 @@ public final class WindowsAzureConstants {
 	public static final String THRD_PARTY_JDK_NAME = "project.%s.jdk.name";
 	public static final String THRD_PARTY_SRV_NAME = "project.%s.server.name.cloud";
 
-	public static final String MIN_SDK_VERSION = "v2.6";
+	public static final String MIN_SDK_VERSION = "v2.7";
 	public static final String SA_NEW_VERSION_ATTR = "/configuration/runtime/assemblyBinding/dependentAssembly/bindingRedirect/@newVersion";
 
 	public static final String WR_CERTS = WORKER_ROLE

@@ -1,10 +1,10 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Package for Apache Qpid Client Libraries for JMS UI (by MS Open Tech)
+Bundle-Name: Package for Apache Qpid Client Libraries for JMS UI
 Bundle-SymbolicName: com.microsoftopentechnologies.qpid.ui;singleton:=true
 Bundle-Version: 0.19.0.qualifier
 Bundle-Activator: com.microsoftopentechnologies.waqpidjava.ui.Activator
-Bundle-Vendor: Microsoft Open Technologies Inc.
+Bundle-Vendor: Microsoft Corp.
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.jdt.core;bundle-version="3.6.0",

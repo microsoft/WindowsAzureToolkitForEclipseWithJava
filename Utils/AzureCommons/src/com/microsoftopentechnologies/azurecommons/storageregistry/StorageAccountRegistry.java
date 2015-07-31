@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -51,5 +51,23 @@ public class StorageAccountRegistry {
 		int index = getStrgList().indexOf(account);
 		StorageAccount storageAccount = getStrgList().get(index);
 		storageAccount.setStrgKey(key);
+	}
+	
+	/**
+	 * Edit storage account's blob endpoint's protocol as per cloud type.
+	 * Retain SSL (https) for storage endpoint URIs for regions that are outside of China.
+	 */
+	public static void editUrlsAsPerCloud() {
+		for (int i = 0; i < getStrgList().size(); i++) {
+			StorageAccount storageAccount = getStrgList().get(i);
+			String tempUrl = storageAccount.getStrgUrl();
+			if (tempUrl.contains("blob.core.windows.net")
+					&& tempUrl.startsWith("http://")) {
+				storageAccount.setStrgUrl(storageAccount.getStrgUrl().replaceFirst("http://", "https://"));
+			} else if (tempUrl.contains("blob.core.chinacloudapi.cn")
+					&& tempUrl.startsWith("https://")) {
+				storageAccount.setStrgUrl(storageAccount.getStrgUrl().replaceFirst("https://", "http://"));
+			}
+		}
 	}
 }

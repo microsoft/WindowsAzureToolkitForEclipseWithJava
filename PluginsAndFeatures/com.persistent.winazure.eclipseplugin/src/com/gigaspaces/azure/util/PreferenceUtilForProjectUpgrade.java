@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class PreferenceUtilForProjectUpgrade {
 	}
 
 	private PublishData[] loadOldPrefs() {
-		Preferences prefs = PluginUtil.getPrefs();
+		Preferences prefs = PluginUtil.getPrefs(waeclipseplugin.Activator.PLUGIN_ID);
 		PublishData[] publishDatas = null;
 		try {
 			byte[] data = prefs.getByteArray(PREF_KEY, null);

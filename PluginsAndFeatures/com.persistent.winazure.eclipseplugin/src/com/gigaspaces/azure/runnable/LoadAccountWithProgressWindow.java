@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ public class LoadAccountWithProgressWindow extends AccountActionRunnable impleme
 		try {
 			dialog.run(true, true, this);
 			dialog.close();
+			PreferenceUtil.setLoaded(true);
 		} catch (InvocationTargetException e) {
             // special check for Java 1.6 and bouncycastle not in classpath error
             if (com.gigaspaces.azure.util.Messages.importDlgMsgJavaVersion.equals(e.getMessage())) {
@@ -48,7 +49,10 @@ public class LoadAccountWithProgressWindow extends AccountActionRunnable impleme
                 MessageUtil.displayErrorDialog(shell, com.gigaspaces.azure.propertypage.Messages.loadingCred, Messages.loadingAccountError);
             }
 			Activator.getDefault().log(Messages.error, e);
+			PreferenceUtil.setLoaded(false);
 		} catch (InterruptedException e) {
+			// cancel pressed, so user might not be interested in loading data again
+			PreferenceUtil.setLoaded(true);
 		}
 	}
 	

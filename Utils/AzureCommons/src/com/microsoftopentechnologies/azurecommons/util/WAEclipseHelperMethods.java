@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -443,6 +443,19 @@ public class WAEclipseHelperMethods {
 		Pattern blob = Pattern
 				.compile("^https?://[a-z0-9]+\\.{1}[a-z0-9.]+/{1}([a-z]|\\d){1}([a-z]|-|\\d){1,61}([a-z]|\\d){1}/{1}[\\w\\p{Punct}]+$");
 		Matcher m = blob.matcher(text);
+		return m.matches();
+	}
+
+	/**
+	 * Method checks whether text is valid application insights instrumentation key or not.
+	 * Key is of the format "65e3ff09-1pq7-4e0e-9a36-3282d6c5d700"
+	 * 8-4-4-4-12 --> eight lower case letters or numbers followed by single dash '-' and so on.
+	 * @param text
+	 * @return
+	 */
+	public static Boolean isValidInstrumentationKey(String text) {
+		Pattern key = Pattern.compile("([a-z0-9]){8}-{1}([a-z0-9]){4}-{1}([a-z0-9]){4}-{1}([a-z0-9]){4}-{1}([a-z0-9]){12}");
+		Matcher m = key.matcher(text);
 		return m.matches();
 	}
 

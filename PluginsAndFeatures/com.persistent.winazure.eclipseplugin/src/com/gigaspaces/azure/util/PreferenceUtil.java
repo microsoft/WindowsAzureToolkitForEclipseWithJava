@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class PreferenceUtil {
 	private void savePreferences() {
 		ByteArrayOutputStream buffer = null;
 		try {
-			Preferences prefs = PluginUtil.getPrefs();
+			Preferences prefs = PluginUtil.getPrefs(waeclipseplugin.Activator.PLUGIN_ID);
 			buffer = new ByteArrayOutputStream();
 			ObjectOutput output = new ObjectOutputStream(buffer);
 			Map<String, String> publishSettingsPerSubscriptionMap = WizardCacheManager.getPublishSettingsPerSubscription();
@@ -89,7 +89,7 @@ public class PreferenceUtil {
 	}
 
 	private void loadPreferences(LoadingAccoutListener listener) {
-		Preferences prefs = PluginUtil.getPrefs();
+		Preferences prefs = PluginUtil.getPrefs(waeclipseplugin.Activator.PLUGIN_ID);
 		// load publishsettingspersubscription data
 		try {
 			byte[] data = prefs.getByteArray(PREF_KEY_PS_PER_SUB, null);

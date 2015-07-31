@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Microsoft Open Technologies, Inc.
+ * Copyright Microsoft Corp.
  * All rights reserved.
  *
  * MIT License
@@ -77,7 +77,6 @@ public final class Messages extends NLS {
 	public static String webxmlPath;
 	public static String depDescTtl;
 	public static String depDescMsg;
-	public static String aiErrTtl;
 	public static String aiErrMsg;
 	public static String fileErrMsg;
 	public static String saveErrMsg;
@@ -97,6 +96,12 @@ public final class Messages extends NLS {
 	public static String natMaven;
 	public static String depDirLocMaven;
 	public static String aiConfRelDirLocMaven;
+	public static String resChangeErr;
+	public static String refreshJobName;
+	public static String aiID;
+	public static String genKeyListErr;
+	public static String startUpErr;
+	public static String dlgImgPath;
 
 	static {
 		// initialize resource bundle

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Microsoft Open Technologies Inc.
+* Copyright Microsoft Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -405,6 +405,7 @@ public class NewCertificateDialog extends TitleAreaDialog {
         }
         else {
             try {
+            	PluginUtil.showBusy(true, getShell());
                 String alias = Messages.newCertDlgAlias;
                 // fix for #2663
                 if (jdkPath == null || jdkPath.isEmpty()) {
@@ -420,7 +421,9 @@ public class NewCertificateDialog extends TitleAreaDialog {
                 	newCertificateDialogHolder.setPassword(txtPFXFile.getText());     
                 	newCertificateDialogHolder.setCnName(txtCNName.getText());
                 }
+                PluginUtil.showBusy(false, getShell());
             } catch (Exception e) {
+            	PluginUtil.showBusy(false, getShell());
                 Activator.getDefault().log(e.getMessage(), e);
                 errorTitle = Messages.newCertDlgCrtErTtl;
                 errorMessage = Messages.newCerDlgCrtCerEr;

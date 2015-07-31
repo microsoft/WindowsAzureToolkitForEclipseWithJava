@@ -1,1 +1,3 @@
-copy a place holder icon with name windowsAzure.png
+Copy place holder icons with below names
+applicationInsights.png
+windowsAzure.png

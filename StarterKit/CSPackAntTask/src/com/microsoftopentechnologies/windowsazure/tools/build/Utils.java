@@ -1,5 +1,5 @@
 /*
- Copyright 2015 Microsoft Open Technologies, Inc.
+ Copyright Microsoft Corp.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -59,7 +59,8 @@ public class Utils {
 	public static StorageService createStorageAccountIfNotExists(Configuration configuration,
 			WindowsAzureServiceManagement instance,
 			String storageAccountName,
-			String region) throws Exception {
+			String region,
+			String managementUrl) throws Exception {
 		System.out.println("Creating storage account : '" + storageAccountName + "' if does not exists");
 		ProgressBar progressBar = new ProgressBar(10000, "Creating storage account");
 		Thread progressBarThread = new Thread(progressBar);
@@ -73,11 +74,14 @@ public class Utils {
 		}
 		// Get storage account object
 		StorageService storageAccount = instance.getStorageAccount(configuration, storageAccountName);
-		List<URI> endpoints = storageAccount.getStorageAccountProperties().getEndpoints();
-		if (endpoints.get(0).toString().startsWith("https://")) {
-			endpoints.set(0, URI.create(endpoints.get(0).toString().replaceFirst("https://", "http://")));
-			endpoints.set(1, URI.create(endpoints.get(1).toString().replaceFirst("https://", "http://")));
-			endpoints.set(2, URI.create(endpoints.get(2).toString().replaceFirst("https://", "http://")));
+		if (managementUrl.equals("https://management.core.chinacloudapi.cn")) {
+			List<URI> endpoints = storageAccount.getStorageAccountProperties().getEndpoints();
+			for (int i = 0; i < endpoints.size(); i++) {
+				String uri = endpoints.get(i).toString();
+				if (uri.startsWith("https://")) {
+					endpoints.set(i, URI.create(uri.replaceFirst("https://", "http://")));
+				}
+			}
 		}
 		return storageAccount;
 	}

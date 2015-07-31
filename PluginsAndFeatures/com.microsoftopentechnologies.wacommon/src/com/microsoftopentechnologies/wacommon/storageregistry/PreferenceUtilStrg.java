@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ public class PreferenceUtilStrg {
 	 */
 	private void savePreferences() {
 		try {
-			Preferences prefs = PluginUtil.getPrefs();
+			Preferences prefs = PluginUtil.getPrefs(
+					com.microsoftopentechnologies.wacommon.utils.Messages.prefFileName);
 			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 			ObjectOutput output = new ObjectOutputStream(buffer);
 			List<StorageAccount> data = StorageAccountRegistry.getStrgList();
@@ -89,7 +90,8 @@ public class PreferenceUtilStrg {
 	 * Converts byte array format data to list of storage accounts.
 	 */
 	private void loadPreferences() {
-		Preferences prefs = PluginUtil.getPrefs();
+		Preferences prefs = PluginUtil.getPrefs(
+				com.microsoftopentechnologies.wacommon.utils.Messages.prefFileName);
 		try {
 			byte[] data = prefs.getByteArray(PREF_KEY, null);
 			if (data != null) {

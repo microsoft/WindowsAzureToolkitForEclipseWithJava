@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
- Copyright 2015 Microsoft Open Technologies, Inc.
+ Copyright Microsoft Corp.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@
 		encutil.exe from wastarterkit4java.codeplex.com.  You may delete this comment after you stop referencing this 
 		sample certificate. -->
 		<property name="cert.windowsazureremotedesktop" value="${basedir}\cert\SampleRemoteAccessPublic.cer"/>
-		<property name="creator.version" value="2.6.0"/>
+		<property name="creator.version" value="2.7.0"/>
 	</target>
 
 	<!-- Force emulator reset to ensure no locks on deploy directory -->
@@ -223,8 +223,14 @@
 
 	</target>
 
-	<!-- This task publishes Azure project to Cloud. -->
+	<!-- This task builds and publishes Azure project to Cloud. -->
 	<target depends="createwapackage" description="Publish Azure project to cloud" name="publish">
+		<taskdef classname="com.microsoftopentechnologies.windowsazure.tools.build.AzurePublish" classpathref="build.classpath" name="azurepublish"/>
+		<azurepublish cloudservicename="${cloudservicename}" deploymentslot="${deploymentslot}" overwritepreviousdeployment="${overwritepreviousdeployment}" projectdir="${basedir}" publishsettingspath="${publishsettingspath}" region="${region}" storageaccountname="${storageaccountname}" subscriptionid="${subscriptionid}"/>
+	</target>
+
+	<!-- This task only publishes an already built Azure deployment project (expecting .CSPKG and .CSCFG in deploy directory) -->
+	<target description="Publish only (do not rebuild) Azure project to cloud" name="publishonly">
 		<taskdef classname="com.microsoftopentechnologies.windowsazure.tools.build.AzurePublish" classpathref="build.classpath" name="azurepublish"/>
 		<azurepublish cloudservicename="${cloudservicename}" deploymentslot="${deploymentslot}" overwritepreviousdeployment="${overwritepreviousdeployment}" projectdir="${basedir}" publishsettingspath="${publishsettingspath}" region="${region}" storageaccountname="${storageaccountname}" subscriptionid="${subscriptionid}"/>
 	</target>

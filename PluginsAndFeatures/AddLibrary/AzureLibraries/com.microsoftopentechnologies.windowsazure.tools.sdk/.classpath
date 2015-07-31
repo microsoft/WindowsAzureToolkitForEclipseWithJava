@@ -11,13 +11,11 @@
 	<classpathentry exported="true" kind="lib" path="dependencies/azure-media-0.6.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/azure-servicebus-0.7.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/azure-serviceruntime-0.6.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="dependencies/azure-storage-2.0.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/azure-tracing-util-0.6.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/commons-codec-1.6.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/commons-io-2.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/commons-lang3-3.3.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/commons-logging-1.1.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="dependencies/guava-12.0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/httpclient-4.3.5.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/httpcore-4.3.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/jackson-core-2.2.3.jar"/>
@@ -37,7 +35,10 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry exported="true" kind="lib" path="dependencies/annotation-detector-3.0.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="dependencies/applicationinsights-core-0.9.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="dependencies/applicationinsights-web-0.9.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/azure-storage-2.2.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/gson-1.7.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/applicationinsights-core-1.0.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/applicationinsights-web-1.0.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="dependencies/guava-12.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,0 +1,1 @@
+ant -f %~dp0..\package.xml publishonly

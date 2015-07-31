@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Microsoft Open Technologies, Inc.
+ * Copyright Microsoft Corp.
  * All rights reserved.
  *
  * MIT License
@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
@@ -42,33 +43,38 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.Bundle;
 
+import com.microsoft.applicationinsights.preference.ApplicationInsightsPreferencePage;
+import com.microsoft.applicationinsights.preference.ApplicationInsightsResourceRegistry;
 import com.microsoft.applicationinsights.ui.activator.Activator;
-import com.microsoft.applicationinsights.util.AILibraryUtil;
 import com.microsoft.applicationinsights.util.AILibraryHandler;
+import com.microsoft.applicationinsights.util.AILibraryUtil;
+import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 public class AIProjConfigWizardDialog extends TitleAreaDialog {
 	private Button aiCheck;
 	private Label lblInstrumentationKey;
-	private Text txtInstrumentationKey;
+	private Combo comboInstrumentationKey;
 	private Link lnkInstrumentationKey;
 	private Link lnkAIPrivacy;
 
@@ -116,6 +122,10 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		super.configureShell(newShell);
 		newShell.setText(Messages.aiConfigWiz);
 		newShell.setLocation(250, 250);
+		Image image = AILibraryUtil.getImage();
+		if (image != null) {
+			setTitleImage(image);
+		}
 	}
 
 	protected Control createDialogArea(Composite parent) {
@@ -123,7 +133,7 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		setMessage(Messages.aiMsg);
 		Composite container = new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 2;
+		gridLayout.numColumns = 3;
 		GridData gridData = new GridData();
 		gridLayout.marginBottom = 50;
 		gridData.widthHint = 550;
@@ -134,24 +144,51 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		createAICheckButton(container);
 		createAIControl(container);
 		createLinks(container);
+		
+		setData();
 
 		if (isEdit()) {
 			populateData();
 		} else {
 			if (aiCheck.getSelection()) {
-				txtInstrumentationKey.setEnabled(true);
+				comboInstrumentationKey.setEnabled(true);
 			} else {
-				txtInstrumentationKey.setEnabled(false);
+				comboInstrumentationKey.setEnabled(false);
 			}
 		}
 
 		return super.createDialogArea(parent);
 	}
+	
+	private void setData() {
+		comboInstrumentationKey.removeAll();
+		String[] array = ApplicationInsightsResourceRegistry.getResourcesNamesToDisplay();
+		if (array.length > 0) {
+			comboInstrumentationKey.setItems(array);
+			comboInstrumentationKey.setText(array[0]);
+		}
+	}
 
 	private void populateData() {
 		aiCheck.setSelection(true);
-		txtInstrumentationKey.setText(handler.getAIInstrumentationKey());
-		txtInstrumentationKey.setEnabled(true);
+		String keyFromFile = handler.getAIInstrumentationKey();
+		int index = -1;
+		if (keyFromFile != null && !keyFromFile.isEmpty()) {
+			index = ApplicationInsightsResourceRegistry.getResourceIndexAsPerKey(keyFromFile);
+		}
+		if (index >= 0) {
+			String[] array = ApplicationInsightsResourceRegistry.getResourcesNamesToDisplay();
+			comboInstrumentationKey.setText(array[index]);
+		} else {
+			/*
+			 * User has specifically removed single entry or all entries from the registry,
+			 * which we added during eclipse start up
+			 * hence it does not make sense to put an entry again. Just leave as it is.
+			 * If registry is non empty, then value will be set to 1st entry.
+			 * If registry is empty, then combo box will be empty.
+			 */
+		}
+		comboInstrumentationKey.setEnabled(true);
 	}
 
 	private boolean isEdit() {
@@ -169,7 +206,7 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		gridData.verticalIndent = 5;
 		gridData.horizontalIndent = 5;
 		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalSpan = 2;
+		gridData.horizontalSpan = 3;
 		aiCheck.setText(Messages.aiCheckBoxTxt);
 		aiCheck.setLayoutData(gridData);
 
@@ -177,13 +214,13 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {
 				if (aiCheck.getSelection()) {
-					txtInstrumentationKey.setEnabled(true);
-					txtInstrumentationKey.setText(handler
-							.getAIInstrumentationKey() != null ? handler
-							.getAIInstrumentationKey() : "");
+					setData();
+					populateData();
 				} else {
-					txtInstrumentationKey.setText("");
-					txtInstrumentationKey.setEnabled(false);
+					if (comboInstrumentationKey.getItemCount() > 0) {
+						comboInstrumentationKey.select(0);
+					}
+					comboInstrumentationKey.setEnabled(false);
 				}
 			}
 
@@ -206,48 +243,54 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		lblInstrumentationKey.setText(Messages.lblInstrumentationKey);
 		lblInstrumentationKey.setLayoutData(gridData);
 
-		txtInstrumentationKey = new Text(container, SWT.LEFT | SWT.BORDER);
+		comboInstrumentationKey = new Combo(container, SWT.LEFT | SWT.READ_ONLY);
 		gridData = new GridData();
-		gridData.horizontalIndent = 30;
-		gridData.horizontalAlignment = SWT.RIGHT;
 		gridData.verticalIndent = 5;
 		gridData.widthHint = 500;
 		gridData.grabExcessHorizontalSpace = true;
-		txtInstrumentationKey.setLayoutData(gridData);
-	}
+		comboInstrumentationKey.setLayoutData(gridData);
 		
-	private void createLinks(Composite container) {
 		// InstrumentationKey Link
 		lnkInstrumentationKey = new Link(container, SWT.RIGHT);
-		GridData gridData = new GridData();
+		gridData = new GridData();
 		gridData.horizontalAlignment = SWT.RIGHT;
-		gridData.horizontalSpan = 2;
 		gridData.verticalIndent = 5;
 		lnkInstrumentationKey.setText(Messages.lnkInstrumentationKey);
 		lnkInstrumentationKey.setLayoutData(gridData);
 		lnkInstrumentationKey.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				try {
-					PlatformUI.getWorkbench().getBrowserSupport().
-					getExternalBrowser().openURL(new URL(event.text));
-				}
-				catch (Exception ex) {
-					/*
-					 * only logging the error in log file
-					 * not showing anything to end user
-					 */
-					Activator.getDefault().log(
-							Messages.lnkInstrumentationKey, ex);
+				String oldName = comboInstrumentationKey.getText();
+				int btnSelected = PluginUtil.openPropertyPageDialog(
+						Messages.aiID, Messages.aiTxt,
+						new ApplicationInsightsPreferencePage());
+				setData();
+				List<String> list = Arrays.asList(
+						ApplicationInsightsResourceRegistry.getResourcesNamesToDisplay());
+				// check user has not removed all entries from registry.
+				if (list.size() > 0) {
+					if (btnSelected == Window.OK) {
+						int index = ApplicationInsightsPreferencePage.getSelIndex();
+						if (index >= 0) {
+							comboInstrumentationKey.setText(list.get(index));
+						} else if (list.contains(oldName)) {
+							comboInstrumentationKey.setText(oldName);
+						}
+					} else if (list.contains(oldName)) {
+						// if oldName is not present then its already set to first entry via setData method
+						comboInstrumentationKey.setText(oldName);
+					}
 				}
 			}
 		});
+	}
 		
+	private void createLinks(Composite container) {
 		// Privacy Link
 		lnkAIPrivacy = new Link(container, SWT.RIGHT);
-		gridData = new GridData();
-		gridData.horizontalAlignment = SWT.RIGHT;
-		gridData.horizontalSpan = 2;
+		GridData gridData = new GridData();
+		gridData.horizontalSpan = 3;
+		gridData.horizontalIndent = 10;
 		gridData.verticalIndent = 5;
 		lnkAIPrivacy.setText(Messages.lnkAIPrivacy);
 		lnkAIPrivacy.setLayoutData(gridData);
@@ -275,8 +318,8 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		boolean okToProceed = true;
 
 		// validate
-		if (aiCheck.getSelection() == true && (txtInstrumentationKey.getText() == null
-				|| txtInstrumentationKey.getText().trim().length() == 0)) {
+		if (aiCheck.getSelection() && (comboInstrumentationKey.getText() == null
+				|| comboInstrumentationKey.getText().trim().length() == 0)) {
 			MessageDialog.openError(getShell(), Messages.aiErrTitle,
 					Messages.aiInstrumentationKeyNull);
 			okToProceed = false;
@@ -352,10 +395,13 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 			handler.parseAIConfXmlPath(path);
 		}
 
-		if (txtInstrumentationKey.getText() != null
-				&& txtInstrumentationKey.getText().length() > 0) {
-			handler.setAIInstrumentationKey(txtInstrumentationKey.getText()
-					.trim());
+		if (comboInstrumentationKey.getText() != null
+				&& comboInstrumentationKey.getText().length() > 0) {
+			int index = comboInstrumentationKey.getSelectionIndex();
+			if (index >= 0) {
+				handler.setAIInstrumentationKey(
+						ApplicationInsightsResourceRegistry.getKeyAsPerIndex(index));
+			}
 		}
 	}
 

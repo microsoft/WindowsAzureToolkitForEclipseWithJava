@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class PreferenceUtilPubWizard {
 
 	private WizardCache loadPreferences(String prefKey) {
 		WizardCache cacheObj = null;
-		Preferences prefs = PluginUtil.getPrefs();
+		Preferences prefs = PluginUtil.getPrefs(waeclipseplugin.Activator.PLUGIN_ID);
 		try {
 			if (Arrays.asList(prefs.keys()).contains(prefKey)) {
 				byte[] data = prefs.getByteArray(prefKey, null);
@@ -63,7 +63,7 @@ public class PreferenceUtilPubWizard {
 
 	public static List<String> getProjKeyList() {
 		List<String> keyList = new ArrayList<String>();
-		Preferences prefs = PluginUtil.getPrefs();
+		Preferences prefs = PluginUtil.getPrefs(waeclipseplugin.Activator.PLUGIN_ID);
 		try {
 			List<String> list =  Arrays.asList(prefs.keys());
 			for (int i = 0; i < list.size(); i++) {

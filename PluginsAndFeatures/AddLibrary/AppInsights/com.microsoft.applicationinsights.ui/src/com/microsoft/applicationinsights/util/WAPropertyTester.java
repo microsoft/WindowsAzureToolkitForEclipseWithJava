@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Microsoft Open Technologies, Inc.
+ * Copyright Microsoft Corp.
  * All rights reserved.
  *
  * MIT License
@@ -57,7 +57,7 @@ public class WAPropertyTester extends PropertyTester {
 	 * @throws CoreException
 	 * @throws WindowsAzureInvalidProjectOperationException
 	 */
-	private boolean isWebProj(Object object) throws CoreException {
+	public static boolean isWebProj(Object object) throws CoreException {
 		boolean retVal = false;
 		IProject project = (IProject) object;
 		if (project.isOpen()) {

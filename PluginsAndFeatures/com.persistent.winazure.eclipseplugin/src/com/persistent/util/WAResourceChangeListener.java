@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -25,9 +25,7 @@ import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
-import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.resources.WorkspaceJob;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -37,12 +35,12 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 
-import waeclipseplugin.Activator;
-
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
+
+import waeclipseplugin.Activator;
 
 /**
  * Listens to changes to resources in the workspace.
@@ -84,7 +82,7 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 				@Override
 				public IStatus runInWorkspace(IProgressMonitor monitor)
 						throws CoreException {
-					refreshWorkspace();
+					PluginUtil.refreshWorkspace();
 					return Status.OK_STATUS;
 				}
 			};
@@ -243,7 +241,7 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 	 * @param project to be upgraded
 	 */
 	private void handleProjectOpen(final IProject project) {
-		refreshWorkspace();
+		PluginUtil.refreshWorkspace();
 		WindowsAzureProjectManager projMngr;
 		try {
 			projMngr = WindowsAzureProjectManager.
@@ -299,24 +297,6 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 			//As project open has been occurred already
 			//user should not get any exception prompt.
 			Activator.getDefault().log(Messages.resCLExProjUpgrd, e);
-		}
-}
-
-	/**
-	 * Refreshes the workspace.
-	 */
-	private static void refreshWorkspace() {
-		try {
-			IWorkspace workspace = ResourcesPlugin.getWorkspace();
-			IWorkspaceRoot root = workspace.getRoot();
-			root.refreshLocal(IResource.DEPTH_INFINITE, null);
-		} catch (CoreException e) {
-			//This is just a try to refresh workspace.
-			//User can also refresh the workspace manually.
-			//So user should not get any exception prompt.
-			Activator.getDefault().log(
-					Messages.resCLExWkspRfrsh,
-					null);
 		}
 	}
 }

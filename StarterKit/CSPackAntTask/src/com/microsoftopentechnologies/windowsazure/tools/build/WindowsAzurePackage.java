@@ -1,5 +1,5 @@
 /*
- Copyright 2015 Microsoft Open Technologies, Inc.
+ Copyright Microsoft Corp.
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -557,9 +557,9 @@ public class WindowsAzurePackage extends Task {
 			
 			com.microsoft.windowsazure.Configuration configuration =
 					WindowsAzureRestUtils.getConfiguration(pubFile, subscriptionId);
-			
+			String managementUrl = XMLUtil.getManagementUrl(pubFile, subscriptionId);
 			storageAccount = Utils.createStorageAccountIfNotExists(
-					configuration, instance, storageAccountName, region);
+					configuration, instance, storageAccountName, region, managementUrl);
 		} finally {
 			Thread.currentThread().setContextClassLoader(currentClassLoader);
 		}
@@ -1287,7 +1287,7 @@ public class WindowsAzurePackage extends Task {
 		if (storageEmulatorDir.exists()) {
 			return storageEmulatorDir.toString();
 		} else {
-			throw new IOException("Azure SDK v2.6 or later is not installed.");
+			throw new IOException("Azure SDK v2.7 or later is not installed.");
 		}
 	}
 
@@ -1308,7 +1308,7 @@ public class WindowsAzurePackage extends Task {
 
 		// Check if the SDK folder exists
 		if (!sdkDir.exists()) {
-			throw new IOException("Azure SDK v2.6 or later is not installed.");
+			throw new IOException("Azure SDK v2.7 or later is not installed.");
 		}
 		
 		String[] versionedSDKDirs = sdkDir.list();
@@ -1330,7 +1330,7 @@ public class WindowsAzurePackage extends Task {
 		}
 
 		if (latestVersionSdkDir == null) {
-			throw new IOException("Azure SDK v2.6 or later is not installed.");
+			throw new IOException("Azure SDK v2.7 or later is not installed.");
 		}
 
 		return String.format("%s%sbin", latestVersionSdkDir, File.separatorChar);

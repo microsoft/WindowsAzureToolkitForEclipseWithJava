@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -476,7 +476,7 @@ public class WASSLOffloading extends PropertyPage {
 		String curSel = comboEndpt.getText();
 		Object endpoint =
 				new WAREndpoints();
-		int btnId = WAEclipseHelper.
+		int btnId = PluginUtil.
 				openPropertyPageDialog(
 						com.persistent.util.Messages.cmhIdEndPts,
 						com.persistent.util.Messages.cmhLblEndPts,
@@ -555,7 +555,7 @@ public class WASSLOffloading extends PropertyPage {
 		String curSel = comboCert.getText();
 		Object cert =
 				new WARCertificates();
-		int btnId = WAEclipseHelper.
+		int btnId = PluginUtil.
 				openPropertyPageDialog(
 						com.persistent.util.Messages.cmhIdCert,
 						com.persistent.util.Messages.cmhLblCert,

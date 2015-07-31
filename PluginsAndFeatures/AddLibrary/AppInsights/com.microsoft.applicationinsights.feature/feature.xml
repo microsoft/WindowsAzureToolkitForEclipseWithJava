@@ -2,21 +2,21 @@
 <feature
       id="com.microsoft.applicationinsights.feature"
       label="Application Insights Plugin for Java"
-      version="0.9.5.qualifier"
-      provider-name="Microsoft Open Technologies, Inc.">
+      version="1.0.0.qualifier"
+      provider-name="Microsoft Corp.">
 
    <description>
       Application Insights Plugin for Java
    </description>
 
    <copyright>
-      Copyright 2015 Microsoft Open Technologies, Inc.
+      Copyright Microsoft Corp.
    </copyright>
 
    <license url="http://www.opensource.org/licenses/mit-license.php">
       The MIT License (MIT)
 
-Copyright (c) Microsoft Open Technologies, Inc.
+Copyright (c) Microsoft Corp.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the &quot;Software&quot;), to deal

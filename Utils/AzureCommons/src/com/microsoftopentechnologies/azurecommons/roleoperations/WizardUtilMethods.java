@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Microsoft Open Technologies, Inc.
+* Copyright Microsoft Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -101,6 +101,7 @@ public class WizardUtilMethods {
 						if (!thrdName.isEmpty()) {
 							role.setServerCloudName(thrdName);
 						}
+						role.setServerCloudValue(depMap.get("srvHome"));
 					}
 
 					String srvTabUrl = depMap.get("srvUrl");
