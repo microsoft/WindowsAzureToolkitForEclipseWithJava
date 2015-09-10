@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+    <extension point="org.eclipse.ui.perspectiveExtensions">
+        <perspectiveExtension targetID="*">
+            <view
+                    closeable="true"
+                    id="com.microsoft.azureexplorer.views.ServiceExplorerView"
+                    minimized="false"
+                    moveable="true"
+                    ratio="0.3"
+                    relative="org.eclipse.jdt.ui.PackageExplorer"
+                    relationship="right"
+                    showTitle="false"
+                    standalone="false"
+                    visible="true">
+            </view>
+        </perspectiveExtension>
+    </extension>
+   <extension
+         point="org.eclipse.ui.views">
+       <view
+               name="Azure Explorer"
+               icon="icons/azure.png"
+               category="com.gigaspaces.azure"
+               class="com.microsoft.azureexplorer.views.ServiceExplorerView"
+               id="com.microsoft.azureexplorer.views.ServiceExplorerView"
+               restorable="true">
+       </view>
+   </extension>
+   <extension
+            point="org.eclipse.ui.editors">
+       <editor
+               class="com.microsoft.azureexplorer.editors.BlobExplorerFileEditor"
+               icon="icons/storage.png"
+               name="[Container]"
+               extensions="mtl"
+               id="com.microsoft.azureexplorer.editors.BlobExplorerFileEditor"/>
+       <editor
+               class="com.microsoft.azureexplorer.editors.TableFileEditor"
+               icon="icons/storage.png"
+               name="[Table]"
+               extensions="mtl"
+               id="com.microsoft.azureexplorer.editors.TableFileEditor"/>
+       <editor
+               class="com.microsoft.azureexplorer.editors.QueueFileEditor"
+               icon="icons/storage.png"
+               name="[Queue]"
+               extensions="mtl"
+               id="com.microsoft.azureexplorer.editors.QueueFileEditor"/>
+    </extension>
+
+    <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
+   </extension>
+
+</plugin>

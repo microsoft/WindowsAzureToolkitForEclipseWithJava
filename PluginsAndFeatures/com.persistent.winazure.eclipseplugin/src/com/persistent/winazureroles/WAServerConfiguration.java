@@ -1,18 +1,22 @@
 /**
-* Copyright Microsoft Corp.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*	 http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-*/
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 package com.persistent.winazureroles;
 
 import java.io.File;
@@ -43,13 +47,10 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PropertyPage;
-
-import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
@@ -70,6 +71,8 @@ import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.JdkSrvConfigListener;
 import com.persistent.util.ProjectNatureHelper;
 import com.persistent.util.WAEclipseHelper;
+
+import waeclipseplugin.Activator;
 
 /**
  * Property page for Server Configuration.
@@ -239,7 +242,8 @@ public class WAServerConfiguration extends PropertyPage {
 				if (srvUrl != null && !srvUrl.isEmpty()) {
 					// server auto upload option configured
 					if (JdkSrvConfigUtilMethods.
-							isServerAutoUploadPrevSelected(windowsAzureRole)) {
+							isServerAutoUploadPrevSelected(windowsAzureRole)
+							|| !thirdServerName.isEmpty()) {
 						if (thirdServerName.isEmpty()) {
 							JdkSrvConfig.getAutoDlRdCldBtnSrv().setSelection(true);
 						} else {
@@ -288,6 +292,13 @@ public class WAServerConfiguration extends PropertyPage {
 					JdkSrvConfig.setCmbStrgAccSrv(JdkSrvConfig.
 							populateStrgNameAsPerKey(srvKey,
 									JdkSrvConfig.getCmbStrgAccSrv()));
+					if (!thirdServerName.isEmpty()) {
+						String cldSrc = JdkSrvConfig.getThirdPartyServerCloudSrc();
+						// check if its latest server scenario then set storage account to (none)
+						if (!cldSrc.isEmpty()) {
+							JdkSrvConfig.getCmbStrgAccSrv().setItem(0, "(none)");
+						}
+					}
 				}
 			}
 			JdkSrvConfig.checkSDKPresenceAndEnableServer();
@@ -1243,7 +1254,7 @@ public class WAServerConfiguration extends PropertyPage {
 			boolean tempAccepted = true;
 			if (JdkSrvConfig.getThrdPrtJdkBtn().getSelection()
 					&& !accepted) {
-				tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(true);
+				tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(getShell(), true);
 				accepted = tempAccepted;
 			}
 			if (tempAccepted) {
@@ -1255,7 +1266,7 @@ public class WAServerConfiguration extends PropertyPage {
 			if (okToProceed) {
 				if (JdkSrvConfig.getThrdPrtSrvBtn().getSelection()
 						&& !srvAccepted) {
-					tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(false);
+					tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(getShell(), false);
 					srvAccepted = tempAccepted;
 				}
 				if (tempAccepted) {
@@ -1482,7 +1493,7 @@ public class WAServerConfiguration extends PropertyPage {
 						boolean tempAccepted = true;
 						if (JdkSrvConfig.getThrdPrtJdkBtn().getSelection()
 								&& !accepted) {
-							tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(true);
+							tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(getShell(), true);
 							accepted = tempAccepted;
 						}
 						if (tempAccepted) {
@@ -1569,7 +1580,7 @@ public class WAServerConfiguration extends PropertyPage {
 								boolean tempAccepted = true;
 								if (JdkSrvConfig.getThrdPrtSrvBtn().getSelection()
 										&& !srvAccepted) {
-									tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(false);
+									tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(getShell(), false);
 									srvAccepted = tempAccepted;
 								}
 								if (tempAccepted) {
@@ -1714,6 +1725,9 @@ public class WAServerConfiguration extends PropertyPage {
 
 			if (JdkSrvConfig.getSerCheckBtn().getSelection()) {
 				if (!srvName.isEmpty()) {
+					// if its latest server scenario, then don't set cloudkey
+					// it should be public download
+					boolean setKey = true;
 					handleEndpointSettings(srvName);
 					windowsAzureRole.setServer(srvName, srvPath, cmpntFile);
 					// JDK download group
@@ -1724,15 +1738,26 @@ public class WAServerConfiguration extends PropertyPage {
 							srvUrl = auto;
 						}
 						if (JdkSrvConfig.getThrdPrtSrvBtn().getSelection()) {
-							windowsAzureRole.setServerCldAltSrc(JdkSrvConfig.getServerCloudAltSource());
+							String altSrcUrl = JdkSrvConfig.getServerCloudAltSource();
+							if (altSrcUrl.isEmpty()) {
+								setKey = false;
+							} else {
+								windowsAzureRole.setServerCldAltSrc(altSrcUrl);
+								windowsAzureRole.setServerCloudUploadMode(
+										WARoleComponentCloudUploadMode.auto);
+							}
 							windowsAzureRole.setServerCloudName(
 									JdkSrvConfig.getThrdPrtSrvCmb().getText());
 							windowsAzureRole.setServerCloudValue(srvHome);
+						} else {
+							windowsAzureRole.setServerCloudUploadMode(
+									WARoleComponentCloudUploadMode.auto);
 						}
-						windowsAzureRole.setServerCloudUploadMode(WARoleComponentCloudUploadMode.auto);
 					}
 					windowsAzureRole.setServerCloudURL(srvUrl);
-					windowsAzureRole.setServerCloudKey(JdkSrvConfig.getAccessKey(srvCmb));
+					if (setKey) {
+						windowsAzureRole.setServerCloudKey(JdkSrvConfig.getAccessKey(srvCmb));
+					}
 					updateServerHomeAsPerPackageType(srvHome);
 				}
 			}
@@ -1862,7 +1887,7 @@ public class WAServerConfiguration extends PropertyPage {
 				.getTable().getSelectionIndex();
 		if (selIndex > -1) {
 			try {
-				boolean choice = MessageDialog.openQuestion(new Shell(),
+				boolean choice = MessageDialog.openQuestion(getShell(),
 						Messages.appRmvTtl, Messages.appRmvMsg);
 				if (choice) {
 					String cmpntName = JdkSrvConfig.getTableViewer().
@@ -2023,7 +2048,7 @@ public class WAServerConfiguration extends PropertyPage {
 		if (prevTabIndex == 0
 				&& JdkSrvConfig.getThrdPrtJdkBtn().getSelection()
 				&& !accepted) {
-			temp = JdkSrvConfig.createAccLicenseAggDlg(true);
+			temp = JdkSrvConfig.createAccLicenseAggDlg(getShell(), true);
 			accepted =  temp;
 		}
 		return temp;
@@ -2034,7 +2059,7 @@ public class WAServerConfiguration extends PropertyPage {
 		if (prevTabIndex == 1
 				&& JdkSrvConfig.getThrdPrtSrvBtn().getSelection()
 				&& !srvAccepted) {
-			temp = JdkSrvConfig.createAccLicenseAggDlg(false);
+			temp = JdkSrvConfig.createAccLicenseAggDlg(getShell(), false);
 			srvAccepted =  temp;
 		}
 		return temp;

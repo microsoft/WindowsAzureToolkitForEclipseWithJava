@@ -1,18 +1,22 @@
 /**
-* Copyright Microsoft Corp.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*	 http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-*/
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 package com.persistent.util;
 
 import java.io.File;
@@ -1406,13 +1410,26 @@ public class JdkSrvConfig {
 	 * combo box and radio button selection.
 	 */
 	public static void updateServerDlURL() {
-		if (isSASelectedForSrv()) {
-			setTxtUrlSrv(cmbBoxListener(
-					getCmbStrgAccSrv(),
-					getTxtUrlSrv(),
-					SRV_TXT));
-		} else if (!getDlRdCldBtnSrv().getSelection()) {
-			getTxtUrlSrv().setText("");
+		boolean needsToBeUpdated = true;
+		if (thrdPrtSrvBtn.getSelection()) {
+			String cldSrc = getThirdPartyServerCloudSrc();
+			// check if its latest server scenario
+			// if yes then directly set cloud source value and storage account to (none)
+			if (!cldSrc.isEmpty()) {
+				needsToBeUpdated = false;
+				getTxtUrlSrv().setText(cldSrc);
+				getCmbStrgAccSrv().setItem(0, "(none)");
+			} else {
+				getCmbStrgAccSrv().setItem(0, "(auto)");
+			}
+		}
+		if (needsToBeUpdated) {
+			if (isSASelectedForSrv()) {
+				setTxtUrlSrv(cmbBoxListener(
+						getCmbStrgAccSrv(), getTxtUrlSrv(), SRV_TXT));
+			} else if (!getDlRdCldBtnSrv().getSelection()) {
+				getTxtUrlSrv().setText("");
+			}
 		}
 	}
 
@@ -1639,10 +1656,10 @@ public class JdkSrvConfig {
 	 * true : license accepted "Accept" button pressed
 	 * false : license not accepted "Cancel" button pressed
 	 */
-	public static boolean createAccLicenseAggDlg(boolean isForJdk) {
+	public static boolean createAccLicenseAggDlg(Shell shell, boolean isForJdk) {
 		boolean licenseAccepted = false;
 		AcceptLicenseAgreementDlg dlg =
-				new AcceptLicenseAgreementDlg(new Shell(), isForJdk);
+				new AcceptLicenseAgreementDlg(shell, isForJdk);
 		int btnId = dlg.open();
 		if (btnId == Window.OK) {
 			licenseAccepted = true;
@@ -1668,13 +1685,34 @@ public class JdkSrvConfig {
 		}
 		return serverName;
 	}
-	
+
+	/**
+	 * Returns cloud alternative source value from download element as per third party server selected. 
+	 * @return
+	 */
 	public static String getServerCloudAltSource() {
 		String url = "";
 		if (thrdPrtSrvBtn.getSelection()) {
 			try {
 				url = WindowsAzureProjectManager.
 						getThirdPartyServerCloudAltSrc(getThrdPrtSrvCmb().getText(), cmpntFile);
+			} catch (WindowsAzureInvalidProjectOperationException e) {
+				url = "";
+			}
+		}
+		return url;
+	}
+
+	/**
+	 * Returns cloud source value from download element as per third party server selected.
+	 * @return
+	 */
+	public static String getThirdPartyServerCloudSrc() {
+		String url = "";
+		if (thrdPrtSrvBtn.getSelection()) {
+			try {
+				url = WindowsAzureProjectManager.
+						getThirdPartyServerCloudSrc(getThrdPrtSrvCmb().getText(), cmpntFile);
 			} catch (WindowsAzureInvalidProjectOperationException e) {
 				url = "";
 			}

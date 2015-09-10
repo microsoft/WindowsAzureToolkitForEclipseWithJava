@@ -1,17 +1,21 @@
-﻿# wash v0.2.2
-# Copyright Microsoft Corp.
+﻿# wash v0.3.0
+# Copyright (c) Microsoft Corporation
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# All rights reserved. 
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# MIT License
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+# (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+# publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+# subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+# ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+# THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 $global:context = @{
 	subscriptionID = $null;
@@ -132,6 +136,10 @@ $entities = @{
 
     "cd" = @{
         "[<path>]" = @()
+    }
+
+    "environment" =@{
+        "watch" = @("<script-file-path>");
     }
 }
 
@@ -480,7 +488,7 @@ function cmd_queue_post([string[]]$cmdTokens) {
     
 	foreach($queue in $queues) {
 		$queue.EncodeMessage = $true
-		$msgObject = New-Object Microsoft.WindowsAzure.StorageClient.CloudQueueMessage($message)
+		$msgObject = New-Object Microsoft.WindowsAzure.Storage.Queue.CloudQueueMessage($message)
 		$queue.AddMessage($msgObject)
 	}
 }
@@ -566,7 +574,7 @@ function cmd_queue_record([string[]]$cmdTokens) {
         while($null -ne ($message = read_commandLine)) {
             try {
                 $queue.EncodeMessage = $true
-                $msgObject = New-Object Microsoft.WindowsAzure.StorageClient.CloudQueueMessage($message)
+                $msgObject = New-Object Microsoft.WindowsAzure.Storage.Queue.CloudQueueMessage($message)
                 $queue.AddMessage($msgObject)
             } catch {
                 Write-ErrorBrief "Failed to add a message to the queue"
@@ -675,7 +683,7 @@ function cmd_container_access([string[]]$cmdTokens) {
     } elseif(@("container", "off", "blob") -notcontains $access) {
         show_usage $cmdTokens
     } else {
-        $perms = New-Object Microsoft.WindowsAzure.StorageClient.BlobContainerPermissions
+        $perms = New-Object Microsoft.WindowsAzure.Storage.Blob.BlobContainerPermissions
 		$perms.PublicAccess = $access.ToLower()
 		$container.SetPermissions($perms)
     }
@@ -699,7 +707,7 @@ function cmd_blob([string[]]$cmdTokens, [string[]]$cmdOptions) {
         return $null
     } elseif($null -eq ($container = get_container $containerName $accountName $accountKey)) {
         Write-ErrorBrief "Container not selected"
-    } elseif($null -eq  ($blob = $container.GetBlobReference($blobName))) {
+    } elseif($null -eq  ($blob = $container.GetBlobReferenceFromServer($blobName))) {
         Write-ErrorBrief "Failed to access the blob"
     } elseif($cmdOptions -contains "--lastchanged") {
         $blob.FetchAttributes()
@@ -761,11 +769,11 @@ function cmd_blob_upload([string[]]$cmdTokens) {
 
     foreach($filepath in $paths) {
         $blobName = Split-Path $filepath -Leaf
-        if($null -eq ($blob = $container.GetBlobReference($blobName))) {
+		if($null -eq ($blob = $container.GetBlockBlobReference($blobName))) {
             Write-ErrorBrief "Failed to upload '$filepath'"
         } else {
             try {
-                [void]$blob.UploadFile($filepath)
+                [void]$blob.UploadFromFile($filepath, 'Open')
             } catch {
 				Write-Error $_
                 Write-ErrorBrief "Failed to upload '$filepath'"
@@ -789,7 +797,7 @@ function cmd_blob_delete([string[]]$cmdTokens) {
 
     if($null -eq ($container = get_container $containerName $accountName $accountKey $baseURL)) {
         show_usage $cmdTokens
-    } elseif($null -eq ($blob = $container.GetBlobReference($blobName))) {
+    } elseif($null -eq ($blob = $container.GetBlobReferenceFromServer($blobName))) {
         show_usage $cmdTokens
     } else {
         $blob.Delete()
@@ -820,18 +828,16 @@ function cmd_blob_download([string[]]$cmdTokens) {
         Write-ErrorBrief "Failed to find this container"
     } elseif($null -eq ($container = get_container $containerName $accountName $accountKey $baseURL)) {     
         show_usage $cmdTokens
-    } elseif($null -eq ($blob = $container.GetBlobReference($blobName))) {
+    } elseif($null -eq ($blob = $container.GetBlockBlobReference($blobName))) {
         show_usage $cmdTokens
     } else {
-        if(Test-Path $filepath) {
-            Remove-Item $filepath
-        }
-        
         try {
-            $blob.DownloadToFile($filepath)
+            $blob.DownloadToFile($filepath, 'Create')
         } catch {
             Write-ErrorBrief "Blob download failed"
-			Remove-Item $filepath
+            if(Test-Path $filepath) {
+                Remove-Item $filepath
+            }
         }
     }
 }
@@ -847,7 +853,7 @@ function cmd_blob_url([string[]]$cmdTokens) {
         show_usage $cmdTokens
     } elseif($null -eq ($blobName = (resolve_blobName $blobName $containerName $accountName $accountKey))) {
         Write-ErrorBrief "Failed to find this blob"
-    } elseif($null -eq ($blob = $container.GetBlobReference($blobName))) {
+    } elseif($null -eq ($blob = $container.GetBlobReferenceFromServer($blobName))) {
         show_usage $cmdTokens
     } else {
         $uri = $blob.Uri.AbsoluteUri
@@ -1194,6 +1200,35 @@ function cmd_dir_watch([string[]]$cmdTokens) {
 }
 
 
+### Entity: environment ###
+
+function cmd_environment_watch([string[]]$cmdTokens) {
+    [string]$scriptPath = $cmdTokens[2]
+
+    [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.WindowsAzure.ServiceRuntime')
+    $roleEnvironment = [Microsoft.WindowsAzure.ServiceRuntime.RoleEnvironment];
+    @("Changed", "Changing", "Stopping") | % { Register-ObjectEvent $roleEnvironment $_ -SourceIdentifier "environmentChange.$_" }
+
+    # Wait for event
+    while($true) {
+        $event = Wait-Event -SourceIdentifier "environmentChange.*"
+        [string]$eventType = $event.SourceIdentifier.Split(".")[-1]
+        if(($eventType -eq "Changing") -or ($eventType -eq "Changed")) {
+            foreach($change in $event.SourceEventArgs.Changes) {
+                Write-Output ($eventType + " " + $change.GetType().Name)
+                [string]$expression = "cmd /c $scriptPath $eventType " + $change.GetType().Name
+                Invoke-Expression $expression
+            }
+        } else {
+            Write-Output $eventType
+            [string]$expression = "cmd /c $scriptPath $eventType"
+            Invoke-Expression $expression
+        }
+        Remove-Event -SourceIdentifier $event.SourceIdentifier
+    }
+}
+
+
 function cmd_files([string[]]$cmdTokens) {
     dir
 }
@@ -1272,9 +1307,7 @@ function list_queues($accountName, $accountKey, $baseURL) {
 function list_blobs($accountName, $accountKey, $baseURL, $containerName) {
 	if($null -ne ($container = get_container $containerName $accountName $accountKey $baseURL)) {
         load_storage_client
-        $options = New-Object Microsoft.WindowsAzure.StorageClient.BlobRequestOptions
-        $options.UseFlatBlobListing = $true;
-        $container.ListBlobs($options) | Where-Object { $_ -ne $null }
+        $container.ListBlobs($null, $true) | Where-Object { $_ -ne $null }
     }
 }
 
@@ -1500,7 +1533,7 @@ function get_queue($name, $accountName, $accountKey, $baseURL) {
 function get_blob_client([string]$accountName, [string]$accountKey, [string]$baseURL) {
 	$storageAccount = get_storageAccount $accountName $accountKey $baseURL
     if($storageAccount) {
-		[Microsoft.WindowsAzure.StorageClient.CloudStorageAccountStorageClientExtensions]::CreateCloudBlobClient($storageAccount)
+		$storageAccount.CreateCloudBlobClient()
 	}
 }
 
@@ -1508,7 +1541,7 @@ function get_blob_client([string]$accountName, [string]$accountKey, [string]$bas
 function get_queue_client($accountName, $accountKey, $baseURL) {
 	$storageAccount = get_storageAccount $accountName $accountKey $baseURL
     if($storageAccount) {
-		[Microsoft.WindowsAzure.StorageClient.CloudStorageAccountStorageClientExtensions]::CreateCloudQueueClient($storageAccount)
+		$storageAccount.CreateCloudQueueClient()
 	}
 }
 
@@ -1517,7 +1550,7 @@ function get_storageAccount($accountName, $accountKey, $baseURL) {
     load_storage_client
 	if(!$baseURL) {
 		$connection = connection_string $accountName $accountKey
-    	[Microsoft.WindowsAzure.CloudStorageAccount]::Parse($connection)
+    	[Microsoft.WindowsAzure.Storage.CloudStorageAccount]::Parse($connection)
 	} else {
 		if($baseURL.StartsWith('http://')) {
 			$http = 'http://'
@@ -1533,14 +1566,15 @@ function get_storageAccount($accountName, $accountKey, $baseURL) {
 		$blobURL = ($http + $accountName + '.' + 'blob.' + $dns)
 		$tableURL = $blobURL.Replace('blob', 'table')
 		$queueURL = $blobURL.Replace('blob', 'queue')
-		$storageCredentials = New-Object Microsoft.WindowsAzure.StorageCredentialsAccountAndKey($accountName, $accountKey)
-		New-Object Microsoft.WindowsAzure.CloudStorageAccount($storageCredentials, $blobURL, $queueURL, $tableURL)
+		$fileURL = $blobURL.Replace('blob', 'file')
+		$storageCredentials = New-Object Microsoft.WindowsAzure.Storage.Auth.StorageCredentials($accountName, $accountKey)
+		New-Object Microsoft.WindowsAzure.Storage.CloudStorageAccount($storageCredentials, $blobURL, $queueURL, $tableURL, $fileURL)
 	}
 }
 
 
 function load_storage_client() {
-    $fileName = 'Microsoft.WindowsAzure.StorageClient.dll'
+    $fileName = 'Microsoft.WindowsAzure.Storage.dll'
     $path = Join-Path $myDir $fileName    
     if(-not (Test-Path $path)) {
         # If not found in current directory then look for SDK
@@ -1549,7 +1583,7 @@ function load_storage_client() {
     }
     
     if(-not (Test-Path $path)) {
-        Write-ErrorBrief 'The required StorageClient.dll cannot be found'
+        Write-ErrorBrief 'The required Storage.dll cannot be found'
         return $null
     }
 
@@ -2147,9 +2181,6 @@ foreach($arg in $args) {
 
 $myDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 #. "$myDir\.washutil.ps1"
-
-(Get-Host).UI.RawUI.WindowTitle = "WASH v0.2.1"
-(Get-Host).UI.RawUI.ForegroundColor = "cyan"
 
 if($cmdTokens.Length -gt 0) {
     process_entity $cmdTokens

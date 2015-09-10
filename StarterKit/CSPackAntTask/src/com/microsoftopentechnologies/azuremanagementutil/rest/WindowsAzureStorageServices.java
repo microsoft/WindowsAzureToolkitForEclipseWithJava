@@ -1,18 +1,22 @@
 /**
-* Copyright Microsoft Corp.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*	 http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-*/
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 package com.microsoftopentechnologies.azuremanagementutil.rest;
 
 import java.io.BufferedInputStream;
@@ -26,17 +30,20 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import com.microsoft.azure.storage.CloudStorageAccount;
-import com.microsoft.azure.storage.RetryNoRetry;
 import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
 import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.blob.*;
+import com.microsoft.azure.storage.blob.BlobContainerPermissions;
+import com.microsoft.azure.storage.blob.BlobContainerPublicAccessType;
+import com.microsoft.azure.storage.blob.CloudBlobClient;
+import com.microsoft.azure.storage.blob.CloudBlobContainer;
+import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoftopentechnologies.azuremanagementutil.exception.InvalidRestAPIArgument;
 import com.microsoftopentechnologies.azuremanagementutil.model.Notifier;
 import com.microsoftopentechnologies.azuremanagementutil.model.StorageService;
 
 public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 
-	private static final int TIME_OUT = 500 * 1000; //500 seconds
+	// private static final int TIME_OUT = 500 * 1000; //500 seconds
 	private StorageService storageAccount;
 	private String storageKey;
 	private final static int NTHREAD = 4;
@@ -173,9 +180,10 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 
 		serviceClient = cloudStorageAccount.createCloudBlobClient();
 		if (!allowRetry) {
+			// Deprecated in azure-storage-3.0.0.jar
 			// Setting no retry policy
-			RetryNoRetry rnr = new RetryNoRetry();
-			serviceClient.setRetryPolicyFactory(rnr);
+			// RetryNoRetry rnr = new RetryNoRetry();
+			// serviceClient.setRetryPolicyFactory(rnr);
 		}
 
 		container 	  = serviceClient.getContainerReference(containerName);
@@ -187,8 +195,9 @@ public class WindowsAzureStorageServices extends WindowsAzureServiceImpl {
 		// set max number of concurrent requests
 		// If requested value is 1 then just leave it to defaults set by third party jars
 		if	(concurrentRequestCount != 1) {
-			serviceClient.setConcurrentRequestCount(concurrentRequestCount);
-			serviceClient.setTimeoutInMs(TIME_OUT);
+			// Deprecated in azure-storage-3.0.0.jar
+			// serviceClient.setConcurrentRequestCount(concurrentRequestCount);
+			// serviceClient.setTimeoutInMs(TIME_OUT);
 		}
 
 		if (cntPubAccess != null) {

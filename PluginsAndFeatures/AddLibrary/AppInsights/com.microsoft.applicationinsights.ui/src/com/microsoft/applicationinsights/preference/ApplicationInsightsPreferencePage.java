@@ -1,23 +1,28 @@
 /**
- * Copyright Microsoft Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *	 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.microsoft.applicationinsights.preference;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.viewers.ILabelProviderListener;
@@ -27,6 +32,7 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -36,13 +42,25 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.microsoft.applicationinsights.management.authentication.Settings;
+import com.microsoft.applicationinsights.management.rest.ApplicationInsightsManagementClient;
+import com.microsoft.applicationinsights.ui.activator.Activator;
 import com.microsoft.applicationinsights.ui.config.AIResourceChangeListener;
+import com.microsoftopentechnologies.auth.AuthenticationContext;
+import com.microsoftopentechnologies.auth.AuthenticationResult;
+import com.microsoftopentechnologies.auth.PromptValue;
+import com.microsoftopentechnologies.auth.browser.BrowserLauncher;
+import com.microsoftopentechnologies.azuremanagementutil.rest.AzureApplicationInsightsServices;
+import com.microsoftopentechnologies.wacommon.adauth.BrowserLauncherEclipse;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 /**
@@ -50,12 +68,15 @@ import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
  * Creates UI components and their listeners.
  */
 public class ApplicationInsightsPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
+	private Button btnImpFrmAzure;
 	private Table table;
 	private TableViewer tableViewer;
+	private Button btnNew;
 	private Button btnAdd;
 	private Button btnDetails;
 	private Button btnRemove;
 	public static int selIndex = -1;
+	AzureApplicationInsightsServices instance = AzureApplicationInsightsServices.getInstance();
 
 	@Override
 	public void init(IWorkbench arg0) {
@@ -72,8 +93,29 @@ public class ApplicationInsightsPreferencePage extends PreferencePage implements
 		gridData.grabExcessHorizontalSpace = true;
 		composite.setLayout(gridLayout);
 		composite.setLayoutData(gridData);
+		createImportBtnCmpnt(composite, 2);
 		createApplicationInsightsResourceTable(composite);
 		return null;
+	}
+
+	public void createImportBtnCmpnt(Composite parent, int horiSpan) {
+		btnImpFrmAzure = new Button(parent, SWT.PUSH | SWT.CENTER);
+		GridData gridData = new GridData();
+		gridData.horizontalIndent = 3;
+		gridData.horizontalSpan = horiSpan;
+		gridData.widthHint = 300;
+		btnImpFrmAzure.setText(Messages.imprtAzureLbl);
+		btnImpFrmAzure.setLayoutData(gridData);
+		btnImpFrmAzure.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				importButtonListener();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
 	}
 
 	public void createApplicationInsightsResourceTable(Composite parent) {
@@ -174,6 +216,23 @@ public class ApplicationInsightsPreferencePage extends PreferencePage implements
 		containerButtons.setLayout(gridLayout);
 		containerButtons.setLayoutData(gridData);
 
+		btnNew = new Button(containerButtons, SWT.PUSH);
+		btnNew.setText(Messages.btnNewLbl);
+		gridData = new GridData();
+		gridData.widthHint = 70;
+		btnNew.setLayoutData(gridData);
+		btnNew.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				newButtonListener();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
+
 		btnAdd = new Button(containerButtons, SWT.PUSH);
 		btnAdd.setText(Messages.btnAddLbl);
 		gridData = new GridData();
@@ -254,6 +313,141 @@ public class ApplicationInsightsPreferencePage extends PreferencePage implements
 	}
 
 	/**
+	 * Method imports existing application insights data from azure.
+	 */
+	protected void importButtonListener() {
+		try {
+			final AuthenticationContext context = new AuthenticationContext(Settings.getAdAuthority());
+			final BrowserLauncher launcher = new BrowserLauncherEclipse(getShell());
+			// configure context with custom eclipse specific browser launcher
+			context.setBrowserLauncher(launcher);
+			ListenableFuture<AuthenticationResult> future = context.acquireTokenInteractiveAsync(Settings.getTenant(),
+					Settings.getResource(), Settings.getClientId(), Settings.getRedirectURI(), PromptValue.login);
+			Futures.addCallback(future, new FutureCallback<AuthenticationResult>() {
+
+				@Override
+				public void onFailure(Throwable throwable) {
+					context.dispose();
+					Activator.getDefault().log(Messages.callBackErr);
+					Activator.getDefault().log(throwable.getMessage());
+					Activator.getDefault().log(ExceptionUtils.getStackTrace(throwable));
+					Display.getDefault().syncExec(new Runnable() {
+						public void run() {
+							MessageDialog.openError(getShell(), Messages.appTtl, Messages.signInErr);
+						}});
+				}
+
+				@Override
+				public void onSuccess(final AuthenticationResult result) {
+					Display.getDefault().syncExec(new Runnable() {
+						public void run() {
+							try {
+								if (result != null) {
+									PluginUtil.showBusy(true, getShell());
+									ApplicationInsightsManagementClient client =
+											instance.getApplicationInsightsManagementClient(result, launcher);
+									ApplicationInsightsResourceRegistry.
+									updateApplicationInsightsResourceRegistry(client);
+								} else {
+									Activator.getDefault().log(Messages.signInErr + Messages.noAuthErr);
+								}
+							} catch (java.net.SocketTimeoutException e) {
+								PluginUtil.showBusy(false, getShell());
+								Activator.getDefault().log(Messages.importErrMsg, e);
+								MessageDialog.openError(getShell(), Messages.appTtl, Messages.timeOutErr);
+							} catch (Exception e) {
+								PluginUtil.showBusy(false, getShell());
+								Activator.getDefault().log(Messages.importErrMsg, e);
+							}
+							context.dispose();
+							PluginUtil.showBusy(false, getShell());
+							tableViewer.refresh();
+						}});
+				}
+			});
+		} catch (Exception e) {
+			Activator.getDefault().log(Messages.signInErr + "(Method)", e);
+			Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openError(getShell(), Messages.appTtl, Messages.signInErr);
+				}});
+		}
+	}
+
+	/**
+	 * Method opens dialog to create new application insights resource.
+	 */
+	protected void newButtonListener() {
+		try {
+			final AuthenticationContext context = new AuthenticationContext(Settings.getAdAuthority());
+			final BrowserLauncher launcher = new BrowserLauncherEclipse(getShell());
+			context.setBrowserLauncher(launcher);
+			ListenableFuture<AuthenticationResult> future = context.acquireTokenInteractiveAsync(Settings.getTenant(),
+					Settings.getResource(), Settings.getClientId(), Settings.getRedirectURI(), PromptValue.login);
+			Futures.addCallback(future, new FutureCallback<AuthenticationResult>() {
+
+				@Override
+				public void onFailure(Throwable throwable) {
+					context.dispose();
+					Activator.getDefault().log(Messages.callBackErr);
+					Activator.getDefault().log(throwable.getMessage());
+					Activator.getDefault().log(ExceptionUtils.getStackTrace(throwable));
+					Display.getDefault().syncExec(new Runnable() {
+						public void run() {
+							MessageDialog.openError(getShell(), Messages.appTtl, Messages.signInErr);
+						}});
+				}
+
+				@Override
+				public void onSuccess(final AuthenticationResult result) {
+					Display.getDefault().syncExec(new Runnable() {
+						public void run() {
+							try {
+								if (result != null) {
+									PluginUtil.showBusy(true, getShell());
+									ApplicationInsightsManagementClient client =
+											instance.getApplicationInsightsManagementClient(result, launcher);
+									createNewDilaog(client);
+								} else {
+									Activator.getDefault().log(Messages.signInErr + Messages.noAuthErr);
+								}
+							} catch (java.net.SocketTimeoutException e) {
+								PluginUtil.showBusy(false, getShell());
+								Activator.getDefault().log(Messages.importErrMsg, e);
+								MessageDialog.openError(getShell(), Messages.appTtl, Messages.timeOutErr);
+							} catch (Exception e) {
+								PluginUtil.showBusy(false, getShell());
+								Activator.getDefault().log(Messages.importErrMsg, e);
+							}
+							context.dispose();
+							PluginUtil.showBusy(false, getShell());
+						}});
+				}
+			});
+		} catch (Exception e) {
+			Activator.getDefault().log(Messages.signInErr + "(Method)", e);
+			Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openError(getShell(), Messages.appTtl, Messages.signInErr);
+				}});
+		}
+	}
+
+	public void createNewDilaog(ApplicationInsightsManagementClient client) {
+		ApplicationInsightsNewDialog dialog = new ApplicationInsightsNewDialog(getShell(), client);
+		int result = dialog.open();
+		if (result == Window.OK) {
+			ApplicationInsightsResource resource = ApplicationInsightsNewDialog.getResource();
+			if (resource!= null &&
+					!ApplicationInsightsResourceRegistry.getAppInsightsResrcList().contains(resource)) {
+				ApplicationInsightsResourceRegistry.getAppInsightsResrcList().add(resource);
+				ApplicationInsightsPreferences.save();
+			}
+		}
+		tableViewer.refresh();
+	}
+
+	/**
 	 * Method opens dialog to add existing application insights resource in list.
 	 */
 	protected void addButtonListener() {
@@ -283,10 +477,10 @@ public class ApplicationInsightsPreferencePage extends PreferencePage implements
 			String keyToRemove = ApplicationInsightsResourceRegistry.getKeyAsPerIndex(curSelIndex);
 			String projName = AIResourceChangeListener.getProjectNameAsPerKey(keyToRemove);
 			if (projName != null && !projName.isEmpty()) {
-				PluginUtil.displayErrorDialog(new Shell(), Messages.appTtl,
+				PluginUtil.displayErrorDialog(getShell(), Messages.appTtl,
 						String.format(Messages.rsrcUseMsg, projName));
 			} else {
-				boolean choice = MessageDialog.openConfirm(new Shell(),
+				boolean choice = MessageDialog.openConfirm(getShell(),
 						Messages.appTtl, Messages.rsrcRmvMsg);
 				if (choice) {
 					ApplicationInsightsResourceRegistry.getAppInsightsResrcList().remove(curSelIndex);

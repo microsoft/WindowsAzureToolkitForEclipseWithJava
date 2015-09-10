@@ -1,21 +1,21 @@
-/*
- * Copyright Microsoft Corp.
- * All rights reserved.
- *
+/**
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
  * MIT License
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this
- * software and associated documentation files (the ""Software""), to deal in the Software
- * without restriction, including without limitation the rights to use, copy, modify, merge,
- * publish, distribute, sublicense, and/or sell copies of the Software, and to permit
- * persons to whom the Software is furnished to do so, subject to the following conditions:
- * The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
- * FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package com.microsoft.applicationinsights.ui.config;
@@ -69,6 +69,7 @@ import com.microsoft.applicationinsights.preference.ApplicationInsightsResourceR
 import com.microsoft.applicationinsights.ui.activator.Activator;
 import com.microsoft.applicationinsights.util.AILibraryHandler;
 import com.microsoft.applicationinsights.util.AILibraryUtil;
+import com.microsoftopentechnologies.wacommon.telemetry.AppInsightsCustomEvent;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
 public class AIProjConfigWizardDialog extends TitleAreaDialog {
@@ -133,10 +134,10 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		setMessage(Messages.aiMsg);
 		Composite container = new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 3;
+		gridLayout.numColumns = 4;
 		GridData gridData = new GridData();
-		gridLayout.marginBottom = 50;
-		gridData.widthHint = 550;
+		gridLayout.marginBottom = 30;
+		gridData.widthHint = 620;
 		gridData.verticalIndent = 10;
 		container.setLayout(gridLayout);
 		container.setLayoutData(gridData);
@@ -206,7 +207,7 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		gridData.verticalIndent = 5;
 		gridData.horizontalIndent = 5;
 		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalSpan = 3;
+		gridData.horizontalSpan = 4;
 		aiCheck.setText(Messages.aiCheckBoxTxt);
 		aiCheck.setLayoutData(gridData);
 
@@ -246,8 +247,9 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		comboInstrumentationKey = new Combo(container, SWT.LEFT | SWT.READ_ONLY);
 		gridData = new GridData();
 		gridData.verticalIndent = 5;
-		gridData.widthHint = 500;
+		gridData.horizontalSpan = 2;
 		gridData.grabExcessHorizontalSpace = true;
+		gridData.horizontalAlignment = SWT.FILL;
 		comboInstrumentationKey.setLayoutData(gridData);
 		
 		// InstrumentationKey Link
@@ -289,7 +291,7 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 		// Privacy Link
 		lnkAIPrivacy = new Link(container, SWT.RIGHT);
 		GridData gridData = new GridData();
-		gridData.horizontalSpan = 3;
+		gridData.horizontalSpan = 4;
 		gridData.horizontalIndent = 10;
 		gridData.verticalIndent = 5;
 		lnkAIPrivacy.setText(Messages.lnkAIPrivacy);
@@ -451,8 +453,16 @@ public class AIProjConfigWizardDialog extends TitleAreaDialog {
 			IClasspathEntry[] newClasspath = (IClasspathEntry[]) list
 					.toArray(new IClasspathEntry[0]);
 			proj.setRawClasspath(newClasspath, null);
+			// Azure SDK configured - application insights configured for the first time for specific project
+			Bundle bundle = Activator.getDefault().getBundle();
+			if (bundle != null) {
+				PluginUtil.showBusy(true, getShell());
+				AppInsightsCustomEvent.create("Application Insights",
+						bundle.getVersion().toString());
+				PluginUtil.showBusy(false, getShell());
+			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			Activator.getDefault().log(e.getMessage(), e);
 		}
 	}
 

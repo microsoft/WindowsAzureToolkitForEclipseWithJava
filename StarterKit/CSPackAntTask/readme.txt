@@ -1,7 +1,5 @@
 Because Azure SDK cannot be installed on Linux machines, following files from SDK need to be placed under 'sdkKit' folder which is located inside 'resources' folder:
 
-Microsoft.WindowsAzure.StorageClient.dll
-
 runtimes\Cloud.uar.csman
 
 runtimes\base\Microsoft.WindowsAzure.ServiceRuntime.dll

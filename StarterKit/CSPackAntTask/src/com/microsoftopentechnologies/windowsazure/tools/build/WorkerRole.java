@@ -1,25 +1,32 @@
-/*
- Copyright Microsoft Corp.
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+/**
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package com.microsoftopentechnologies.windowsazure.tools.build;
 
 import java.io.*;
+import java.util.List;
 import java.util.Vector;
 
 import com.microsoftopentechnologies.windowsazure.tools.cspack.*;
+import com.microsoftopentechnologies.windowsazure.tools.cspack.Utils;
+
 import org.apache.tools.ant.BuildException;
 
 /**
@@ -229,31 +236,50 @@ public class WorkerRole {
 	 * Ensures the presence of the storage client library in util
 	 */
 	public void includeStorageClientLibrary() {
+		// Microsoft.WindowsAzure.Storage.dll (4.3.0)
+		includeLibrary(WindowsAzurePackage.STORAGEDLL_FILENAME);
+		// Its six dependencies
+		includeLibrary(WindowsAzurePackage.DATA_SERV_FILENAME);
+		includeLibrary(WindowsAzurePackage.DATA_EDM_FILENAME);
+		includeLibrary(WindowsAzurePackage.DATA_ODATA_FILENAME);
+		includeLibrary(WindowsAzurePackage.JSON_FILENAME);
+		includeLibrary(WindowsAzurePackage.SPATIAL_FILENAME);
+		includeLibrary(WindowsAzurePackage.CONFIGURATION_FILENAME);
+	}
+
+	public void includeLibrary(String fileNameToInclude) {
 		File utilDirectory = new File(getAppRootDir(), WindowsAzurePackage.DEFAULT_UTIL_SUBDIR);
-		File storageClientDestFile = new File(utilDirectory, WindowsAzurePackage.STORAGEDLL_FILENAME);
-        if(storageClientDestFile.exists() && storageClientDestFile.isFile()) {
-            // Library already included
-            return;
-        }
-        File storageClientSrcFile;
-        if (WindowsAzurePackage.IS_WINDOWS) {
-            storageClientSrcFile = new File(new File(wapackage.getSdkDir(), WindowsAzurePackage.STORAGEDLL_SUBDIR), WindowsAzurePackage.STORAGEDLL_FILENAME);
-            if(!storageClientSrcFile.exists() || !storageClientSrcFile.isFile()) {
-                // Library cannot be found in SDK
-                throw new BuildException("The required StorageClient.dll cannot be found. Make sure you have installed the latest Azure SDK for .NET");
-            } else {
-                wapackage.copyFile(storageClientSrcFile, storageClientDestFile);
+		File fileToInclude = new File(utilDirectory, fileNameToInclude);
+		if (fileToInclude.exists() && fileToInclude.isFile()) {
+			// Library already included
+			return;
+		}
+		File srcFile;
+		if (WindowsAzurePackage.IS_WINDOWS) {
+			File cachingFolder = new File(String.format("%s%s%s%s%s", wapackage.getSdkDir(), File.separatorChar, "plugins", File.separatorChar, "Caching"));
+			srcFile = new File(cachingFolder, fileNameToInclude);
+			if (!srcFile.exists() || !srcFile.isFile()) {
+				// Library cannot be found in SDK
+				throw new BuildException(String.format(
+						"The required %s cannot be found. Make sure you have installed the latest Azure SDK for .NET",
+						fileNameToInclude));
+			} else {
+				wapackage.copyFile(srcFile, fileToInclude);
 			}
 		} else {
 			// copy dll from 'sdkKit' directory - for linux and Mac
 			try {
-				com.microsoftopentechnologies.windowsazure.tools.cspack.Utils.copyJarEntry(
-						String.format("%s%s%s%s", "/", wapackage.getSdkKit(), File.separator, WindowsAzurePackage.STORAGEDLL_FILENAME), storageClientDestFile);
+				String jarName = String.format("%s%s%s", wapackage.getProjectDir(), File.separatorChar, ".cspack.jar");
+				String sourceFolder = "sdkKit/plugins/Caching";
+				List<String> fileEntries = Utils.getJarEntries(jarName, sourceFolder.replace("\\", "/"));
+				for (String entryName : fileEntries) {
+					if (entryName.equals(fileNameToInclude)) {
+						Utils.copyJarEntry("/" + entryName, fileToInclude);
+					}
+				}
 			} catch (IOException e) {
-				throw new BuildException("The required StorageClient.dll cannot be found.", e);
+				throw new BuildException(String.format("The required %s cannot be found.", fileNameToInclude), e);
 			}
-//		storageClientSrcFile = new File(String.format("%s%s%s", wapackage.getSdkKit(), File.separator, WindowsAzurePackage.STORAGEDLL_FILENAME));
-//            wapackage.copyFile(storageClientSrcFile, storageClientDestFile);
 		}
 	}
 }

@@ -1,18 +1,22 @@
 /**
-* Copyright Microsoft Corp.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*	 http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-*/
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 package com.persistent.ui.projwizard;
 
 import java.io.File;
@@ -44,7 +48,6 @@ import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.IWorkbench;
@@ -53,8 +56,6 @@ import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.IWorkingSetManager;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.WorkingSetGroup;
-
-import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
@@ -69,6 +70,8 @@ import com.persistent.util.AppCmpntParam;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.ParseXML;
 import com.persistent.util.WAEclipseHelper;
+
+import waeclipseplugin.Activator;
 
 /**
  * This class creates a wizard for new Azure Cloud Project.
@@ -188,11 +191,11 @@ implements INewWizard, IPageChangedListener {
         	boolean tempAccepted = true;
         	if (WATabPage.isThirdPartyJdkChecked()
         			&& !WATabPage.isAccepted()) {
-        		tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(true);
+        		tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(getShell(), true);
         	}
         	if (WATabPage.isThirdPartySrvChecked()
         			&& !WATabPage.isServerAccepted()) {
-        		tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(false);
+        		tempAccepted = JdkSrvConfig.createAccLicenseAggDlg(getShell(), false);
         	}
         	if (tempAccepted) {
         		getContainer().run(true, false, runnable);
@@ -357,7 +360,7 @@ implements INewWizard, IPageChangedListener {
             if (sdkPath == null && Activator.IS_WINDOWS) {
                 errorTitle = Messages.sdkInsErrTtl;
                 errorMessage = Messages.sdkInsErrMsg;
-                boolean choice = MessageDialog.openQuestion(new Shell(),
+                boolean choice = MessageDialog.openQuestion(getShell(),
                         errorTitle, errorMessage);
                 if (choice) {
                     PlatformUI.getWorkbench().getBrowserSupport()

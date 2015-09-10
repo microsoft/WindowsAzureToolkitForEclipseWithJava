@@ -23,7 +23,9 @@
 	<module>AddLibrary/QpidLibraries/com.microsoftopentechnologies.qpid</module>
 	<module>AddLibrary/QpidLibraries/com.microsoftopentechnologies.qpid.feature</module>
     <module>AddLibrary/QpidLibraries/com.microsoftopentechnologies.qpid.ui</module>
-	<module>com.persistent.winazure.eclipseplugin</module>   
+    <module>com.microsoft.azureexplorer</module>
+    <module>com.microsoft.azureexplorer.feature</module>
+    <module>com.persistent.winazure.eclipseplugin</module>
 	<module>com.persistent.winazure.eclipseplugin.feature</module>   
 	<module>WindowsAzurePlugin4EJ</module>   
   </modules>
@@ -80,6 +82,14 @@
               <arch>x86</arch>
             </environment>
 			</environments>-->
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-compiler-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <compilerArgument>-warn:+discouraged,forbidden</compilerArgument>
         </configuration>
       </plugin>
     </plugins>

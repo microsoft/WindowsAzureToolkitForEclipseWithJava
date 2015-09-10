@@ -1,23 +1,29 @@
 /**
-* Copyright Microsoft Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *	 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
 package com.microsoftopentechnologies.azurecommons.xmlhandling;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -26,8 +32,12 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import com.microsoftopentechnologies.azurecommons.messagehandler.PropUtil;
@@ -94,5 +104,44 @@ public class ParseXMLUtilMethods {
 		}
 
 		return true;
+	}
+
+	/** Generic API to update or create DOM elements */
+	public static Element updateOrCreateElement(Document doc, String expr,
+			String parentNodeExpr, String elementName, boolean firstChild,
+			Map<String, String> attributes) throws Exception {
+		if (doc == null) {
+			throw new IllegalArgumentException();
+		} else {
+			XPath xPath = XPathFactory.newInstance().newXPath();
+			Element element = null;
+			if (expr != null)
+				element = (Element) xPath.evaluate(expr, doc,
+						XPathConstants.NODE);
+
+			// If element doesn't exist create one
+			if (element == null) {
+				element = doc.createElement(elementName);
+				Element parentElement = (Element) xPath.evaluate(
+						parentNodeExpr, doc, XPathConstants.NODE);
+				if (firstChild) {
+					parentElement.insertBefore(
+							element,
+							parentElement != null ? parentElement
+									.getFirstChild() : null);
+				} else {
+					parentElement.appendChild(element);
+				}
+			}
+
+			if (attributes != null && !attributes.isEmpty()) {
+				for (Map.Entry<String, String> attribute : attributes
+						.entrySet()) {
+					element.setAttribute(attribute.getKey(),
+							attribute.getValue());
+				}
+			}
+			return element;
+		}
 	}
 }

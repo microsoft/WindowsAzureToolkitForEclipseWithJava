@@ -1,17 +1,21 @@
-/*
- Copyright Microsoft Corp.
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+/**
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package com.microsoftopentechnologies.windowsazure.tools.build;
@@ -74,7 +78,15 @@ public class WindowsAzurePackage extends Task {
 	private static final String ENV_X86_PROGRAMFILES_WOW64 = "ProgramFiles(x86)";
 	private static final String ENV_PROGRAMFILES = "ProgramFiles";
 	public static final String STORAGEDLL_SUBDIR = "..\\ref"; // relative to sdk\bin dir
-	public static final String STORAGEDLL_FILENAME = "Microsoft.WindowsAzure.StorageClient.dll";
+	// storage dll 4.3.0 and its dependencies
+	public static final String STORAGEDLL_FILENAME = "Microsoft.WindowsAzure.Storage.dll";
+	public static final String DATA_SERV_FILENAME = "Microsoft.Data.Services.Client.dll";
+	public static final String DATA_EDM_FILENAME = "Microsoft.Data.Edm.dll";
+	public static final String DATA_ODATA_FILENAME = "Microsoft.Data.OData.dll";
+	public static final String JSON_FILENAME = "Newtonsoft.Json.dll";
+	public static final String SPATIAL_FILENAME = "System.Spatial.dll";
+	public static final String CONFIGURATION_FILENAME = "Microsoft.WindowsAzure.Configuration.dll";
+
 	private static final String TEMPLATES_SUBDIR = ".templates";
 	private static final String TEMPLATE_TOKEN_SDKDIR = "${SDKDir}";
 	private static final String TEMPLATE_TOKEN_EMULATORDIR = "${EmulatorDir}";
@@ -265,6 +277,10 @@ public class WindowsAzurePackage extends Task {
 	 */
 	public void setProjectDir(String projectDir) {
 		this.projectDir = projectDir;
+	}
+	
+	public String getProjectDir() {
+		return projectDir;
 	}
 
 	/**

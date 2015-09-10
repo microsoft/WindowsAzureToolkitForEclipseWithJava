@@ -1,0 +1,10 @@
+{
+  "clientId": "61d65f5a-6e3b-468b-af73-a033f5098c5c",
+  "pluginVersion": "0.1.145",
+  "tenantName": "common",
+  "redirectUri": "https://msopentech.com/",
+  "adAuthority": "login.windows.net",
+  "azureServiceManagementUri": "https://management.core.windows.net/",
+  "graphApiUri": "https://graph.windows.net/",
+  "graphApiVersion": "1.5"
+}

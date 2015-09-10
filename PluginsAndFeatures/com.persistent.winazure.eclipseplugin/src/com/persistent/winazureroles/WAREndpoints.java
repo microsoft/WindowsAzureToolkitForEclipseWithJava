@@ -1,18 +1,22 @@
 /**
-* Copyright Microsoft Corp.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*	 http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-*/
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 package com.persistent.winazureroles;
 
 import java.util.List;
@@ -37,14 +41,11 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PropertyPage;
-
-import waeclipseplugin.Activator;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
@@ -56,6 +57,8 @@ import com.microsoftopentechnologies.azurecommons.model.RoleAndEndpoint;
 import com.microsoftopentechnologies.azurecommons.roleoperations.WAREndpointsUtilMethods;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.util.WAEclipseHelper;
+
+import waeclipseplugin.Activator;
 
 /**
  * Property page for Endpoints table.
@@ -446,7 +449,7 @@ public class WAREndpoints extends PropertyPage {
         		}
         		Boolean disableDebug = false;
         		if (endpointName.equalsIgnoreCase(dbgEndptName)) {
-        			boolean choice = MessageDialog.openQuestion(new Shell(),
+        			boolean choice = MessageDialog.openQuestion(getShell(),
         					Messages.dlgTypeTitle,
         					String.format("%s%s%s",
         							Messages.dlgEPDel,
@@ -478,7 +481,7 @@ public class WAREndpoints extends PropertyPage {
         				prvPort = pubPort;
         			} else {
         				changeType = false;
-        				MessageDialog.openWarning(new Shell(),
+        				MessageDialog.openWarning(getShell(),
         						Messages.dlgTypeTitle,
         						String.format(Messages.inpInstTypeMsg, pubPort));
         			}
@@ -500,7 +503,7 @@ public class WAREndpoints extends PropertyPage {
         		endpoint.setPrivatePort(prvPort);
         		endpoint.setEndPointType(type);
         	} else {
-        		MessageDialog.openInformation(new Shell(),
+        		MessageDialog.openInformation(getShell(),
         				Messages.dlgTypeTitle, Messages.changeErr);
         	}
         }
@@ -688,7 +691,7 @@ public class WAREndpoints extends PropertyPage {
                 	StringBuffer msg = new StringBuffer(Messages.dlgEPDel);
                 	msg.append(Messages.dlgEPDel1);
                 	msg.append(Messages.dlgEPDel2);
-                    boolean choice = MessageDialog.openQuestion(new Shell(),
+                    boolean choice = MessageDialog.openQuestion(getShell(),
                             Messages.dlgDelEndPt1, msg.toString());
                     if (choice) {
                         waEndpoint.delete();
@@ -701,7 +704,7 @@ public class WAREndpoints extends PropertyPage {
                  */
                 else if (waEndpoint.isStickySessionEndpoint()
                 		&& waEndpoint.isSSLEndpoint()) {
-                	boolean choice = MessageDialog.openConfirm(new Shell(),
+                	boolean choice = MessageDialog.openConfirm(getShell(),
                             Messages.dlgDelEndPt1, Messages.bothDelMsg);
                     if (choice) {
                     	if (waEndpoint.getEndPointType().
@@ -724,7 +727,7 @@ public class WAREndpoints extends PropertyPage {
         		 */
                 else if (waEndpoint.isStickySessionEndpoint()) {
                     StringBuffer msg = new StringBuffer(Messages.ssnAffDelMsg);
-                    boolean choice = MessageDialog.openConfirm(new Shell(),
+                    boolean choice = MessageDialog.openConfirm(getShell(),
                             Messages.dlgDelEndPt1, msg.toString());
                     if (choice) {
                     	if (waEndpoint.getEndPointType().
@@ -742,7 +745,7 @@ public class WAREndpoints extends PropertyPage {
                  * Endpoint associated with SSL
                  */
                 else if (waEndpoint.isSSLEndpoint()) {
-                	boolean choice = MessageDialog.openConfirm(new Shell(),
+                	boolean choice = MessageDialog.openConfirm(getShell(),
                             Messages.dlgDelEndPt1, Messages.sslDelMsg);
                     if (choice) {
                     	if (waEndpoint.getEndPointType().
@@ -758,7 +761,7 @@ public class WAREndpoints extends PropertyPage {
                  * Endpoint associated with SSL redirection.
                  */
                 else if (waEndpoint.isSSLRedirectEndPoint()) {
-                	boolean choice = MessageDialog.openConfirm(new Shell(),
+                	boolean choice = MessageDialog.openConfirm(getShell(),
                             Messages.dlgDelEndPt1, Messages.sslRedirectDelMsg);
                     if (choice) {
                     	windowsAzureRole.deleteSslOffloadingRedirectionEndpoint();
@@ -768,7 +771,7 @@ public class WAREndpoints extends PropertyPage {
                  * Normal end point.
                  */
                 else {
-                    boolean choice = MessageDialog.openQuestion(new Shell(),
+                    boolean choice = MessageDialog.openQuestion(getShell(),
                             Messages.dlgDelEndPt1, Messages.dlgDelEndPt2);
                     if (choice) {
                         waEndpoint.delete();

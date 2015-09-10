@@ -1,25 +1,36 @@
 /**
- * Copyright Microsoft Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *	 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Copyright (c) Microsoft Corporation
+ * 
+ * All rights reserved. 
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.microsoft.applicationinsights.preference;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.microsoft.applicationinsights.management.rest.ApplicationInsightsManagementClient;
+import com.microsoft.applicationinsights.management.rest.client.RestOperationException;
+import com.microsoft.applicationinsights.management.rest.model.Resource;
+import com.microsoft.applicationinsights.management.rest.model.Subscription;
+import com.microsoft.applicationinsights.ui.config.AIResourceChangeListener;
 import com.microsoftopentechnologies.azurecommons.storageregistry.StorageRegistryUtilMethods;
+import com.microsoftopentechnologies.azuremanagementutil.rest.AzureApplicationInsightsServices;
 
 
 public class ApplicationInsightsResourceRegistry {
@@ -180,5 +191,83 @@ public class ApplicationInsightsResourceRegistry {
 			}
 		}
 		return subWiseList;
+	}
+
+	/**
+	 * Prepare list of ApplicationInsightsResource using list of Resource.
+	 * @param resourceList
+	 * @param sub
+	 * @return
+	 */
+	public static List<ApplicationInsightsResource> prepareAppResListFromRes(
+			List<Resource> resourceList, Subscription sub) {
+		List<ApplicationInsightsResource> list = new ArrayList<ApplicationInsightsResource>();
+		for (Resource resource : resourceList) {
+			ApplicationInsightsResource resourceToAdd = new ApplicationInsightsResource(
+					resource.getName(), resource.getInstrumentationKey(),
+					sub.getName(), sub.getId(),
+					resource.getLocation(), resource.getResourceGroup(), true);
+			list.add(resourceToAdd);
+		}
+		return list;
+	}
+
+	/**
+	 * Method updates application insights registry by adding, removing or updating resources.
+	 * @param client
+	 * @throws IOException
+	 * @throws RestOperationException
+	 */
+	public static void updateApplicationInsightsResourceRegistry(
+			ApplicationInsightsManagementClient client) throws IOException, RestOperationException {
+		AzureApplicationInsightsServices instance = AzureApplicationInsightsServices.getInstance();
+		List<Subscription> subList = instance.getSubscriptions(client);
+		for (Subscription sub : subList) {
+			// fetch resources available for particular subscription
+			List<Resource> resourceList = instance.getApplicationInsightsResources(client, sub.getId());
+
+			// Removal logic
+			List<ApplicationInsightsResource> registryList = getResourceListAsPerSub(sub.getId());
+			List<ApplicationInsightsResource> importedList = prepareAppResListFromRes(resourceList, sub);
+			List<String> inUsekeyList = AIResourceChangeListener.getInUseInstrumentationKeys();
+			for (ApplicationInsightsResource registryRes : registryList) {
+				if (!importedList.contains(registryRes)) {
+					String key = registryRes.getInstrumentationKey();
+					int index = getResourceIndexAsPerKey(key);
+					if (inUsekeyList.contains(key)) {
+						/*
+						 * key is used by project but not present in cloud,
+						 * so make it as manually added resource and not imported.
+						 */
+						ApplicationInsightsResource resourceToAdd = new ApplicationInsightsResource(
+								key, key, Messages.unknown, Messages.unknown,
+								Messages.unknown, Messages.unknown, false);
+						getAppInsightsResrcList().set(index, resourceToAdd);
+					} else {
+						// key is not used by any project then delete it.
+						getAppInsightsResrcList().remove(index);
+					}
+				}
+			}
+
+			// Addition logic
+			List<ApplicationInsightsResource> list = getAppInsightsResrcList();
+			for (Resource resource : resourceList) {
+				ApplicationInsightsResource resourceToAdd = new ApplicationInsightsResource(
+						resource.getName(), resource.getInstrumentationKey(),
+						sub.getName(), sub.getId(),
+						resource.getLocation(), resource.getResourceGroup(), true);
+				if (list.contains(resourceToAdd)) {
+					int index = getResourceIndexAsPerKey(resource.getInstrumentationKey());
+					ApplicationInsightsResource objectFromRegistry = list.get(index);
+					if (!objectFromRegistry.imported) {
+						getAppInsightsResrcList().set(index, resourceToAdd);
+					}
+				} else {
+					getAppInsightsResrcList().add(resourceToAdd);
+				}
+			}
+		}
+		ApplicationInsightsPreferences.save();
 	}
 }
