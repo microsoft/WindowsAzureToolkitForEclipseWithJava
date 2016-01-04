@@ -152,10 +152,10 @@ public class WAEndpointDialog extends org.eclipse.jface.dialogs.Dialog {
         		type = waEndpt.getEndPointType();
         		comboType.setText(type.toString());
         	} catch (WindowsAzureInvalidProjectOperationException e) {
-        		PluginUtil.displayErrorDialog(
+        		PluginUtil.displayErrorDialogAndLog(
         				this.getShell(),
         				Messages.dlgDbgEndPtErrTtl,
-        				Messages.endPtTypeErr);
+        				Messages.endPtTypeErr, e);
         	}
             // private port
             String prvPort = waEndpt.getPrivatePort();

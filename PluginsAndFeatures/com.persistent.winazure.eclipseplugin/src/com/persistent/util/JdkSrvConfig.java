@@ -1418,9 +1418,18 @@ public class JdkSrvConfig {
 			if (!cldSrc.isEmpty()) {
 				needsToBeUpdated = false;
 				getTxtUrlSrv().setText(cldSrc);
-				getCmbStrgAccSrv().setItem(0, "(none)");
+				/*
+				 * org.eclipse.swt.widgets.Combo's setItem method
+				 * behave weirdly on Linux eclipse.
+				 * Hence use only on windows.
+				 */
+				if (Activator.IS_WINDOWS) {
+					getCmbStrgAccSrv().setItem(0, NONE_TXT);
+				}
 			} else {
-				getCmbStrgAccSrv().setItem(0, "(auto)");
+				if (Activator.IS_WINDOWS) {
+					getCmbStrgAccSrv().setItem(0, AUTO_TXT);
+				}
 			}
 		}
 		if (needsToBeUpdated) {

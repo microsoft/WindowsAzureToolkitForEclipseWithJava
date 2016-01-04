@@ -411,7 +411,7 @@ public class WARLocalStorage extends PropertyPage {
         		 loclRes = WARLocalStorageUtilMethods.
         				 modifyName(loclRes, modifiedVal, mapLclStg);
         	 } catch (AzureCommonsException e) {
-        		 PluginUtil.displayErrorDialog(getShell(), Messages.lclStgNameErrTtl, e.getMessage());
+        		 PluginUtil.displayErrorDialogAndLog(getShell(), Messages.lclStgNameErrTtl, e.getMessage(), e);
         	 }
          }
 
@@ -480,7 +480,7 @@ public class WARLocalStorage extends PropertyPage {
         		 WARLocalStorageUtilMethods.modifyPath(
         				 loclRes, modifiedVal, mapLclStg, windowsAzureRole);
         	 } catch (AzureCommonsException e1) {
-        		 PluginUtil.displayErrorDialog(getShell(), Messages.lclStgPathErrTtl, e1.getMessage());
+        		 PluginUtil.displayErrorDialogAndLog(getShell(), Messages.lclStgPathErrTtl, e1.getMessage(), e1);
         	 }
          }
 

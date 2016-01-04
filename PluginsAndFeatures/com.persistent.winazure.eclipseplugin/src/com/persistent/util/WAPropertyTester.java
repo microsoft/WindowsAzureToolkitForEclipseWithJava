@@ -19,6 +19,8 @@
  */
 package com.persistent.util;
 
+import java.io.File;
+
 import org.eclipse.core.expressions.PropertyTester;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -30,13 +32,14 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
-import waeclipseplugin.Activator;
-
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
 import com.persistent.ui.propertypage.WAProjectNature;
 import com.persistent.util.ProjectNatureHelper.ProjExportType;
+
+import waeclipseplugin.Activator;
 
 /**
  * Provides implementation for following tests :
@@ -81,6 +84,12 @@ public class WAPropertyTester extends PropertyTester {
             } else if(property.equalsIgnoreCase("isWebOrAzureProj")
             		&& object instanceof IProject) {
             	retVal = isWebOrAzureProj(object);
+            } else if (property.equalsIgnoreCase("isFirstPackageWithAuto")
+            		&& object instanceof IProject) {
+            	retVal = isFirstPackageWithAuto(object);
+            } else if (property.equalsIgnoreCase("isProjFileAndisFirstPackageWithAuto")
+            		&& object instanceof IEditorPart) {
+            	retVal = isProjFileAndisFirstPackageWithAuto(object);
             }
         } catch (Exception ex) {
             //As this is not an user initiated method,
@@ -159,9 +168,29 @@ public class WAPropertyTester extends PropertyTester {
     }
 
     /**
+     * Method checks if auto is present as storage account then
+     * valid publish information is present.
+     * @param object
+     * @return
+     * @throws CoreException
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    private boolean isFirstPackageWithAuto(Object object)
+    		throws CoreException, WindowsAzureInvalidProjectOperationException {
+    	boolean retVal = false;
+    	IProject project = (IProject) object;
+    	if (project.isOpen() && project.hasNature(WAProjectNature.NATURE_ID)) {
+    		WindowsAzureProjectManager projMngr = WindowsAzureProjectManager.
+    				load(new File(project.getLocation().toOSString()));
+    		retVal = WAEclipseHelperMethods.isFirstPackageWithAuto(projMngr);
+    	}
+    	return retVal;
+    }
+
+    /**
      * Method checks and returns true,
      * if the file which is opened in editor
-     * is of  Azure Deployment project.
+     * is of Azure Deployment project.
      * @param obj
      * @return
      * @throws CoreException
@@ -183,6 +212,37 @@ public class WAPropertyTester extends PropertyTester {
     						hasNature(WAProjectNature.NATURE_ID)) {
     					isProjFile = true;
     				}
+    			}
+    		}
+    	}
+    	return isProjFile;
+    }
+    
+    /**
+     * Method checks and returns true,
+     * if the file which is opened in editor
+     * is of Azure Deployment project and contains publish information
+     * if auto is present as storage account.
+     * @param obj
+     * @return
+     * @throws CoreException
+     * @throws WindowsAzureInvalidProjectOperationException
+     */
+    private boolean isProjFileAndisFirstPackageWithAuto(Object obj)
+    		throws CoreException, WindowsAzureInvalidProjectOperationException {
+    	boolean isProjFile = false;
+    	IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+    	if (window != null) {
+    		IWorkbenchPage page = window.getActivePage();
+    		/*
+    		 * To avoid null pointer exception when we close any file
+    		 * and as a result of which there is no active editor.
+    		 */
+    		if (page.getActiveEditor() != null) {
+    			IFile editFile = (IFile) page.getActiveEditor().
+    					getEditorInput().getAdapter(IFile.class);
+    			if (editFile != null) {
+    				isProjFile = isFirstPackageWithAuto(editFile.getProject());
     			}
     		}
     	}

@@ -35,7 +35,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 
@@ -263,8 +263,13 @@ public class WAResourceChangeListener implements IResourceChangeListener {
 					try {
 						Display.getDefault().syncExec(new Runnable() {
 							public void run() {
-								installSDK = MessageDialog.openQuestion(null,
-											 	Messages.sdkInsTtl, Messages.sdkInsMsg);
+								SDKInstallationDlg dlg = new SDKInstallationDlg(null);
+								int btnId = dlg.open();
+								if (btnId == Window.OK) {
+									installSDK = true;
+								} else {
+									installSDK = false;
+								}
 							}
 						});
 						if (installSDK) {

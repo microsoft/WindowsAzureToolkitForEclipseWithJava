@@ -19,28 +19,27 @@
  */
 package com.microsoft.azureexplorer.actions;
 
-import org.eclipse.jface.wizard.WizardDialog;
-import org.eclipse.swt.widgets.Shell;
-
 import com.microsoft.azureexplorer.forms.createvm.CreateVMWizard;
 import com.microsoftopentechnologies.tooling.msservices.helpers.Name;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.NodeActionEvent;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.NodeActionListener;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.azure.vm.VMServiceModule;
+import org.eclipse.jface.wizard.WizardDialog;
+import org.eclipse.swt.widgets.Shell;
 
 @Name("Create VM")
 public class CreateVMAction extends NodeActionListener {
-	public CreateVMAction(VMServiceModule node) {
-		super(node);
-	}
+    public CreateVMAction(VMServiceModule node) {
+        super(node);
+    }
 
-	@Override
-	public void actionPerformed(NodeActionEvent e) {
-		CreateVMWizard createVMWizard = new CreateVMWizard((VMServiceModule) e.getAction().getNode());
-		WizardDialog dialog = new WizardDialog(new Shell(), createVMWizard);
-		dialog.setTitle("Create new Virtual Machine");
-		dialog.setMinimumPageSize(450, 450);
-		dialog.create();
-		dialog.open();
-	}
+    @Override
+    public void actionPerformed(NodeActionEvent e) {
+        CreateVMWizard createVMWizard = new CreateVMWizard((VMServiceModule) e.getAction().getNode());
+        WizardDialog dialog = new WizardDialog(new Shell(), createVMWizard);
+        dialog.setTitle("Create new Virtual Machine");
+        dialog.setMinimumPageSize(450, 450);
+        dialog.create();
+        dialog.open();
+    }
 }

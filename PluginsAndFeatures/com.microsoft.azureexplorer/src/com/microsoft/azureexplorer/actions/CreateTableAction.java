@@ -19,34 +19,33 @@
  */
 package com.microsoft.azureexplorer.actions;
 
-import org.eclipse.swt.widgets.Shell;
-
 import com.microsoft.azureexplorer.forms.CreateTableForm;
 import com.microsoftopentechnologies.tooling.msservices.helpers.Name;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.NodeActionEvent;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.NodeActionListener;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.azure.storage.ClientStorageNode;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.azure.storage.TableModule;
+import org.eclipse.swt.widgets.Shell;
 
 @Name("Create new table")
 public class CreateTableAction extends NodeActionListener {
-	private TableModule tableModule;
+    private TableModule tableModule;
 
-	public CreateTableAction(TableModule tableModule) {
-		this.tableModule = tableModule;
-	}
+    public CreateTableAction(TableModule tableModule) {
+        this.tableModule = tableModule;
+    }
 
-	@Override
-	public void actionPerformed(NodeActionEvent e) {
-		CreateTableForm form = new CreateTableForm(new Shell(), tableModule.getStorageAccount());
+    @Override
+    public void actionPerformed(NodeActionEvent e) {
+        CreateTableForm form = new CreateTableForm(new Shell(), tableModule.getStorageAccount());
 
-		form.setOnCreate(new Runnable() {
-			@Override
-			public void run() {
-				tableModule.getParent().removeAllChildNodes();
-				((ClientStorageNode) tableModule.getParent()).load();
-			}
-		});
-		form.open();
-	}
+        form.setOnCreate(new Runnable() {
+            @Override
+            public void run() {
+                tableModule.getParent().removeAllChildNodes();
+                ((ClientStorageNode) tableModule.getParent()).load();
+            }
+        });
+        form.open();
+    }
 }

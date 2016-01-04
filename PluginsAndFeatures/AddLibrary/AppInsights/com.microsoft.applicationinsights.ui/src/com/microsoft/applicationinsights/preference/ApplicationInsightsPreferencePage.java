@@ -346,7 +346,7 @@ public class ApplicationInsightsPreferencePage extends PreferencePage implements
 									PluginUtil.showBusy(true, getShell());
 									ApplicationInsightsManagementClient client =
 											instance.getApplicationInsightsManagementClient(result, launcher);
-									ApplicationInsightsResourceRegistry.
+									ApplicationInsightsResourceRegistryEclipse.
 									updateApplicationInsightsResourceRegistry(client);
 								} else {
 									Activator.getDefault().log(Messages.signInErr + Messages.noAuthErr);

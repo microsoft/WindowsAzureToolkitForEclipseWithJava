@@ -29,8 +29,10 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IStartup;
 import org.w3c.dom.Document;
 
+import com.microsoftopentechnologies.azurecommons.xmlhandling.DataOperations;
 import com.microsoftopentechnologies.azurecommons.xmlhandling.ParseXMLUtilMethods;
 import com.microsoftopentechnologies.wacommon.Activator;
+import com.microsoftopentechnologies.wacommon.telemetry.AppInsightsCustomEvent;
 import com.microsoftopentechnologies.wacommon.utils.FileUtil;
 import com.microsoftopentechnologies.wacommon.utils.Messages;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
@@ -141,5 +143,9 @@ public class WACPStartUp implements IStartup {
 		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 		DataOperations.updatePropertyValue(doc, Messages.instID, dateFormat.format(new Date()));
 		ParseXMLUtilMethods.saveXMLDocument(dataFile, doc);
+		String prefVal = DataOperations.getProperty(dataFile, Messages.prefVal);
+		if (prefVal != null && !prefVal.isEmpty() && prefVal.equals("true")) {
+			AppInsightsCustomEvent.create(Messages.telAgrEvtName, "");
+		}
 	}
 }

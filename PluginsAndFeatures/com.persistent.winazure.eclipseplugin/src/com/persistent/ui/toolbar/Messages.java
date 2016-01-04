@@ -52,6 +52,7 @@ public final class Messages extends NLS {
 	 public static String azureLibPropName;
 	 public static String noLocalServerMsg;
 	 public static String noLocalJDKMsg;
+	 public static String instSDK;
 
 	 static {
 	        // initialize resource bundle

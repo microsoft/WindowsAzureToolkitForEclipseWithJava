@@ -357,9 +357,9 @@ public class WAREndpoints extends PropertyPage {
         			break;
         		}
         	} catch (WindowsAzureInvalidProjectOperationException e) {
-        		PluginUtil.displayErrorDialog(getShell(),
+        		PluginUtil.displayErrorDialogAndLog(getShell(),
         				Messages.dlgDbgEndPtErrTtl,
-        				Messages.endPtTypeErr);
+        				Messages.endPtTypeErr, e);
         	}
         	return result;
         }
@@ -521,8 +521,8 @@ public class WAREndpoints extends PropertyPage {
         	try {
         		WAREndpointsUtilMethods.modifyName(endpoint, modifiedVal, windowsAzureRole);
         	} catch (AzureCommonsException e) {
-        		PluginUtil.displayErrorDialog(
-        				getShell(), Messages.dlgInvdEdPtName1, e.getMessage());
+        		PluginUtil.displayErrorDialogAndLog(
+        				getShell(), Messages.dlgInvdEdPtName1, e.getMessage(), e);
         	}
         }
 
@@ -544,9 +544,9 @@ public class WAREndpoints extends PropertyPage {
         				modifiedVal,
         				dashCnt, windowsAzureRole);
         	} catch (AzureCommonsException e) {
-        		PluginUtil.displayErrorDialog(getShell(),
+        		PluginUtil.displayErrorDialogAndLog(getShell(),
         				Messages.dlgInvldPort,
-        				e.getMessage());
+        				e.getMessage(), e);
         	}
         }
 
@@ -571,8 +571,8 @@ public class WAREndpoints extends PropertyPage {
         			windowsAzureRole = obj.getRole();
         		}
         	} catch (AzureCommonsException e1) {
-        		PluginUtil.displayErrorDialog(getShell(),
-        				Messages.dlgInvldPort, e1.getMessage());
+        		PluginUtil.displayErrorDialogAndLog(getShell(),
+        				Messages.dlgInvldPort, e1.getMessage(), e1);
         	}
         }
 
@@ -596,9 +596,9 @@ public class WAREndpoints extends PropertyPage {
 						result = 1;
 					}
 				} catch (WindowsAzureInvalidProjectOperationException e) {
-	            	PluginUtil.displayErrorDialog(getShell(),
+	            	PluginUtil.displayErrorDialogAndLog(getShell(),
 	            			Messages.dlgDbgEndPtErrTtl,
-	            			Messages.endPtTypeErr);
+	            			Messages.endPtTypeErr, e);
 	            }
         	} else if (property.equals(Messages.dlgColName)) {
         		result = endpoint.getName();
@@ -648,9 +648,9 @@ public class WAREndpoints extends PropertyPage {
         			}
         		}
         	} catch (WindowsAzureInvalidProjectOperationException e) {
-    			PluginUtil.displayErrorDialog(getShell(),
+    			PluginUtil.displayErrorDialogAndLog(getShell(),
     					Messages.dlgDbgEndPtErrTtl,
-    					Messages.endPtTypeErr);
+    					Messages.endPtTypeErr, e);
     		}
         	return retVal;
         }
@@ -849,9 +849,9 @@ public class WAREndpoints extends PropertyPage {
     				tblViewer.refresh(true);
     			}
     		} catch (WindowsAzureInvalidProjectOperationException e) {
-    			PluginUtil.displayErrorDialog(getShell(),
+    			PluginUtil.displayErrorDialogAndLog(getShell(),
     					Messages.genErrTitle,
-    					Messages.chEndPtErMsg);
+    					Messages.chEndPtErMsg, e);
     		}
     	}
     }

@@ -1,4 +1,4 @@
-Following content from Azure SDK 2.7.1 "bin\plugins\Caching" directory should be under this directory:
+Following content from Azure SDK 2.8.0 "bin\plugins\Caching" directory should be under this directory:
 
 Microsoft.WindowsAzure.Storage.dll
 Microsoft.Data.Services.Client.dll

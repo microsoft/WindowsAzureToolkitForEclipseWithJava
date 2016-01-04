@@ -58,6 +58,7 @@ public final class Messages extends NLS {
 	public static String timeOutErr;
 	public static String callBackErr;
 	public static String noAuthErr;
+	public static String timeOutErr1;
 
 	static {
 		// initialize resource bundle

@@ -25,28 +25,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.microsoft.windowsazure.management.compute.models.DeploymentStatus;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
 
-import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse;
-import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
-import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse.Deployment;
-import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
-import com.microsoftopentechnologies.azuremanagementutil.model.Subscription;
 import com.gigaspaces.azure.runnable.FetchDeploymentsForHostedServiceWithProgressWindow;
 import com.gigaspaces.azure.runnable.LoadAccountWithProgressWindow;
 import com.gigaspaces.azure.util.PreferenceUtil;
 import com.gigaspaces.azure.util.UIUtils;
+import com.microsoft.windowsazure.management.compute.models.DeploymentStatus;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse.Deployment;
+import com.microsoft.windowsazure.management.compute.models.HostedServiceListResponse.HostedService;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
+import com.microsoftopentechnologies.azuremanagementutil.model.Subscription;
 
 public class UndeploymentPage extends WindowsAzurePage {
 
@@ -99,33 +97,21 @@ public class UndeploymentPage extends WindowsAzurePage {
 	public void createControl(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
 		GridLayout compositeLayout = new GridLayout();
-
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,Messages.pluginPrefix + Messages.unpublishCommandHelp);
-
-		compositeLayout.verticalSpacing = 20;
-		compositeLayout.marginTop = 10;
-		compositeLayout.marginBottom = 5;
-		compositeLayout.numColumns = 1;
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,
+				Messages.pluginPrefix + Messages.unpublishCommandHelp);
+		compositeLayout.numColumns = 2;
 		composite.setLayout(compositeLayout);
 		setControl(composite);
 
-		Composite container = createDefaultComposite(composite);
-
-		Label lblSubscription = new Label(container, SWT.NONE);
-
-		lblSubscription.setText("Subscription");
-
+		Label lblSubscription = new Label(composite, SWT.NONE);
+		lblSubscription.setText("Subscription:");
 		subscriptionCombo = createCombo(
-				container, SWT.READ_ONLY, -1, GridData.BEGINNING, 200);
+				composite, SWT.READ_ONLY, -1, SWT.FILL, 0);
 
-
-
-		Label label = new Label(container, SWT.NONE);
-
+		Label label = new Label(composite, SWT.NONE);
 		label.setText(Messages.hostedServiceLbl);
-
 		hostedServiceCombo = createCombo(
-				container, SWT.READ_ONLY, -1, GridData.BEGINNING, 200);
+				composite, SWT.READ_ONLY, -1, SWT.FILL, 0);
 
 
 		subscriptionCombo.addModifyListener(new ModifyListener() {
@@ -147,25 +133,18 @@ public class UndeploymentPage extends WindowsAzurePage {
 
 			@Override
 			public void modifyText(ModifyEvent e) {
-
 				deploymentCombo.removeAll();
 				deploymentCombo.setEnabled(false);
-
 				populateDeployment();
-
 				setComponentState();
-
 				setPageComplete(validatePageComplete());
 			}
 		});
 
-		Label deploymentLbl = new Label(container, SWT.NONE);
-
+		Label deploymentLbl = new Label(composite, SWT.NONE);
 		deploymentLbl.setText(Messages.deploymentsLbl);
-
 		deploymentCombo = createCombo(
-				container, SWT.READ_ONLY, -1, GridData.BEGINNING, 200);
-
+				composite, SWT.READ_ONLY, -1, SWT.FILL, 0);
 		deploymentCombo.addModifyListener(new ModifyListener() {
 
 			@Override
@@ -173,7 +152,6 @@ public class UndeploymentPage extends WindowsAzurePage {
 				setPageComplete(validatePageComplete());
 			}
 		});
-
 	}
 
 	@Override
@@ -201,16 +179,18 @@ public class UndeploymentPage extends WindowsAzurePage {
 
 			deploymentCombo.removeAll();
 
+			if (hostedServiceDetailed != null) {
 			for (Deployment deployment : hostedServiceDetailed.getDeployments()) {
 				if (deployment.getName() == null) {
 					continue;
 				}
-				if (deployment.getStatus().equals(DeploymentStatus.Running)) {
+				if (!deployment.getStatus().equals(DeploymentStatus.Deleting)) {
                     String label = deployment.getLabel();
                     String id = label + " - " + deployment.getDeploymentSlot();
                     deploymentCombo.add(id);
                     deploymentCombo.setData(id, deployment);
                 }
+			}
 			}
 
 			if (deploymentCombo.getItemCount() > 0) {
@@ -221,18 +201,7 @@ public class UndeploymentPage extends WindowsAzurePage {
 		}
 	}
 
-	private Composite createDefaultComposite(Composite parent) {
-		Group composite = new Group(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
-		layout.makeColumnsEqualWidth = true;
-		composite.setLayout(layout);
-
-		return composite;
-	}
-
 	public void populateHostedServices() {
-
 		if (currentPublishData != null) {
 			Subscription currentSubscription = currentPublishData.getCurrentSubscription();
 			List<HostedService> hostedServices = currentPublishData.getServicesPerSubscription().get(currentSubscription.getId());
@@ -266,16 +235,13 @@ public class UndeploymentPage extends WindowsAzurePage {
 	}
 
 	private void populateSubscriptionCombo() {
-
 		Collection<PublishData> publishes = WizardCacheManager.getPublishDatas();
-
 		Map<String , PublishData> map = new HashMap<String, PublishData>();
 		for (PublishData pd : publishes) {
 			for (Subscription sub : pd.getPublishProfile().getSubscriptions()) {
 				map.put(sub.getName(), pd);
 			} 
 		}
-
 
 		subscriptionCombo.removeAll();
 
@@ -314,8 +280,4 @@ public class UndeploymentPage extends WindowsAzurePage {
 		}
 		deploymentCombo.setEnabled(hostedServiceCombo.getSelectionIndex() > -1 && deploymentCombo.getItemCount() > 0);
 	}
-
-
-
-
 }

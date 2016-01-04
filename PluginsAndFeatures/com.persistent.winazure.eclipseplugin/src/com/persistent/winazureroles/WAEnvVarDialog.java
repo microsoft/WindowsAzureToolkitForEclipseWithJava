@@ -256,9 +256,9 @@ public class WAEnvVarDialog extends Dialog {
     				varName, waRole);
     	} catch (AzureCommonsException e) {
     		retVal = false;
-    		PluginUtil.displayErrorDialog(
+    		PluginUtil.displayErrorDialogAndLog(
     				getShell(),
-    				Messages.genErrTitle, e.getMessage());
+    				Messages.genErrTitle, e.getMessage(), e);
     	}
     	return retVal;
     }

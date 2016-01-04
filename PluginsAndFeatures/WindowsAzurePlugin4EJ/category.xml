@@ -6,22 +6,22 @@
    <feature url="features/com.microsoftopentechnologies.qpid.feature_0.19.0.qualifier.jar" id="com.microsoftopentechnologies.qpid.feature" version="0.19.0.qualifier">
       <category name="com.persistent.winazure.eclipseplugin.category"/>
    </feature>
-   <feature url="features/com.microsoftopentechnologies.windowsazure.tools.sdk.feature_0.7.0.qualifier.jar" id="com.microsoftopentechnologies.windowsazure.tools.sdk.feature" version="0.7.0.qualifier">
-      <category name="com.persistent.winazure.eclipseplugin.category"/>
-   </feature>
-   <feature url="features/com.microsoft.sqljdbc4.feature_4.1.5605.100.jar" id="com.microsoft.sqljdbc4.feature" version="4.1.5605.100">
-      <category name="com.persistent.winazure.eclipseplugin.category"/>
-   </feature>
-   <feature url="features/com.microsoftopentechnologies.wacommon.feature_2.7.1.qualifier.jar" id="com.microsoftopentechnologies.wacommon.feature" version="2.7.1.qualifier">
-      <category name="com.persistent.winazure.eclipseplugin.category"/>
-   </feature>
-   <feature url="features/com.persistent.winazure.eclipseplugin.feature_2.7.1.qualifier.jar" id="com.persistent.winazure.eclipseplugin.feature" version="2.7.1.qualifier">
-      <category name="com.persistent.winazure.eclipseplugin.category"/>
-   </feature>
-   <feature url="features/com.microsoft.applicationinsights.feature_1.0.1.qualifier.jar" id="com.microsoft.applicationinsights.feature" version="1.0.1.qualifier">
-      <category name="com.persistent.winazure.eclipseplugin.category"/>
-   </feature>
    <feature url="features/com.microsoft.azureexplorer.feature_1.0.0.qualifier.jar" id="com.microsoft.azureexplorer.feature" version="1.0.0.qualifier">
+      <category name="com.persistent.winazure.eclipseplugin.category"/>
+   </feature>
+   <feature url="features/com.microsoftopentechnologies.wacommon.feature_2.8.0.qualifier.jar" id="com.microsoftopentechnologies.wacommon.feature" version="2.8.0.qualifier">
+      <category name="com.persistent.winazure.eclipseplugin.category"/>
+   </feature>
+   <feature url="features/com.persistent.winazure.eclipseplugin.feature_2.8.0.qualifier.jar" id="com.persistent.winazure.eclipseplugin.feature" version="2.8.0.qualifier">
+      <category name="com.persistent.winazure.eclipseplugin.category"/>
+   </feature>
+   <feature url="features/com.microsoft.sqljdbc4.feature_4.2.6420.100.jar" id="com.microsoft.sqljdbc4.feature" version="4.2.6420.100">
+      <category name="com.persistent.winazure.eclipseplugin.category"/>
+   </feature>
+   <feature url="features/com.microsoft.applicationinsights.feature_1.0.2.qualifier.jar" id="com.microsoft.applicationinsights.feature" version="1.0.2.qualifier">
+      <category name="com.persistent.winazure.eclipseplugin.category"/>
+   </feature>
+   <feature url="features/com.microsoftopentechnologies.windowsazure.tools.sdk.feature_0.9.0.qualifier.jar" id="com.microsoftopentechnologies.windowsazure.tools.sdk.feature" version="0.9.0.qualifier">
       <category name="com.persistent.winazure.eclipseplugin.category"/>
    </feature>
    <category-def name="com.persistent.winazure.eclipseplugin.category" label="Azure Toolkit for Java">

@@ -248,8 +248,8 @@ public class LocalStorageResourceDialog extends TitleAreaDialog {
     				 isValidName(name, lclStgMap, isResEdit, resName);
     	 } catch (AzureCommonsException e) {
     		 retVal = false;
-    		 PluginUtil.displayErrorDialog(getShell(),
-    				 Messages.genErrTitle, e.getMessage());
+    		 PluginUtil.displayErrorDialogAndLog(getShell(),
+    				 Messages.genErrTitle, e.getMessage(), e);
     	 }
     	 return retVal;
      }

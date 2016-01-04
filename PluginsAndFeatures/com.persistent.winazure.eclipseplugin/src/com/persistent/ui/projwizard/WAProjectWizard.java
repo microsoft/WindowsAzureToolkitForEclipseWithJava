@@ -43,6 +43,7 @@ import org.eclipse.jface.dialogs.PageChangedEvent;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.IWizardContainer;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.Wizard;
@@ -63,12 +64,14 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
 import com.microsoftopentechnologies.azurecommons.roleoperations.WizardUtilMethods;
+import com.microsoftopentechnologies.wacommon.telemetry.AppInsightsCustomEvent;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.builder.WADependencyBuilder;
 import com.persistent.ui.propertypage.WAProjectNature;
 import com.persistent.util.AppCmpntParam;
 import com.persistent.util.JdkSrvConfig;
 import com.persistent.util.ParseXML;
+import com.persistent.util.SDKInstallationDlg;
 import com.persistent.util.WAEclipseHelper;
 
 import waeclipseplugin.Activator;
@@ -203,9 +206,9 @@ implements INewWizard, IPageChangedListener {
         		return false;
         	}
         } catch (InterruptedException e) {
-        	PluginUtil.displayErrorDialog(this.getShell(),
+        	PluginUtil.displayErrorDialogAndLog(this.getShell(),
         			Messages.pWizErrTitle,
-        			Messages.pWizErrMsg);
+        			Messages.pWizErrMsg, e);
         	retVal = false;
         } catch (InvocationTargetException e) {
         	PluginUtil.displayErrorDialogAndLog(this.getShell(),
@@ -215,6 +218,9 @@ implements INewWizard, IPageChangedListener {
         }
         //re-initializing context menu to default option : false
         Activator.getDefault().setContextMenu(false);
+        if (retVal) {
+        	AppInsightsCustomEvent.create(Messages.projCrtEvtName, "");
+        }
         return retVal;
     }
 
@@ -358,15 +364,13 @@ implements INewWizard, IPageChangedListener {
         }
         try {
             if (sdkPath == null && Activator.IS_WINDOWS) {
-                errorTitle = Messages.sdkInsErrTtl;
-                errorMessage = Messages.sdkInsErrMsg;
-                boolean choice = MessageDialog.openQuestion(getShell(),
-                        errorTitle, errorMessage);
-                if (choice) {
-                    PlatformUI.getWorkbench().getBrowserSupport()
-                    .getExternalBrowser()
-                    .openURL(new URL(Messages.sdkInsUrl));
-                }
+            	SDKInstallationDlg dlg = new SDKInstallationDlg(getShell());
+            	int btnId = dlg.open();
+            	if (btnId == Window.OK) {
+            		PlatformUI.getWorkbench().getBrowserSupport()
+            		.getExternalBrowser()
+            		.openURL(new URL(Messages.sdkInsUrl));
+            	}
                 addPage(null);
             } else {
                 waProjWizPage = new WAProjectWizardPage(Messages.projWizPg);

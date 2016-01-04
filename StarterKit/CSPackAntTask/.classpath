@@ -2,20 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/azure-core-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-management-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-management-compute-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-management-media-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-management-network-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-management-scheduler-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-management-sql-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-management-storage-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-management-websites-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-media-0.6.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-servicebus-0.7.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-serviceruntime-0.6.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-tracing-util-0.6.0.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/commons-codec-1.6.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/jackson-core-asl-1.9.2.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/jackson-jaxrs-1.9.2.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/jackson-mapper-asl-1.9.2.jar"/>
@@ -28,14 +14,32 @@
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/jettison-1.1.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/mail-1.4.5.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/commons-logging-1.1.3.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/httpclient-4.3.5.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/httpcore-4.3.2.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/gson-1.7.2.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/guava-18.0.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-activedirectory-interactive-auth-library-for-java.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/applicationinsights-management-0.9.8.jar"/>
-	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-storage-3.0.0.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/commons-lang3-3.4.jar"/>
 	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/jackson-core-2.6.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/httpclient-4.3.6.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/httpcore-4.3.3.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/jackson-annotations-2.6.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/jackson-databind-2.6.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/jjwt-0.5.1.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/commons-lang-2.6.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-storage-4.0.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-media-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-servicebus-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/azure-core-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-serviceruntime-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-svc-mgmt-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-svc-mgmt-compute-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-svc-mgmt-media-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-svc-mgmt-network-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-svc-mgmt-scheduler-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-svc-mgmt-sql-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-svc-mgmt-storage-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-svc-mgmt-websites-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/azure-tracing-util-0.9.0.jar"/>
+	<classpathentry kind="lib" path="/com.microsoftopentechnologies.windowsazure.tools.sdk/dependencies/commons-codec-1.10.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

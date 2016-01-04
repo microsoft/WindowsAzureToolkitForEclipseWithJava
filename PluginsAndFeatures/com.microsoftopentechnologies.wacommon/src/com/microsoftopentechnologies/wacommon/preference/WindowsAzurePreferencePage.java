@@ -40,9 +40,10 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.PlatformUI;
 import org.w3c.dom.Document;
 
+import com.microsoftopentechnologies.azurecommons.xmlhandling.DataOperations;
 import com.microsoftopentechnologies.azurecommons.xmlhandling.ParseXMLUtilMethods;
 import com.microsoftopentechnologies.wacommon.Activator;
-import com.microsoftopentechnologies.wacommon.startup.DataOperations;
+import com.microsoftopentechnologies.wacommon.telemetry.AppInsightsCustomEvent;
 import com.microsoftopentechnologies.wacommon.utils.FileUtil;
 import com.microsoftopentechnologies.wacommon.utils.Messages;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
@@ -134,6 +135,7 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 			if (new File(pluginInstLoc).exists()) {
 				if (new File(dataFile).exists()) {
 					Document doc = ParseXMLUtilMethods.parseFile(dataFile);
+					String oldPrefVal = DataOperations.getProperty(dataFile, Messages.prefVal);
 					DataOperations.updatePropertyValue(doc, Messages.prefVal,
 							String.valueOf(btnPreference.getSelection()));
 					String version = DataOperations.getProperty(dataFile, Messages.version);
@@ -147,6 +149,13 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 						DataOperations.updatePropertyValue(doc, Messages.instID, dateFormat.format(new Date()));
 					}
 					ParseXMLUtilMethods.saveXMLDocument(dataFile, doc);
+					// Its necessary to call application insights custom create event after saving data.xml
+					if (oldPrefVal != null && !oldPrefVal.isEmpty()
+							&& oldPrefVal.equals("false") && btnPreference.getSelection()) {
+						// Previous preference value is false and latest is true
+						// that indicates user agrees to send telemetry
+						AppInsightsCustomEvent.create(Messages.telAgrEvtName, "");
+					}
 				} else {
 					FileUtil.copyResourceFile(Messages.dataFileEntry, dataFile);
 					setValues(dataFile);
@@ -177,8 +186,8 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 	 * @param dataFile
 	 * @throws Exception
 	 */
-	private void setValues(final String dataFile) throws Exception {
-		final Document doc = ParseXMLUtilMethods.parseFile(dataFile);
+	private void setValues(String dataFile) throws Exception {
+		Document doc = ParseXMLUtilMethods.parseFile(dataFile);
 		DataOperations.updatePropertyValue(doc, Messages.version,
 				Activator.getDefault().getBundle().getVersion().toString());
 		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -186,5 +195,8 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 		DataOperations.updatePropertyValue(doc, Messages.prefVal,
 				String.valueOf(btnPreference.getSelection()));
 		ParseXMLUtilMethods.saveXMLDocument(dataFile, doc);
+		if (btnPreference.getSelection()) {
+			AppInsightsCustomEvent.create(Messages.telAgrEvtName, "");
+		}
 	}
 }

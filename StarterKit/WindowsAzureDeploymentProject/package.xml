@@ -19,7 +19,7 @@ ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --><project basedir="." default="createwapackage" name="WindowsAzureDeploymentProject">
 	<property location="." name="cspack.dir"/>
-	<property location="D:\EclipseSW\dll\eclipse\plugins\com.microsoftopentechnologies.windowsazure.tools.sdk_0.7.0.201509100429" name="azure.lib.dir"/>
+	<property location="./lib" name="azure.lib.dir"/>
 	<property location="" name="publishsettingspath"/>
 	<property name="subscriptionid" value=""/>
 	<property name="cloudservicename" value=""/>
@@ -31,7 +31,7 @@ THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	<path id="build.classpath">
 		<!-- Setting cspack.jar in classpath -->
 		<fileset dir="${cspack.dir}">
-			<include name="**/*.jar"/>
+			<include name="*.jar"/>
 			<include name="**/*.jar"/>
 		</fileset>
 

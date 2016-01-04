@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.microsoft.applicationinsights.TelemetryClient;
-import com.microsoftopentechnologies.wacommon.startup.DataOperations;
+import com.microsoftopentechnologies.azurecommons.xmlhandling.DataOperations;
 import com.microsoftopentechnologies.wacommon.utils.Messages;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 
@@ -40,9 +40,14 @@ public class AppInsightsCustomEvent {
 			String prefValue = DataOperations.getProperty(dataFile, Messages.prefVal);
 			if (prefValue != null && !prefValue.isEmpty() && prefValue.equalsIgnoreCase("true")) {
 				TelemetryClient telemetry = new TelemetryClient();
+				telemetry.getContext().setInstrumentationKey("");
 
 				Map<String, String> properties = new HashMap<String, String>();
-				properties.put("Library Version", version);
+
+				if (version != null && !version.isEmpty()) {
+					properties.put("Library Version", version);
+				}
+				
 				String pluginVersion = DataOperations.getProperty(dataFile, Messages.version);
 				if (pluginVersion != null && !pluginVersion.isEmpty()) {
 					properties.put("Plugin Version", pluginVersion);

@@ -144,9 +144,9 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 						getSelectedPreferenceSetName(filePath));
 			}
 		} catch (Exception e) {
-			PluginUtil.displayErrorDialog(getShell(),
+			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.errTtl,
-					Messages.getPrefErMsg);
+					Messages.getPrefErMsg, e);
 		}
 	}
 
@@ -169,9 +169,9 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 			txtPubSet.setText(PreferenceSetUtil.
 					getSelectedPublishSettingsURL(nameInCombo, filePath));
 		} catch (Exception e) {
-			PluginUtil.displayErrorDialog(getShell(),
+			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.errTtl,
-					Messages.getPrefErMsg);
+					Messages.getPrefErMsg, e);
 		}
 	}
 
@@ -292,9 +292,9 @@ extends PreferencePage implements IWorkbenchPreferencePage {
 				valOkToLeave = cmbValue;
 			}
 		} catch (Exception e) {
-			PluginUtil.displayErrorDialog(getShell(),
+			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.errTtl,
-					Messages.setPrefErMsg);
+					Messages.setPrefErMsg, e);
 		}
 	}
 }

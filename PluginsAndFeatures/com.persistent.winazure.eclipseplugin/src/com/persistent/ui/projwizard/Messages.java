@@ -49,8 +49,6 @@ public final class Messages extends NLS {
     public static String wizPageTitle;
     public static String wizPageErrPath;
     public static String wizPageDialogImg;
-    public static String sdkInsErrTtl;
-    public static String sdkInsErrMsg;
     public static String sdkInsUrl;
     public static String imgDplDlg;
     public static String dplPageJdkMsg;
@@ -119,6 +117,7 @@ public final class Messages extends NLS {
     public static String dlgAutoDlJDKUrlErrMsg;
     public static String dlgAutoDlSrvUrlErrMsg;
     public static String jdkPathErrMsg;
+    public static String projCrtEvtName;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

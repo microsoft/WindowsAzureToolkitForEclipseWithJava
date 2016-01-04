@@ -40,6 +40,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 import com.interopbridges.tools.windowsazure.WindowsAzureCertificate;
+import com.microsoftopentechnologies.wacommon.Activator;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.microsoftopentechnologies.azurecommons.wacommonutil.CerPfxUtil;
 import com.persistent.util.WAEclipseHelper;
@@ -243,6 +244,7 @@ public class PfxPwdDialog extends Dialog {
 										cert.getName()));
 					}
 				} catch (Exception e) {
+					Activator.getDefault().log(Messages.error, e);
 				}
 			} else {
 				PluginUtil.displayErrorDialog(getShell(),

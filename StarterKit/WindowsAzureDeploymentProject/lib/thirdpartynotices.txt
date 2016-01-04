@@ -1,7 +1,7 @@
   -------------------------------------------------------------------------------------------------------------------------
 Third Party Notices
 
-This file is based on or incorporates material from the projects listed below (collectively, “Third Party Code”).   Microsoft Open Technologies, Inc. ("Microsoft Open Tech") is not the original author of the Third Party Code.  The original copyright notice and the license under which Microsoft Open Tech received such Third Party Code, are set forth below.  Such licenses and notices are provided for informational purposes only.  Microsoft Open Tech licenses the Third Party Code to you under the Microsoft Open Technologies software license terms for the AZURE PLUGIN FOR ECLIPSE WITH JAVA.  Microsoft Open Tech reserves all other rights not expressly granted under its software license terms agreement, whether by implication, estoppel or otherwise.  
+This file is based on or incorporates material from the projects listed below (collectively, “Third Party Code”).   Microsoft Corporation is not the original author of the Third Party Code.  The original copyright notice and the license under which Microsoft received such Third Party Code, are set forth below.  Such licenses and notices are provided for informational purposes only.  Microsoft licenses the Third Party Code to you under the Microsoft software license terms for the AZURE PLUGIN FOR ECLIPSE WITH JAVA.  Microsoft reserves all other rights not expressly granted under its software license terms agreement, whether by implication, estoppel or otherwise.
 
 1. handlebars-1.0.0
    Copyright (c) 2012-2013 Edgar Espina
@@ -475,7 +475,9 @@ License for portions of the Rhino debugger
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -------------------------------------------------------------------------------------------------------------------------
-4.  slf4j-api-1.7.5
+4.  slf4j-api-1.7.12
+5.  slf4j-simple-1.7.12
+
 Copyright (c) 2004-2013 QOS.ch 
 All rights reserved.
 http://www.slf4j.org/ 

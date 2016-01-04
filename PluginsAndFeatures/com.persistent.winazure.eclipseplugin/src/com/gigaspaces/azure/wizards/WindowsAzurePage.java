@@ -37,8 +37,6 @@ public abstract class WindowsAzurePage extends WizardPage {
 		super(pageName);
 	}
 
-
-	
 	public static void addConfigurationEventListener(ConfigurationEventListener listener) {
 		LISTENERS.add(ConfigurationEventListener.class, listener);
 	}
@@ -65,15 +63,15 @@ public abstract class WindowsAzurePage extends WizardPage {
 	protected Combo createCombo(Composite container,
 			int style, int verticalIndent, int horiAlign, int width) {
 		Combo combo = new Combo(container, style);
-
 		GridData comboData = new GridData();
-		comboData.widthHint = width;
+		if (width > 0) {
+			comboData.widthHint = width;
+		}
 		comboData.heightHint = 23;
 		comboData.horizontalAlignment = horiAlign;
 		comboData.grabExcessHorizontalSpace = true;
 		comboData.verticalIndent = verticalIndent;
 		combo.setLayoutData(comboData);
-
 		return combo;
 	}
 }

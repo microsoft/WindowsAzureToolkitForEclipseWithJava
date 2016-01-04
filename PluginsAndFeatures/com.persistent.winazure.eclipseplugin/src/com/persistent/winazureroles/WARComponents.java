@@ -215,10 +215,10 @@ public class WARComponents extends PropertyPage {
     				tblViewer.refresh();
     				updateMoveButtons();
     			} catch (Exception e) {
-    				PluginUtil.displayErrorDialog(
+    				PluginUtil.displayErrorDialogAndLog(
     						getShell(),
     						Messages.cmpntSetErrTtl,
-    						Messages.cmpntSwapErMsg);
+    						Messages.cmpntSwapErMsg, e);
     			}
     		}
 
@@ -250,10 +250,10 @@ public class WARComponents extends PropertyPage {
     				tblViewer.refresh();
     				updateMoveButtons();
     			} catch (Exception e) {
-    				PluginUtil.displayErrorDialog(
+    				PluginUtil.displayErrorDialogAndLog(
     						getShell(),
     						Messages.cmpntSetErrTtl,
-    						Messages.cmpntSwapErMsg);
+    						Messages.cmpntSwapErMsg, e);
     			}
     		}
 

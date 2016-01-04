@@ -68,6 +68,7 @@ import com.microsoftopentechnologies.azuremanagementutil.rest.WindowsAzureStorag
 import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccount;
 import com.microsoftopentechnologies.azurecommons.storageregistry.StorageAccountRegistry;
 import com.microsoftopentechnologies.wacommon.storageregistry.PreferenceUtilStrg;
+import com.microsoftopentechnologies.wacommon.telemetry.AppInsightsCustomEvent;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.microsoftopentechnologies.wacommon.utils.WACommonException;
 
@@ -124,6 +125,8 @@ public final class DeploymentManager {
 						OperationStatus.Succeeded, Messages.deplCompleted);
 				return;
 			}
+			// Publish start event
+			AppInsightsCustomEvent.create(Messages.startEvent, "");
 
 			// need to improve this check (maybe hostedSerivce.isExisting())?
 			if (hostedService.getUri() == null
@@ -276,6 +279,9 @@ public final class DeploymentManager {
 			
 			notifyProgress(deploymentDesc.getDeploymentId(), deploymentURL, 20,
 					status, deployment.getStatus().toString());
+			// publish success event
+			AppInsightsCustomEvent.create(Messages.successEvent, "");
+
 			// RDP prompt will come only on windows
 			if (deploymentDesc.isStartRdpOnDeploy() && Activator.IS_WINDOWS) {
 				// plugin folder
@@ -297,15 +303,21 @@ public final class DeploymentManager {
 								.getUserName(), pluginFolder);
 			}
 		} catch (Throwable t) {
+			boolean deploymentCancelled = false;
 			String msg = (t != null ? t.getMessage() : "");
 			if (msg.equalsIgnoreCase("sleep interrupted")
 					|| msg.equalsIgnoreCase("java.lang.InterruptedException: sleep interrupted")
 					|| msg.equalsIgnoreCase("java.lang.InterruptedException")
 					|| msg.equalsIgnoreCase("Exception when create deployment")) {
 				msg = "Deployment cancelled";
+				deploymentCancelled = true;
 			}
 			if (!msg.startsWith(OperationStatus.Failed.toString())) {
 				msg = OperationStatus.Failed.toString() + " : " + msg;
+			}
+			if (!deploymentCancelled) {
+				// Publish failure event
+				AppInsightsCustomEvent.create(Messages.failureEvent, "");
 			}
 			notifyProgress(deploymentDesc.getDeploymentId(), null, 100,
 					OperationStatus.Failed, msg,

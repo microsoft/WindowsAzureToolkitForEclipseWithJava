@@ -295,7 +295,12 @@ public class WAServerConfiguration extends PropertyPage {
 					if (!thirdServerName.isEmpty()) {
 						String cldSrc = JdkSrvConfig.getThirdPartyServerCloudSrc();
 						// check if its latest server scenario then set storage account to (none)
-						if (!cldSrc.isEmpty()) {
+						if (!cldSrc.isEmpty() && Activator.IS_WINDOWS) {
+							/*
+							 * org.eclipse.swt.widgets.Combo's setItem method
+							 * behave weirdly on Linux eclipse.
+							 * Hence use only on windows.
+							 */
 							JdkSrvConfig.getCmbStrgAccSrv().setItem(0, "(none)");
 						}
 					}
@@ -1696,9 +1701,9 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			isValid = false;
-			PluginUtil.displayErrorDialog(getShell(),
+			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.genErrTitle,
-					Messages.urlKeySetErrMsg);
+					Messages.urlKeySetErrMsg, e);
 		}
 		return isValid;
 	}
@@ -1763,9 +1768,9 @@ public class WAServerConfiguration extends PropertyPage {
 			}
 		} catch (WindowsAzureInvalidProjectOperationException e) {
 			isValid = false;
-			PluginUtil.displayErrorDialog(getShell(),
+			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.genErrTitle,
-					Messages.urlKeySetErMsgSrv);
+					Messages.urlKeySetErMsgSrv, e);
 		}
 		return isValid;
 	}
@@ -2006,10 +2011,10 @@ public class WAServerConfiguration extends PropertyPage {
 					updateJavaHome(javaHome, windowsAzureRole, waProjManager,
 							JdkSrvConfig.getTxtJdk().getText().trim(), cmpntFile);
 		} catch (Exception e) {
-			PluginUtil.displayErrorDialog(
+			PluginUtil.displayErrorDialogAndLog(
 					getShell(),
 					Messages.genErrTitle,
-					Messages.jvHomeErr);
+					Messages.jvHomeErr, e);
 		}
 	}
 
@@ -2027,10 +2032,10 @@ public class WAServerConfiguration extends PropertyPage {
 					JdkSrvConfig.getTxtDir().getText().trim(),
 					JdkSrvConfig.getServerName(), cmpntFile);
 		} catch (Exception e) {
-			PluginUtil.displayErrorDialog(
+			PluginUtil.displayErrorDialogAndLog(
 					getShell(),
 					Messages.genErrTitle,
-					Messages.srvHomeErr);
+					Messages.srvHomeErr, e);
 		}
 	}
 

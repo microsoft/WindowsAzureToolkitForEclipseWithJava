@@ -36,11 +36,14 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.interopbridges.tools.windowsazure.WARoleComponentCloudUploadMode;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpoint;
 import com.interopbridges.tools.windowsazure.WindowsAzureEndpointType;
 import com.interopbridges.tools.windowsazure.WindowsAzureInvalidProjectOperationException;
 import com.interopbridges.tools.windowsazure.WindowsAzureProjectManager;
 import com.interopbridges.tools.windowsazure.WindowsAzureRole;
+import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
+import com.microsoftopentechnologies.azurecommons.messagehandler.PropUtil;
 
 public class WAEclipseHelperMethods {
 
@@ -603,5 +606,57 @@ public class WAEclipseHelperMethods {
 			jdkPath = "";
 		}
 		return jdkPath;
+	}
+
+	public static boolean isAutoPresentForRole(WindowsAzureRole role)
+			throws WindowsAzureInvalidProjectOperationException {
+		// check for caching storage account name
+		String name = role.getCacheStorageAccountName();
+		if (name != null && !name.isEmpty() && name.equals("-auto")) {
+			return true;
+		}
+		List<WindowsAzureRoleComponent> cmpnntsList = role.getComponents();
+		for (int j = 0; j < cmpnntsList.size(); j++) {
+			WindowsAzureRoleComponent component = cmpnntsList.get(j);
+			String cmpntType = component.getType();
+			WARoleComponentCloudUploadMode mode = component.getCloudUploadMode();
+			if (((cmpntType.equals(PropUtil.getValueFromFile("typeJdkDply"))
+					|| cmpntType.equals(PropUtil.getValueFromFile("typeSrvDply")))
+					&& mode != null && mode.equals(WARoleComponentCloudUploadMode.auto))
+					|| (cmpntType.equals(PropUtil.getValueFromFile("typeSrvApp"))
+							&& mode != null && mode.equals(WARoleComponentCloudUploadMode.always))) {
+				if (component.getCloudDownloadURL().equalsIgnoreCase("auto")) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public static boolean isFirstPackageWithAuto(WindowsAzureProjectManager projMngr)
+			throws WindowsAzureInvalidProjectOperationException {
+		boolean retVal = true;
+		List<WindowsAzureRole> roleList = projMngr.getRoles();
+		boolean isAuto = false;
+		for (int i = 0; i < roleList.size(); i++) {
+			if (isAutoPresentForRole(roleList.get(i))) {
+				isAuto = true;
+				break;
+			}
+		}
+		if (isAuto) {
+			// Check global properties exist in package.xml
+			String pubFileLoc = projMngr.getPublishSettingsPath();
+			String subId = projMngr.getPublishSubscriptionId();
+			String storageAccName = projMngr.getPublishStorageAccountName();
+			String region = projMngr.getPublishRegion();
+			if (pubFileLoc == null || pubFileLoc.isEmpty()
+					|| subId == null || subId.isEmpty()
+					|| storageAccName == null || storageAccName.isEmpty()
+					|| region == null || region.isEmpty()) {
+				retVal = false;
+			}
+		}
+		return retVal;
 	}
 }

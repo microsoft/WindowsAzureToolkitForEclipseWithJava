@@ -52,6 +52,10 @@ public class WANewProject extends AbstractHandler {
 				wizDialog.setTitle(wizard.getWindowTitle());
 				wizDialog.open();
 			}
+		} catch (NullPointerException ex) {
+			PluginUtil.displayErrorDialogAndLog(new Shell(),
+					Messages.errTtl,
+					Messages.wzrdCrtErMsg + Messages.instSDK, ex);
 		} catch (Exception ex) {
 			PluginUtil.displayErrorDialogAndLog(new Shell(),
 					Messages.errTtl,

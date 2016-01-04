@@ -437,9 +437,9 @@ public class CacheDialog extends TitleAreaDialog {
 			}
 		} catch (Exception e) {
 			okToProceed = false;
-			PluginUtil.displayErrorDialog(getShell(),
+			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.cachErrTtl,
-					Messages.cachSetErrMsg);
+					Messages.cachSetErrMsg, e);
 		}
 		if (okToProceed) {
 			super.okPressed();
@@ -458,9 +458,9 @@ public class CacheDialog extends TitleAreaDialog {
 					cacheMap, isEdit, cacheName);
 		} catch (AzureCommonsException e) {
 			retVal = false;
-			PluginUtil.displayErrorDialog(getShell(),
+			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.genErrTitle,
-					e.getMessage());
+					e.getMessage(), e);
 		}
 		return retVal;
 	}
@@ -494,7 +494,7 @@ public class CacheDialog extends TitleAreaDialog {
 			isValidPortRng = CacheDialogUtilMethods.validatePort(port, cacheMap, cacheName, isEdit,
 					txtCacheName.getText(), windowsAzureRole);
 		} catch (AzureCommonsException e) {
-			PluginUtil.displayErrorDialog(getShell(), Messages.genErrTitle, e.getMessage());
+			PluginUtil.displayErrorDialogAndLog(getShell(), Messages.genErrTitle, e.getMessage(), e);
 		}
 		return isValidPortRng;
 	}
@@ -519,9 +519,9 @@ public class CacheDialog extends TitleAreaDialog {
 					expPol,
 					txtMinLive.getText().trim());
 		} catch (Exception e) {
-			PluginUtil.displayErrorDialog(getShell(),
+			PluginUtil.displayErrorDialogAndLog(getShell(),
 					Messages.cachErrTtl,
-					Messages.cachSetErrMsg);
+					Messages.cachSetErrMsg, e);
 		}
 	}
 }

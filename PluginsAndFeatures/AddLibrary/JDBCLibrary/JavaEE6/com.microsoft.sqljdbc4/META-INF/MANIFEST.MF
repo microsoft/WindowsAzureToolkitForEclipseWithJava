@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Microsoft JDBC Driver 4.1 for SQL Server Library
+Bundle-Name: Microsoft JDBC Driver 4.2 for SQL Server Library
 Bundle-SymbolicName: com.microsoft.sqljdbc4
-Bundle-Version: 4.1.5605.100
-Bundle-ClassPath: sqljdbc41.jar
+Bundle-Version: 4.2.6420.100
+Bundle-ClassPath: sqljdbc42.jar
 Bundle-Vendor: Microsoft Corp.
 Export-Package: com.microsoft.sqlserver.jdbc,
  microsoft.sql

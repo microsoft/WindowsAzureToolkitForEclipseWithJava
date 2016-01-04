@@ -19,9 +19,12 @@
  */
 package com.microsoft.azureexplorer.forms;
 
-import java.net.URL;
-import java.util.Calendar;
-
+import com.microsoft.azureexplorer.Activator;
+import com.microsoftopentechnologies.tooling.msservices.components.DefaultLoader;
+import com.microsoftopentechnologies.tooling.msservices.helpers.azure.AzureCmdException;
+import com.microsoftopentechnologies.tooling.msservices.helpers.azure.sdk.StorageClientSDKManagerImpl;
+import com.microsoftopentechnologies.tooling.msservices.model.storage.BlobContainer;
+import com.microsoftopentechnologies.tooling.msservices.model.storage.ClientStorageAccount;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -31,21 +34,11 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 import org.eclipse.ui.PlatformUI;
 
-import com.microsoft.azureexplorer.Activator;
-import com.microsoftopentechnologies.tooling.msservices.components.DefaultLoader;
-import com.microsoftopentechnologies.tooling.msservices.helpers.azure.AzureCmdException;
-import com.microsoftopentechnologies.tooling.msservices.helpers.azure.sdk.StorageClientSDKManagerImpl;
-import com.microsoftopentechnologies.tooling.msservices.model.storage.BlobContainer;
-import com.microsoftopentechnologies.tooling.msservices.model.storage.ClientStorageAccount;
+import java.net.URL;
+import java.util.Calendar;
 
 public class CreateBlobContainerForm extends Dialog {
     private static String NAMING_GUIDELINES_LINK = "<a href=\"http://go.microsoft.com/fwlink/?LinkId=255555\">Naming Guidelines</a>";
@@ -111,6 +104,11 @@ public class CreateBlobContainerForm extends Dialog {
                 changedName();
             }
         });
+//        contentPane.registerKeyboardAction(new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                onCancel();
+//            }
+//        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         return super.createContents(parent);
     }
 

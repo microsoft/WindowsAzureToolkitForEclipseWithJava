@@ -30,8 +30,8 @@ import org.osgi.service.prefs.Preferences;
 
 import waeclipseplugin.Activator;
 
-import com.microsoftopentechnologies.deploy.util.PublishData;
-import com.microsoftopentechnologies.model.Subscription;
+import com.microsoftopentechnologies.azurecommons.deploy.util.PublishData;
+import com.microsoftopentechnologies.azuremanagementutil.model.Subscription;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 /* Class needs to be removed after 2.5.1 release.
  * Class is added just to take care of project upgrade scenario.

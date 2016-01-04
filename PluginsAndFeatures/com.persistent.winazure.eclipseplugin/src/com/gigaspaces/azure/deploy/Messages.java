@@ -25,35 +25,21 @@ public final class Messages extends NLS {
 			"com.gigaspaces.azure.deploy.messages"; //$NON-NLS-1$
 
 	public static String createHostedService;
-
 	public static String createStorageAccount;
-		
 	public static String activityView;
-
 	public static String certificateElem;
-
 	public static String certificateNameAttr;
-
 	public static String certificatePath;
-
 	public static String certificatesElem;
-
 	public static String certificatesPath;	
-
 	public static String configurationSettingPath;
 	public static String configurationSettingsElem;
-
 	public static String configurationSettingsPath;
-
 	public static String cspkgName;
-
 	public static String failed;
 	public static String inProgress;
-	
 	public static String dateFormatEventArgs;
-
 	public static String dateFormat;
-
 	public static String deplCantOpenView;
 	public static String deplCompleted;
 	public static String deplConfigRdp;
@@ -70,65 +56,40 @@ public final class Messages extends NLS {
 	public static String deplUploadCert;
 	public static String deplYes;
 	public static String remoteAccessAccountEncryptedPassword;
-
 	public static String remoteAccessAccountExpiration;
-
 	public static String remoteAccessAccountUsername;
-
 	public static String remoteAccessEnabledSetting;
-
 	public static String remoteAccessEnabledSettingVal;
-
 	public static String remoteAccessPasswordEncryption;
-
 	public static String remoteAccessPasswordEncryptionPath;
-
 	public static String remoteFormarderEnabledSetting;
-
 	public static String remoteFormarderEnabledSettingVal;
-
 	public static String rolePath;
-
 	public static String settingElem;
-
 	public static String settingNameAttr;
-
 	public static String settingValueAttr;
-
 	public static String stoppingMsg;
-
 	public static String eclipseDeployContainer;
-
 	public static String thumbprint;
-
 	public static String thumbprintAlg;
-
 	public static String thumbprintAttr;
-
 	public static String toStringFormat;
-
 	public static String undeployCompletedMsg;
-
 	public static String undeployFailedMsg;
-
 	public static String undeployMsg;
-
 	public static String undeployProgressMsg;
-
 	public static String utfFormat;
-
 	public static String yesProp;
-
 	public static String succeeded;
-
 	public static String uploadPackage;
-
 	public static String uploadingServicePackage;
-
 	public static String creatingDeployment;
-
 	public static String waitingForDeployment;
 	public static String deletePackage;
+	public static String startEvent;
+	public static String successEvent;
+	public static String failureEvent;
+	
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

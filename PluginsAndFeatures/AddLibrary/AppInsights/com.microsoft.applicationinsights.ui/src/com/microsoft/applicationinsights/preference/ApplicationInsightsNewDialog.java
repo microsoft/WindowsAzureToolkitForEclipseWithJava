@@ -364,10 +364,14 @@ public class ApplicationInsightsNewDialog extends TitleAreaDialog  {
 					subscription.getText(), subId, resource.getLocation(),
 					resource.getResourceGroup(), true);
 			isValid = true;
+		} catch (java.net.SocketTimeoutException e) {
+			PluginUtil.showBusy(false, getShell());
+			PluginUtil.displayErrorDialogAndLog(getShell(), Messages.appTtl,
+					Messages.timeOutErr1, e);
 		} catch (Exception ex) {
 			PluginUtil.showBusy(false, getShell());
-			PluginUtil.displayErrorDialog(getShell(),
-					Messages.appTtl, Messages.resCreateErrMsg);
+			PluginUtil.displayErrorDialogAndLog(getShell(),
+					Messages.appTtl, Messages.resCreateErrMsg, ex);
 		}
 		if (isValid) {
 			PluginUtil.showBusy(false, getShell());

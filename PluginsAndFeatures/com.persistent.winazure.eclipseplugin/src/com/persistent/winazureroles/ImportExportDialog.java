@@ -185,10 +185,10 @@ public class ImportExportDialog extends TitleAreaDialog {
 						cmpnt.getDeployName()).toLowerCase());
 			}
 		} catch (WindowsAzureInvalidProjectOperationException e) {
-			PluginUtil.displayErrorDialog(
+			PluginUtil.displayErrorDialogAndLog(
 					this.getShell(),
 					Messages.cmpntSetErrTtl,
-					Messages.cmpntgetErrMsg);
+					Messages.cmpntgetErrMsg, e);
 		}
 		if (isEdit) {
 			populateData();
@@ -386,10 +386,10 @@ public class ImportExportDialog extends TitleAreaDialog {
 				populateStrgNameAsPerKey(accessKey, comboStrgAcc);
 			}
 		} catch (Exception e) {
-			PluginUtil.displayErrorDialog(
+			PluginUtil.displayErrorDialogAndLog(
 					this.getShell(),
 					Messages.genErrTitle,
-					Messages.urlKeyGetErMsg);
+					Messages.urlKeyGetErMsg, e);
 		}
 	}
 

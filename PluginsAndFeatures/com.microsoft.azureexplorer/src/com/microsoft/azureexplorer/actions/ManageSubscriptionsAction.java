@@ -19,27 +19,26 @@
  */
 package com.microsoft.azureexplorer.actions;
 
-import org.eclipse.jface.dialogs.Dialog;
-import org.eclipse.swt.widgets.Shell;
-
 import com.microsoft.azureexplorer.forms.SubscriptionPropertyPage;
 import com.microsoftopentechnologies.tooling.msservices.helpers.Name;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.NodeActionEvent;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.NodeActionListener;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.azure.AzureServiceModule;
+import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.swt.widgets.Shell;
 
 @Name("Manage Subscriptions")
 public class ManageSubscriptionsAction  extends NodeActionListener {
-	private AzureServiceModule azureServiceModule;
+    private AzureServiceModule azureServiceModule;
 
-	public ManageSubscriptionsAction(AzureServiceModule azureServiceModule) {
-		this.azureServiceModule = azureServiceModule;
-	}
+    public ManageSubscriptionsAction(AzureServiceModule azureServiceModule) {
+        this.azureServiceModule = azureServiceModule;
+    }
 
-	@Override
-	public void actionPerformed(NodeActionEvent e) {
-		Dialog subscriptionsDialog = new SubscriptionPropertyPage(new Shell());
-		subscriptionsDialog.open();
-		azureServiceModule.load();
-	}
+    @Override
+    public void actionPerformed(NodeActionEvent e) {
+        Dialog subscriptionsDialog = new SubscriptionPropertyPage(new Shell());
+        subscriptionsDialog.open();
+        azureServiceModule.load();
+    }
 }

@@ -228,7 +228,7 @@ public class CertificateDialog extends TitleAreaDialog {
 		try {
 			retVal = CertificateDialogUtilMethods.validateNameAndThumbprint(name, thumb, mapCert);
 		} catch (AzureCommonsException e) {
-			PluginUtil.displayErrorDialog(getShell(), Messages.genErrTitle, e.getMessage());
+			PluginUtil.displayErrorDialogAndLog(getShell(), Messages.genErrTitle, e.getMessage(), e);
 		}
 		return retVal;
 	}
@@ -289,10 +289,10 @@ public class CertificateDialog extends TitleAreaDialog {
 				try {
 					thumbprint = CerPfxUtil.getThumbPrint(cert);					
 				} catch (Exception e) {
-					PluginUtil.displayErrorDialog(
+					PluginUtil.displayErrorDialogAndLog(
 							this.getShell(),
 							Messages.certErrTtl,
-							Messages.certImpEr);
+							Messages.certImpEr, e);
 				}
 				txtThumb.setText(thumbprint);
 			}
@@ -328,10 +328,10 @@ public class CertificateDialog extends TitleAreaDialog {
 				txtThumb.setText(CerPfxUtil.
 						getThumbPrint(data.getCerFilePath()));
 			} catch (Exception e) {
-				PluginUtil.displayErrorDialog(
+				PluginUtil.displayErrorDialogAndLog(
 						this.getShell(),
 						Messages.certErrTtl,
-						Messages.certImpEr);
+						Messages.certImpEr, e);
 			}
 		}
 	}

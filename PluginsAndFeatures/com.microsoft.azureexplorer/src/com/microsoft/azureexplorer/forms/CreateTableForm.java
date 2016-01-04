@@ -39,111 +39,117 @@ import org.eclipse.ui.PlatformUI;
 import java.net.URL;
 
 public class CreateTableForm extends Dialog {
-	private static String NAMING_GUIDELINES_LINK = "<a href=\"http://go.microsoft.com/fwlink/?LinkId=267429\">Naming Guidelines</a>";
-	private Button buttonOK;
-	private Label nameLabel;
-	private Text nameTextField;
-	private Link namingGuidelinesLink;
-	private ClientStorageAccount storageAccount;
-	private Runnable onCreate;
+    private static String NAMING_GUIDELINES_LINK = "<a href=\"http://go.microsoft.com/fwlink/?LinkId=267429\">Naming Guidelines</a>";
+    private Button buttonOK;
+    private Label nameLabel;
+    private Text nameTextField;
+    private Link namingGuidelinesLink;
+    private ClientStorageAccount storageAccount;
+    private Runnable onCreate;
 
-	public CreateTableForm(Shell parentShell, ClientStorageAccount storageAccount) {
-		super(parentShell);
-		parentShell.setText("Create table");
-		this.storageAccount = storageAccount;
-	}
+    public CreateTableForm(Shell parentShell, ClientStorageAccount storageAccount) {
+        super(parentShell);
+        parentShell.setText("Create table");
+        this.storageAccount = storageAccount;
+    }
 
-	@Override
-	protected Control createContents(Composite parent) {
-		Composite container = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		container.setLayout(gridLayout);
-		GridData gridData = new GridData();
-		gridData.widthHint = 350;
-		container.setLayoutData(gridData);
+    @Override
+    protected Control createContents(Composite parent) {
+        Composite container = new Composite(parent, SWT.NONE);
+        GridLayout gridLayout = new GridLayout();
+        container.setLayout(gridLayout);
+        GridData gridData = new GridData();
+        gridData.widthHint = 350;
+        container.setLayoutData(gridData);
 
-		nameLabel = new Label(container, SWT.LEFT);
-		nameLabel.setText("Enter a name for the new table");
-		nameTextField = new Text(container, SWT.LEFT | SWT.BORDER);
-		gridData = new GridData(SWT.FILL, SWT.CENTER, true, true);
-		nameTextField.setLayoutData(gridData);
-		namingGuidelinesLink = new Link(container, SWT.LEFT);
-		namingGuidelinesLink.setText(NAMING_GUIDELINES_LINK);
-		namingGuidelinesLink.setLayoutData(gridData);
-		namingGuidelinesLink.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent event) {
-				try {
-					PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL(event.text));
-				} catch (Exception ex) {
+        nameLabel = new Label(container, SWT.LEFT);
+        nameLabel.setText("Enter a name for the new table");
+        nameTextField = new Text(container, SWT.LEFT | SWT.BORDER);
+        gridData = new GridData(SWT.FILL, SWT.CENTER, true, true);
+        nameTextField.setLayoutData(gridData);
+        namingGuidelinesLink = new Link(container, SWT.LEFT);
+        namingGuidelinesLink.setText(NAMING_GUIDELINES_LINK);
+        namingGuidelinesLink.setLayoutData(gridData);
+        namingGuidelinesLink.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent event) {
+                try {
+                    PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL(event.text));
+                } catch (Exception ex) {
 					/*
 					 * only logging the error in log file
 					 * not showing anything to end user
 					 */
-					Activator.getDefault().log("Error occurred while opening link in default browser.", ex);
-				}
-			}
-		});
+                    Activator.getDefault().log("Error occurred while opening link in default browser.", ex);
+                }
+            }
+        });
 
-		nameTextField.addModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent modifyEvent) {
-				changedName();
-			}
-		});
-		return super.createContents(parent);
-	}
+        nameTextField.addModifyListener(new ModifyListener() {
+            @Override
+            public void modifyText(ModifyEvent modifyEvent) {
+                changedName();
+            }
+        });
+//        contentPane.registerKeyboardAction(new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                onCancel();
+//            }
+//        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        return super.createContents(parent);
+    }
 
-	@Override
-	protected Control createButtonBar(Composite parent) {
-		Control ctrl = super.createButtonBar(parent);
-		buttonOK = getButton(IDialogConstants.OK_ID);
-		buttonOK.setEnabled(false);
-		return ctrl;
-	}
+    @Override
+    protected Control createButtonBar(Composite parent) {
+        Control ctrl = super.createButtonBar(parent);
+        buttonOK = getButton(IDialogConstants.OK_ID);
+        buttonOK.setEnabled(false);
+        return ctrl;
+    }
 
-	private void changedName() {
-		buttonOK.setEnabled(nameTextField.getText().length() > 0);
-	}
+    private void changedName() {
+        buttonOK.setEnabled(nameTextField.getText().length() > 0);
+    }
 
-	@Override
-	protected void okPressed() {
-		final String name = nameTextField.getText();
-		if (!name.matches("^[A-Za-z][A-Za-z0-9]{2,62}$")) {
-			DefaultLoader.getUIHelper().showError("Table names must start with a letter, and can contain only letters and numbers.\n" +
-					"Queue names must be from 3 through 63 characters long.", "Azure Explorer");
-			return;
-		}
-		DefaultLoader.getIdeHelper().runInBackground(null, "Creating table...", false, true, "Creating table...", new Runnable() {
-			public void run() {
-				try {
-					for (com.microsoftopentechnologies.tooling.msservices.model.storage.Table table : StorageClientSDKManagerImpl.getManager().getTables(storageAccount)) {
-						if (table.getName().equals(name)) {
-							DefaultLoader.getIdeHelper().invokeLater(new Runnable() {
-								@Override
-								public void run() {
-									DefaultLoader.getUIHelper().showError("A table with the specified name already exists.", "Service Explorer");
-								}
-							});
+    @Override
+    protected void okPressed() {
+        final String name = nameTextField.getText();
+        if (!name.matches("^[A-Za-z][A-Za-z0-9]{2,62}$")) {
+            DefaultLoader.getUIHelper().showError("Table names must start with a letter, and can contain only letters and numbers.\n" +
+                    "Queue names must be from 3 through 63 characters long.", "Azure Explorer");
+            return;
+        }
+        DefaultLoader.getIdeHelper().runInBackground(null, "Creating table...", false, true, "Creating table...", new Runnable() {
+            public void run() {
+                try {
+                    for (com.microsoftopentechnologies.tooling.msservices.model.storage.Table table : StorageClientSDKManagerImpl.getManager().getTables(storageAccount)) {
+                        if (table.getName().equals(name)) {
+                            DefaultLoader.getIdeHelper().invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    DefaultLoader.getUIHelper().showError("A table with the specified name already exists.", "Service Explorer");
+                                }
+                            });
 
-							return;
-						}
-					}
-					com.microsoftopentechnologies.tooling.msservices.model.storage.Table table = new com.microsoftopentechnologies.tooling.msservices.model.storage.Table(name, "");
-					StorageClientSDKManagerImpl.getManager().createTable(storageAccount, table);
+                            return;
+                        }
+                    }
 
-					if (onCreate != null) {
-						DefaultLoader.getIdeHelper().invokeLater(onCreate);
-					}
-				} catch (AzureCmdException e) {
-					DefaultLoader.getUIHelper().showException("Error creating table", e, "Service explorer", false, true);
-				}
-			}
-		});
-		super.okPressed();
-	}
+                    com.microsoftopentechnologies.tooling.msservices.model.storage.Table table = new com.microsoftopentechnologies.tooling.msservices.model.storage.Table(name, "");
+                    StorageClientSDKManagerImpl.getManager().createTable(storageAccount, table);
 
-	public void setOnCreate(Runnable onCreate) {
-		this.onCreate = onCreate;
-	}
+                    if (onCreate != null) {
+                        DefaultLoader.getIdeHelper().invokeLater(onCreate);
+                    }
+                } catch (AzureCmdException e) {
+                    DefaultLoader.getUIHelper().showException("Error creating table", e, "Service explorer", false, true);
+                }
+            }
+        });
+        super.okPressed();
+    }
+
+    public void setOnCreate(Runnable onCreate) {
+        this.onCreate = onCreate;
+    }
 }

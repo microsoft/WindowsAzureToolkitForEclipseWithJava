@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="com.microsoft.sqljdbc4.feature"
-      label="Microsoft JDBC Driver 4.1 for SQL Server"
-      version="4.1.5605.100"
+      label="Microsoft JDBC Driver 4.2 for SQL Server"
+      version="4.2.6420.100"
       provider-name="Microsoft Corp.">
 
    <description>
-      Provides JDBC API for SQL Server and Windows Azure SQL Database for Java Platform Enterprise Edition 7
+      Provides JDBC API for SQL Server and Windows Azure SQL Database for Java Platform Enterprise Edition 8
    </description>
 
    <copyright>
@@ -15,7 +15,7 @@
 
    <license>
       MICROSOFT SOFTWARE LICENSE TERMS
-REDISTRIBUTION LICENSE FOR MICROSOFT JDBC DRIVER 4.1 FOR SQL SERVER
+REDISTRIBUTION LICENSE FOR MICROSOFT JDBC DRIVER 4.2 FOR SQL SERVER
 -------------------------------------------------------------------------------------
 
 These license terms are an agreement between Microsoft Corporation (or based on where you live, one of its affiliates) and you. Please read them. They apply to the software named above, which includes the media on which you received it, if any. The terms also apply to any Microsoft

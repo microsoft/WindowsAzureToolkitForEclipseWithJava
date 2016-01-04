@@ -253,10 +253,14 @@ public class NewResourceGroupDialog extends TitleAreaDialog {
 			group = instance.createResourceGroup(client, subId,
 					txtName.getText().trim(), locationCombo.getText());
 			isValid = true;
+		} catch (java.net.SocketTimeoutException e) {
+			PluginUtil.showBusy(false, getShell());
+			PluginUtil.displayErrorDialogAndLog(getShell(), Messages.newResGrpTtl,
+					Messages.timeOutErr, e);
 		} catch (Exception ex) {
 			PluginUtil.showBusy(false, getShell());
-			PluginUtil.displayErrorDialog(getShell(),
-					Messages.newResGrpTtl, Messages.newResErrMsg);
+			PluginUtil.displayErrorDialogAndLog(getShell(),
+					Messages.newResGrpTtl, Messages.newResErrMsg, ex);
 		}
 		if (isValid) {
 			PluginUtil.showBusy(false, getShell());

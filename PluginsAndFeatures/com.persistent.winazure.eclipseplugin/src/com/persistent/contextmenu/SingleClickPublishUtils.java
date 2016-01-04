@@ -46,6 +46,7 @@ import com.interopbridges.tools.windowsazure.WindowsAzureRole;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponent;
 import com.interopbridges.tools.windowsazure.WindowsAzureRoleComponentImportMethod;
 import com.microsoftopentechnologies.azurecommons.util.WAEclipseHelperMethods;
+import com.microsoftopentechnologies.wacommon.telemetry.AppInsightsCustomEvent;
 import com.microsoftopentechnologies.wacommon.utils.PluginUtil;
 import com.persistent.builder.WADependencyBuilder;
 import com.persistent.ui.propertypage.WAProjectNature;
@@ -159,6 +160,8 @@ public class SingleClickPublishUtils {
 							dynamicWebProjName, jdkName, thirdPartyServer);
 					if (deploymentProj == null) {
 						MessageDialog.openError(new Shell(), Messages.title, Messages.projErr);
+					} else {
+						AppInsightsCustomEvent.create(com.persistent.ui.projwizard.Messages.projCrtEvtName, "");
 					}
 				}
 			} else {

@@ -19,34 +19,33 @@
  */
 package com.microsoft.azureexplorer.actions;
 
-import org.eclipse.swt.widgets.Shell;
-
 import com.microsoft.azureexplorer.forms.CreateQueueForm;
 import com.microsoftopentechnologies.tooling.msservices.helpers.Name;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.NodeActionEvent;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.NodeActionListener;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.azure.storage.ClientStorageNode;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.azure.storage.QueueModule;
+import org.eclipse.swt.widgets.Shell;
 
 @Name("Create new queue")
 public class CreateQueueAction  extends NodeActionListener {
-	private QueueModule queueModule;
+    private QueueModule queueModule;
 
-	public CreateQueueAction(QueueModule queuModule) {
-		this.queueModule = queuModule;
-	}
+    public CreateQueueAction(QueueModule queuModule) {
+        this.queueModule = queuModule;
+    }
 
-	@Override
-	public void actionPerformed(NodeActionEvent e) {
-		CreateQueueForm form = new CreateQueueForm(new Shell(), queueModule.getStorageAccount());
+    @Override
+    public void actionPerformed(NodeActionEvent e) {
+        CreateQueueForm form = new CreateQueueForm(new Shell(), queueModule.getStorageAccount());
 
-		form.setOnCreate(new Runnable() {
-			@Override
-			public void run() {
-				queueModule.getParent().removeAllChildNodes();
-				((ClientStorageNode) queueModule.getParent()).load();
-			}
-		});
-		form.open();
-	}
+        form.setOnCreate(new Runnable() {
+            @Override
+            public void run() {
+                queueModule.getParent().removeAllChildNodes();
+                ((ClientStorageNode) queueModule.getParent()).load();
+            }
+        });
+        form.open();
+    }
 }

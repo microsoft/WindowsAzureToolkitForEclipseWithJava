@@ -68,6 +68,7 @@ public final class Messages extends NLS {
     public static String noSubErrMsg;
     public static String newResErrMsg;
     public static String getValuesErrMsg;
+    public static String timeOutErr;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

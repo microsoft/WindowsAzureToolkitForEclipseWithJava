@@ -19,8 +19,6 @@
  */
 package com.microsoft.azureexplorer.actions;
 
-import org.eclipse.swt.widgets.Shell;
-
 import com.microsoft.azureexplorer.forms.ExternalStorageAccountForm;
 import com.microsoftopentechnologies.tooling.msservices.components.DefaultLoader;
 import com.microsoftopentechnologies.tooling.msservices.helpers.ExternalStorageHelper;
@@ -31,45 +29,47 @@ import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.NodeActi
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.azure.storage.ExternalStorageNode;
 import com.microsoftopentechnologies.tooling.msservices.serviceexplorer.azure.storage.StorageModule;
 
+import org.eclipse.swt.widgets.Shell;
+
 @Name("Attach external storage account")
 public class AttachExternalStorageAccountAction extends NodeActionListener {
-	private final StorageModule storageModule;
+    private final StorageModule storageModule;
 
-	public AttachExternalStorageAccountAction(StorageModule storageModule) {
-		this.storageModule = storageModule;
-	}
+    public AttachExternalStorageAccountAction(StorageModule storageModule) {
+        this.storageModule = storageModule;
+    }
 
-	@Override
-	public void actionPerformed(NodeActionEvent e) {
-		final ExternalStorageAccountForm form = new ExternalStorageAccountForm(new Shell(), "Attach External Storage Account");
+    @Override
+    public void actionPerformed(NodeActionEvent e) {
+        final ExternalStorageAccountForm form = new ExternalStorageAccountForm(new Shell(), "Attach External Storage Account");
 
-		form.setOnFinish(new Runnable() {
-			@Override
-			public void run() {
-				DefaultLoader.getIdeHelper().invokeLater(
-						new Runnable() {
-							public void run() {
-								ClientStorageAccount storageAccount = form.getStorageAccount();
-								ClientStorageAccount fullStorageAccount = form.getFullStorageAccount();
+        form.setOnFinish(new Runnable() {
+            @Override
+            public void run() {
+                DefaultLoader.getIdeHelper().invokeLater(
+                        new Runnable() {
+                            public void run() {
+                                ClientStorageAccount storageAccount = form.getStorageAccount();
+                                ClientStorageAccount fullStorageAccount = form.getFullStorageAccount();
 
-								for (ClientStorageAccount clientStorageAccount : ExternalStorageHelper.getList()) {
-									String name = storageAccount.getName();
-									if (clientStorageAccount.getName().equals(name)) {
-										DefaultLoader.getUIHelper().showError(
-												"Storage account with name '" + name + "' already exists.",
-												"Service Explorer");
-										return;
-									}
-								}
+                                for (ClientStorageAccount clientStorageAccount : ExternalStorageHelper.getList()) {
+                                    String name = storageAccount.getName();
+                                    if (clientStorageAccount.getName().equals(name)) {
+                                        DefaultLoader.getUIHelper().showError(
+                                                "Storage account with name '" + name + "' already exists.",
+                                                "Service Explorer");
+                                        return;
+                                    }
+                                }
 
-								ExternalStorageNode node = new ExternalStorageNode(storageModule, fullStorageAccount);
-								storageModule.addChildNode(node);
+                                ExternalStorageNode node = new ExternalStorageNode(storageModule, fullStorageAccount);
+                                storageModule.addChildNode(node);
 
-								ExternalStorageHelper.add(storageAccount);
-							}
-						});
-			}
-		});
-		form.open();
-	}
+                                ExternalStorageHelper.add(storageAccount);
+                            }
+                        });
+            }
+        });
+        form.open();
+    }
 }

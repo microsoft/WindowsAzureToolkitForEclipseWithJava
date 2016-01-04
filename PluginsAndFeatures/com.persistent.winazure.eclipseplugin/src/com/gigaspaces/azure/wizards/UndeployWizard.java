@@ -32,25 +32,19 @@ public class UndeployWizard extends Wizard {
 
 	public UndeployWizard() {
 		super();
-
 		setWindowTitle(Messages.undeployWizTitle);
-
 	}
 
 	@Override
 	public void addPages() {
 		page = new UndeploymentPage(Messages.unpubplishAzureProjPage);
-
 		addPage(page);
 	}
 
 	@Override
 	public boolean performFinish() {
-
 		Job job = new WindowsAzureUndeploymentJob(Messages.deletingAzureDeployment, serviceName, deploymentName,deploymentState,deploymentState);
-
 		job.schedule();
-
 		return true;
 	}
 
@@ -58,7 +52,5 @@ public class UndeployWizard extends Wizard {
 		this.serviceName = serviceName;		
 		this.deploymentName = deploymentName;
 		this.deploymentState = deploymentState;
-		
 	}
-
 }

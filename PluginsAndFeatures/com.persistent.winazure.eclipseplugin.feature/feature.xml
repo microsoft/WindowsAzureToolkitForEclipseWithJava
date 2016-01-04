@@ -2,7 +2,7 @@
 <feature
       id="com.persistent.winazure.eclipseplugin.feature"
       label="Azure Plugin for Eclipse with Java"
-      version="2.7.1.qualifier"
+      version="2.8.0.qualifier"
       provider-name="Microsoft Corp.">
 
    <description>

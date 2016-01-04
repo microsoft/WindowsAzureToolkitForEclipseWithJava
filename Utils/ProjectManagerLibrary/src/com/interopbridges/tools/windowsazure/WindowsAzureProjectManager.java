@@ -485,7 +485,7 @@ public class WindowsAzureProjectManager {
 					.hasNext();) {
 				WindowsAzureRole windowsAzureRole = iterator.next();
 				if (sdkVersion == null) {
-					sdkVersion = "2.7.0.0";
+					sdkVersion = "2.8.0.0";
 				}
 				// If Session affinity is enabled
 				if (sdkVersion != null
@@ -503,9 +503,12 @@ public class WindowsAzureProjectManager {
 							.parseXMLResource(this.getClass()
 									.getResourceAsStream(
 											"/arrconfig/ARRAgent.exe.config"));
+					/*
+					 * Temporary fix for Azure SDK 2.8
+					 * Microsoft.WindowsAzure.ServiceRuntime.dll version is still 2.7.0.0
 					ParserXMLUtility.setExpressionValue(saConfigDoc,
 							WindowsAzureConstants.SA_NEW_VERSION_ATTR,
-							sdkVersion);
+							sdkVersion); */
 					ParserXMLUtility.saveXMLFile(destPath, saConfigDoc);
 				}
 			}
@@ -2255,7 +2258,7 @@ public class WindowsAzureProjectManager {
 				if (versionedSdkDir.isDirectory()) {
 
 					// Since we are iterating in descending manner , below if
-					// will be true only if SDK2.7 or greater version is not
+					// will be true only if SDK 2.8 or greater version is not
 					// installed.
 					// If greater version is installed we always break loop and
 					// return the value.
@@ -2354,7 +2357,7 @@ public class WindowsAzureProjectManager {
 		if (storageEmulatorDir.exists()) {
 			return storageEmulatorDir.toString();
 		} else {
-			throw new IOException("Azure SDK v2.7 or later is not installed.");
+			throw new IOException("Azure SDK v2.8 or later is not installed.");
 		}
 	}
 
@@ -3436,7 +3439,7 @@ public class WindowsAzureProjectManager {
 		updateGlobalPropertyLocation(WindowsAzureConstants.PROJ_GLOBAL_PROP_PUBLISH_SETTINGS_PATH_NAME, publishSettingsPath);
 	}
 		
-	public String getPublishSettingsPath(String publishSettingsPath) throws WindowsAzureInvalidProjectOperationException {
+	public String getPublishSettingsPath() throws WindowsAzureInvalidProjectOperationException {
 		return getGlobalPropertyLocation(WindowsAzureConstants.PROJ_GLOBAL_PROP_PUBLISH_SETTINGS_PATH_NAME);
 	}
 	

@@ -24,47 +24,43 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 
 public class ViewMessageForm extends Dialog {
-	private String content;
-	private Text messageTextArea;
+    private String content;
+    private Text messageTextArea;
 
-	public ViewMessageForm(Shell parentShell, String content) {
-		super(parentShell);
-		parentShell.setText("View Message");
-		this.content = content;
-	}
+    public ViewMessageForm(Shell parentShell, String content) {
+        super(parentShell);
+        parentShell.setText("View Message");
+        this.content = content;
+    }
 
-	@Override
-	protected Control createContents(Composite parent) {
-		Composite container = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		container.setLayout(gridLayout);
-		GridData gridData = new GridData();
-		gridData.widthHint = 350;
-		gridData.heightHint = 300;
-		container.setLayoutData(gridData);
+    @Override
+    protected Control createContents(Composite parent) {
+        Composite container = new Composite(parent, SWT.NONE);
+        GridLayout gridLayout = new GridLayout();
+        container.setLayout(gridLayout);
+        GridData gridData = new GridData();
+        gridData.widthHint = 350;
+        gridData.heightHint = 300;
+        container.setLayoutData(gridData);
 
-		messageTextArea = new Text(container, SWT.LEFT | SWT.BORDER | SWT.MULTI);
-		gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		gridData.heightHint = 200;
-		messageTextArea.setLayoutData(gridData);
-		messageTextArea.setText(content);
-		messageTextArea.setEditable(false);
+        messageTextArea = new Text(container, SWT.LEFT | SWT.BORDER | SWT.MULTI);
+        gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        gridData.heightHint = 200;
+        messageTextArea.setLayoutData(gridData);
+        messageTextArea.setText(content);
+        messageTextArea.setEditable(false);
 
-		return super.createContents(parent);
-	}
+        return super.createContents(parent);
+    }
 
-	@Override
-	protected Button createButton(Composite parent, int id, String label, boolean defaultButton) {
-		if (id == IDialogConstants.CANCEL_ID) {
-			return null;
-		}
-		return super.createButton(parent, id, label, defaultButton);
-	}
+    @Override
+    protected Button createButton(Composite parent, int id, String label, boolean defaultButton) {
+        if (id == IDialogConstants.CANCEL_ID) {
+            return null;
+        }
+        return super.createButton(parent, id, label, defaultButton);
+    }
 }

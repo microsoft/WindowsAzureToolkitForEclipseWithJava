@@ -1013,10 +1013,10 @@ public class WARCaching extends PropertyPage {
 			try {
 				cache = WARCachingUtilMethods.modifyPort(cache, modifiedVal, wARole);
 			} catch (AzureCommonsException e1) {
-				PluginUtil.displayErrorDialog(
+				PluginUtil.displayErrorDialogAndLog(
 						getShell(),
 						Messages.cachPortErrTtl,
-						e1.getMessage());
+						e1.getMessage(), e1);
 			}
 		}
 
@@ -1109,9 +1109,9 @@ public class WARCaching extends PropertyPage {
 			try {
 				cache = WARCachingUtilMethods.modifyCacheName(cache, modifiedVal, mapCache);
 			} catch (AzureCommonsException e) {
-				PluginUtil.displayErrorDialog(getShell(),
+				PluginUtil.displayErrorDialogAndLog(getShell(),
 						Messages.cachNameErrTtl,
-						e.getMessage());
+						e.getMessage(), e);
 			}
 		}
 
