@@ -6,7 +6,7 @@ This includes the Azure Plugin for Eclipse with Java for developing projects tha
 
 To install, point Eclipse's "Install New Software" command at http://dl.msopentech.com/eclipse
 
-To learn more, go to: http://msdn.microsoft.com/en-us/library/windowsazure/hh694271
+To learn more, go to: https://azure.microsoft.com/en-us/documentation/articles/azure-toolkit-for-eclipse/
 
 
 Contributors
